@@ -1,0 +1,14 @@
+#Mac
+.DS_Store
+
+#Gradle
+/.gradle/
+/build/
+
+#Intellij
+/out/
+/.idea/
+*.iml
+
+#Project libs
+/sonarqube-lib/
