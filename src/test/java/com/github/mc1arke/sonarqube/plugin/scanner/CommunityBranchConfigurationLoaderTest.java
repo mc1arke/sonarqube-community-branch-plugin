@@ -58,16 +58,69 @@ public class CommunityBranchConfigurationLoaderTest {
     }
 
     @Test
-    public void testExceptionWhenNoExistingBranch() {
+    public void testExceptionWhenNoExistingBranchAndBranchParamsPresent() {
         CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
         ProjectBranches branchInfo = mock(ProjectBranches.class);
         when(branchInfo.isEmpty()).thenReturn(true);
+
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("sonar.branch.name", "dummy");
 
         expectedException.expect(MessageException.class);
         expectedException.expectMessage(IsEqual.equalTo(
                 "No branches currently exist in this project. Please scan the main branch without passing any branch parameters."));
 
-        testCase.load(new HashMap<>(), supplier, branchInfo, mock(ProjectPullRequests.class));
+        testCase.load(parameters, supplier, branchInfo, mock(ProjectPullRequests.class));
+    }
+
+    @Test
+    public void testExceptionWhenNoExistingBranchAndPulRequestParamsPresent() {
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        ProjectBranches branchInfo = mock(ProjectBranches.class);
+        when(branchInfo.isEmpty()).thenReturn(true);
+
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("sonar.pullrequest.branch", "dummy2");
+
+        expectedException.expect(MessageException.class);
+        expectedException.expectMessage(IsEqual.equalTo(
+                "No branches currently exist in this project. Please scan the main branch without passing any branch parameters."));
+
+        testCase.load(parameters, supplier, branchInfo, mock(ProjectPullRequests.class));
+    }
+
+    @Test
+    public void testExceptionWhenNoExistingBranchAndPullRequestAndBranchParametersPresent() {
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        ProjectBranches branchInfo = mock(ProjectBranches.class);
+        when(branchInfo.isEmpty()).thenReturn(true);
+
+
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("sonar.branch.name", "dummy");
+        parameters.put("sonar.pullrequest.branch", "dummy2");
+
+
+        expectedException.expect(MessageException.class);
+        expectedException.expectMessage(IsEqual.equalTo(
+                "No branches currently exist in this project. Please scan the main branch without passing any branch parameters."));
+
+        testCase.load(parameters, supplier, branchInfo, mock(ProjectPullRequests.class));
+    }
+
+    @Test
+    public void testDefaultBranchInfoWhenNoBranchParametersSpecifiedAndNoBranchesExist() {
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+
+        ProjectBranches branchInfo = mock(ProjectBranches.class);
+        when(branchInfo.isEmpty()).thenReturn(true);
+
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("dummy", "dummy");
+
+
+        assertEquals(DefaultBranchConfiguration.class,
+                     testCase.load(parameters, supplier, branchInfo, mock(ProjectPullRequests.class)).getClass());
     }
 
     @Test

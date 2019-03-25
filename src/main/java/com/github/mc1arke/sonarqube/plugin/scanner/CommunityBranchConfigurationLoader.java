@@ -53,7 +53,9 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
     @Override
     public BranchConfiguration load(Map<String, String> localSettings, Supplier<Map<String, String>> supplier,
                                     ProjectBranches projectBranches, ProjectPullRequests projectPullRequests) {
-        if (projectBranches.isEmpty()) {
+        if (projectBranches.isEmpty() &&
+            (PULL_REQUEST_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey) ||
+             BRANCH_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey))) {
             // it would be nice to identify the 'primary' branch directly, but different projects work differently: using any of master, develop, main etc as primary
             // A project/global configuration entry could be used to drive this in the future, but the current documented SonarQube parameters need followed for now
             throw MessageException
