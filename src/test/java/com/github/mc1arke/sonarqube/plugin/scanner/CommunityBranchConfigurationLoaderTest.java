@@ -74,19 +74,49 @@ public class CommunityBranchConfigurationLoaderTest {
     }
 
     @Test
-    public void testExceptionWhenNoExistingBranchAndPulRequestParamsPresent() {
+    public void testDefaultConfigWhenNoExistingBranchAndBranchNameParamMaster() {
         CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
         ProjectBranches branchInfo = mock(ProjectBranches.class);
         when(branchInfo.isEmpty()).thenReturn(true);
 
         Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.pullrequest.branch", "dummy2");
+        parameters.put("sonar.branch.name", "master");
+
+        assertEquals(DefaultBranchConfiguration.class,
+                     testCase.load(parameters, supplier, branchInfo, mock(ProjectPullRequests.class)).getClass());
+    }
+
+    @Test
+    public void testErrorWhenNoExistingBranchAndBranchTargetMasterButNoSourceBranch() {
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        ProjectBranches branchInfo = mock(ProjectBranches.class);
+        when(branchInfo.isEmpty()).thenReturn(true);
+
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("sonar.branch.source", null);
+        parameters.put("sonar.branch.target", "master");
+
 
         expectedException.expect(MessageException.class);
         expectedException.expectMessage(IsEqual.equalTo(
                 "No branches currently exist in this project. Please scan the main branch without passing any branch parameters."));
 
         testCase.load(parameters, supplier, branchInfo, mock(ProjectPullRequests.class));
+    }
+
+
+    @Test
+    public void testDefaultConfigWhenNoExistingBranchAndBranchParamsAllMaster() {
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        ProjectBranches branchInfo = mock(ProjectBranches.class);
+        when(branchInfo.isEmpty()).thenReturn(true);
+
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("sonar.branch.name", "master");
+        parameters.put("sonar.branch.target", "master");
+
+        assertEquals(DefaultBranchConfiguration.class,
+                     testCase.load(parameters, supplier, branchInfo, mock(ProjectPullRequests.class)).getClass());
     }
 
     @Test
