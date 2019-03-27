@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
+import org.apache.commons.lang.StringUtils;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.utils.MessageException;
 import org.sonar.core.config.ScannerProperties;
@@ -54,10 +55,14 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
     public BranchConfiguration load(Map<String, String> localSettings, Supplier<Map<String, String>> supplier,
                                     ProjectBranches projectBranches, ProjectPullRequests projectPullRequests) {
         if (projectBranches.isEmpty()) {
-            // it would be nice to identify the 'primary' branch directly, but different projects work differently: using any of master, develop, main etc as primary
-            // A project/global configuration entry could be used to drive this in the future, but the current documented SonarQube parameters need followed for now
-            throw MessageException
-                    .of("No branches currently exist in this project. Please scan the main branch without passing any branch parameters.");
+            if (isTargetingDefaultBranch(localSettings)) {
+                return new DefaultBranchConfiguration();
+            } else {
+                // it would be nice to identify the 'primary' branch directly, but different projects work differently: using any of master, develop, main etc as primary
+                // A project/global configuration entry could be used to drive this in the future, but the current documented SonarQube parameters need followed for now
+                throw MessageException
+                        .of("No branches currently exist in this project. Please scan the main branch without passing any branch parameters.");
+            }
         }
         if (BRANCH_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey)) {
             return createBranchConfiguration(localSettings.get(ScannerProperties.BRANCH_NAME),
@@ -71,6 +76,13 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         }
 
         return new DefaultBranchConfiguration();
+    }
+
+    private static boolean isTargetingDefaultBranch(Map<String, String> localSettings) {
+        String name = StringUtils.trimToNull(localSettings.get(ScannerProperties.BRANCH_NAME));
+        String target = StringUtils.trimToNull(localSettings.get(ScannerProperties.BRANCH_TARGET));
+
+        return (null == name || "master".equals(name)) && (null == target || target.equals(name));
     }
 
     private static BranchConfiguration createBranchConfiguration(String branchName, String branchTarget,
