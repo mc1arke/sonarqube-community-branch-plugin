@@ -86,8 +86,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
             String pullRequestKey = metadata.getPullRequestKey();
 
             BranchDto dto = branchDto.get();
-            return new CommunityBranch(branchName, BranchType.PULL_REQUEST, dto.isMain(), dto.getMergeBranchUuid(),
-                                       pullRequestKey);
+            return new CommunityBranch(branchName, BranchType.PULL_REQUEST, false, dto.getUuid(), pullRequestKey);
         } else {
             throw new IllegalStateException(
                     String.format("Could not find target branch '%s' in project", targetBranch));
