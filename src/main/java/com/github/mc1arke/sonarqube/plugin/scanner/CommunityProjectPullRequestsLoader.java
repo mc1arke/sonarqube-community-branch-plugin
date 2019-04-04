@@ -19,9 +19,13 @@
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonObject;
 import org.sonar.api.utils.MessageException;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 import org.sonar.scanner.bootstrap.ScannerWsClient;
-import org.sonar.scanner.protocol.GsonHelper;
 import org.sonar.scanner.scan.branch.ProjectPullRequests;
 import org.sonar.scanner.scan.branch.ProjectPullRequestsLoader;
 import org.sonar.scanner.scan.branch.PullRequestInfo;
@@ -32,6 +36,8 @@ import org.sonarqube.ws.client.WsResponse;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +48,7 @@ import java.util.List;
  */
 public class CommunityProjectPullRequestsLoader implements ProjectPullRequestsLoader {
 
+    private static final Logger LOGGER = Loggers.get(CommunityProjectPullRequestsLoader.class);
     private static final String PROJECT_PULL_REQUESTS_URL = "/api/project_pull_requests/list?project=";
 
     private final ScannerWsClient scannerWsClient;
@@ -50,7 +57,24 @@ public class CommunityProjectPullRequestsLoader implements ProjectPullRequestsLo
     public CommunityProjectPullRequestsLoader(ScannerWsClient scannerWsClient) {
         super();
         this.scannerWsClient = scannerWsClient;
-        this.gson = GsonHelper.create();
+        this.gson =
+                new GsonBuilder().registerTypeAdapter(PullRequestInfo.class, createPullRequestInfoJsonDeserialiser())
+                        .create();
+    }
+
+    private static JsonDeserializer<PullRequestInfo> createPullRequestInfoJsonDeserialiser() {
+        return (jsonElement, type, jsonDeserializationContext) -> {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            long parsedDate = 0;
+            try {
+                parsedDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+                        .parse(jsonObject.get("analysisDate").getAsString()).getTime();
+            } catch (ParseException e) {
+                LOGGER.warn("Could not parse date from Pull Requests API response. Will use '0' date", e);
+            }
+            return new PullRequestInfo(jsonObject.get("key").getAsString(), jsonObject.get("branch").getAsString(),
+                                       jsonObject.get("base").getAsString(), parsedDate);
+        };
     }
 
     @Override
