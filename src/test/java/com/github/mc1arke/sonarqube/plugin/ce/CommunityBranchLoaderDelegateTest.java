@@ -189,9 +189,8 @@ public class CommunityBranchLoaderDelegateTest {
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getBranchType()).thenReturn(BranchType.PULL_REQUEST);
         when(branchDto.getKey()).thenReturn("branchKey");
-        when(branchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
+        when(branchDto.getUuid()).thenReturn("mergeBranchUuid");
         when(branchDto.getProjectUuid()).thenReturn("projectUuid");
-        when(branchDto.getUuid()).thenReturn("branchUuid");
 
         BranchDao branchDao = mock(BranchDao.class);
         when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("branch"))).thenReturn(Optional.of(branchDto));
