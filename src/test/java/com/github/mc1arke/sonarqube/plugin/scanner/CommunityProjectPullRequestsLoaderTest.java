@@ -33,8 +33,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,7 +59,7 @@ public class CommunityProjectPullRequestsLoaderTest {
     }
 
     @Test
-    public void testEmptyBranchesOnEmptyServerResponse() {
+    public void testEmptyPullRequestsOnEmptyServerResponse() {
         WsResponse mockResponse = mock(WsResponse.class);
         when(scannerWsClient.call(any())).thenReturn(mockResponse);
 
@@ -73,30 +74,46 @@ public class CommunityProjectPullRequestsLoaderTest {
     }
 
     @Test
-    public void testAllBranchesFromNonEmptyServerResponse() {
+    public void testAllPullRequestsFromNonEmptyServerResponse() throws ParseException {
         WsResponse mockResponse = mock(WsResponse.class);
         when(scannerWsClient.call(any())).thenReturn(mockResponse);
 
-        List<PullRequestInfo> infos = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            infos.add(new PullRequestInfo("key" + i, "branch" + i, "base" + i, i));
-        }
-
         StringReader stringReader = new StringReader(
-                GsonHelper.create().toJson(new CommunityProjectPullRequestsLoader.PullRequestsResponse(infos)));
+                "{\"pullRequests\":[{\"key\":\"101\",\"title\":\"dummybranch\",\"branch\":\"dummybranch\",\"base\":\"master\",\"status\":{\"qualityGateStatus\":\"OK\",\"bugs\":0,\"vulnerabilities\":0,\"codeSmells\":0},\"analysisDate\":\"2019-04-04T19:44:27+0100\"}]}");
         when(mockResponse.contentReader()).thenReturn(stringReader);
 
         CommunityProjectPullRequestsLoader testCase = new CommunityProjectPullRequestsLoader(scannerWsClient);
         ProjectPullRequests response = testCase.load("key");
         assertFalse(response.isEmpty());
-        for (PullRequestInfo info : infos) {
-            PullRequestInfo responseInfo = response.get(info.getBranch());
-            assertNotNull(responseInfo);
-            assertEquals(info.getAnalysisDate(), responseInfo.getAnalysisDate());
-            assertEquals(info.getBase(), responseInfo.getBase());
-            assertEquals(info.getBranch(), responseInfo.getBranch());
-            assertEquals(info.getKey(), responseInfo.getKey());
-        }
+
+        PullRequestInfo responseInfo = response.get("dummybranch");
+        assertNotNull(responseInfo);
+        assertEquals(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse("2019-04-04T19:44:27+0100").getTime(),
+                     responseInfo.getAnalysisDate());
+        assertEquals("master", responseInfo.getBase());
+        assertEquals("dummybranch", responseInfo.getBranch());
+        assertEquals("101", responseInfo.getKey());
+    }
+
+    @Test
+    public void testAllPullRequestsFromNonEmptyServerResponseWithInvalidDate() {
+        WsResponse mockResponse = mock(WsResponse.class);
+        when(scannerWsClient.call(any())).thenReturn(mockResponse);
+
+        StringReader stringReader = new StringReader(
+                "{\"pullRequests\":[{\"key\":\"101\",\"title\":\"dummybranch\",\"branch\":\"dummybranch\",\"base\":\"master\",\"status\":{\"qualityGateStatus\":\"OK\",\"bugs\":0,\"vulnerabilities\":0,\"codeSmells\":0},\"analysisDate\":\"\"}]}");
+        when(mockResponse.contentReader()).thenReturn(stringReader);
+
+        CommunityProjectPullRequestsLoader testCase = new CommunityProjectPullRequestsLoader(scannerWsClient);
+        ProjectPullRequests response = testCase.load("key");
+        assertFalse(response.isEmpty());
+
+        PullRequestInfo responseInfo = response.get("dummybranch");
+        assertNotNull(responseInfo);
+        assertEquals(0, responseInfo.getAnalysisDate());
+        assertEquals("master", responseInfo.getBase());
+        assertEquals("dummybranch", responseInfo.getBranch());
+        assertEquals("101", responseInfo.getKey());
     }
 
     @Test
