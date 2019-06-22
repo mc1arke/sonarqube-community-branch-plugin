@@ -23,7 +23,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonar.db.component.BranchType;
-import org.sonar.scanner.protocol.output.ScannerReport;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,66 +40,45 @@ public class CommunityBranchTest {
 
     @Test
     public void testGenerateKeyMainBranchNullFileOfPath() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null);
+        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
 
-        ScannerReport.Component projectKey =
-                ScannerReport.Component.getDefaultInstance().toBuilder().setKey("projectKey").build();
-
-        assertEquals("projectKey", testCase.generateKey(projectKey, null));
+        assertEquals("projectKey", testCase.generateKey("projectKey", null));
     }
 
     @Test
     public void testGenerateKeyMainBranchNonNullFileOfPathHolder() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null);
+        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
 
-        ScannerReport.Component projectKey =
-                ScannerReport.Component.getDefaultInstance().toBuilder().setKey("projectKey").build();
-        ScannerReport.Component fileOrPath = ScannerReport.Component.getDefaultInstance();
-
-        assertEquals("projectKey", testCase.generateKey(projectKey, fileOrPath));
+        assertEquals("projectKey", testCase.generateKey("projectKey", ""));
     }
 
     @Test
     public void testGenerateKeyMainBranchNonNullFileOfPathContent() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null);
+        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
 
-        ScannerReport.Component projectKey =
-                ScannerReport.Component.getDefaultInstance().toBuilder().setKey("projectKey").build();
-        ScannerReport.Component fileOrPath =
-                ScannerReport.Component.getDefaultInstance().toBuilder().setPath("path").build();
-
-        assertEquals("projectKey:path", testCase.generateKey(projectKey, fileOrPath));
+        assertEquals("projectKey:path", testCase.generateKey("projectKey", "path"));
     }
 
     @Test
     public void testGenerateKeyNonMainBranchNonNullFileOfPathContentPullRequest() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "pullRequestKey");
+        CommunityBranch testCase =
+                new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "pullRequestKey", null);
 
-        ScannerReport.Component projectKey =
-                ScannerReport.Component.getDefaultInstance().toBuilder().setKey("projectKey").build();
-        ScannerReport.Component fileOrPath =
-                ScannerReport.Component.getDefaultInstance().toBuilder().setPath("path").build();
-
-        assertEquals("projectKey:path:PULL_REQUEST:pullRequestKey", testCase.generateKey(projectKey, fileOrPath));
+        assertEquals("projectKey:path:PULL_REQUEST:pullRequestKey", testCase.generateKey("projectKey", "path"));
     }
 
     @Test
     public void testGenerateKeyNonMainBranchNonNullFileOfPathContentShortBranch() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.SHORT, false, null, null);
+        CommunityBranch testCase = new CommunityBranch("name", BranchType.SHORT, false, null, null, null);
 
-        ScannerReport.Component projectKey =
-                ScannerReport.Component.getDefaultInstance().toBuilder().setKey("projectKey").build();
-        ScannerReport.Component fileOrPath =
-                ScannerReport.Component.getDefaultInstance().toBuilder().setPath("path").build();
-
-        assertEquals("projectKey:path:BRANCH:name", testCase.generateKey(projectKey, fileOrPath));
+        assertEquals("projectKey:path:BRANCH:name", testCase.generateKey("projectKey", "path"));
     }
 
 
     @Test
     public void testGetPulRequestKey() {
-        assertEquals("prKey",
-                     new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "prKey").getPullRequestKey());
+        assertEquals("prKey", new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "prKey", null)
+                .getPullRequestKey());
     }
 
     @Test
@@ -109,7 +87,7 @@ public class CommunityBranchTest {
                 .expectMessage(IsEqual.equalTo("Only a branch of type PULL_REQUEST can have a pull request ID"));
         expectedException.expect(IllegalStateException.class);
 
-        new CommunityBranch("name", BranchType.SHORT, false, null, "prKey").getPullRequestKey();
+        new CommunityBranch("name", BranchType.SHORT, false, null, "prKey", null).getPullRequestKey();
     }
 
 }

@@ -180,7 +180,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("master", result.targetScmBranch());
+        assertEquals("master", result.targetBranchName());
         assertEquals("feature/shortLivedFeatureBranch", result.branchName());
         assertEquals("masterBranchInfo", result.longLivingSonarReferenceBranch());
         assertTrue(result.isShortOrPullRequest());
@@ -211,7 +211,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("masterxxx", result.targetScmBranch());
+        assertEquals("masterxxx", result.targetBranchName());
         assertEquals("feature/shortLivedBranch", result.branchName());
         assertEquals("defaultBranchInfo", result.longLivingSonarReferenceBranch());
         assertTrue(result.isShortOrPullRequest());
@@ -237,7 +237,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("masterxxx", result.targetScmBranch());
+        assertEquals("masterxxx", result.targetBranchName());
         assertEquals("feature/shortLivedBranch", result.branchName());
         assertEquals("defaultBranchInfo", result.longLivingSonarReferenceBranch());
         assertTrue(result.isShortOrPullRequest());
@@ -344,7 +344,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("longLivedBranch", result.targetScmBranch());
+        assertEquals("longLivedBranch", result.targetBranchName());
         assertEquals("feature/shortLivedBranch", result.branchName());
         assertEquals("longLivedBranch", result.longLivingSonarReferenceBranch());
         assertTrue(result.isShortOrPullRequest());
@@ -376,7 +376,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("master", result.targetScmBranch());
+        assertEquals("master", result.targetBranchName());
         assertEquals("feature/shortLivedBranch", result.branchName());
         assertEquals("master", result.longLivingSonarReferenceBranch());
         assertTrue(result.isShortOrPullRequest());
@@ -401,7 +401,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertNull(result.targetScmBranch());
+        assertNull(result.targetBranchName());
         assertEquals("longLivedBranch", result.branchName());
         assertEquals("longLivedBranch", result.longLivingSonarReferenceBranch());
         assertFalse(result.isShortOrPullRequest());
@@ -428,7 +428,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("target", result.targetScmBranch());
+        assertEquals("target", result.targetBranchName());
         assertEquals("feature/sourceBranch", result.branchName());
         assertEquals("target", result.longLivingSonarReferenceBranch());
         assertTrue(result.isShortOrPullRequest());
@@ -457,7 +457,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("master", result.targetScmBranch());
+        assertEquals("master", result.targetBranchName());
         assertEquals("feature/sourceBranch", result.branchName());
         assertEquals("master", result.longLivingSonarReferenceBranch());
         assertTrue(result.isShortOrPullRequest());
@@ -485,7 +485,7 @@ public class CommunityBranchConfigurationLoaderTest {
         BranchConfiguration result =
                 testCase.load(parameters, supplier, projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("master", result.targetScmBranch());
+        assertEquals("master", result.targetBranchName());
         assertEquals("feature/sourceBranch", result.branchName());
         assertEquals("master", result.longLivingSonarReferenceBranch());
         assertTrue(result.isShortOrPullRequest());

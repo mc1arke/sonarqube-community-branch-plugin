@@ -37,7 +37,7 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '7.4'
+def sonarqubeVersion = '7.8'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
@@ -57,7 +57,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.24.0'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
-    compileOnly group: 'org.sonarsource.sonarqube', name: 'sonar-plugin-api', version: "${sonarqubeVersion}"
+    compileOnly group: 'org.sonarsource.sonarqube', name: 'sonar-plugin-api', version: "7.7"
 }
 
 
