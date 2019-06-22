@@ -23,9 +23,6 @@ import org.sonar.ce.task.projectanalysis.analysis.Branch;
 import org.sonar.core.component.ComponentKeys;
 import org.sonar.db.component.BranchType;
 import org.sonar.db.component.ComponentDto;
-import org.sonar.scanner.protocol.output.ScannerReport;
-
-import java.util.Optional;
 
 /**
  * @author Michael Clarke
@@ -37,15 +34,17 @@ public class CommunityBranch implements Branch {
     private final boolean main;
     private final String mergeBranchUuid;
     private final String pullRequestKey;
+    private final String targetBranchName;
 
     public CommunityBranch(String name, BranchType branchType, boolean main, String mergeBranchUuid,
-                           String pullRequestKey) {
+                           String pullRequestKey, String targetBranchName) {
         super();
         this.name = name;
         this.branchType = branchType;
         this.main = main;
         this.mergeBranchUuid = mergeBranchUuid;
         this.pullRequestKey = pullRequestKey;
+        this.targetBranchName = targetBranchName;
     }
 
     @Override
@@ -69,8 +68,8 @@ public class CommunityBranch implements Branch {
     }
 
     @Override
-    public Optional<String> getMergeBranchUuid() {
-        return Optional.ofNullable(mergeBranchUuid);
+    public String getMergeBranchUuid() {
+        return mergeBranchUuid;
     }
 
     @Override
@@ -86,13 +85,7 @@ public class CommunityBranch implements Branch {
         return pullRequestKey;
     }
 
-    // This method can be removed when removing support for all SonarQube versions before 7.6
     @Override
-    public String generateKey(ScannerReport.Component projectKey, ScannerReport.Component fileOrDirPath) {
-        return generateKey(projectKey.getKey(), null == fileOrDirPath ? null : fileOrDirPath.getPath());
-    }
-
-    //@Override for SonarQube 7.6
     public String generateKey(String projectKey, String fileOrDirPath) {
         String effectiveKey;
         if (null == fileOrDirPath) {
@@ -108,6 +101,11 @@ public class CommunityBranch implements Branch {
         } else {
             return ComponentDto.generateBranchKey(effectiveKey, name);
         }
+    }
+
+    @Override
+    public String getTargetBranchName() {
+        return targetBranchName;
     }
 
 }

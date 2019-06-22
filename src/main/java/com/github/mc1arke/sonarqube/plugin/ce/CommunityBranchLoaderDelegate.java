@@ -53,6 +53,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
     }
 
     private static Branch load(ScannerReport.Metadata metadata, Project project, DbClient dbClient) {
+        String targetBranchName = StringUtils.trimToNull(metadata.getTargetBranchName());
         String branchName = StringUtils.trimToNull(metadata.getBranchName());
         String projectUuid = StringUtils.trimToNull(project.getUuid());
 
@@ -60,19 +61,23 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
             Optional<BranchDto> branchDto = findBranchByUuid(projectUuid, dbClient);
             if (branchDto.isPresent()) {
                 BranchDto dto = branchDto.get();
-                return new CommunityBranch(dto.getKey(), dto.getBranchType(), dto.isMain(), null, null);
+                return new CommunityBranch(dto.getKey(), dto.getBranchType(), dto.isMain(), null, null,
+                                           targetBranchName);
             } else {
                 throw new IllegalStateException("Could not find main branch");
             }
         } else {
             String targetBranch = StringUtils.trimToNull(metadata.getMergeBranchName());
             ScannerReport.Metadata.BranchType branchType = metadata.getBranchType();
+            if (null == targetBranchName) {
+                targetBranchName = targetBranch;
+            }
 
             if (ScannerReport.Metadata.BranchType.PULL_REQUEST == branchType) {
-                return createPullRequest(metadata, dbClient, branchName, projectUuid, targetBranch);
+                return createPullRequest(metadata, dbClient, branchName, projectUuid, targetBranch, targetBranchName);
             } else if (ScannerReport.Metadata.BranchType.LONG == branchType ||
                        ScannerReport.Metadata.BranchType.SHORT == branchType) {
-                return createBranch(dbClient, branchName, projectUuid, targetBranch, branchType);
+                return createBranch(dbClient, branchName, projectUuid, targetBranch, branchType, targetBranchName);
             } else {
                 throw new IllegalStateException(String.format("Invalid branch type '%s'", branchType.name()));
             }
@@ -80,13 +85,14 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
     }
 
     private static Branch createPullRequest(ScannerReport.Metadata metadata, DbClient dbClient, String branchName,
-                                            String projectUuid, String targetBranch) {
+                                            String projectUuid, String targetBranch, String targetBranchName) {
         Optional<BranchDto> branchDto = findBranchByKey(projectUuid, targetBranch, dbClient);
         if (branchDto.isPresent()) {
             String pullRequestKey = metadata.getPullRequestKey();
 
             BranchDto dto = branchDto.get();
-            return new CommunityBranch(branchName, BranchType.PULL_REQUEST, false, dto.getUuid(), pullRequestKey);
+            return new CommunityBranch(branchName, BranchType.PULL_REQUEST, false, dto.getUuid(), pullRequestKey,
+                                       targetBranchName);
         } else {
             throw new IllegalStateException(
                     String.format("Could not find target branch '%s' in project", targetBranch));
@@ -94,7 +100,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
     }
 
     private static Branch createBranch(DbClient dbClient, String branchName, String projectUuid, String targetBranch,
-                                       ScannerReport.Metadata.BranchType branchType) {
+                                       ScannerReport.Metadata.BranchType branchType, String targetBranchName) {
         String targetUuid;
         if (null == targetBranch) {
             targetUuid = projectUuid;
@@ -110,7 +116,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
         return new CommunityBranch(branchName, ScannerReport.Metadata.BranchType.LONG == branchType ? BranchType.LONG :
                                                BranchType.SHORT,
                                    findBranchByKey(projectUuid, branchName, dbClient).map(BranchDto::isMain)
-                                           .orElse(false), targetUuid, null);
+                                           .orElse(false), targetUuid, null, targetBranchName);
     }
 
     private static Optional<BranchDto> findBranchByUuid(String projectUuid, DbClient dbClient) {

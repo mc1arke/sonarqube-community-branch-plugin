@@ -3,11 +3,16 @@
 # Sonarqube Community Branch Plugin
 A plugin for SonarQube to allow branch analysis in the Community version.
 
-# Installation
-Either build the project or [download the release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases). Copy the plugin JAR file to the `extensions/plugins/`directory of your SonarQube instance and restart SonarQube.
-
 # Compatibility
-The latest release of the plugin supports SonarQube Community edition 7.4 and above.
+Use the following table to find the correct plugin version for each SonarQube version
+
+SonarQube Version | Plugin Version
+------------------|---------------
+7.8+              | 1.1.0
+7.4 - 7.7         | 1.0.2
+
+# Installation
+Either build the project or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases). Copy the plugin JAR file to the `extensions/plugins/` directory of your SonarQube instance and restart SonarQube.
 
 # Features
 The plugin is intended to support the features and parameters specified in the SonarQube documentation, with the following caveats

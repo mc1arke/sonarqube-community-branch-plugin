@@ -58,7 +58,7 @@ public class CommunityBranchConfiguration implements BranchConfiguration {
     }
 
     @Override
-    public String targetScmBranch() {
+    public String targetBranchName() {
         return targetScmBranch;
     }
 
