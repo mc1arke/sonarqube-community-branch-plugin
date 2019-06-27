@@ -15,5 +15,5 @@ SonarQube Version | Plugin Version
 Either build the project or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases). Copy the plugin JAR file to the `extensions/plugins/` directory of your SonarQube instance and restart SonarQube.
 
 # Features
-The plugin is intended to support the features and parameters specified in the SonarQube documentation, with the following caveats
+The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
 * __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests with any issues is not currently supported
