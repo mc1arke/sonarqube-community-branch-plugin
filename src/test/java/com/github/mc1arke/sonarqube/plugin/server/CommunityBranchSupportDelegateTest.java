@@ -161,7 +161,7 @@ public class CommunityBranchSupportDelegateTest {
     }
 
     @Test
-    public void testCreateBranchComponentComponentKeyComponentFtoKeyMismatch() {
+    public void testCreateBranchComponentComponentKeyComponentDtoKeyMismatch() {
         DbSession dbSession = mock(DbSession.class);
         OrganizationDto organizationDto = mock(OrganizationDto.class);
 
@@ -174,6 +174,7 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getUuid()).thenReturn("componentUuid");
+        when(branchDto.getBranchType()).thenReturn(BranchType.SHORT);
 
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(12345678901234L);
@@ -213,6 +214,7 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getUuid()).thenReturn("componentUuid");
+        when(branchDto.getKey()).thenReturn("dummy");
 
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(12345678901234L);
