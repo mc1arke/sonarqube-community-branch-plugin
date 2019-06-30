@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
+import com.github.mc1arke.sonarqube.plugin.ce.CommunityBranchEditionProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
@@ -83,10 +84,12 @@ public class CommunityBranchPluginTest {
         testCase.define(context);
 
         ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(context).addExtension(argumentCaptor.capture());
+        verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
 
-        assertEquals(CommunityReportAnalysisComponentProvider.class, argumentCaptor.getValue());
+        assertEquals(
+                Arrays.asList(CommunityReportAnalysisComponentProvider.class, CommunityBranchEditionProvider.class),
+                argumentCaptor.getAllValues().subList(0, 2));
     }
 
 
