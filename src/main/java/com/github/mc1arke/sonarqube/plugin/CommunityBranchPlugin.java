@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
+import com.github.mc1arke.sonarqube.plugin.ce.CommunityBranchEditionProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
@@ -44,7 +45,7 @@ public class CommunityBranchPlugin implements Plugin {
             context.addExtensions(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
                                   CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class);
         } else if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide()) {
-            context.addExtension(CommunityReportAnalysisComponentProvider.class);
+            context.addExtensions(CommunityReportAnalysisComponentProvider.class, CommunityBranchEditionProvider.class);
         } else if (SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class);
         }
