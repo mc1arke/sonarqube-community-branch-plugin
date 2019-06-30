@@ -51,6 +51,7 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
             Arrays.asList(ScannerProperties.PULL_REQUEST_BRANCH, ScannerProperties.PULL_REQUEST_KEY,
                           ScannerProperties.PULL_REQUEST_BASE));
 
+    // This method can be removed when removing support for all SonarQube versions before 7.8
     @Override
     public BranchConfiguration load(Map<String, String> localSettings, Supplier<Map<String, String>> supplier,
                                     ProjectBranches projectBranches, ProjectPullRequests projectPullRequests) {
@@ -66,7 +67,36 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         }
         if (BRANCH_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey)) {
             return createBranchConfiguration(localSettings.get(ScannerProperties.BRANCH_NAME),
-                                             localSettings.get(ScannerProperties.BRANCH_TARGET), supplier,
+                                             localSettings.get(ScannerProperties.BRANCH_TARGET),
+                                             supplier.get().get(CoreProperties.LONG_LIVED_BRANCHES_REGEX),
+                                             projectBranches);
+        } else if (PULL_REQUEST_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey)) {
+            return createPullRequestConfiguration(localSettings.get(ScannerProperties.PULL_REQUEST_KEY),
+                                                  localSettings.get(ScannerProperties.PULL_REQUEST_BRANCH),
+                                                  localSettings.get(ScannerProperties.PULL_REQUEST_BASE),
+                                                  projectBranches);
+        }
+
+        return new DefaultBranchConfiguration();
+    }
+
+    //@Override since SonarQube 7.9
+    public BranchConfiguration load(Map<String, String> localSettings, ProjectBranches projectBranches,
+                                    ProjectPullRequests pullRequests) {
+        if (projectBranches.isEmpty()) {
+            if (isTargetingDefaultBranch(localSettings)) {
+                return new DefaultBranchConfiguration();
+            } else {
+                // it would be nice to identify the 'primary' branch directly, but different projects work differently: using any of master, develop, main etc as primary
+                // A project/global configuration entry could be used to drive this in the future, but the current documented SonarQube parameters need followed for now
+                throw MessageException
+                        .of("No branches currently exist in this project. Please scan the main branch without passing any branch parameters.");
+            }
+        }
+        if (BRANCH_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey)) {
+            return createBranchConfiguration(localSettings.get(ScannerProperties.BRANCH_NAME),
+                                             localSettings.get(ScannerProperties.BRANCH_TARGET),
+                                             localSettings.get(CoreProperties.LONG_LIVED_BRANCHES_REGEX),
                                              projectBranches);
         } else if (PULL_REQUEST_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey)) {
             return createPullRequestConfiguration(localSettings.get(ScannerProperties.PULL_REQUEST_KEY),
@@ -86,7 +116,7 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
     }
 
     private static BranchConfiguration createBranchConfiguration(String branchName, String branchTarget,
-                                                                 Supplier<Map<String, String>> settingsSupplier,
+                                                                 String longLivedBranchesRegex,
                                                                  ProjectBranches branches) {
         if (null == branchTarget || branchTarget.isEmpty()) {
             branchTarget = branches.defaultBranchName();
@@ -95,7 +125,7 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         BranchInfo existingBranch = branches.get(branchName);
 
         if (null == existingBranch) {
-            final BranchType branchType = computeBranchType(settingsSupplier, branchName);
+            final BranchType branchType = computeBranchType(longLivedBranchesRegex, branchName);
             final BranchInfo targetBranch = findTargetBranch(branchTarget, branches);
             return new CommunityBranchConfiguration(branchName, branchType, targetBranch.name(), branchTarget, null);
         }
@@ -108,8 +138,7 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         }
     }
 
-    private static BranchType computeBranchType(Supplier<Map<String, String>> settingsSupplier, String branchName) {
-        String longLivedBranchesRegex = settingsSupplier.get().get(CoreProperties.LONG_LIVED_BRANCHES_REGEX);
+    private static BranchType computeBranchType(String longLivedBranchesRegex, String branchName) {
         if (null == longLivedBranchesRegex) {
             longLivedBranchesRegex = DEFAULT_BRANCH_REGEX;
         }
