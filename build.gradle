@@ -21,7 +21,7 @@ plugins {
     id('jacoco')
     id('org.sonarqube') version('2.7')
     id('info.solidsoft.pitest') version('1.4.0')
-    id('com.iadams.sonar-packaging') version('1.0-RC1')
+    id('com.github.johnrengelman.shadow') version('4.0.3')
     id('net.researchgate.release') version('2.6.0')
 }
 
@@ -41,6 +41,8 @@ def sonarqubeVersion = '7.8'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 configurations {
     zip
 }
@@ -57,7 +59,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.24.0'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
-    compileOnly group: 'org.sonarsource.sonarqube', name: 'sonar-plugin-api', version: "7.7"
+    compileOnly group: 'org.sonarsource.sonarqube', name: 'sonar-plugin-api', version: "${sonarqubeVersion}"
 }
 
 
@@ -74,18 +76,20 @@ project.afterEvaluate {
     }
 }
 
-sonarPackaging {
-    pluginKey = 'communityBranchPlugin'
-    pluginClass = 'com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginBootstrap'
-    pluginName = 'Community Branch Plugin'
-    pluginDescription = 'Enables branch and pull request analysis in SonarQube Community Edition, without having to upgrade to Developer Edition'
-    pluginLicense = 'GNU LGPL 3'
-    pluginUrl = 'https://github.com/mc1arke/sonarqube-community-branch-plugin'
-    pluginIssueTrackerUrl = 'https://github.com/mc1arke/sonarqube-community-branch-plugin/issues'
-    skipDependenciesPackaging = true
-    useChildFirstClassLoader = false
-    organization['name'] = 'Michael Clarke'
-    organization['url'] = ''
+jar {
+    manifest {
+        attributes 'Plugin-Description': 'Enables branch and pull request analysis in SonarQube Community Edition, without having to upgrade to Developer Edition',
+          'SonarLint-Supported': false,
+          'Plugin-Homepage': 'https://github.com/mc1arke/sonarqube-community-branch-plugin',
+          'Plugin-License': 'GNU LGPL 3',
+          'Plugin-Version': "${project.version}",
+          'Plugin-Organization': 'Michael Clarke',
+          'Sonar-Version': "${sonarqubeVersion}",
+          'Plugin-IssueTrackerUrl': 'https://github.com/mc1arke/sonarqube-community-branch-plugin/issues',
+          'Plugin-Key': 'communityBranchPlugin',
+          'Plugin-Class': 'com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginBootstrap',
+          'Plugin-Name': 'Community Branch Plugin'
+    }
 }
 
 release {
