@@ -59,7 +59,6 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.24.0'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
-    compileOnly group: 'org.sonarsource.sonarqube', name: 'sonar-plugin-api', version: "${sonarqubeVersion}"
 }
 
 
