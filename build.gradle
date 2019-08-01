@@ -21,7 +21,7 @@ plugins {
     id('jacoco')
     id('org.sonarqube') version('2.7')
     id('info.solidsoft.pitest') version('1.4.0')
-    id('com.github.johnrengelman.shadow') version('4.0.3')
+    id('com.github.johnrengelman.shadow') version('5.1.0')
     id('net.researchgate.release') version('2.6.0')
 }
 
@@ -31,9 +31,9 @@ repositories {
     mavenCentral()
     ivy {
         url 'https://binaries.sonarsource.com/'
-        layout 'pattern', {
+        patternLayout({a ->
             artifact '/Distribution/[module]/[module]-[revision].[ext]'
-        }
+        })
     }
 }
 
@@ -96,3 +96,14 @@ release {
         requireBranch = '(master|release-\\d+\\.\\d+|\\d+\\.\\d+)'
     }
 }
+
+tasks.jar.configure {
+    classifier = 'nodeps'
+    enabled = false
+}
+
+tasks.shadowJar.configure {
+    classifier = null
+}
+
+assemble.dependsOn('shadowJar')
