@@ -29,6 +29,9 @@ group 'com.github.mc1arke.sonarqube.plugin'
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://dl.bintray.com/americanexpress/maven/'
+    }
     ivy {
         url 'https://binaries.sonarsource.com/'
         patternLayout({a ->
@@ -59,6 +62,8 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.24.0'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.62'
+    compile 'io.aexp.nodes.graphql:nodes:0.5.0'
 }
 
 

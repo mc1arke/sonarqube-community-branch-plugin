@@ -16,23 +16,14 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import org.junit.Test;
+import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 
-import java.util.List;
+public interface PullRequestBuildStatusDecorator {
 
-import static org.junit.Assert.assertEquals;
+    String name();
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+    void decorateQualityGateStatus(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis);
 
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(4, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
-    }
 }

@@ -16,25 +16,26 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestPostAnalysisTask;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubPullRequestDecorator;
-import org.sonar.ce.task.projectanalysis.container.ReportAnalysisComponentProvider;
+import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.issue.IssueVisitor;
+import org.sonar.core.issue.DefaultIssue;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProvider implements ReportAnalysisComponentProvider {
+public class PostAnalysisIssueVisitor extends IssueVisitor {
+
+    private final List<DefaultIssue> collectedIssues = new ArrayList<>();
 
     @Override
-    public List<Object> getComponents() {
-        return Arrays.asList(CommunityBranchLoaderDelegate.class, PullRequestPostAnalysisTask.class,
-                             PostAnalysisIssueVisitor.class, GithubPullRequestDecorator.class);
+    public void onIssue(Component component, DefaultIssue defaultIssue) {
+        collectedIssues.add(defaultIssue);
     }
 
+    public List<DefaultIssue> getIssues() {
+        return Collections.unmodifiableList(collectedIssues);
+    }
 }

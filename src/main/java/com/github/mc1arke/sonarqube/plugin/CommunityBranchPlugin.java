@@ -39,6 +39,9 @@ import org.sonar.core.config.PurgeConstants;
  */
 public class CommunityBranchPlugin implements Plugin {
 
+    private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
+    private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
+
     @Override
     public void define(Context context) {
         if (SonarQubeSide.SCANNER == context.getRuntime().getSonarQubeSide()) {
@@ -64,7 +67,39 @@ public class CommunityBranchPlugin implements Plugin {
                 //the name and description shown on the UI are automatically loaded from core.properties so don't need to be specified here
                 PropertyDefinition.builder(CoreProperties.LONG_LIVED_BRANCHES_REGEX).onQualifiers(Qualifiers.PROJECT)
                         .category(CoreProperties.CATEGORY_GENERAL).subCategory(CoreProperties.SUBCATEGORY_BRANCHES)
-                        .defaultValue(CommunityBranchConfigurationLoader.DEFAULT_BRANCH_REGEX).build());
+                        .defaultValue(CommunityBranchConfigurationLoader.DEFAULT_BRANCH_REGEX).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.provider").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory("General")
+                        .onlyOnQualifiers(Qualifiers.PROJECT).name("Provider").type(PropertyType.SINGLE_SELECT_LIST)
+                        .options("Github").build(),
+
+                PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
+                        .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
+                        .onQualifiers(Qualifiers.APP).name("App Private Key")
+                        .type(PropertyType.PASSWORD).build(),
+
+                PropertyDefinition.builder("sonar.alm.github.app.name").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP).name("App Name")
+                        .defaultValue("SonarQube Community Pull Request Analysis").type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.alm.github.app.id").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP).name("App ID")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.github.repository")
+                        .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
+                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .name("Repository identifier").description("Example: SonarSource/sonarqube")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.github.endpoint").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP)
+                        .name("The API URL for a GitHub instance").description(
+                        "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
+                        .type(PropertyType.STRING).defaultValue("https://api.github.com").build()
+
+                             );
 
     }
 

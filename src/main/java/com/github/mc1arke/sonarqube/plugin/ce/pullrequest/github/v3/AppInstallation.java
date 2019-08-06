@@ -16,23 +16,28 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3;
 
-import org.junit.Test;
+import com.google.gson.annotations.SerializedName;
 
-import java.util.List;
+public class AppInstallation {
 
-import static org.junit.Assert.assertEquals;
+    @SerializedName("repositories_url")
+    private final String repositoriesUrl;
+    @SerializedName("access_tokens_url")
+    private final String accessTokensUrl;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+    public AppInstallation(String repositoriesUrl, String accessTokensUrl) {
+        super();
+        this.repositoriesUrl = repositoriesUrl;
+        this.accessTokensUrl = accessTokensUrl;
+    }
 
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(4, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    public String getRepositoriesUrl() {
+        return repositoriesUrl;
+    }
+
+    public String getAccessTokensUrl() {
+        return accessTokensUrl;
     }
 }
