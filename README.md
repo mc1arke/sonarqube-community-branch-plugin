@@ -21,7 +21,7 @@ Either build the project or [download a compatible release version of the plugin
 
 # Features
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
-* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github and Bitbucket Server, and only as an experimental feature
+* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, and only as an experimental feature
 
 ## Bitbucket Server
 To enable setting of several properties in SonarQube on project level is required.
@@ -33,6 +33,8 @@ Tasks:
 - [x] enable and disable file comment and overall comment 
 - [ ] file comment (wip: smaller issues with commenting to correct line.)
 - [x] reset comments (all comments are reset by property userSlug. It's therefore highly recommended to create a user in your company that's only purpose it is to comment sonar issues)
+
+
 
 # Contribution
 To generate the jar file to copy to your Sonar Server execute ```./gradlew clean build``` inside of the project dir. This will put the jar under ```libs/sonarqube-community-branch-plugin*.jar```
