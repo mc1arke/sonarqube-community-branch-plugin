@@ -3,6 +3,11 @@
 # Sonarqube Community Branch Plugin
 A plugin for SonarQube to allow branch analysis in the Community version.
 
+# Support
+This plugin is not maintained or supported by SonarSource and has no official upgrade path for migrating from the SonarQube Community Edition to any of the Commercial Editions (Developer, Enterprise, or Data Center Edition). Support for any problems is only available through issues on the Github repository or through alternative channels (e.g. StackOverflow) and any attempt to request support for this plugin directly from SonarSource or an affiliated channel (e.g. Sonar Community forum) is likely to result in your request being closed or ignored.
+
+If you plan on migrating your SonarQube data to a commercial edition after using this plugin then please be aware that this may result in some or all of your data being lost due to this compatibility of this plugin and the official SonarQube branch features being untested.
+
 # Compatibility
 Use the following table to find the correct plugin version for each SonarQube version
 
