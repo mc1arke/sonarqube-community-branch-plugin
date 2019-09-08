@@ -1,4 +1,4 @@
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=mc1arke_sonarqube-community-branch-plugin&metric=alert_status)](https://sonarcloud.io/dashboard?id=mc1arke_sonarqube-community-branch-plugin)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=mc1arke_sonarqube-community-branch-plugin&metric=alert_status)](https://sonarcloud.io/dashboard?id=mc1arke_sonarqube-community-branch-plugin) [![Build Status](https://travis-ci.org/mc1arke/sonarqube-community-branch-plugin.svg?branch=master)](https://travis-ci.org/mc1arke/sonarqube-community-branch-plugin)
 
 # Sonarqube Community Branch Plugin
 A plugin for SonarQube to allow branch analysis in the Community version.
