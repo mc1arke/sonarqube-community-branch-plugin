@@ -42,6 +42,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
     private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
     private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
+    private static final String BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Bitbucket";
+
 
     @Override
     public String getName() {
@@ -75,7 +77,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                 PropertyDefinition.builder("sonar.pullrequest.provider").subCategory(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory("General")
                         .onlyOnQualifiers(Qualifiers.PROJECT).name("Provider").type(PropertyType.SINGLE_SELECT_LIST)
-                        .options("Github").build(),
+                        .options("Github", "BitbucketServer", "BitbucketCloud").build(),
 
                 PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
@@ -100,8 +102,55 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP)
                         .name("The API URL for a GitHub instance").description(
                         "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
-                        .type(PropertyType.STRING).defaultValue("https://api.github.com").build()
+                        .type(PropertyType.STRING).defaultValue("https://api.github.com").build(),
 
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.url").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
+                        .name("URL for Bitbucket (Server or Cloud) instance").description(
+                        "Example: http://bitbucket.local")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.token").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
+                        .name("The token for the user to comment to the PR on Bitbucket (Server or Cloud) instance").description(
+                        "Token used for authentication and commenting to your Bitbucket instance")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.repositorySlug").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
+                        .name("Repository Slug for the Bitbucket (Server or Cloud) instance").description(
+                        "Repository Slug see for example https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.userSlug").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
+                        .name("User Slug for the Bitbucket (Server or Cloud) instance").description(
+                        "User Slug see for example https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.projectKey").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
+                        .name("ProjectKey for the Bitbucket (Server or Cloud) instance").description(
+                        "Project Key see for example https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.summary.comment.enabled").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
+                        .name("Enable Bitbucket (Server or Cloud) summary comment").description(
+                        "This enables the summary comment to your Bitbucket (Server or Cloud) instance.")
+                        .type(PropertyType.BOOLEAN).defaultValue("true").build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.file.comment.enabled").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
+                        .name("Enable Bitbucket (Server or Cloud) file comment").description(
+                        "This enables commenting on file level to your Bitbucket (Server or Cloud) instance.")
+                        .type(PropertyType.BOOLEAN).defaultValue("true").build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.delete.comments.enabled").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
+                        .name("Enable Bitbucket (Server or Cloud) resetting comments").description(
+                        "This cleans up the comments from previous runs on Bitbucket (Server or Cloud) instance.")
+                        .type(PropertyType.BOOLEAN).defaultValue("false").build()
                              );
 
     }

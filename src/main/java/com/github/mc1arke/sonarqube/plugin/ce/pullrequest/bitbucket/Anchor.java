@@ -19,11 +19,10 @@ public class Anchor implements Serializable
         super();
     }
 
-    public Anchor(int line, String lineType, String path, String fileType) {
+    public Anchor(int line, String lineType, String path) {
         this.line = line;
         this.lineType = lineType;
         this.path = path;
-        this.fileType = fileType;
     }
 
     public int getLine() {

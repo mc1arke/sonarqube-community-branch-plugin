@@ -29,8 +29,11 @@ import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
+import org.sonar.core.issue.DefaultIssue;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
@@ -67,6 +70,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
     @Deprecated
     @Override
     public void finished(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis) {
+        LOGGER.info("found " + pullRequestDecorators.size() + " pull request decorators");
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
         if (!optionalPullRequest.isPresent()) {
@@ -121,8 +125,8 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
                                     projectAnalysis.getProject(), configuration);
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
+        LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
         pullRequestDecorator.decorateQualityGateStatus(analysisDetails);
-
     }
 
     private static Optional<PullRequestBuildStatusDecorator> findCurrentPullRequestStatusDecorator(
@@ -131,7 +135,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
         Optional<String> optionalImplementationName = configuration.get("sonar.pullrequest.provider");
 
         if (!optionalImplementationName.isPresent()) {
-            LOGGER.debug("'sonar.pullrequest.provider' property not set");
+            LOGGER.error("'sonar.pullrequest.provider' property not set");
             return Optional.empty();
         }
 
