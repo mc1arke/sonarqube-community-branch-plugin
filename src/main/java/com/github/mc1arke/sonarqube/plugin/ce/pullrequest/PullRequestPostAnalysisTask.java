@@ -44,8 +44,9 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
     @Override
     public void finished(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis) {
+        LOGGER.info("found " + pullRequestDecorators.size() + " pull request decorators");
         if (!projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType()).isPresent()) {
-            LOGGER.trace("Current analysis is not for a Pull Request. Task being skipped");
+            LOGGER.info("Current analysis is not for a Pull Request. Task being skipped");
             return;
         }
 
@@ -59,6 +60,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         }
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
+        LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
         pullRequestDecorator.decorateQualityGateStatus(projectAnalysis);
 
     }
@@ -69,7 +71,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         Optional<String> optionalImplementationName = configuration.get("sonar.pullrequest.provider");
 
         if (!optionalImplementationName.isPresent()) {
-            LOGGER.debug("'sonar.pullrequest.provider' property not set");
+            LOGGER.error("'sonar.pullrequest.provider' property not set");
             return Optional.empty();
         }
 
