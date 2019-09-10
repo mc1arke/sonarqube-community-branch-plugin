@@ -32,7 +32,7 @@ Tasks:
 - [x] overall comment
 - [x] enable and disable file comment and overall comment 
 - [ ] file comment (wip: smaller issues with commenting to correct line.)
-- [ ] reset comments (wip: deletion not implemented yet) 
+- [x] reset comments (all comments are reset by property userSlug. It's therefore highly recommended to create a user in your company that's only purpose it is to comment sonar issues)
 
 # Contribution
 To generate the jar file to copy to your Sonar Server execute ```./gradlew clean build``` inside of the project dir. This will put the jar under ```libs/sonarqube-community-branch-plugin*.jar```

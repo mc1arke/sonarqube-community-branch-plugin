@@ -18,14 +18,21 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.Activity;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.ActivityPage;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.Anchor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.FileComment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.SummaryComment;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.Comment;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -134,27 +141,27 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             final boolean deleteCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty("sonar.pullrequest.bitbucket.delete.comments.enabled", configuration));
 
             final String commentUrl;
-            final String deleteCommentsUrl;
+            final String activityUrl;
             if (StringUtils.isNotBlank(userSlug)) {
                 commentUrl = String.format(FULL_PR_COMMENT_USER_API, hostURL, userSlug, repositorySlug, pullRequestId);
-                deleteCommentsUrl = String.format(FULL_PR_ACTIVITIES_API, hostURL, userSlug, repositorySlug, pullRequestId, 200);
+                activityUrl = String.format(FULL_PR_ACTIVITIES_API, hostURL, userSlug, repositorySlug, pullRequestId, 200);
             }
             else if (StringUtils.isNotBlank(projectKey)) {
                 commentUrl = String.format(FULL_PR_COMMENT_API, hostURL, repositorySlug, projectKey, pullRequestId);
-                deleteCommentsUrl = String.format(FULL_PR_COMMENT_API, hostURL, repositorySlug, projectKey, pullRequestId, 200);
+                activityUrl = String.format(FULL_PR_COMMENT_API, hostURL, repositorySlug, projectKey, pullRequestId, 200);
             }
             else
             {
                 throw new IllegalStateException("Property userSlug or projectKey needs to be set.");
             }
             LOGGER.info(String.format("Comment url is: %s ", commentUrl));
-            LOGGER.info(String.format("Delete url is: %s ", deleteCommentsUrl));
+            LOGGER.info(String.format("Delete url is: %s ", activityUrl));
 
             Map<String, String> headers = new HashMap<>();
             headers.put("Authorization", "Bearer " + apiToken);
             headers.put("Accept", "application/json");
 
-            deleteComments(deleteCommentsUrl, headers, deleteCommentsEnabled);
+            deleteComments(activityUrl, commentUrl, userSlug, headers, deleteCommentsEnabled);
 
             String status =
                     (QualityGate.Status.OK == projectAnalysis.getQualityGate().getStatus() ? "Passed" : "Failed");
@@ -225,26 +232,52 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 postComment(commentUrl, headers, fileCommentEntity, fileCommentEnabled);
             }
         } catch (IOException ex) {
-            throw new IllegalStateException("Could not decorate Pull Request on Github", ex);
+            throw new IllegalStateException("Could not decorate Pull Request on Bitbucket Server", ex);
         }
 
     }
 
-    private void deleteComments(String deleteCommentUrl, Map<String, String> headers, boolean deleteCommentsEnabled) throws IOException {
+    protected boolean deleteComments(String deleteCommentUrl, String commentUrl, String userSlug, Map<String, String> headers, boolean deleteCommentsEnabled) throws IOException {
         if (!deleteCommentsEnabled)
-            return;
+            return false;
         HttpGet httpGet = new HttpGet(deleteCommentUrl);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
         }
         HttpResponse httpResponse = HttpClients.createDefault().execute(httpGet);
-        if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 201) {
+        if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
             LOGGER.error(httpResponse.toString());
             throw new IllegalStateException("An error was returned in the response from the Bitbucket API. See the previous log messages for details");
         } else if (null != httpResponse) {
             LOGGER.debug(httpResponse.toString());
-            LOGGER.info("History received");
+            HttpEntity entity = httpResponse.getEntity();
+            ActivityPage activityPage = new ObjectMapper()
+                    .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
+                    .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .readValue(IOUtils.toString(entity.getContent()), ActivityPage.class);
+            LOGGER.info("ActivityPage received");
+
+            List<Comment> commentsToDelete = Arrays.stream(activityPage.getValues())
+                    .filter(a -> a.getComment() != null)
+                    .filter(a -> userSlug.equals(a.getComment().getAuthor().getSlug()))
+                    .map(Activity::getComment)
+                    .collect(Collectors.toList());
+            for (Comment comment : commentsToDelete) {
+                HttpDelete httpDelete = new HttpDelete(String.format(commentUrl + "/%s?version=%s", comment.getId(), comment.getVersion()));
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    httpDelete.addHeader(entry.getKey(), entry.getValue());
+                }
+                HttpResponse deleteResponse = HttpClients.createDefault().execute(httpDelete);
+                if (null != deleteResponse && deleteResponse.getStatusLine().getStatusCode() != 204) {
+                    LOGGER.error(IOUtils.toString(deleteResponse.getEntity().getContent()));
+                    throw new IllegalStateException("An error was returned in the response from the Bitbucket API. See the previous log messages for details");
+                } else if (null != deleteResponse) {
+                    LOGGER.info(String.format("Comment %s version %s deleted", comment.getId(), comment.getVersion()));
+                }
+            }
         }
+        return true;
     }
 
     private void postComment(String commentUrl, Map<String, String> headers, StringEntity entity, boolean sendRequest) throws IOException {
