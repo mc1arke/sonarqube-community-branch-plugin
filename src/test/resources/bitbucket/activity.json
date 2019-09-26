@@ -1,0 +1,195 @@
+{
+  "size": 5,
+  "limit": 25,
+  "isLastPage": true,
+  "values": [
+    {
+      "id": 480611,
+      "createdDate": 1569432626477,
+      "user": {
+        "name": "susi.sonar",
+        "emailAddress": "susi.sonar@bitbucket.local",
+        "id": 1000,
+        "displayName": "Susi Sonar",
+        "active": true,
+        "slug": "susi.sonar",
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "https://bitbucket.local/users/susi.sonar"
+            }
+          ]
+        }
+      },
+      "action": "COMMENTED",
+      "commentAction": "ADDED",
+      "comment": {
+        "properties": {
+          "repositoryId": 1
+        },
+        "id": 57021,
+        "version": 0,
+        "text": "test overall comment",
+        "author": {
+          "name": "susi.sonar",
+          "emailAddress": "susi.sonar@bitbucket.local",
+          "id": 1000,
+          "displayName": "Susi Sonar",
+          "active": true,
+          "slug": "susi.sonar",
+          "type": "NORMAL",
+          "links": {
+            "self": [
+              {
+                "href": "https://bitbucket.local/users/susi.sonar"
+              }
+            ]
+          }
+        },
+        "createdDate": 1569432626478,
+        "updatedDate": 1569432626478,
+        "comments": [],
+        "tasks": [],
+        "permittedOperations": {
+          "editable": true,
+          "deletable": true
+        }
+      }
+    },
+    {
+      "id": 480610,
+      "createdDate": 1569432616900,
+      "user": {
+        "name": "susi.sonar",
+        "emailAddress": "susi.sonar@bitbucket.local",
+        "id": 1000,
+        "displayName": "Susi Sonar",
+        "active": true,
+        "slug": "susi.sonar",
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "https://bitbucket.local/users/susi.sonar"
+            }
+          ]
+        }
+      },
+      "action": "COMMENTED",
+      "commentAction": "ADDED",
+      "comment": {
+        "properties": {
+          "repositoryId": 1
+        },
+        "id": 57020,
+        "version": 0,
+        "text": "this is a comment on file level with german umlauts to check UTF-8. ÄÖÜ äöü",
+        "author": {
+          "name": "susi.sonar",
+          "emailAddress": "susi.sonar@bitbucket.local",
+          "id": 1000,
+          "displayName": "Susi Sonar",
+          "active": true,
+          "slug": "susi.sonar",
+          "type": "NORMAL",
+          "links": {
+            "self": [
+              {
+                "href": "https://bitbucket.local/users/susi.sonar"
+              }
+            ]
+          }
+        },
+        "createdDate": 1569432616899,
+        "updatedDate": 1569432616899,
+        "comments": [],
+        "tasks": [],
+        "permittedOperations": {
+          "editable": true,
+          "deletable": true
+        }
+      },
+      "commentAnchor": {
+        "fromHash": "fromHash",
+        "toHash": "toHash",
+        "line": 62,
+        "lineType": "ADDED",
+        "fileType": "TO",
+        "path": "test.java",
+        "diffType": "EFFECTIVE",
+        "orphaned": false
+      },
+      "diff": {
+        "source": null,
+        "destination": {
+          "components": [
+            "test.java"
+          ],
+          "parent": "",
+          "name": "test.java",
+          "extension": "java",
+          "toString": "test.java"
+        },
+        "hunks": [
+          {
+            "context": "some context",
+            "sourceLine": 52,
+            "sourceSpan": 20,
+            "destinationLine": 52,
+            "destinationSpan": 21,
+            "segments": [
+              {
+                "type": "CONTEXT",
+                "lines": [
+                ],
+                "truncated": false
+              },
+              {
+                "type": "ADDED",
+                "lines": [
+                ],
+                "truncated": false
+              },
+              {
+                "type": "CONTEXT",
+                "lines": [
+                ],
+                "truncated": false
+              }
+            ],
+            "truncated": false
+          }
+        ],
+        "truncated": false,
+        "properties": {
+          "toHash": "toHash",
+          "current": true,
+          "fromHash": "fromHash"
+        }
+      }
+    },
+    {
+      "id": 367439,
+      "createdDate": 1550480883597,
+      "user": {
+        "name": "susi.sonar",
+        "emailAddress": "susi.sonar@bitbucket.local",
+        "id": 1000,
+        "displayName": "Susi Sonar",
+        "active": true,
+        "slug": "susi.sonar",
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "https://bitbucket.local/users/susi.sonar"
+            }
+          ]
+        }
+      },
+      "action": "OPENED"
+    }
+  ],
+  "start": 0
+}
