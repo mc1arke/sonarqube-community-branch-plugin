@@ -1,4 +1,4 @@
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity;
 
 import java.io.Serializable;
 
