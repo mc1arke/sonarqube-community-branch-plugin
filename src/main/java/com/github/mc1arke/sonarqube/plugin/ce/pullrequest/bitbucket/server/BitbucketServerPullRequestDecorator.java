@@ -158,9 +158,9 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 activityUrl = String.format(FULL_PR_ACTIVITIES_API, hostURL, userSlug, repositorySlug, pullRequestId, 250);
             }
             else if (StringUtils.isNotBlank(projectKey)) {
-                commentUrl = String.format(FULL_PR_COMMENT_API, hostURL, repositorySlug, projectKey, pullRequestId);
-                diffUrl = String.format(FULL_PR_DIFF_API, hostURL, repositorySlug, projectKey, pullRequestId);
-                activityUrl = String.format(FULL_PR_ACTIVITIES_USER_API, hostURL, repositorySlug, projectKey, pullRequestId, 250);
+                commentUrl = String.format(FULL_PR_COMMENT_API, hostURL, projectKey, repositorySlug, pullRequestId);
+                diffUrl = String.format(FULL_PR_DIFF_API, hostURL, projectKey, repositorySlug, pullRequestId);
+                activityUrl = String.format(FULL_PR_ACTIVITIES_USER_API, hostURL, projectKey, repositorySlug, pullRequestId, 250);
             }
             else
             {
