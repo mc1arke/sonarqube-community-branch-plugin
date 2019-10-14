@@ -30,7 +30,11 @@ import org.sonar.classloader.Mask;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -43,6 +47,7 @@ import static org.mockito.Mockito.verify;
  */
 public class ClassReferenceElevatedClassLoaderFactoryTest {
 
+    private static final String SVN_PLUGIN_CLASS = "org.sonar.plugins.scm.svn.SvnPlugin";
     private final ExpectedException expectedException = ExpectedException.none();
 
     @Rule
@@ -62,17 +67,15 @@ public class ClassReferenceElevatedClassLoaderFactoryTest {
     }
 
     @Test
-    public void testClassloaderReturnedOnHappyPath() {
-        ClassReferenceElevatedClassLoaderFactory testCase =
-                spy(new ClassReferenceElevatedClassLoaderFactory(getClass().getName()));
-        testCase.createClassLoader(((Plugin) context -> {
-        }).getClass());
+    public void testClassloaderReturnedOnHappyPath() throws ReflectiveOperationException, MalformedURLException {
+        URLClassLoader mockClassLoader = new URLClassLoader(findSonarqubePluginJars());
+        ElevatedClassLoaderFactory testCase = spy(new ClassReferenceElevatedClassLoaderFactory(getClass().getName()));
+        testCase.createClassLoader((Class<? extends Plugin>) mockClassLoader.loadClass(SVN_PLUGIN_CLASS));
 
         ArgumentCaptor<ClassLoader> argumentCaptor = ArgumentCaptor.forClass(ClassLoader.class);
         verify(testCase).createClassLoader(argumentCaptor.capture(), argumentCaptor.capture());
 
-        assertEquals(Arrays.asList(getClass().getClassLoader(), getClass().getClassLoader()),
-                     argumentCaptor.getAllValues());
+        assertEquals(Arrays.asList(mockClassLoader, getClass().getClassLoader()), argumentCaptor.getAllValues());
     }
 
     @Test
@@ -85,17 +88,14 @@ public class ClassReferenceElevatedClassLoaderFactoryTest {
         builder.setParent("_customPlugin", "_api_", new Mask());
         builder.setLoadingOrder("_customPlugin", ClassloaderBuilder.LoadingOrder.SELF_FIRST);
 
-        File[] sonarQubeDistributions = new File("sonarqube-lib/").listFiles();
-
-        for (File pluginJar : new File(sonarQubeDistributions[0], "extensions/plugins/").listFiles()) {
-            builder.addURL("_customPlugin", pluginJar.toURI().toURL());
+        for (URL pluginUrl : findSonarqubePluginJars()) {
+            builder.addURL("_customPlugin", pluginUrl);
         }
 
         Map<String, ClassLoader> loaders = builder.build();
         ClassLoader classLoader = loaders.get("_customPlugin");
 
-        Class<? extends Plugin> loadedClass =
-                (Class<? extends Plugin>) classLoader.loadClass("org.sonar.plugins.scm.svn.SvnPlugin");
+        Class<? extends Plugin> loadedClass = (Class<? extends Plugin>) classLoader.loadClass(SVN_PLUGIN_CLASS);
 
         ClassReferenceElevatedClassLoaderFactory testCase =
                 new ClassReferenceElevatedClassLoaderFactory(ActiveRule.class.getName());
@@ -103,6 +103,16 @@ public class ClassReferenceElevatedClassLoaderFactoryTest {
         Class<?> elevatedClass = elevatedLoader.loadClass(loadedClass.getName());
         // Getting closer than this is going to be difficult since the URLClassLoader that actually loads is an inner class of evelvatedClassLoader
         assertNotSame(elevatedLoader, elevatedClass.getClassLoader());
+    }
+
+    private static URL[] findSonarqubePluginJars() throws MalformedURLException {
+        List<URL> pluginUrls = new ArrayList<>();
+        File[] sonarQubeDistributions = new File("sonarqube-lib/").listFiles();
+
+        for (File pluginJar : new File(sonarQubeDistributions[0], "extensions/plugins/").listFiles()) {
+            pluginUrls.add(pluginJar.toURI().toURL());
+        }
+        return pluginUrls.toArray(new URL[0]);
     }
 
 }
