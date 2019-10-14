@@ -57,7 +57,7 @@ dependencies {
     compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar')
     testCompile fileTree(dir: sonarLibraries, include: '**/*.jar')
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.24.0'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
 }
 
