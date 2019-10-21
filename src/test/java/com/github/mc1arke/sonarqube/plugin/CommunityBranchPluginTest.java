@@ -123,6 +123,6 @@ public class CommunityBranchPluginTest {
         verify(context).addExtensions(argumentCaptor.capture(), argumentCaptor.capture(), argumentCaptor.capture());
 
 
-        assertEquals(8, argumentCaptor.getAllValues().size());
+        assertEquals(11, argumentCaptor.getAllValues().size());
     }
 }

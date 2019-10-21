@@ -41,6 +41,7 @@ public class CommunityBranchPlugin implements Plugin {
 
     private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
     private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
+    private static final String TFS_INTEGRATION_SUBCATEGORY_LABEL = "Integration With TFS";
 
     @Override
     public void define(Context context) {
@@ -97,7 +98,25 @@ public class CommunityBranchPlugin implements Plugin {
                         .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP)
                         .name("The API URL for a GitHub instance").description(
                         "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
-                        .type(PropertyType.STRING).defaultValue("https://api.github.com").build()
+                        .type(PropertyType.STRING).defaultValue("https://api.github.com").build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.tfs.proxy.url")
+                        .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
+                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .name("URL of the bot to proxy issues to TFS").description("Example: http://localhost:5005")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.tfs.repositoryId")
+                        .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
+                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .name("TFS repository name").description("Example: LuxUAS. Note - this should be specified within tfs task for each project")
+                        .type(PropertyType.STRING).build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.vsts.repository")
+                        .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
+                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .name("TFS repository name").description("Example: LuxUAS. Note - this should be specified within tfs task for each project")
+                        .type(PropertyType.STRING).build()
 
                              );
 
