@@ -73,7 +73,7 @@ public class CommunityBranchPlugin implements Plugin {
                 PropertyDefinition.builder("sonar.pullrequest.provider").subCategory(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory("General")
                         .onlyOnQualifiers(Qualifiers.PROJECT).name("Provider").type(PropertyType.SINGLE_SELECT_LIST)
-                        .options("Github").build(),
+                        .options("Github", "TFS").build(),
 
                 PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
@@ -108,13 +108,13 @@ public class CommunityBranchPlugin implements Plugin {
 
                 PropertyDefinition.builder("sonar.pullrequest.tfs.repositoryId")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
-                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .onQualifiers(Qualifiers.PROJECT)
                         .name("TFS repository name").description("Example: LuxUAS. Note - this should be specified within tfs task for each project")
                         .type(PropertyType.STRING).build(),
 
                 PropertyDefinition.builder("sonar.pullrequest.vsts.repository")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
-                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .onQualifiers(Qualifiers.PROJECT)
                         .name("TFS repository name").description("Example: LuxUAS. Note - this should be specified within tfs task for each project")
                         .type(PropertyType.STRING).build()
 
