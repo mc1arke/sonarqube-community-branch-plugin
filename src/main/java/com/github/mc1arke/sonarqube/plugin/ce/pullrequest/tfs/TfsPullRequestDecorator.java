@@ -50,7 +50,7 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
 
             Message message = Message.newBuilder()
                     .issues(issues)
-                    .projectName(projectAnalysis.getProject().getName())
+                    .projectName(getMandatoryProperty("sonar.pullrequest.vsts.project", configuration))
                     .pullRequestId(Integer.parseInt(projectAnalysis.getBranch().get().getName().get()))
                     .repositoryId(getMandatoryProperty("sonar.pullrequest.vsts.repository", configuration))
                     .build();
