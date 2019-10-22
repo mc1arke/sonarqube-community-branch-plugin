@@ -59,7 +59,7 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
             String value = mapper.writeValueAsString(message);
             LOGGER.info("JSON:" + value);
 
-            URL url = new URL(getMandatoryProperty("sonar.pullrequest.tfs.proxy.url", configuration));
+            URL url = new URL(getMandatoryProperty("sonar.pullrequest.vsts.proxy.url", configuration));
 
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("POST");
