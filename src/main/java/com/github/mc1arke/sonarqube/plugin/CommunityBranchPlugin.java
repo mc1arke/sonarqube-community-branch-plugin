@@ -100,15 +100,15 @@ public class CommunityBranchPlugin implements Plugin {
                         "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
                         .type(PropertyType.STRING).defaultValue("https://api.github.com").build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.tfs.proxy.url")
+                PropertyDefinition.builder("sonar.pullrequest.vsts.proxy.url")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
-                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .onlyOnQualifiers(Qualifiers.APP)
                         .name("URL of the bot to proxy issues to TFS").description("Example: http://localhost:5005")
                         .type(PropertyType.STRING).build(),
 
                 PropertyDefinition.builder("sonar.pullrequest.vsts.repository")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
-                        .onQualifiers(Qualifiers.PROJECT)
+                        .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("TFS repository name").description("Example: SonarQuabe")
                         .type(PropertyType.STRING).build()
 

@@ -29,4 +29,4 @@ The plugin prepares issues data for TFS pull requests and send it to proxy in or
 #### Configuration
   - sonar.pullrequest.provider - should be 'TFS' in order to use this plugin
   - sonar.pullrequest.vsts.repository - repository id of pull request, needs to be specified in SonarQube for each repository
-  - sonar.pullrequest.tfs.proxy.url - plugin will send preprocessed issues to this url
+  - sonar.pullrequest.vsts.proxy.url - plugin will send preprocessed issues to this url
