@@ -102,7 +102,7 @@ public class CommunityBranchPlugin implements Plugin {
 
                 PropertyDefinition.builder("sonar.pullrequest.vsts.proxy.url")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
-                        .onlyOnQualifiers(Qualifiers.APP)
+                        .onQualifiers(Qualifiers.APP)
                         .name("URL of the bot to proxy issues to TFS").description("Example: http://localhost:5005")
                         .type(PropertyType.STRING).build(),
 
