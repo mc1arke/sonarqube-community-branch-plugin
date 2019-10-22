@@ -45,23 +45,21 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
 
             List<Issue> issues = postAnalysisIssueVisitor.getIssues().stream()
                     .filter(i -> OPEN_ISSUE_STATUSES.contains(i.status()))
-                    .map(this::toIssue)
+                    .map(this::toTfsIssue)
                     .collect(Collectors.toList());
 
-            Message message = new Message();
-            message.issues = issues;
-            message.projectName = projectAnalysis.getProject().getName();
-            message.pullRequestId = Integer.parseInt(projectAnalysis.getBranch().get().getName().get());
-            message.repositoryId = getMandatoryProperty("sonar.pullrequest.vsts.repository", configuration);
-
-            LOGGER.info("Issues count:" + issues.size());
+            Message message = Message.newBuilder()
+                    .issues(issues)
+                    .projectName(projectAnalysis.getProject().getName())
+                    .pullRequestId(Integer.parseInt(projectAnalysis.getBranch().get().getName().get()))
+                    .repositoryId(getMandatoryProperty("sonar.pullrequest.vsts.repository", configuration))
+                    .build();
 
             ObjectMapper mapper = new ObjectMapper();
             String value = mapper.writeValueAsString(message);
             LOGGER.info("JSON:" + value);
 
             URL url = new URL(getMandatoryProperty("sonar.pullrequest.tfs.proxy.url", configuration));
-            LOGGER.info("proxy url:" + url);
 
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("POST");
@@ -86,7 +84,7 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
                 String.format("%s must be specified in the project configuration", propertyName)));
     }
 
-    private Issue toIssue(DefaultIssue sourceIssue) {
+    private Issue toTfsIssue(DefaultIssue sourceIssue) {
         return Issue.newBuilder()
                 .key(sourceIssue.key())
                 .componentKey(sourceIssue.componentKey())

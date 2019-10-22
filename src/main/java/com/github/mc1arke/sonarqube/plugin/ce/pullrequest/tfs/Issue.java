@@ -2,16 +2,22 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.tfs;
 
 import org.sonar.api.batch.rule.Severity;
 
-import java.io.File;
-
 public class Issue {
+
     private String key;
+
     private String ruleKey;
+
     private String componentKey;
+
     private String file;
+
     private Integer line;
+
     private String message;
+
     private Severity severity;
+
     private boolean newIssue;
 
     private Issue() {

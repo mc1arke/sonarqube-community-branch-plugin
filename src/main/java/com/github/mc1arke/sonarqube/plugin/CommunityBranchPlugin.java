@@ -109,7 +109,7 @@ public class CommunityBranchPlugin implements Plugin {
                 PropertyDefinition.builder("sonar.pullrequest.vsts.repository")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
                         .onQualifiers(Qualifiers.PROJECT)
-                        .name("TFS repository name").description("Example: LuxUAS. Note - this should be specified within tfs task for each project")
+                        .name("TFS repository name").description("Example: SonarQuabe")
                         .type(PropertyType.STRING).build()
 
                              );
