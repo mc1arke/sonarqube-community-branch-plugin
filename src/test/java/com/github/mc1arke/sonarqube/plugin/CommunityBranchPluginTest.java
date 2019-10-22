@@ -110,7 +110,7 @@ public class CommunityBranchPluginTest {
         assertEquals(Arrays.asList(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class),
                      argumentCaptor.getAllValues().subList(0, 2));
     }
-/*
+
     @Test
     public void testDefine() {
         CommunityBranchPlugin testCase = new CommunityBranchPlugin();
@@ -124,5 +124,5 @@ public class CommunityBranchPluginTest {
 
 
         assertEquals(10, argumentCaptor.getAllValues().size());
-    }*/
+    }
 }

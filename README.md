@@ -22,3 +22,11 @@ Either build the project or [download a compatible release version of the plugin
 # Features
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
 * __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, and only as an experimental feature
+
+## TFS (Azure DevOps)
+The plugin prepares issues data for TFS pull requests and send it to proxy in order to customize further processing.
+
+#### Configuration
+  - sonar.pullrequest.provider - should be 'TFS' in order to use this plugin
+  - sonar.pullrequest.vsts.repository - repository id of pull request, needs to be specified in SonarQube for each repository
+  - sonar.pullrequest.tfs.proxy.url - plugin will send preprocessed issues to this url
