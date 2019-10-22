@@ -13,7 +13,7 @@ import org.sonar.core.issue.DefaultIssue;
 import java.io.DataOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator {
@@ -28,6 +28,7 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
 
     public TfsPullRequestDecorator(ConfigurationRepository configurationRepository,
                                    PostAnalysisIssueVisitor postAnalysisIssueVisitor) {
+        super();
         this.configurationRepository = configurationRepository;
         this.postAnalysisIssueVisitor = postAnalysisIssueVisitor;
     }
@@ -51,23 +52,7 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
             message.issues = issues;
             message.projectName = projectAnalysis.getProject().getName();
             message.pullRequestId = Integer.parseInt(projectAnalysis.getBranch().get().getName().get());
-
-            LOGGER.info("Scanner properties start");
-            projectAnalysis.getScannerContext().getProperties().forEach((k, v) -> LOGGER.info("Scanner property: " + k + ", value: " + v));
-            LOGGER.info("Scanner properties stop");
-
-            try {
-                String repoFromConfig = getMandatoryProperty("sonar.pullrequest.vsts.repository", configuration);
-                LOGGER.info("repo id from config: " + repoFromConfig);
-            } catch (Exception e)
-            {
-                LOGGER.error("failed to find a repo id", e);
-            }
-
-            String supposedRepoId = projectAnalysis.getScannerContext().getProperties().get("sonar.pullrequest.tfs.repositoryId");
-            LOGGER.info("Repository id (?): " + supposedRepoId);
-
-            message.repositoryId = supposedRepoId;
+            message.repositoryId = getMandatoryProperty("sonar.pullrequest.vsts.repository", configuration);
 
             LOGGER.info("Issues count:" + issues.size());
 
@@ -76,7 +61,6 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
             LOGGER.info("JSON:" + value);
 
             URL url = new URL(getMandatoryProperty("sonar.pullrequest.tfs.proxy.url", configuration));
-
             LOGGER.info("proxy url:" + url);
 
             HttpURLConnection con = (HttpURLConnection) url.openConnection();

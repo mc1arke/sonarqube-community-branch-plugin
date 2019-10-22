@@ -106,12 +106,6 @@ public class CommunityBranchPlugin implements Plugin {
                         .name("URL of the bot to proxy issues to TFS").description("Example: http://localhost:5005")
                         .type(PropertyType.STRING).build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.tfs.repositoryId")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
-                        .onQualifiers(Qualifiers.PROJECT)
-                        .name("TFS repository name").description("Example: LuxUAS. Note - this should be specified within tfs task for each project")
-                        .type(PropertyType.STRING).build(),
-
                 PropertyDefinition.builder("sonar.pullrequest.vsts.repository")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(TFS_INTEGRATION_SUBCATEGORY_LABEL)
                         .onQualifiers(Qualifiers.PROJECT)
