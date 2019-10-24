@@ -30,13 +30,14 @@ import org.sonar.scanner.bootstrap.ScannerWsClient;
 import org.sonar.scanner.scan.branch.ProjectPullRequests;
 import org.sonar.scanner.scan.branch.ProjectPullRequestsLoader;
 import org.sonar.scanner.scan.branch.PullRequestInfo;
-import org.sonar.scanner.util.ScannerUtils;
 import org.sonarqube.ws.client.GetRequest;
 import org.sonarqube.ws.client.HttpException;
 import org.sonarqube.ws.client.WsResponse;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -53,12 +54,12 @@ public class CommunityProjectPullRequestsLoader implements ProjectPullRequestsLo
     private static final Logger LOGGER = Loggers.get(CommunityProjectPullRequestsLoader.class);
     private static final String PROJECT_PULL_REQUESTS_URL = "/api/project_pull_requests/list?project=";
 
-    private final ScannerWsClient scannerWsClient;
+    private final ScannerWsClientWrapper scannerWsClient;
     private final Gson gson;
 
     public CommunityProjectPullRequestsLoader(ScannerWsClient scannerWsClient) {
         super();
-        this.scannerWsClient = scannerWsClient;
+        this.scannerWsClient = new ScannerWsClientWrapper(scannerWsClient);
         this.gson =
                 new GsonBuilder().registerTypeAdapter(PullRequestInfo.class, createPullRequestInfoJsonDeserialiser())
                         .create();
@@ -82,13 +83,16 @@ public class CommunityProjectPullRequestsLoader implements ProjectPullRequestsLo
 
     @Override
     public ProjectPullRequests load(String projectKey) {
-        GetRequest branchesGetRequest =
-                new GetRequest(PROJECT_PULL_REQUESTS_URL + ScannerUtils.encodeForUrl(projectKey));
+        try {
+            GetRequest branchesGetRequest = new GetRequest(
+                    PROJECT_PULL_REQUESTS_URL + URLEncoder.encode(projectKey, StandardCharsets.UTF_8.name()));
 
-        try (WsResponse branchesResponse = scannerWsClient.call(branchesGetRequest); Reader reader = branchesResponse
+            try (WsResponse branchesResponse = scannerWsClient
+                    .call(branchesGetRequest); Reader reader = branchesResponse
                 .contentReader()) {
-            PullRequestsResponse parsedResponse = gson.fromJson(reader, PullRequestsResponse.class);
-            return new ProjectPullRequests(parsedResponse.getPullRequests());
+                PullRequestsResponse parsedResponse = gson.fromJson(reader, PullRequestsResponse.class);
+                return new ProjectPullRequests(parsedResponse.getPullRequests());
+            }
         } catch (IOException e) {
             throw MessageException.of("Could not load pull requests from server", e);
         } catch (HttpException e) {

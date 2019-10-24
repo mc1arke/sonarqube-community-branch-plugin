@@ -62,6 +62,7 @@ public class CommunityBranch implements Branch {
         return main;
     }
 
+    // Can be removed when support removed for SonarQube 7.9
     @Override
     public boolean isLegacyFeature() {
         return false;

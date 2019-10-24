@@ -38,6 +38,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -70,7 +71,7 @@ public class CommunityBranchPluginBootstrapTest {
         when(configuration.get(any())).thenReturn(Optional.empty());
         SonarRuntime sonarRuntime = mock(SonarRuntime.class);
         when(context.getRuntime()).thenReturn(sonarRuntime);
-        when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SERVER);
+        when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
         ClassLoader classLoader = mock(ClassLoader.class);
         when(classLoader.loadClass(any())).thenReturn((Class) MockPlugin.class);
@@ -90,6 +91,33 @@ public class CommunityBranchPluginBootstrapTest {
     }
 
     @Test
+    public void testDefineNotInvokedForNonScanner() throws ClassNotFoundException {
+        Plugin.Context context = spy(mock(Plugin.Context.class));
+        Configuration configuration = mock(Configuration.class);
+        when(context.getBootConfiguration()).thenReturn(configuration);
+        when(configuration.get(any())).thenReturn(Optional.empty());
+        SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+        when(context.getRuntime()).thenReturn(sonarRuntime);
+        when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SERVER);
+
+        ClassLoader classLoader = mock(ClassLoader.class);
+        when(classLoader.loadClass(any())).thenReturn((Class) MockPlugin.class);
+
+        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock(ElevatedClassLoaderFactory.class);
+        when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
+
+        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider =
+                mock(ElevatedClassLoaderFactoryProvider.class);
+        when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
+
+        CommunityBranchPluginBootstrap testCase =
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider);
+        testCase.define(context);
+
+        assertNull(MockPlugin.invokedContext);
+    }
+
+    @Test
     public void testFailureOnIncorrectClassTypeReturned() throws ReflectiveOperationException {
         ClassLoader classLoader = mock(ClassLoader.class);
         doReturn(this.getClass()).when(classLoader).loadClass(any());
@@ -98,6 +126,9 @@ public class CommunityBranchPluginBootstrapTest {
         when(classLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
         Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
+        SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+        when(context.getRuntime()).thenReturn(sonarRuntime);
+        when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo(
@@ -123,6 +154,9 @@ public class CommunityBranchPluginBootstrapTest {
         doThrow(new ClassNotFoundException("Whoops")).when(classLoader).loadClass(any());
 
         Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
+        SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+        when(context.getRuntime()).thenReturn(sonarRuntime);
+        when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
         expectedException.expectCause(new BaseMatcher<ClassNotFoundException>() {
 

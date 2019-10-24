@@ -33,11 +33,12 @@ import org.sonar.api.SonarQubeSide;
 import org.sonar.api.config.PropertyDefinition;
 import org.sonar.api.resources.Qualifiers;
 import org.sonar.core.config.PurgeConstants;
+import org.sonar.core.extension.CoreExtension;
 
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchPlugin implements Plugin {
+public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
     private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
     private static final String GENERAL = "General";
@@ -46,11 +47,13 @@ public class CommunityBranchPlugin implements Plugin {
 
 
     @Override
-    public void define(Context context) {
-        if (SonarQubeSide.SCANNER == context.getRuntime().getSonarQubeSide()) {
-            context.addExtensions(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
-                                  CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class);
-        } else if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide()) {
+    public String getName() {
+        return "Community Branch Plugin";
+    }
+
+    @Override
+    public void load(CoreExtension.Context context) {
+        if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityReportAnalysisComponentProvider.class, CommunityBranchEditionProvider.class);
         } else if (SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class);
