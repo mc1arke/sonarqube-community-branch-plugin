@@ -80,4 +80,15 @@ public class CommunityBranchParamsValidatorTest {
                 "The legacy 'sonar.branch' parameter cannot be used at the same time as 'sonar.branch.name' or 'sonar.branch.target'",
                 messages.get(0));
     }
+
+    @Test
+    public void testNoMessagesOnValidate() {
+        List<String> messages = new ArrayList<>();
+
+        GlobalConfiguration globalConfiguration = mock(GlobalConfiguration.class);
+        when(globalConfiguration.hasKey(eq("sonar.branch.target"))).thenReturn(true);
+        when(globalConfiguration.hasKey(eq("sonar.branch"))).thenReturn(true);
+        new CommunityBranchParamsValidator(globalConfiguration).validate(messages);
+        assertEquals(0, messages.size());
+    }
 }

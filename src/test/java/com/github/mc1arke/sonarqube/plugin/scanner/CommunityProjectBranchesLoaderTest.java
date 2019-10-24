@@ -145,16 +145,7 @@ public class CommunityProjectBranchesLoaderTest {
 
     @Test
     public void testEmptyListOn404HttpResponse() {
-        WsResponse mockResponse = mock(WsResponse.class);
-        when(scannerWsClient.call(any())).thenReturn(mockResponse);
-
-        Reader mockReader = new BufferedReader(new StringReader(
-                GsonHelper.create().toJson(new CommunityProjectBranchesLoader.BranchesResponse(new ArrayList<>())))) {
-            public void close() {
-                throw new HttpException("url", 404, "content");
-            }
-        };
-        when(mockResponse.contentReader()).thenReturn(mockReader);
+        when(scannerWsClient.call(any())).thenThrow(new HttpException("url", 404, "content"));
 
         CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
         assertTrue(testCase.load("project").isEmpty());
