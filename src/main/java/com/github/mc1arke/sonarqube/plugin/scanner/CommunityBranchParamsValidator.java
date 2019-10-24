@@ -36,6 +36,7 @@ public class CommunityBranchParamsValidator implements BranchParamsValidator {
         this.globalConfiguration = globalConfiguration;
     }
 
+    //Can be removed when support for SonarQube 7.9 is removed
     @Override
     public void validate(List<String> validationMessages, String deprecatedBranchName) {
         if (null != deprecatedBranchName && (globalConfiguration.hasKey(ScannerProperties.BRANCH_NAME) ||
@@ -44,5 +45,10 @@ public class CommunityBranchParamsValidator implements BranchParamsValidator {
                     "The legacy 'sonar.branch' parameter cannot be used at the same time as '%s' or '%s'",
                     ScannerProperties.BRANCH_NAME, ScannerProperties.BRANCH_TARGET));
         }
+    }
+
+    //@Override since SonarQube 8.0
+    public void validate(List<String> validationMessages) {
+        //no-op - nothing to validate
     }
 }

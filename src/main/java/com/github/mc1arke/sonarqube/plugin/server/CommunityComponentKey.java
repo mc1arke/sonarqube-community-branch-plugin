@@ -52,6 +52,7 @@ import java.util.Optional;
         return dbKey;
     }
 
+    //Can be removed when Support for SonarQube 7.9 is removed
     @Override
     public Optional<String> getDeprecatedBranchName() {
         return Optional.ofNullable(deprecatedBranchName);
