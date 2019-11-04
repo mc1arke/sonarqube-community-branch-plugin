@@ -183,7 +183,8 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
             String newCoverage = newCoverageCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newCoverageCondition.getValue() : "-";
             String newDuplication = newDuplicationCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newDuplicationCondition.getValue() : "-";
 
-            String summaryBuilder = status + "\n" + failedConditions.stream().map(c -> "- " + format(c))
+            String summaryBuilder = status + "\n" + failedConditions.stream().filter(c -> c.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
+                    .map(c -> "- " + format(c))
                     .collect(Collectors.joining("\n")) + "\n# Analysis Details\n" + "## " +
                                     issueCounts.entrySet().stream().mapToLong(Map.Entry::getValue).sum() + " Issues\n" +
                                     " - " + pluralOf(issueCounts.get(RuleType.BUG), "Bug", "Bugs") + "\n" + " - " +
@@ -355,12 +356,10 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
                     .format("%s %s (%s %s)", Rating.valueOf(Integer.parseInt(condition.getValue())), metric.getName(),
                             condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is worse than" :
                             "is better than", Rating.valueOf(Integer.parseInt(condition.getErrorThreshold())));
-        } else if (condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE) {
+        } else {
             return String.format("%s %s (%s %s)", condition.getValue(), metric.getName(),
                                  condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
                                  "is less than", condition.getErrorThreshold());
-        } else  {
-            return condition.toString();
         }
     }
 
