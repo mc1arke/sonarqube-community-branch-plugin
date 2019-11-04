@@ -180,6 +180,9 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
                                                                                                                              i.type())
                                                                                                                 .count()));
 
+            String newCoverage = newCoverageCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newCoverageCondition.getValue() : "-";
+            String newDuplication = newDuplicationCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newDuplicationCondition.getValue() : "-";
+
             String summaryBuilder = status + "\n" + failedConditions.stream().map(c -> "- " + format(c))
                     .collect(Collectors.joining("\n")) + "\n# Analysis Details\n" + "## " +
                                     issueCounts.entrySet().stream().mapToLong(Map.Entry::getValue).sum() + " Issues\n" +
@@ -188,9 +191,9 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
                                              issueCounts.get(RuleType.SECURITY_HOTSPOT), "Vulnerability",
                                              "Vulnerabilities") + "\n" + " - " +
                                     pluralOf(issueCounts.get(RuleType.CODE_SMELL), "Code Smell", "Code Smells") + "\n" +
-                                    "## Coverage and Duplications\n" + " - " + newCoverageCondition.getValue() +
+                                    "## Coverage and Duplications\n" + " - " + newCoverage +
                                     "% Coverage (" + estimatedCoverage + "% Estimated after merge)\n" + " - " +
-                                    newDuplicationCondition.getValue() + "% Duplicated Code (" + estimatedDuplications +
+                                    newDuplication + "% Duplicated Code (" + estimatedDuplications +
                                     "% Estimated after merge)\n";
 
             InputObject<String> checkRunOutputContent =
@@ -352,10 +355,12 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
                     .format("%s %s (%s %s)", Rating.valueOf(Integer.parseInt(condition.getValue())), metric.getName(),
                             condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is worse than" :
                             "is better than", Rating.valueOf(Integer.parseInt(condition.getErrorThreshold())));
-        } else {
+        } else if (condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE) {
             return String.format("%s %s (%s %s)", condition.getValue(), metric.getName(),
                                  condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
                                  "is less than", condition.getErrorThreshold());
+        } else  {
+            return condition.toString();
         }
     }
 
