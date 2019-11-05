@@ -148,8 +148,9 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
             headers.put("Authorization", "Bearer " + repositoryAuthenticationToken.getAuthenticationToken());
             headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
-            String status =
-                    (QualityGate.Status.OK == projectAnalysis.getQualityGate().getStatus() ? "Passed" : "Failed");
+            String status = (QualityGate.Status.OK == projectAnalysis.getQualityGate().getStatus() ? "Passed" : "Failed");
+            String statusImg =
+                    (QualityGate.Status.OK == projectAnalysis.getQualityGate().getStatus() ? "![Passed](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/checks/QualityGateBadge/passed.svg?sanitize=true)" : "![Failed](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/checks/QualityGateBadge/failed.svg?sanitize=true)");
 
             List<QualityGate.Condition> failedConditions = projectAnalysis.getQualityGate().getConditions().stream()
                     .filter(c -> c.getStatus() != QualityGate.EvaluationStatus.OK).collect(Collectors.toList());
@@ -180,22 +181,19 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
                                                                                                                              i.type())
                                                                                                                 .count()));
 
-            String newCoverage = newCoverageCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newCoverageCondition.getValue() : "-";
-            String newDuplication = newDuplicationCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newDuplicationCondition.getValue() : "-";
+            String newCoverage = newCoverageCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newCoverageCondition.getValue() + "% Coverage" : "![No Coverage info](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/checks/CoverageChart/NoCoverageInfo.svg?sanitize=true) No coverage information";
+            String newDuplication = newDuplicationCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newDuplicationCondition.getValue() + "% Duplicated Code" : "![No Dublication info](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/checks/CoverageChart/NoCoverageInfo.svg?sanitize=true) No Duplication information";
 
-            String summaryBuilder = status + "\n" + failedConditions.stream().filter(c -> c.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
+            String summaryBuilder = statusImg + "\n" + failedConditions.stream().filter(c -> c.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
                     .map(c -> "- " + format(c))
                     .collect(Collectors.joining("\n")) + "\n# Analysis Details\n" + "## " +
                                     issueCounts.entrySet().stream().mapToLong(Map.Entry::getValue).sum() + " Issues\n" +
-                                    " - " + pluralOf(issueCounts.get(RuleType.BUG), "Bug", "Bugs") + "\n" + " - " +
-                                    pluralOf(issueCounts.get(RuleType.VULNERABILITY) +
-                                             issueCounts.get(RuleType.SECURITY_HOTSPOT), "Vulnerability",
-                                             "Vulnerabilities") + "\n" + " - " +
-                                    pluralOf(issueCounts.get(RuleType.CODE_SMELL), "Code Smell", "Code Smells") + "\n" +
-                                    "## Coverage and Duplications\n" + " - " + newCoverage +
-                                    "% Coverage (" + estimatedCoverage + "% Estimated after merge)\n" + " - " +
-                                    newDuplication + "% Duplicated Code (" + estimatedDuplications +
-                                    "% Estimated after merge)\n";
+                                    " - ![Bug](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/common/bug.svg?sanitize=true)" + pluralOf(issueCounts.get(RuleType.BUG), "Bug", "Bugs") + "\n" +
+                                    " - ![Vulnerability](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/common/vulnerability.svg?sanitize=true)" + pluralOf(issueCounts.get(RuleType.VULNERABILITY), "Vulnerability", "Vulnerabilities") + " (and ![Security Hotspot](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/common/security_hotspot.svg?sanitize=true) "+pluralOf(issueCounts.get(RuleType.SECURITY_HOTSPOT), "Security Hotspot", "Security Hotspots")+" to review)\n" +
+                                    " - ![Code Smell](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/common/code_smell.svg?sanitize=true)" + pluralOf(issueCounts.get(RuleType.CODE_SMELL), "Code Smell", "Code Smells") + "\n" +
+                                    "## Coverage and Duplications\n" +
+                                    " - " + newCoverage + " (" + estimatedCoverage + "% Estimated after merge)\n" +
+                                    " - " + newDuplication + " (" + estimatedDuplications + "% Estimated after merge)\n";
 
             InputObject<String> checkRunOutputContent =
                     new InputObject.Builder<String>().put("title", "Quality Gate " + status.toLowerCase(Locale.ENGLISH))
