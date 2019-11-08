@@ -28,7 +28,6 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.CheckConclus
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.CreateCheckRun;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.RequestableCheckStatusState;
 import com.google.common.reflect.TypeToken;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
 import io.aexp.nodes.graphql.Argument;
 import io.aexp.nodes.graphql.Arguments;
 import io.aexp.nodes.graphql.GraphQLRequestEntity;
