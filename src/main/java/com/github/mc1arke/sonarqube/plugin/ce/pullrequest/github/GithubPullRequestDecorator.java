@@ -28,6 +28,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.CheckConclus
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.CreateCheckRun;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.RequestableCheckStatusState;
 import com.google.common.reflect.TypeToken;
+import com.hazelcast.util.ConcurrentReferenceHashMap;
 import io.aexp.nodes.graphql.Argument;
 import io.aexp.nodes.graphql.Arguments;
 import io.aexp.nodes.graphql.GraphQLRequestEntity;
@@ -154,17 +155,14 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
             List<QualityGate.Condition> failedConditions = projectAnalysis.getQualityGate().getConditions().stream()
                     .filter(c -> c.getStatus() != QualityGate.EvaluationStatus.OK).collect(Collectors.toList());
 
-            QualityGate.Condition newCoverageCondition = projectAnalysis.getQualityGate().getConditions().stream()
-                    .filter(c -> CoreMetrics.NEW_COVERAGE_KEY.equals(c.getMetricKey())).findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Could not find New Coverage Condition in analysis"));
+            Optional<QualityGate.Condition> newCoverageCondition = projectAnalysis.getQualityGate().getConditions().stream()
+                    .filter(c -> CoreMetrics.NEW_COVERAGE_KEY.equals(c.getMetricKey())).findFirst();
             String estimatedCoverage = measureRepository
                     .getRawMeasure(treeRootHolder.getRoot(), metricRepository.getByKey(CoreMetrics.COVERAGE_KEY))
                     .map(Measure::getData).orElse("0");
 
-            QualityGate.Condition newDuplicationCondition = projectAnalysis.getQualityGate().getConditions().stream()
-                    .filter(c -> CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY.equals(c.getMetricKey())).findFirst()
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Could not find New Duplicated Lines Condition in analysis"));
+            Optional<QualityGate.Condition> newDuplicationCondition = projectAnalysis.getQualityGate().getConditions().stream()
+                    .filter(c -> CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY.equals(c.getMetricKey())).findFirst();
             String estimatedDuplications = measureRepository.getRawMeasure(treeRootHolder.getRoot(), metricRepository
                     .getByKey(CoreMetrics.DUPLICATED_LINES_KEY)).map(Measure::getData).orElse("0");
 
@@ -179,9 +177,19 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
                                                                                                                 .filter(i -> k ==
                                                                                                                              i.type())
                                                                                                                 .count()));
+            String newCoverage;
+            if (newCoverageCondition.isPresent() && (newCoverageCondition.get().getStatus() != QualityGate.EvaluationStatus.NO_VALUE)) {
+                newCoverage = newCoverageCondition.get().getValue() + "% Coverage";
+            } else {
+                newCoverage = "![No Coverage info](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/checks/CoverageChart/NoCoverageInfo.svg?sanitize=true) No coverage information";
+            }
 
-            String newCoverage = newCoverageCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newCoverageCondition.getValue() : "-";
-            String newDuplication = newDuplicationCondition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE ? newDuplicationCondition.getValue() : "-";
+            String newDuplication;
+            if (newDuplicationCondition.isPresent() && (newDuplicationCondition.get().getStatus() != QualityGate.EvaluationStatus.NO_VALUE)) {
+                newDuplication = newDuplicationCondition.get().getValue() + "% Duplicated Code";
+            } else {
+                newDuplication =  "![No Dublication info](https://raw.githubusercontent.com/SonarSource/sonarcloud-github-static-resources/gh-pages/v2/checks/CoverageChart/NoCoverageInfo.svg?sanitize=true) No Duplication information";
+            }
 
             String summaryBuilder = status + "\n" + failedConditions.stream().filter(c -> c.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
                     .map(c -> "- " + format(c))
