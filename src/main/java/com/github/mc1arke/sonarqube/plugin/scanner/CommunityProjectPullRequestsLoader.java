@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.scanner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.sonar.api.utils.MessageException;
 import org.sonar.api.utils.log.Logger;
@@ -72,8 +73,10 @@ public class CommunityProjectPullRequestsLoader implements ProjectPullRequestsLo
             } catch (ParseException e) {
                 LOGGER.warn("Could not parse date from Pull Requests API response. Will use '0' date", e);
             }
+            final JsonElement baseJson = jsonObject.get("base");
+            final String base = baseJson != null ? baseJson.getAsString() : null;
             return new PullRequestInfo(jsonObject.get("key").getAsString(), jsonObject.get("branch").getAsString(),
-                                       jsonObject.get("base").getAsString(), parsedDate);
+                    base, parsedDate);
         };
     }
 

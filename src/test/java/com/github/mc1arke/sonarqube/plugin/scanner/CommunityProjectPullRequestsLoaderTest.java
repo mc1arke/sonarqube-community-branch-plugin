@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -112,6 +113,27 @@ public class CommunityProjectPullRequestsLoaderTest {
         assertNotNull(responseInfo);
         assertEquals(0, responseInfo.getAnalysisDate());
         assertEquals("master", responseInfo.getBase());
+        assertEquals("dummybranch", responseInfo.getBranch());
+        assertEquals("101", responseInfo.getKey());
+    }
+
+    @Test
+    public void testAllPullRequestsFromNonEmptyServerResponseWithoutBase() {
+        WsResponse mockResponse = mock(WsResponse.class);
+        when(scannerWsClient.call(any())).thenReturn(mockResponse);
+
+        StringReader stringReader = new StringReader(
+                "{\"pullRequests\":[{\"key\":\"101\",\"title\":\"dummybranch\",\"branch\":\"dummybranch\",\"status\":{\"qualityGateStatus\":\"OK\",\"bugs\":0,\"vulnerabilities\":0,\"codeSmells\":0},\"analysisDate\":\"\"}]}");
+        when(mockResponse.contentReader()).thenReturn(stringReader);
+
+        CommunityProjectPullRequestsLoader testCase = new CommunityProjectPullRequestsLoader(scannerWsClient);
+        ProjectPullRequests response = testCase.load("key");
+        assertFalse(response.isEmpty());
+
+        PullRequestInfo responseInfo = response.get("dummybranch");
+        assertNotNull(responseInfo);
+        assertEquals(0, responseInfo.getAnalysisDate());
+        assertNull(responseInfo.getBase());
         assertEquals("dummybranch", responseInfo.getBranch());
         assertEquals("101", responseInfo.getKey());
     }
