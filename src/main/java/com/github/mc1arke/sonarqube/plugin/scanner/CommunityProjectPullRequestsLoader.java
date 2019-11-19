@@ -41,6 +41,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Loads the Pull Requests currently known by SonarQube from the server component for client applications.
@@ -73,8 +74,7 @@ public class CommunityProjectPullRequestsLoader implements ProjectPullRequestsLo
             } catch (ParseException e) {
                 LOGGER.warn("Could not parse date from Pull Requests API response. Will use '0' date", e);
             }
-            final JsonElement baseJson = jsonObject.get("base");
-            final String base = baseJson != null ? baseJson.getAsString() : null;
+            final String base = Optional.ofNullable(jsonObject.get("base")).map(JsonElement::getAsString).orElse(null);
             return new PullRequestInfo(jsonObject.get("key").getAsString(), jsonObject.get("branch").getAsString(),
                     base, parsedDate);
         };
