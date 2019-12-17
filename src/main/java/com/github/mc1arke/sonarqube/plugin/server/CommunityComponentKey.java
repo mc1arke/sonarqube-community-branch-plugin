@@ -25,7 +25,7 @@ import java.util.Optional;
 /**
  * @author Michael Clarke
  */
-/*package*/ class CommunityComponentKey extends BranchSupport.ComponentKey {
+/*package*/ class CommunityComponentKey extends BranchSupport.ComponentKey implements ComponentKeyCompatibility.ComponentKeyCompatibilityMajor7.ComponentKeyCompatibilityMinor9 {
 
     private final String key;
     private final String dbKey;
@@ -52,7 +52,6 @@ import java.util.Optional;
         return dbKey;
     }
 
-    //Can be removed when Support for SonarQube 7.9 is removed
     @Override
     public Optional<String> getDeprecatedBranchName() {
         return Optional.ofNullable(deprecatedBranchName);

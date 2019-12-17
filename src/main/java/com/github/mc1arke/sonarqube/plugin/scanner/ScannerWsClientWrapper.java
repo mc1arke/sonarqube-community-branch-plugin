@@ -24,12 +24,13 @@ import org.sonarqube.ws.client.WsResponse;
 
 import java.lang.reflect.InvocationTargetException;
 
+import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
+
 /**
  * Provides a way of invoking {@link ScannerWsClient} between SonarQube versions where it changed from being a class
  * to being an interface.
  */
-// Can be removed when support for SonarQube < 8.0 is removed
-/*package*/ class ScannerWsClientWrapper {
+/*package*/ class ScannerWsClientWrapper implements SonarqubeCompatibility.Major7.Minor9 {
 
     private final Object wsClient;
 

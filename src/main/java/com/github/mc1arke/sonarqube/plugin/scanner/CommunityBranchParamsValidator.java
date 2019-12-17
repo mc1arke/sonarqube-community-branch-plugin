@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchParamsValidator implements BranchParamsValidator {
+public class CommunityBranchParamsValidator implements BranchParamsValidator, BranchParamsValidatorCompatibility.BranchParamsValidatorCompatibilityMajor7.BranchParamsValidatorCompatibilityMinor9, BranchParamsValidatorCompatibility.BranchParamsValidatorCompatibilityMajor8.BranchParamsValidatorCompatibilityMinor0 {
 
     private final GlobalConfiguration globalConfiguration;
 
@@ -36,7 +36,6 @@ public class CommunityBranchParamsValidator implements BranchParamsValidator {
         this.globalConfiguration = globalConfiguration;
     }
 
-    //Can be removed when support for SonarQube 7.9 is removed
     @Override
     public void validate(List<String> validationMessages, String deprecatedBranchName) {
         if (null != deprecatedBranchName && (globalConfiguration.hasKey(ScannerProperties.BRANCH_NAME) ||
@@ -47,7 +46,7 @@ public class CommunityBranchParamsValidator implements BranchParamsValidator {
         }
     }
 
-    //@Override since SonarQube 8.0
+    @Override
     public void validate(List<String> validationMessages) {
         //no-op - nothing to validate
     }
