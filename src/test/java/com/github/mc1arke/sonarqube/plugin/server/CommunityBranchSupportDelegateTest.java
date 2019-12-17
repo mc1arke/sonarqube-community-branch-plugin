@@ -68,7 +68,7 @@ public class CommunityBranchSupportDelegateTest {
         params.put("branch", "feature/dummy");
         params.put("branchType", "SHORT");
 
-        BranchSupport.ComponentKey componentKey =
+        CommunityComponentKey componentKey =
                 new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
                         .createComponentKey("xxx", params);
         assertEquals("xxx:BRANCH:feature/dummy", componentKey.getDbKey());
@@ -77,7 +77,7 @@ public class CommunityBranchSupportDelegateTest {
         assertFalse(componentKey.isMainBranch());
         assertTrue(componentKey.getBranch().isPresent());
         assertEquals("feature/dummy", componentKey.getBranch().get().getName());
-        assertFalse(componentKey.isDeprecatedBranch());
+        assertFalse(componentKey.getDeprecatedBranchName().isPresent());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
         assertEquals(BranchType.SHORT, componentKey.getBranch().get().getType());
     }
@@ -88,7 +88,7 @@ public class CommunityBranchSupportDelegateTest {
         params.put("branch", "release-1.1");
         params.put("branchType", "LONG");
 
-        BranchSupport.ComponentKey componentKey =
+        CommunityComponentKey componentKey =
                 new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
                         .createComponentKey("yyy", params);
 
@@ -98,7 +98,7 @@ public class CommunityBranchSupportDelegateTest {
         assertFalse(componentKey.isMainBranch());
         assertTrue(componentKey.getBranch().isPresent());
         assertEquals("release-1.1", componentKey.getBranch().get().getName());
-        assertFalse(componentKey.isDeprecatedBranch());
+        assertFalse(componentKey.getDeprecatedBranchName().isPresent());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
         assertEquals(BranchType.LONG, componentKey.getBranch().get().getType());
     }
@@ -117,7 +117,7 @@ public class CommunityBranchSupportDelegateTest {
         assertEquals("pullrequestkey", componentKey.getPullRequestKey().get());
         assertFalse(componentKey.isMainBranch());
         assertFalse(componentKey.getBranch().isPresent());
-        assertFalse(componentKey.isDeprecatedBranch());
+        assertFalse(componentKey.getDeprecatedBranchName().isPresent());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
         CommunityComponentKey mainBranchComponentKey = componentKey.getMainBranchComponentKey();
         assertSame(mainBranchComponentKey, mainBranchComponentKey.getMainBranchComponentKey());

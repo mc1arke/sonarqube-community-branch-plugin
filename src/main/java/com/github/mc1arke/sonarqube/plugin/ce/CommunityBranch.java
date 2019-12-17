@@ -27,7 +27,7 @@ import org.sonar.db.component.ComponentDto;
 /**
  * @author Michael Clarke
  */
-public class CommunityBranch implements Branch {
+public class CommunityBranch implements Branch, BranchCompatibility.BranchCompatibilityMajor7.BranchCompatibilityMinor9 {
 
     private final String name;
     private final BranchType branchType;
@@ -62,7 +62,6 @@ public class CommunityBranch implements Branch {
         return main;
     }
 
-    // Can be removed when support removed for SonarQube 7.9
     @Override
     public boolean isLegacyFeature() {
         return false;
