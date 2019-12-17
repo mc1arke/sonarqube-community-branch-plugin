@@ -39,7 +39,7 @@ import java.util.function.Supplier;
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchConfigurationLoader implements BranchConfigurationLoader {
+public class CommunityBranchConfigurationLoader implements BranchConfigurationLoader, BranchConfigurationLoaderCompatibility.BranchConfigurationLoaderCompatibilityMajor7.BranchConfigurationLoaderCompatibilityMinor8, BranchConfigurationLoaderCompatibility.BranchConfigurationLoaderCompatibilityMajor7.BranchConfigurationLoaderCompatibilityMinor9 {
 
     public static final String DEFAULT_BRANCH_REGEX = "(branch|release).*";
 
@@ -51,7 +51,6 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
             Arrays.asList(ScannerProperties.PULL_REQUEST_BRANCH, ScannerProperties.PULL_REQUEST_KEY,
                           ScannerProperties.PULL_REQUEST_BASE));
 
-    // This method can be removed when removing support for all SonarQube versions before 7.8
     @Override
     public BranchConfiguration load(Map<String, String> localSettings, Supplier<Map<String, String>> supplier,
                                     ProjectBranches projectBranches, ProjectPullRequests projectPullRequests) {
@@ -80,7 +79,7 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         return new DefaultBranchConfiguration();
     }
 
-    //@Override since SonarQube 7.9
+    @Override
     public BranchConfiguration load(Map<String, String> localSettings, ProjectBranches projectBranches,
                                     ProjectPullRequests pullRequests) {
         if (projectBranches.isEmpty()) {

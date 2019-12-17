@@ -22,7 +22,9 @@ import org.hamcrest.core.IsEqual;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.sonar.ce.task.projectanalysis.analysis.AnalysisMetadataHolderImpl;
+import org.mockito.ArgumentCaptor;
+import org.sonar.ce.task.projectanalysis.analysis.Branch;
+import org.sonar.ce.task.projectanalysis.analysis.MutableAnalysisMetadataHolder;
 import org.sonar.db.DbClient;
 import org.sonar.db.component.BranchDao;
 import org.sonar.db.component.BranchDto;
@@ -39,6 +41,7 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -62,8 +65,8 @@ public class CommunityBranchLoaderDelegateTest {
         ScannerReport.Metadata metadata = ScannerReport.Metadata.getDefaultInstance();
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("uuid", "key", "name", "description", new ArrayList<>()));
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("uuid", "key", "name", "description", new ArrayList<>()));
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo("Could not find main branch"));
@@ -86,18 +89,21 @@ public class CommunityBranchLoaderDelegateTest {
         ScannerReport.Metadata metadata = ScannerReport.Metadata.getDefaultInstance();
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("uuid", "key", "name", "description", new ArrayList<>()));
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("uuid", "key", "name", "description", new ArrayList<>()));
 
         new CommunityBranchLoaderDelegate(dbClient, metadataHolder).load(metadata);
 
-        assertEquals(BranchType.SHORT, metadataHolder.getBranch().getType());
-        assertNull(metadataHolder.getBranch().getMergeBranchUuid());
-        assertEquals("branchKey", metadataHolder.getBranch().getName());
-        assertFalse(metadataHolder.getBranch().isLegacyFeature());
-        assertFalse(metadataHolder.getBranch().isMain());
-        assertFalse(metadataHolder.getBranch().supportsCrossProjectCpd());
-        assertNull(metadataHolder.getBranch().getTargetBranchName());
+        ArgumentCaptor<CommunityBranch> branchArgumentCaptor = ArgumentCaptor.forClass(CommunityBranch.class);
+
+        verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
+        assertEquals(BranchType.SHORT, branchArgumentCaptor.getValue().getType());
+        assertNull(branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals("branchKey", branchArgumentCaptor.getValue().getName());
+        assertFalse(branchArgumentCaptor.getValue().isLegacyFeature());
+        assertFalse(branchArgumentCaptor.getValue().isMain());
+        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
+        assertNull(branchArgumentCaptor.getValue().getTargetBranchName());
     }
 
     @Test
@@ -111,9 +117,9 @@ public class CommunityBranchLoaderDelegateTest {
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("uuid", "key", "name", "description", new ArrayList<>()));
 
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("uuid", "key", "name", "description", new ArrayList<>()));
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo("Invalid branch type 'UNSET'"));
@@ -139,18 +145,22 @@ public class CommunityBranchLoaderDelegateTest {
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
+
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
 
         new CommunityBranchLoaderDelegate(dbClient, metadataHolder).load(metadata);
 
-        assertEquals(BranchType.SHORT, metadataHolder.getBranch().getType());
-        assertEquals("projectUuid", metadataHolder.getBranch().getMergeBranchUuid());
-        assertEquals("branch", metadataHolder.getBranch().getName());
-        assertFalse(metadataHolder.getBranch().isLegacyFeature());
-        assertFalse(metadataHolder.getBranch().isMain());
-        assertFalse(metadataHolder.getBranch().supportsCrossProjectCpd());
-        assertNull(metadataHolder.getBranch().getTargetBranchName());
+        ArgumentCaptor<CommunityBranch> branchArgumentCaptor = ArgumentCaptor.forClass(CommunityBranch.class);
+
+        verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
+        assertEquals(BranchType.SHORT, branchArgumentCaptor.getValue().getType());
+        assertEquals("projectUuid", branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals("branch", branchArgumentCaptor.getValue().getName());
+        assertFalse(branchArgumentCaptor.getValue().isLegacyFeature());
+        assertFalse(branchArgumentCaptor.getValue().isMain());
+        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
+        assertNull(branchArgumentCaptor.getValue().getTargetBranchName());
     }
 
     @Test
@@ -172,18 +182,22 @@ public class CommunityBranchLoaderDelegateTest {
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
+
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
 
         new CommunityBranchLoaderDelegate(dbClient, metadataHolder).load(metadata);
 
-        assertEquals(BranchType.LONG, metadataHolder.getBranch().getType());
-        assertEquals("projectUuid", metadataHolder.getBranch().getMergeBranchUuid());
-        assertEquals("branch", metadataHolder.getBranch().getName());
-        assertFalse(metadataHolder.getBranch().isLegacyFeature());
-        assertFalse(metadataHolder.getBranch().isMain());
-        assertFalse(metadataHolder.getBranch().supportsCrossProjectCpd());
-        assertEquals("targetBranchName", metadataHolder.getBranch().getTargetBranchName());
+        ArgumentCaptor<CommunityBranch> branchArgumentCaptor = ArgumentCaptor.forClass(CommunityBranch.class);
+
+        verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
+        assertEquals(BranchType.LONG, branchArgumentCaptor.getValue().getType());
+        assertEquals("projectUuid", branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals("branch", branchArgumentCaptor.getValue().getName());
+        assertFalse(branchArgumentCaptor.getValue().isLegacyFeature());
+        assertFalse(branchArgumentCaptor.getValue().isMain());
+        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
+        assertEquals("targetBranchName", branchArgumentCaptor.getValue().getTargetBranchName());
     }
 
     @Test
@@ -205,18 +219,22 @@ public class CommunityBranchLoaderDelegateTest {
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
+
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
 
         new CommunityBranchLoaderDelegate(dbClient, metadataHolder).load(metadata);
 
-        assertEquals(BranchType.PULL_REQUEST, metadataHolder.getBranch().getType());
-        assertEquals("mergeBranchUuid", metadataHolder.getBranch().getMergeBranchUuid());
-        assertEquals("sourceBranch", metadataHolder.getBranch().getName());
-        assertFalse(metadataHolder.getBranch().isLegacyFeature());
-        assertFalse(metadataHolder.getBranch().isMain());
-        assertFalse(metadataHolder.getBranch().supportsCrossProjectCpd());
-        assertEquals("branch", metadataHolder.getBranch().getTargetBranchName());
+        ArgumentCaptor<CommunityBranch> branchArgumentCaptor = ArgumentCaptor.forClass(CommunityBranch.class);
+
+        verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
+        assertEquals(BranchType.PULL_REQUEST, branchArgumentCaptor.getValue().getType());
+        assertEquals("mergeBranchUuid", branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals("sourceBranch", branchArgumentCaptor.getValue().getName());
+        assertFalse(branchArgumentCaptor.getValue().isLegacyFeature());
+        assertFalse(branchArgumentCaptor.getValue().isMain());
+        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
+        assertEquals("branch", branchArgumentCaptor.getValue().getTargetBranchName());
     }
 
     @Test
@@ -231,8 +249,9 @@ public class CommunityBranchLoaderDelegateTest {
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
+
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo("Could not find target branch 'branch' in project"));
@@ -272,18 +291,21 @@ public class CommunityBranchLoaderDelegateTest {
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
+
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
 
         new CommunityBranchLoaderDelegate(dbClient, metadataHolder).load(metadata);
 
-        assertEquals(BranchType.SHORT, metadataHolder.getBranch().getType());
-        assertEquals("targetBranchUuid", metadataHolder.getBranch().getMergeBranchUuid());
-        assertEquals("branch", metadataHolder.getBranch().getName());
-        assertFalse(metadataHolder.getBranch().isLegacyFeature());
-        assertFalse(metadataHolder.getBranch().isMain());
-        assertFalse(metadataHolder.getBranch().supportsCrossProjectCpd());
-        assertEquals("targetBranchThatDoesNotMatchMergeBranch", metadataHolder.getBranch().getTargetBranchName());
+        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.forClass(Branch.class);
+
+        verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
+        assertEquals(BranchType.SHORT, branchArgumentCaptor.getValue().getType());
+        assertEquals("targetBranchUuid", branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals("branch", branchArgumentCaptor.getValue().getName());
+        assertFalse(branchArgumentCaptor.getValue().isMain());
+        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
+        assertEquals("targetBranchThatDoesNotMatchMergeBranch", branchArgumentCaptor.getValue().getTargetBranchName());
     }
 
     @Test
@@ -307,8 +329,9 @@ public class CommunityBranchLoaderDelegateTest {
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
-        AnalysisMetadataHolderImpl metadataHolder = new AnalysisMetadataHolderImpl();
-        metadataHolder.setProject(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
+
+        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
+        when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
 
 
         expectedException.expect(IllegalStateException.class);
