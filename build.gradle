@@ -29,6 +29,9 @@ group 'com.github.mc1arke.sonarqube.plugin'
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://dl.bintray.com/americanexpress/maven/'
+    }
     ivy {
         url 'https://binaries.sonarsource.com/'
         patternLayout({a ->
@@ -60,6 +63,10 @@ dependencies {
     testCompile group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.13.2'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.62'
+    compile('io.aexp.nodes.graphql:nodes:0.5.0') {
+        exclude group: 'com.fasterxml.jackson.core'
+    }
 }
 
 
@@ -108,3 +115,8 @@ tasks.shadowJar.configure {
 }
 
 assemble.dependsOn('shadowJar')
+
+pitest {
+    timestampedReports = false
+    avoidCallsTo = ['org.sonar.api.utils.log.Logger']
+}

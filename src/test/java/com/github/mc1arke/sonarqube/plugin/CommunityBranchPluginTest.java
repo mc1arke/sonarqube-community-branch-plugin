@@ -98,7 +98,7 @@ public class CommunityBranchPluginTest {
 
         testCase.load(context);
 
-        ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+        ArgumentCaptor<Class> argumentCaptor = ArgumentCaptor.forClass(Class.class);
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
 
@@ -119,6 +119,7 @@ public class CommunityBranchPluginTest {
         ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
+        assertEquals(10, argumentCaptor.getAllValues().size());
 
         assertEquals(Arrays.asList(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class),
                      argumentCaptor.getAllValues().subList(0, 2));
@@ -128,15 +129,13 @@ public class CommunityBranchPluginTest {
     public void testLoad() {
         CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
-        CoreExtension.Context context = spy(mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS));
+        CoreExtension.Context context = mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS);
+        when(context.getRuntime().getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
         testCase.load(context);
 
-        ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(context).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
+        verify(context, never()).addExtensions(any());
 
-
-        assertEquals(2, argumentCaptor.getAllValues().size());
     }
 
     @Test

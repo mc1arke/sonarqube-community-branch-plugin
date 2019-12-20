@@ -16,23 +16,28 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CheckRun;
 import org.junit.Test;
 
-import java.util.List;
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+public class CreateCheckRunTest {
 
     @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(6, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    public void deserialiseReturnsSerialiseInput() throws IOException {
+        CreateCheckRun testCase = new CreateCheckRun("mutation ID", new CheckRun("check run ID"));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String serialised = objectMapper.writeValueAsString(testCase);
+
+        CreateCheckRun deserialised = objectMapper.readerFor(CreateCheckRun.class).readValue(serialised);
+
+        assertEquals("mutation ID", deserialised.getClientMutationId());
+        assertEquals("check run ID", testCase.getCheckRun().getId());
     }
 }

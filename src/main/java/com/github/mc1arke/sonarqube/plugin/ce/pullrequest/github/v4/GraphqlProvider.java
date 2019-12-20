@@ -16,23 +16,17 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
-import org.junit.Test;
+import io.aexp.nodes.graphql.GraphQLRequestEntity;
+import io.aexp.nodes.graphql.GraphQLTemplate;
+import io.aexp.nodes.graphql.InputObject;
 
-import java.util.List;
+interface GraphqlProvider {
 
-import static org.junit.Assert.assertEquals;
+    GraphQLTemplate createGraphQLTemplate();
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+    GraphQLRequestEntity.RequestBuilder createRequestBuilder();
 
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(6, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
-    }
+    <T> InputObject.Builder<T> createInputObject();
 }

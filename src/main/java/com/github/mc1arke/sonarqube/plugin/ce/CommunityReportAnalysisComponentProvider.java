@@ -18,9 +18,14 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestPostAnalysisTask;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.RestApplicationAuthenticationProvider;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.GraphqlCheckRunProvider;
 import org.sonar.ce.task.projectanalysis.container.ReportAnalysisComponentProvider;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -30,7 +35,9 @@ public class CommunityReportAnalysisComponentProvider implements ReportAnalysisC
 
     @Override
     public List<Object> getComponents() {
-        return Collections.singletonList(CommunityBranchLoaderDelegate.class);
+        return Arrays.asList(CommunityBranchLoaderDelegate.class, PullRequestPostAnalysisTask.class,
+                             PostAnalysisIssueVisitor.class, GithubPullRequestDecorator.class,
+                             GraphqlCheckRunProvider.class, RestApplicationAuthenticationProvider.class);
     }
 
 }
