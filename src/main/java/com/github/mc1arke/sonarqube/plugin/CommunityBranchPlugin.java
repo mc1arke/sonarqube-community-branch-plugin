@@ -40,6 +40,9 @@ import org.sonar.core.extension.CoreExtension;
  */
 public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
+    private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
+    private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
+
     @Override
     public String getName() {
         return "Community Branch Plugin";
@@ -50,24 +53,61 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
         if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityReportAnalysisComponentProvider.class, CommunityBranchEditionProvider.class);
         } else if (SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
-            context.addExtensions(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class);
+            context.addExtensions(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class,
+
+                    /* org.sonar.db.purge.PurgeConfiguration uses the value for the this property if it's configured, so it only
+                    needs to be specified here, but doesn't need any additional classes to perform the relevant purge/cleanup
+                     */
+                                  PropertyDefinition
+                                          .builder(PurgeConstants.DAYS_BEFORE_DELETING_INACTIVE_SHORT_LIVING_BRANCHES)
+                                          .name("Number of days before purging inactive short living branches")
+                                          .description(
+                                                  "Short living branches are permanently deleted when there are no analysis for the configured number of days.")
+                                          .category(CoreProperties.CATEGORY_GENERAL)
+                                          .subCategory(CoreProperties.SUBCATEGORY_DATABASE_CLEANER).defaultValue("30")
+                                          .type(PropertyType.INTEGER).build(),
+
+                                  //the name and description shown on the UI are automatically loaded from core.properties so don't need to be specified here
+                                  PropertyDefinition.builder(CoreProperties.LONG_LIVED_BRANCHES_REGEX)
+                                          .onQualifiers(Qualifiers.PROJECT).category(CoreProperties.CATEGORY_GENERAL)
+                                          .subCategory(CoreProperties.SUBCATEGORY_BRANCHES)
+                                          .defaultValue(CommunityBranchConfigurationLoader.DEFAULT_BRANCH_REGEX).build()
+
+
+                                 );
         }
 
-        context.addExtensions(
-            /* org.sonar.db.purge.PurgeConfiguration uses the value for the this property if it's configured, so it only
-            needs to be specified here, but doesn't need any additional classes to perform the relevant purge/cleanup
-             */
-                PropertyDefinition.builder(PurgeConstants.DAYS_BEFORE_DELETING_INACTIVE_SHORT_LIVING_BRANCHES)
-                        .name("Number of days before purging inactive short living branches").description(
-                        "Short living branches are permanently deleted when there are no analysis for the configured number of days.")
-                        .category(CoreProperties.CATEGORY_GENERAL)
-                        .subCategory(CoreProperties.SUBCATEGORY_DATABASE_CLEANER).defaultValue("30")
-                        .type(PropertyType.INTEGER).build(),
+        if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide() ||
+            SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
+            context.addExtensions(
+                    PropertyDefinition.builder("sonar.pullrequest.provider").category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory("General").onlyOnQualifiers(Qualifiers.PROJECT).name("Provider")
+                            .type(PropertyType.SINGLE_SELECT_LIST).options("Github").build(),
 
-                //the name and description shown on the UI are automatically loaded from core.properties so don't need to be specified here
-                PropertyDefinition.builder(CoreProperties.LONG_LIVED_BRANCHES_REGEX).onQualifiers(Qualifiers.PROJECT)
-                        .category(CoreProperties.CATEGORY_GENERAL).subCategory(CoreProperties.SUBCATEGORY_BRANCHES)
-                        .defaultValue(CommunityBranchConfigurationLoader.DEFAULT_BRANCH_REGEX).build());
+                    PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
+                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.APP).name("App Private Key").type(PropertyType.TEXT).build(),
+
+                    PropertyDefinition.builder("sonar.alm.github.app.name").category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP)
+                            .name("App Name").defaultValue("SonarQube Community Pull Request Analysis")
+                            .type(PropertyType.STRING).build(),
+
+                    PropertyDefinition.builder("sonar.alm.github.app.id").category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP)
+                            .name("App ID").type(PropertyType.STRING).build(),
+
+                    PropertyDefinition.builder("sonar.pullrequest.github.repository")
+                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT).name("Repository identifier")
+                            .description("Example: SonarSource/sonarqube").type(PropertyType.STRING).build(),
+
+                    PropertyDefinition.builder("sonar.pullrequest.github.endpoint")
+                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.APP).name("The API URL for a GitHub instance").description(
+                            "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
+                            .type(PropertyType.STRING).defaultValue("https://api.github.com").build());
+        }
 
     }
 

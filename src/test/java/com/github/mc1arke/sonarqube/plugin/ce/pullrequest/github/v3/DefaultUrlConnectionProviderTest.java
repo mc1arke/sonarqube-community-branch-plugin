@@ -16,23 +16,19 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3;
 
 import org.junit.Test;
 
-import java.util.List;
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+public class DefaultUrlConnectionProviderTest {
 
     @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(6, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    public void testValidInputStreamReturned() throws IOException {
+        DefaultUrlConnectionProvider testCase = new DefaultUrlConnectionProvider();
+        assertEquals("http://localhost/", testCase.createUrlConnection("http://localhost/").getURL().toString());
     }
 }

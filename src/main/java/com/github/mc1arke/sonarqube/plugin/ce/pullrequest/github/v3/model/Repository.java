@@ -16,23 +16,27 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.model;
 
-import org.junit.Test;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
+public class Repository {
 
-import static org.junit.Assert.assertEquals;
+    private final String nodeId;
+    private final String fullName;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+    @JsonCreator
+    public Repository(@JsonProperty("node_id") String nodeId, @JsonProperty("full_name") String fullName) {
+        this.nodeId = nodeId;
+        this.fullName = fullName;
+    }
 
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(6, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getNodeId() {
+        return nodeId;
     }
 }

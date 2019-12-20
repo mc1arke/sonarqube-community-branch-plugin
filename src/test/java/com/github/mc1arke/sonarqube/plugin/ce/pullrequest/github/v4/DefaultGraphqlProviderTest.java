@@ -16,23 +16,20 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
 import org.junit.Test;
 
-import java.util.List;
+import static org.junit.Assert.assertNotSame;
 
-import static org.junit.Assert.assertEquals;
-
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+public class DefaultGraphqlProviderTest {
 
     @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(6, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    public void newInstancesShouldBeReturnedOnRepeatCalls() {
+        DefaultGraphqlProvider testCase = new DefaultGraphqlProvider();
+
+        assertNotSame(testCase.createGraphQLTemplate(), testCase.createGraphQLTemplate());
+        assertNotSame(testCase.createInputObject(), testCase.createInputObject());
+        assertNotSame(testCase.createRequestBuilder(), testCase.createRequestBuilder());
     }
 }
