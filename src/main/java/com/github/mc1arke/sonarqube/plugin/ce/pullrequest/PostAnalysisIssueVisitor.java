@@ -18,38 +18,44 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.issue.IssueVisitor;
 import org.sonar.core.issue.DefaultIssue;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class PostAnalysisIssueVisitor extends IssueVisitor {
 
-    private static final Logger LOGGER = Loggers.get(PostAnalysisIssueVisitor.class);
-
-    private final List<DefaultIssue> collectedIssues = new ArrayList<>();
-
-    private final Map<DefaultIssue, String> collectedIssueMap = new HashMap<>();
+    private final List<ComponentIssue> collectedIssues = new ArrayList<>();
 
     @Override
     public void onIssue(Component component, DefaultIssue defaultIssue) {
-        if (Component.Type.FILE.equals(component.getType()))
-        {
-            LOGGER.info(component.toString());
-            Optional<String> scmPath = component.getReportAttributes().getScmPath();
-            scmPath.ifPresent(s -> collectedIssueMap.put(defaultIssue, s));
-        }
-        collectedIssues.add(defaultIssue);
+        collectedIssues.add(new ComponentIssue(component, defaultIssue));
     }
 
-    public List<DefaultIssue> getIssues() {
+    public List<ComponentIssue> getIssues() {
         return Collections.unmodifiableList(collectedIssues);
     }
 
-    public Map<DefaultIssue, String>  getIssueMap() {
-        return Collections.unmodifiableMap(collectedIssueMap);
+    public static class ComponentIssue {
+
+        private final Component component;
+        private final DefaultIssue issue;
+
+        ComponentIssue(Component component, DefaultIssue issue) {
+            super();
+            this.component = component;
+            this.issue = issue;
+        }
+
+        public Component getComponent() {
+            return component;
+        }
+
+        public DefaultIssue getIssue() {
+            return issue;
+        }
     }
 }

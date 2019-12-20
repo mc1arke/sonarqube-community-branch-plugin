@@ -16,12 +16,23 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-public interface PullRequestBuildStatusDecorator {
+public final class Heading extends Node {
 
-    String name();
+    private final int level;
 
-    void decorateQualityGateStatus(AnalysisDetails analysisDetails);
+    public Heading(int level, Node... children) {
+        super(children);
+        this.level = level;
+    }
 
+    int getLevel() {
+        return level;
+    }
+
+    @Override
+    boolean isValidChild(Node child) {
+        return child instanceof Text || child instanceof Image;
+    }
 }

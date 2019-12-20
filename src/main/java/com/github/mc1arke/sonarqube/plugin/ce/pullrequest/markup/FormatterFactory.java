@@ -16,12 +16,21 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-public interface PullRequestBuildStatusDecorator {
+public interface FormatterFactory {
 
-    String name();
+    Formatter<Document> documentFormatter();
 
-    void decorateQualityGateStatus(AnalysisDetails analysisDetails);
+    Formatter<Heading> headingFormatter();
 
+    Formatter<Image> imageFormatter();
+
+    Formatter<List> listFormatter();
+
+    Formatter<ListItem> listItemFormatter();
+
+    Formatter<Paragraph> paragraphFormatter();
+
+    Formatter<Text> textFormatter();
 }

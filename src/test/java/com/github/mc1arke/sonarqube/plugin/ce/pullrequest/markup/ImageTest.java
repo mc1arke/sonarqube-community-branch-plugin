@@ -16,12 +16,25 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-public interface PullRequestBuildStatusDecorator {
+import org.junit.Test;
 
-    String name();
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
 
-    void decorateQualityGateStatus(AnalysisDetails analysisDetails);
+public class ImageTest {
+
+    @Test
+    public void correctParametersReturned() {
+        Image image = new Image("alt", "source");
+        assertThat(image).extracting(Image::getAltText).isEqualTo("alt");
+        assertThat(image).extracting(Image::getSource).isEqualTo("source");
+    }
+
+    @Test
+    public void checkInvalidAddChild() {
+        assertFalse(new Image("", "").isValidChild(new Image("", "")));
+    }
 
 }
