@@ -82,7 +82,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
                 PropertyDefinition.builder("sonar.pullrequest.base.image.url")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL)
-                        .onlyOnQualifiers(Qualifiers.APP)
+                        .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("Base image URL")
                         .defaultValue("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/pr-decoration/src/main/resources/pr-decoration-images")
                         .description("Default: https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images")

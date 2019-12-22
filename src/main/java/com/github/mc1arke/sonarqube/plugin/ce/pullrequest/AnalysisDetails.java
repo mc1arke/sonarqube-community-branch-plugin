@@ -178,7 +178,7 @@ public class AnalysisDetails {
 
         Document document = new Document(
                 new Paragraph(new Text(String.format("Type: %s", issue.type().name()))),
-                new Paragraph(new Text(String.format("Severity: %s %s",  String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase()), issue.severity()))),
+                new Paragraph(new Image(issue.severity(), String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase())), new Text(issue.severity())),
                 new Paragraph(new Text(String.format("Message: %s", issue.getMessage())))
                 );
 
