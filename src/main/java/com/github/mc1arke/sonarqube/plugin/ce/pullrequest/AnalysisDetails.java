@@ -20,13 +20,8 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
 import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Image;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.ListItem;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.*;
+import org.apache.commons.lang.StringUtils;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -35,10 +30,12 @@ import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Metric;
 import org.sonar.api.rules.RuleType;
+import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.Measure;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
+import org.sonar.core.issue.DefaultIssue;
 import org.sonar.server.measure.Rating;
 
 import java.math.BigDecimal;
@@ -50,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.sonar.api.rule.Severity.*;
 
 public class AnalysisDetails {
 
@@ -118,7 +117,7 @@ public class AnalysisDetails {
 
         List<QualityGate.Condition> failedConditions = findFailedConditions();
 
-        String baseImageUrl = configuration.get("com.github.mc1arke.sonarqube.plugin.branch.image-url-base")
+        String baseImageUrl = configuration.get("sonar.pullrequest.base.image.url")
                 .orElse("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images");
 
         Document document = new Document(new Paragraph((QualityGate.Status.OK == getQualityGateStatus() ?
@@ -168,6 +167,42 @@ public class AnalysisDetails {
                                                          "% Estimated after merge)"))));
 
         return formatterFactory.documentFormatter().format(document, formatterFactory);
+    }
+
+
+    public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
+        final DefaultIssue issue = componentIssue.getIssue();
+
+        String baseImageUrl = configuration.get("sonar.pullrequest.base.image.url")
+                .orElse("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images");
+
+        Document document = new Document(
+                new Paragraph(new Text(String.format("Type: %s", issue.type().name()))),
+                new Paragraph(new Text(String.format("Severity: %s %s",  String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase()), issue.severity()))),
+                new Paragraph(new Text(String.format("Message: %s", issue.getMessage())))
+                );
+
+        Long effort = issue.effortInMinutes();
+        if (effort != null)
+        {
+            document.addChild(new Paragraph(new Text(String.format("Duration (min): %s", effort))));
+        }
+        String resolution = issue.resolution();
+        if (StringUtils.isNotBlank(resolution))
+        {
+            document.addChild(new Paragraph(new Text(String.format("Resolution: %s ", resolution))));
+        }
+        return formatterFactory.documentFormatter().format(document, formatterFactory);
+    }
+
+    public String getSCMPathForIssue(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
+        final Component component = componentIssue.getComponent();
+        String scmPath = "";
+        if (Component.Type.FILE.equals(component.getType()))
+        {
+            scmPath = component.getReportAttributes().getScmPath().orElse("");
+        }
+        return scmPath;
     }
 
     public PostAnalysisIssueVisitor getPostAnalysisIssueVisitor() {

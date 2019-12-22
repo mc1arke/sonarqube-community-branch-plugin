@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity.Activity;
@@ -29,6 +30,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.FileComment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.SummaryComment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity.Comment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.*;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
@@ -91,8 +93,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     private static final String FULL_PR_DIFF_API = "%s" + REST_API + PROJECT_PR_API + DIFF_API;
     private static final String FULL_PR_DIFF_USER_API = "%s" + REST_API + USER_PR_API + DIFF_API;
 
-
-
     private final ConfigurationRepository configurationRepository;
     private final Server server;
     private final MetricRepository metricRepository;
@@ -114,36 +114,18 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     }
 
     @Override
-    public void decorateQualityGateStatus(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis) {
-        LOGGER.info("starting to analyze with " + projectAnalysis.toString());
-        Optional<Analysis> optionalAnalysis = projectAnalysis.getAnalysis();
-        if (!optionalAnalysis.isPresent()) {
-            LOGGER.warn(
-                    "No analysis results were created for this project analysis. This is likely to be due to an earlier failure");
-            return;
-        }
-
-        Analysis analysis = optionalAnalysis.get();
-
-        Optional<String> revision = analysis.getRevision();
-        if (!revision.isPresent()) {
-            LOGGER.warn("No commit details were submitted with this analysis. Check the project is committed to Git");
-            return;
-        }
-
-        if (null == projectAnalysis.getQualityGate()) {
-            LOGGER.warn("No quality gate was found on the analysis, so no results are available");
-            return;
-        }
+    public void decorateQualityGateStatus(AnalysisDetails analysisDetails) {
+        LOGGER.info("starting to analyze with " + analysisDetails.toString());
 
         try {
             Configuration configuration = configurationRepository.getConfiguration();
             final String hostURL = getMandatoryProperty("sonar.pullrequest.bitbucket.url", configuration);
             final String apiToken = getMandatoryProperty("sonar.pullrequest.bitbucket.token", configuration);
             final String repositorySlug = getMandatoryProperty("sonar.pullrequest.bitbucket.repositorySlug", configuration);
-            final String pullRequestId = projectAnalysis.getBranch().flatMap(Branch::getName).get();
+            final String pullRequestId = analysisDetails.getBranchName();
             final String userSlug = configuration.get("sonar.pullrequest.bitbucket.userSlug").orElse(StringUtils.EMPTY);
             final String projectKey = configuration.get("sonar.pullrequest.bitbucket.projectKey").orElse(StringUtils.EMPTY);
+            final String commentUserSlug = configuration.get("sonar.pullrequest.bitbucket.comment.userSlug").orElse(StringUtils.EMPTY);
 
             final boolean summaryCommentEnabled = Boolean.parseBoolean(getMandatoryProperty("sonar.pullrequest.summary.comment.enabled", configuration));
             final boolean fileCommentEnabled = Boolean.parseBoolean(getMandatoryProperty("sonar.pullrequest.file.comment.enabled", configuration));
@@ -155,89 +137,38 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             if (StringUtils.isNotBlank(userSlug)) {
                 commentUrl = String.format(FULL_PR_COMMENT_USER_API, hostURL, userSlug, repositorySlug, pullRequestId);
                 diffUrl = String.format(FULL_PR_DIFF_USER_API, hostURL, userSlug, repositorySlug, pullRequestId);
-                activityUrl = String.format(FULL_PR_ACTIVITIES_API, hostURL, userSlug, repositorySlug, pullRequestId, 250);
+                activityUrl = String.format(FULL_PR_ACTIVITIES_USER_API, hostURL, userSlug, repositorySlug, pullRequestId, 250);
             }
             else if (StringUtils.isNotBlank(projectKey)) {
-                commentUrl = String.format(FULL_PR_COMMENT_API, hostURL, repositorySlug, projectKey, pullRequestId);
-                diffUrl = String.format(FULL_PR_DIFF_API, hostURL, repositorySlug, projectKey, pullRequestId);
-                activityUrl = String.format(FULL_PR_ACTIVITIES_USER_API, hostURL, repositorySlug, projectKey, pullRequestId, 250);
+                commentUrl = String.format(FULL_PR_COMMENT_API, hostURL, projectKey, repositorySlug, pullRequestId);
+                diffUrl = String.format(FULL_PR_DIFF_API, hostURL, projectKey, repositorySlug, pullRequestId);
+                activityUrl = String.format(FULL_PR_ACTIVITIES_API, hostURL, projectKey, repositorySlug, pullRequestId, 250);
             }
             else
             {
                 throw new IllegalStateException("Property userSlug or projectKey needs to be set.");
             }
-            LOGGER.info(String.format("Comment url is: %s ", commentUrl));
-            LOGGER.info(String.format("Delete url is: %s ", activityUrl));
-            LOGGER.info(String.format("Diff url is: %s ", diffUrl));
+            LOGGER.info(String.format("Comment URL is: %s ", commentUrl));
+            LOGGER.info(String.format("Activity URL is: %s ", activityUrl));
+            LOGGER.info(String.format("Diff URL is: %s ", diffUrl));
 
             Map<String, String> headers = new HashMap<>();
             headers.put("Authorization", String.format("Bearer %s", apiToken));
             headers.put("Accept", "application/json");
 
-            deleteComments(activityUrl, commentUrl, userSlug, headers, deleteCommentsEnabled);
-
-            String status =
-                    (QualityGate.Status.OK == projectAnalysis.getQualityGate().getStatus() ? "Passed" : "Failed");
-
-            List<QualityGate.Condition> failedConditions = projectAnalysis.getQualityGate().getConditions().stream()
-                    .filter(c -> c.getStatus() != QualityGate.EvaluationStatus.OK).collect(Collectors.toList());
-
-            QualityGate.Condition newCoverageCondition = projectAnalysis.getQualityGate().getConditions().stream()
-                    .filter(c -> CoreMetrics.NEW_COVERAGE_KEY.equals(c.getMetricKey())).findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Could not find New Coverage Condition in analysis"));
-            String coverageValue = newCoverageCondition.getStatus().equals(QualityGate.EvaluationStatus.NO_VALUE) ? "0" : newCoverageCondition.getValue();
-
-            String estimatedCoverage = measureRepository
-                    .getRawMeasure(treeRootHolder.getRoot(), metricRepository.getByKey(CoreMetrics.COVERAGE_KEY))
-                    .map(Measure::getData).orElse("0");
-
-            QualityGate.Condition newDuplicationCondition = projectAnalysis.getQualityGate().getConditions().stream()
-                    .filter(c -> CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY.equals(c.getMetricKey())).findFirst()
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Could not find New Duplicated Lines Condition in analysis"));
-            String estimatedDuplications = measureRepository.getRawMeasure(treeRootHolder.getRoot(), metricRepository
-                    .getByKey(CoreMetrics.DUPLICATED_LINES_KEY)).map(Measure::getData).orElse("0");
-
-
-            List<DefaultIssue> openIssues = postAnalysisIssueVisitor.getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.status())).collect(Collectors.toList());
-            Map<RuleType, Long> issueCounts = Arrays.stream(RuleType.values()).collect(Collectors.toMap(k -> k,
-                                                                                                        k -> openIssues
-                                                                                                                .stream()
-                                                                                                                .filter(i -> k ==
-                                                                                                                             i.type())
-                                                                                                                .count()));
-            String summaryComment = String.format("%s %s", status, NEW_LINE) +
-                    String.format("%s %s", failedConditions.stream().map(c -> "- " + format(c)).collect(Collectors.joining(NEW_LINE)), NEW_LINE) +
-                    String.format("# Analysis Details %s", NEW_LINE) +
-                    String.format("## %s Issues %s", issueCounts.values().stream().mapToLong(l -> l).sum(), NEW_LINE) +
-                    String.format(" - %s %s", pluralOf(issueCounts.get(RuleType.BUG), "Bug", "Bugs"), NEW_LINE) +
-                    String.format(" - %s %s", pluralOf(issueCounts.get(RuleType.VULNERABILITY), "Vulnerability", "Vulnerabilities"), NEW_LINE) +
-                    String.format(" - %s %s", pluralOf(issueCounts.get(RuleType.SECURITY_HOTSPOT), "Security issue", "Security issues"), NEW_LINE) +
-                    String.format(" - %s %s", pluralOf(issueCounts.get(RuleType.CODE_SMELL), "Code Smell", "Code Smells"), NEW_LINE) +
-                    String.format("## Coverage and Duplications %s", NEW_LINE) +
-                    String.format(" - %s%% Coverage (%s%% Estimated after merge) %s", coverageValue, estimatedCoverage, NEW_LINE) +
-                    String.format(" - %s%% Duplicated Code (%s%% Estimated after merge) %s", newDuplicationCondition.getValue(), estimatedDuplications, NEW_LINE);
-            StringEntity summaryCommentEntity = new StringEntity(new ObjectMapper().writeValueAsString(new SummaryComment(summaryComment)), ContentType.APPLICATION_JSON);
+            deleteComments(activityUrl, commentUrl, commentUserSlug, headers, deleteCommentsEnabled);
+            String analysisSummary = analysisDetails.createAnalysisSummary(new MarkdownFormatterFactory());
+            StringEntity summaryCommentEntity = new StringEntity(new ObjectMapper().writeValueAsString(new SummaryComment(analysisSummary)), ContentType.APPLICATION_JSON);
             postComment(commentUrl, headers, summaryCommentEntity, summaryCommentEnabled);
 
             DiffPage diffPage = getPage(diffUrl, headers, DiffPage.class);
-            for (DefaultIssue issue : openIssues) {
-                StringBuilder fileComment = new StringBuilder();
-                fileComment.append(String.format("Type: %s %s", issue.type().name(), NEW_LINE));
-                fileComment.append(String.format("Severity: %s %s %s", getSeverityEmoji(issue.severity()), issue.severity(), NEW_LINE));
-                fileComment.append(String.format("Message: %s %s", issue.getMessage(), NEW_LINE));
-                Long effort = issue.effortInMinutes();
-                if (effort != null)
-                {
-                    fileComment.append(String.format("Duration (min): %s %s", effort, NEW_LINE));
-                }
-                String resolution = issue.resolution();
-                if (StringUtils.isNotBlank(resolution))
-                {
-                    fileComment.append(String.format("Resolution: %s %s", resolution, NEW_LINE));
-                }
+            List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status())).collect(Collectors.toList());
+            for (PostAnalysisIssueVisitor.ComponentIssue componentIssue : componentIssues) {
+                final DefaultIssue issue = componentIssue.getIssue();
                 LOGGER.info(issue.toString());
-                String issuePath = postAnalysisIssueVisitor.getIssueMap().get(issue);
+
+                String analysisIssueSummary = analysisDetails.createAnalysisIssueSummary(componentIssue, new MarkdownFormatterFactory());
+                String issuePath = analysisDetails.getSCMPathForIssue(componentIssue);
                 int issueLine = issue.getLine() != null ? issue.getLine() : 0;
                 String issueType = getIssueType(diffPage, issuePath, issueLine);
                 String fileType = "TO";
@@ -245,7 +176,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                     fileType = "FROM";
                 }
                 StringEntity fileCommentEntity = new StringEntity(
-                        new ObjectMapper().writeValueAsString(new FileComment(fileComment.toString(), new Anchor(issueLine, issueType, issuePath, fileType))), ContentType.APPLICATION_JSON
+                        new ObjectMapper().writeValueAsString(new FileComment(analysisIssueSummary, new Anchor(issueLine, issueType, issuePath, fileType))), ContentType.APPLICATION_JSON
                 );
                 postComment(commentUrl, headers, fileCommentEntity, fileCommentEnabled);
             }
@@ -294,10 +225,15 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         if (!deleteCommentsEnabled) {
             return false;
         }
+        if (StringUtils.isEmpty(userSlug)) {
+            LOGGER.info("No comments deleted cause property comment.userSlug is not set.");
+            return false;
+        }
         boolean commentsRemoved = false;
         final ActivityPage activityPage = getPage(activityUrl, headers, ActivityPage.class);
         if (activityPage != null) {
             final List<Comment> commentsToDelete = getCommentsToDelete(userSlug, activityPage);
+            LOGGER.info(String.format("Deleting %s comments", commentsToDelete));
             for (Comment comment : commentsToDelete) {
                 try {
                     boolean commentDeleted = deleteComment(commentUrl, headers, comment);
@@ -316,6 +252,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     private boolean deleteComment(String commentUrl, Map<String, String> headers, Comment comment) throws IOException {
         boolean commentDeleted = false;
         HttpDelete httpDelete = new HttpDelete(String.format(commentUrl + "/%s?version=%s", comment.getId(), comment.getVersion()));
+        LOGGER.info("delete " + comment.getId() + " " + comment.getVersion());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpDelete.addHeader(entry.getKey(), entry.getValue());
         }
@@ -345,6 +282,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         T page = null;
         try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault())
         {
+            LOGGER.info(String.format("Getting page %s", type));
             HttpGet httpGet = new HttpGet(diffUrl);
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 httpGet.addHeader(entry.getKey(), entry.getValue());
@@ -392,20 +330,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             }
         }
         return commentPosted;
-    }
-
-    private String getSeverityEmoji(String severity) {
-        String icon;
-        switch (severity)
-        {
-            case BLOCKER: icon = ":arrow_double_up:"; break;
-            case CRITICAL: icon = ":arrow_up:"; break;
-            case MAJOR: icon = ":arrow_right:"; break;
-            case MINOR: icon = ":arrow_down:"; break;
-            case INFO: icon = ":arrow_double_down:"; break;
-            default: icon = StringUtils.EMPTY;
-        }
-        return icon;
     }
 
     private static String pluralOf(long value, String singleLabel, String multiLabel) {

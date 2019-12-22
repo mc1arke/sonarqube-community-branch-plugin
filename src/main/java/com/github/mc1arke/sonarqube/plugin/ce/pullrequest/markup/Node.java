@@ -32,7 +32,7 @@ public abstract class Node {
         Arrays.asList(children).forEach(this::addChild);
     }
 
-    private void addChild(Node child) {
+    public void addChild(Node child) {
         if (!isValidChild(child)) {
             throw new IllegalArgumentException(
                     String.format("%s is not a valid child of %s", child.getClass().getName(), getClass().getName()));

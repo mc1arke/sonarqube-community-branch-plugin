@@ -80,6 +80,15 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .onlyOnQualifiers(Qualifiers.PROJECT).name("Provider").type(PropertyType.SINGLE_SELECT_LIST)
                         .options("Github", "BitbucketServer", "BitbucketCloud").build(),
 
+                PropertyDefinition.builder("sonar.pullrequest.base.image.url")
+                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .onlyOnQualifiers(Qualifiers.APP)
+                        .name("Base image URL")
+                        .defaultValue("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/pr-decoration/src/main/resources/pr-decoration-images")
+                        .description("Default: https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images")
+                        .type(PropertyType.STRING)
+                        .build(),
+
                 PropertyDefinition.builder("sonar.pullrequest.summary.comment.enabled")
                         .subCategory(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(GENERAL)
@@ -110,31 +119,6 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .defaultValue("false")
                         .build(),
 
-                PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
-                        .onQualifiers(Qualifiers.APP).name("App Private Key")
-                        .type(PropertyType.PASSWORD).build(),
-
-                PropertyDefinition.builder("sonar.alm.github.app.name").subCategory(PULL_REQUEST_CATEGORY_LABEL)
-                        .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP).name("App Name")
-                        .defaultValue("SonarQube Community Pull Request Analysis").type(PropertyType.STRING).build(),
-
-                PropertyDefinition.builder("sonar.alm.github.app.id").subCategory(PULL_REQUEST_CATEGORY_LABEL)
-                        .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP).name("App ID")
-                        .type(PropertyType.STRING).build(),
-
-                PropertyDefinition.builder("sonar.pullrequest.github.repository")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
-                        .onlyOnQualifiers(Qualifiers.PROJECT)
-                        .name("Repository identifier").description("Example: SonarSource/sonarqube")
-                        .type(PropertyType.STRING).build(),
-
-                PropertyDefinition.builder("sonar.pullrequest.github.endpoint").subCategory(PULL_REQUEST_CATEGORY_LABEL)
-                        .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP)
-                        .name("The API URL for a GitHub instance").description(
-                        "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
-                        .type(PropertyType.STRING).defaultValue("https://api.github.com").build(),
-
                 PropertyDefinition.builder("sonar.pullrequest.bitbucket.url").subCategory(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
                         .name("URL for Bitbucket (Server or Cloud) instance").description(
@@ -147,6 +131,15 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .onQualifiers(Qualifiers.PROJECT)
                         .name("The token for the user to comment to the PR on Bitbucket (Server or Cloud) instance")
                         .description("Token used for authentication and commenting to your Bitbucket instance")
+                        .type(PropertyType.STRING)
+                        .build(),
+
+                PropertyDefinition.builder("sonar.pullrequest.bitbucket.comment.userSlug")
+                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
+                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .name("Comment User Slug")
+                        .description("User slug for the comment user. Needed only for comment deletion.")
                         .type(PropertyType.STRING)
                         .build(),
 
