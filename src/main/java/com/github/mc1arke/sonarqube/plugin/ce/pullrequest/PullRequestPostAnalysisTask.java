@@ -70,7 +70,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
     @Deprecated
     @Override
     public void finished(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis) {
-        LOGGER.info("found " + pullRequestDecorators.size() + " pull request decorators");
+        LOGGER.debug("found " + pullRequestDecorators.size() + " pull request decorators");
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
         if (!optionalPullRequest.isPresent()) {
@@ -135,7 +135,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
         Optional<String> optionalImplementationName = configuration.get("sonar.pullrequest.provider");
 
         if (!optionalImplementationName.isPresent()) {
-            LOGGER.error("'sonar.pullrequest.provider' property not set");
+            LOGGER.debug("'sonar.pullrequest.provider' property not set");
             return Optional.empty();
         }
 

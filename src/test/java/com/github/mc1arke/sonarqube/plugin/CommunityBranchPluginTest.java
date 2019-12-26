@@ -143,4 +143,9 @@ public class CommunityBranchPluginTest {
     public void testGetName() {
         assertEquals("Community Branch Plugin", new CommunityBranchPlugin().getName());
     }
+
+    @Test
+    public void testGetName() {
+        assertEquals("Community Branch Plugin", new CommunityBranchPlugin().getName());
+    }
 }

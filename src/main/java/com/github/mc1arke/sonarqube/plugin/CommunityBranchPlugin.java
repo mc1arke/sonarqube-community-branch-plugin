@@ -42,9 +42,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
     private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
     private static final String GENERAL = "General";
-    private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
     private static final String BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Bitbucket";
-
 
     @Override
     public String getName() {

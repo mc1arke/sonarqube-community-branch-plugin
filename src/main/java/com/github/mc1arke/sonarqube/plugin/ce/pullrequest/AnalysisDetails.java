@@ -22,6 +22,13 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.*;
 import org.apache.commons.lang.StringUtils;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Image;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.ListItem;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -49,7 +56,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.sonar.api.rule.Severity.*;
-
 public class AnalysisDetails {
 
     private static final List<String> CLOSED_ISSUE_STATUS = Arrays.asList(Issue.STATUS_CLOSED, Issue.STATUS_RESOLVED);
@@ -169,7 +175,6 @@ public class AnalysisDetails {
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
 
-
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
         final DefaultIssue issue = componentIssue.getIssue();
 
@@ -204,6 +209,7 @@ public class AnalysisDetails {
         }
         return scmPath;
     }
+
 
     public PostAnalysisIssueVisitor getPostAnalysisIssueVisitor() {
         return postAnalysisIssueVisitor;
