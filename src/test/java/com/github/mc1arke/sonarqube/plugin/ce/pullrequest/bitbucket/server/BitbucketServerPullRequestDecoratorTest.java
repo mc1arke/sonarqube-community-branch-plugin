@@ -26,7 +26,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.Is.is;
 
-
 public class BitbucketServerPullRequestDecoratorTest {
 
     @Rule
@@ -51,8 +50,8 @@ public class BitbucketServerPullRequestDecoratorTest {
     private static final String COMMENTURL = "http://localhost:8089/comments";
 
     @Before
-    public void setUp() throws Exception {
-        bitbucketServerPullRequestDecorator = new BitbucketServerPullRequestDecorator(null, null, null, null, null, null);
+    public void setUp() {
+        bitbucketServerPullRequestDecorator = new BitbucketServerPullRequestDecorator(null);
 
         headers = new HashMap<>();
         headers.put("Authorization", String.format("Bearer %s", APITOKEN));
@@ -118,39 +117,17 @@ public class BitbucketServerPullRequestDecoratorTest {
     }
 
     @Test
-    public void getCommentsToDelete() {
-        final ActivityPage activityPage = new ActivityPage();
-        activityPage.setValues(new Activity[0]);
+    public void getCommentsToDelete() throws Exception {
+        ActivityPage activityPage = new ObjectMapper().readValue(FileUtils.readFileToByteArray(new File("src/test/resources/bitbucket/delete/activityPageCase1.json")), ActivityPage.class);
         assertThat(bitbucketServerPullRequestDecorator.getCommentsToDelete("susi.sonar", activityPage).size() , is(0));
 
-        Activity activityWithoutComment = new Activity();
-        activityWithoutComment.setId(123);
-        activityPage.setValues(new Activity[] {activityWithoutComment});
+        activityPage = new ObjectMapper().readValue(FileUtils.readFileToByteArray(new File("src/test/resources/bitbucket/delete/activityPageCase2.json")), ActivityPage.class);
         assertThat(bitbucketServerPullRequestDecorator.getCommentsToDelete("susi.sonar", activityPage).size() , is(0));
 
-        Activity activityWithCommentWrongSlug = new Activity();
-        activityWithCommentWrongSlug.setId(123);
-        Comment comment1 = new Comment();
-        comment1.setId(1000);
-        User authorJayUnit = new User();
-        authorJayUnit.setName("Jay Unit");
-        authorJayUnit.setSlug("jay.unit");
-        comment1.setAuthor(authorJayUnit);
-        activityWithCommentWrongSlug.setComment(comment1);
-
-        activityPage.setValues(new Activity[] {activityWithoutComment, activityWithCommentWrongSlug});
+        activityPage = new ObjectMapper().readValue(FileUtils.readFileToByteArray(new File("src/test/resources/bitbucket/delete/activityPageCase3.json")), ActivityPage.class);
         assertThat(bitbucketServerPullRequestDecorator.getCommentsToDelete("susi.sonar", activityPage).size() , is(0));
 
-        Activity activityWithCommentCorrectSlug = new Activity();
-        activityWithCommentCorrectSlug.setId(123);
-        Comment comment2 = new Comment();
-        comment2.setId(1000);
-        User authorSusiSonar = new User();
-        authorSusiSonar.setName("Susi Sonar");
-        authorSusiSonar.setSlug("susi.sonar");
-        comment2.setAuthor(authorSusiSonar);
-        activityWithCommentCorrectSlug.setComment(comment2);
-        activityPage.setValues(new Activity[] {activityWithoutComment, activityWithCommentWrongSlug, activityWithCommentCorrectSlug});
+        activityPage = new ObjectMapper().readValue(FileUtils.readFileToByteArray(new File("src/test/resources/bitbucket/delete/activityPageCase4.json")), ActivityPage.class);
         assertThat(bitbucketServerPullRequestDecorator.getCommentsToDelete("susi.sonar", activityPage).size() , is(1));
     }
 

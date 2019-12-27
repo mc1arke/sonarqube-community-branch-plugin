@@ -23,40 +23,40 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Diff implements Serializable
+public class DiffLine implements Serializable
 {
     @JsonProperty
-    private String fromHash;
+    private int source;
 
     @JsonProperty
-    private String toHash;
+    private int destination;
 
     @JsonProperty
-    private List<Hunk> hunks;
+    private String line;
 
     @JsonProperty
-    private File source;
+    private boolean truncated;
 
     @JsonProperty
-    private File destination;
+    private List<Integer> commentIds;
 
-    public String getFromHash() {
-        return fromHash;
-    }
-
-    public String getToHash() {
-        return toHash;
-    }
-
-    public List<Hunk> getHunks() {
-        return hunks;
-    }
-
-    public File getSource() {
+    public int getSource() {
         return source;
     }
 
-    public File getDestination() {
+    public int getDestination() {
         return destination;
+    }
+
+    public String getLine() {
+        return line;
+    }
+
+    public boolean isTruncated() {
+        return truncated;
+    }
+
+    public List<Integer> getCommentIds() {
+        return commentIds;
     }
 }

@@ -20,7 +20,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
 import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.*;
 import org.apache.commons.lang.StringUtils;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
@@ -55,7 +54,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.sonar.api.rule.Severity.*;
 public class AnalysisDetails {
 
     private static final List<String> CLOSED_ISSUE_STATUS = Arrays.asList(Issue.STATUS_CLOSED, Issue.STATUS_RESOLVED);
@@ -188,13 +186,11 @@ public class AnalysisDetails {
                 );
 
         Long effort = issue.effortInMinutes();
-        if (effort != null)
-        {
+        if (effort != null) {
             document.addChild(new Paragraph(new Text(String.format("Duration (min): %s", effort))));
         }
         String resolution = issue.resolution();
-        if (StringUtils.isNotBlank(resolution))
-        {
+        if (StringUtils.isNotBlank(resolution)) {
             document.addChild(new Paragraph(new Text(String.format("Resolution: %s ", resolution))));
         }
         return formatterFactory.documentFormatter().format(document, formatterFactory);
@@ -202,10 +198,9 @@ public class AnalysisDetails {
 
     public String getSCMPathForIssue(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
         final Component component = componentIssue.getComponent();
-        String scmPath = "";
-        if (Component.Type.FILE.equals(component.getType()))
-        {
-            scmPath = component.getReportAttributes().getScmPath().orElse("");
+        String scmPath = StringUtils.EMPTY;
+        if (Component.Type.FILE.equals(component.getType())) {
+            scmPath = component.getReportAttributes().getScmPath().orElse(StringUtils.EMPTY);
         }
         return scmPath;
     }

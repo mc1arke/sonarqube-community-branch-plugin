@@ -43,31 +43,17 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.sonar.api.ce.posttask.Analysis;
-import org.sonar.api.ce.posttask.Branch;
-import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
-import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
-import org.sonar.api.measures.CoreMetrics;
-import org.sonar.api.platform.Server;
-import org.sonar.api.rules.RuleType;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
-import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
-import org.sonar.ce.task.projectanalysis.measure.Measure;
-import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
-import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 import org.sonar.core.issue.DefaultIssue;
-import org.sonar.server.measure.Rating;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.sonar.api.rule.Severity.*;
 
 public class BitbucketServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
@@ -76,7 +62,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());
 
-    private static final String NEW_LINE = "\n";
     private static final String REST_API = "/rest/api/1.0/";
     private static final String USER_PR_API = "users/%s/repos/%s/pull-requests/%s/";
     private static final String PROJECT_PR_API = "projects/%s/repos/%s/pull-requests/%s/";
@@ -94,23 +79,10 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     private static final String FULL_PR_DIFF_USER_API = "%s" + REST_API + USER_PR_API + DIFF_API;
 
     private final ConfigurationRepository configurationRepository;
-    private final Server server;
-    private final MetricRepository metricRepository;
-    private final MeasureRepository measureRepository;
-    private final TreeRootHolder treeRootHolder;
-    private final PostAnalysisIssueVisitor postAnalysisIssueVisitor;
 
-    public BitbucketServerPullRequestDecorator(Server server, ConfigurationRepository configurationRepository,
-                                               MeasureRepository measureRepository, MetricRepository metricRepository,
-                                               TreeRootHolder treeRootHolder,
-                                               PostAnalysisIssueVisitor postAnalysisIssueVisitor) {
+    public BitbucketServerPullRequestDecorator(ConfigurationRepository configurationRepository) {
         super();
         this.configurationRepository = configurationRepository;
-        this.server = server;
-        this.measureRepository = measureRepository;
-        this.metricRepository = metricRepository;
-        this.treeRootHolder = treeRootHolder;
-        this.postAnalysisIssueVisitor = postAnalysisIssueVisitor;
     }
 
     @Override
@@ -138,14 +110,11 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 commentUrl = String.format(FULL_PR_COMMENT_USER_API, hostURL, userSlug, repositorySlug, pullRequestId);
                 diffUrl = String.format(FULL_PR_DIFF_USER_API, hostURL, userSlug, repositorySlug, pullRequestId);
                 activityUrl = String.format(FULL_PR_ACTIVITIES_USER_API, hostURL, userSlug, repositorySlug, pullRequestId, 250);
-            }
-            else if (StringUtils.isNotBlank(projectKey)) {
+            } else if (StringUtils.isNotBlank(projectKey)) {
                 commentUrl = String.format(FULL_PR_COMMENT_API, hostURL, projectKey, repositorySlug, pullRequestId);
                 diffUrl = String.format(FULL_PR_DIFF_API, hostURL, projectKey, repositorySlug, pullRequestId);
                 activityUrl = String.format(FULL_PR_ACTIVITIES_API, hostURL, projectKey, repositorySlug, pullRequestId, 250);
-            }
-            else
-            {
+            } else {
                 throw new IllegalStateException("Property userSlug or projectKey needs to be set.");
             }
             LOGGER.info(String.format("Comment URL is: %s ", commentUrl));
@@ -193,12 +162,10 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 .filter(diff -> issuePath.equals(diff.getDestination().getToString()))
                 .collect(Collectors.toList());
 
-        if (!diffs.isEmpty())
-        {
+        if (!diffs.isEmpty()) {
             for (Diff diff : diffs) {
                 List<Hunk> hunks = diff.getHunks();
-                if (!hunks.isEmpty())
-                {
+                if (!hunks.isEmpty()) {
                     issueType = getExtractIssueType(issueLine, issueType, hunks);
                 }
             }
@@ -210,7 +177,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         for (Hunk hunk : hunks) {
             List<Segment> segments = hunk.getSegments();
             for (Segment segment : segments) {
-                Optional<Line> optionalLine = segment.getLines().stream().filter(line -> line.getDestination() == issueLine).findFirst();
+                Optional<DiffLine> optionalLine = segment.getLines().stream().filter(diffLine -> diffLine.getDestination() == issueLine).findFirst();
                 if (optionalLine.isPresent())
                 {
                     issueType = segment.getType();
@@ -251,7 +218,8 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
     private boolean deleteComment(String commentUrl, Map<String, String> headers, Comment comment) throws IOException {
         boolean commentDeleted = false;
-        HttpDelete httpDelete = new HttpDelete(String.format(commentUrl + "/%s?version=%s", comment.getId(), comment.getVersion()));
+        String deleteCommentUrl = commentUrl + "/%s?version=%s";
+        HttpDelete httpDelete = new HttpDelete(String.format(deleteCommentUrl, comment.getId(), comment.getVersion()));
         LOGGER.info("delete " + comment.getId() + " " + comment.getVersion());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpDelete.addHeader(entry.getKey(), entry.getValue());
@@ -280,8 +248,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
     protected <T> T getPage(String diffUrl, Map<String, String> headers, Class<T> type) {
         T page = null;
-        try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault())
-        {
+        try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault()) {
             LOGGER.info(String.format("Getting page %s", type));
             HttpGet httpGet = new HttpGet(diffUrl);
             for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -315,8 +282,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         httpPost.setEntity(requestEntity);
         LOGGER.info(EntityUtils.toString(requestEntity));
         if (sendRequest) {
-            try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault())
-            {
+            try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault()) {
                 HttpResponse httpResponse = closeableHttpClient.execute(httpPost);
                 if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 201) {
                     HttpEntity entity = httpResponse.getEntity();
@@ -332,28 +298,9 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         return commentPosted;
     }
 
-    private static String pluralOf(long value, String singleLabel, String multiLabel) {
-        return value + " " + (1 == value ? singleLabel : multiLabel);
-    }
-
-
     private static String getMandatoryProperty(String propertyName, Configuration configuration) {
         return configuration.get(propertyName).orElseThrow(() -> new IllegalStateException(
                 String.format("%s must be specified in the project configuration", propertyName)));
-    }
-
-    private static String format(QualityGate.Condition condition) {
-        org.sonar.api.measures.Metric<?> metric = CoreMetrics.getMetric(condition.getMetricKey());
-        if (metric.getType() == org.sonar.api.measures.Metric.ValueType.RATING) {
-            return String
-                    .format("%s %s (%s %s)", Rating.valueOf(Integer.parseInt(condition.getValue())), metric.getName(),
-                            condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is worse than" :
-                            "is better than", Rating.valueOf(Integer.parseInt(condition.getErrorThreshold())));
-        } else {
-            return String.format("%s %s (%s %s)", condition.getStatus().equals(QualityGate.EvaluationStatus.NO_VALUE) ? "0" : condition.getValue(), metric.getName(),
-                                 condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
-                                 "is less than", condition.getErrorThreshold());
-        }
     }
 
     @Override
