@@ -22,6 +22,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.CommunityBranchEditionProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.BitbucketServerPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
@@ -46,6 +47,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
     private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
     private static final String GENERAL = "General";
     private static final String BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Bitbucket";
+    private static final String GITLAB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Gitlab";
 
     @Override
     public String getName() {
@@ -86,7 +88,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
             context.addExtensions(
                     PropertyDefinition.builder("sonar.pullrequest.provider").category(PULL_REQUEST_CATEGORY_LABEL)
                             .subCategory("General").onlyOnQualifiers(Qualifiers.PROJECT).name("Provider")
-                            .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer").build(),
+                            .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer", "GitlabServer").build(),
 
                     PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
                             .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
@@ -146,7 +148,36 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                             .onlyOnQualifiers(Qualifiers.PROJECT).name("ProjectKey").description("This is used for '/projects' repos. Only set one User Slug or ProjectKey!")
-                            .type(PropertyType.STRING).index(1).build());
+                            .type(PropertyType.STRING).index(1).build(),
+
+                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_URL)
+                            .category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT)
+                            .name("URL for Gitlab (Server or Cloud) instance")
+                            .description("Example: https://ci-server.local/gitlab")
+                            .type(PropertyType.STRING)
+                            .defaultValue("https://gitlab.com")
+                            .build(),
+
+                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_TOKEN)
+                            .category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT)
+                            .name("The token for the user to comment to the PR on Gitlab (Server or Cloud) instance")
+                            .description("Token used for authentication and commenting to your Gitlab instance")
+                            .type(PropertyType.STRING)
+                            .build(),
+
+                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG)
+                            .category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT)
+                            .name("Repository Slug for the Gitlab (Server or Cloud) instance")
+                            .description("The repository slug can be eiter in the form of user/repo or it can be the Project ID")
+                            .type(PropertyType.STRING)
+                            .build()
+            );
         }
     }
 
