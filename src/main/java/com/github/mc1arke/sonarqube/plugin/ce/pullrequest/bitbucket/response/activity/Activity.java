@@ -24,41 +24,30 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Activity implements Serializable {
-    @JsonProperty
-    private int id;
 
-    @JsonProperty
-    private User user;
+    private final int id;
 
-    @JsonProperty
-    private Comment comment;
+    private final User user;
+
+    private final Comment comment;
 
     @JsonCreator
-    public Activity() {
-        super();
+    public Activity(@JsonProperty("id") final int id, @JsonProperty("user") final User user, @JsonProperty("comment") final Comment comment)
+    {
+        this.id = id;
+        this.user = user;
+        this.comment = comment;
     }
 
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public User getUser() {
         return user;
     }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
-
     public Comment getComment() {
         return comment;
-    }
-
-    public void setComment(Comment comment) {
-        this.comment = comment;
     }
 }

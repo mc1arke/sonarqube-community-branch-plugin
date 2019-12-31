@@ -24,22 +24,21 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Comment implements Serializable {
-    @JsonProperty
-    private int id;
+    private final int id;
 
-    @JsonProperty
-    private int version;
+    private final int version;
 
-    @JsonProperty
-    private String text;
+    private final String text;
 
-    @JsonProperty
-    private User author;
+    private final User author;
 
     @JsonCreator
-    public Comment()
+    public Comment(@JsonProperty("id") final int id, @JsonProperty("version") final int version, @JsonProperty("text") final String text, @JsonProperty("author") final User author)
     {
-        super();
+        this.id = id;
+        this.version = version;
+        this.text = text;
+        this.author = author;
     }
 
     public int getId() {

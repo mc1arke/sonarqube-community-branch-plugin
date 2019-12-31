@@ -25,15 +25,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class User implements Serializable {
     @JsonProperty
-    private String name;
+    private final String name;
 
     @JsonProperty
-    private String slug;
+    private final String slug;
 
     @JsonCreator
-    public User()
+    public User(@JsonProperty("name") final String name, @JsonProperty("slug") final String slug)
     {
-        super();
+        this.name = name;
+        this.slug = slug;
     }
 
     public String getName() {

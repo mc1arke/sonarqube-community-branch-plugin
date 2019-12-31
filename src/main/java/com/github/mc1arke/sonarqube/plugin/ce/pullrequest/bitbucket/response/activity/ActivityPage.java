@@ -24,28 +24,27 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ActivityPage implements Serializable {
-    @JsonProperty
-    private int size;
+    private final int size;
 
-    @JsonProperty
-    private int limit;
+    private final int limit;
 
-    @JsonProperty
-    private boolean isLastPage;
+    private final boolean isLastPage;
 
-    @JsonProperty
-    private int start;
+    private final int start;
 
-    @JsonProperty
-    private int nextPageStart;
+    private final int nextPageStart;
 
-    @JsonProperty
-    private Activity[] values;
+    private final Activity[] values;
 
     @JsonCreator
-    public ActivityPage()
+    public ActivityPage(@JsonProperty("size") final int size, @JsonProperty("limit") final int limit, @JsonProperty("isLastPage") final boolean isLastPage, @JsonProperty("start") final int start, @JsonProperty("nextPageStart") final int nextPageStart, @JsonProperty("values") final Activity[] values)
     {
-        super();
+        this.size = size;
+        this.limit = limit;
+        this.isLastPage = isLastPage;
+        this.start = start;
+        this.nextPageStart = nextPageStart;
+        this.values = values;
     }
 
     public int getSize() {

@@ -21,24 +21,26 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.di
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Segment implements Serializable {
-    @JsonProperty
-    private String type;
+    private final String type;
 
-    @JsonProperty()
-    private List<DiffLine> lines;
+    private final List<DiffLine> lines;
 
-    @JsonProperty
-    private boolean truncated;
+    private final boolean truncated;
+
+    @JsonCreator
+    public Segment(@JsonProperty("type") final String type, @JsonProperty("lines") final List<DiffLine> lines, @JsonProperty("truncated") final boolean truncated)
+    {
+        this.type = type;
+        this.lines = lines;
+        this.truncated = truncated;
+    }
 
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public List<DiffLine> getLines() {

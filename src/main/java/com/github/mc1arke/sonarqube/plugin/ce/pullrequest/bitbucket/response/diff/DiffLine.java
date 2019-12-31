@@ -21,23 +21,29 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.di
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DiffLine implements Serializable {
-    @JsonProperty
-    private int source;
+    private final int source;
 
-    @JsonProperty
-    private int destination;
+    private final int destination;
 
-    @JsonProperty
-    private String line;
+    private final String line;
 
-    @JsonProperty
-    private boolean truncated;
+    private final boolean truncated;
 
-    @JsonProperty
-    private List<Integer> commentIds;
+    private final List<Integer> commentIds;
+
+    @JsonCreator
+    public DiffLine(@JsonProperty("source") int source, @JsonProperty("destination") int destination, @JsonProperty("line") String line, @JsonProperty("truncated") boolean truncated, @JsonProperty("commentIds") List<Integer> commentIds)
+    {
+        this.source = source;
+        this.destination = destination;
+        this.line = line;
+        this.truncated = truncated;
+        this.commentIds = commentIds;
+    }
 
     public int getSource() {
         return source;

@@ -21,23 +21,29 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.di
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class File implements Serializable {
-    @JsonProperty
-    private String parent;
+    private final String parent;
 
-    @JsonProperty
-    private String name;
+    private final String name;
 
-    @JsonProperty
-    private String extension;
+    private final String extension;
 
-    @JsonProperty
-    private String toString;
+    private final String toString;
 
-    @JsonProperty
-    private List<String> components;
+    private final List<String> components;
+
+    @JsonCreator
+    public File(@JsonProperty("parent") final String parent, @JsonProperty("name") final String name, @JsonProperty("extension") final String extension, @JsonProperty("toString") final String toString, @JsonProperty("components") final List<String> components)
+    {
+        this.parent = parent;
+        this.name = name;
+        this.extension = extension;
+        this.toString = toString;
+        this.components = components;
+    }
 
     public String getParent() {
         return parent;

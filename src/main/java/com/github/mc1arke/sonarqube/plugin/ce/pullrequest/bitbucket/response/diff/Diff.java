@@ -21,23 +21,29 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.di
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Diff implements Serializable {
-    @JsonProperty
-    private String fromHash;
+    private final String fromHash;
 
-    @JsonProperty
-    private String toHash;
+    private final String toHash;
 
-    @JsonProperty
-    private List<Hunk> hunks;
+    private final List<Hunk> hunks;
 
-    @JsonProperty
-    private File source;
+    private final File source;
 
-    @JsonProperty
-    private File destination;
+    private final File destination;
+
+    @JsonCreator
+    public Diff(@JsonProperty("fromHash") String fromHash, @JsonProperty("toHash") String toHash, @JsonProperty("hunks") List<Hunk> hunks, @JsonProperty("source") File source, @JsonProperty("destination") File destination)
+    {
+        this.fromHash = fromHash;
+        this.toHash = toHash;
+        this.hunks = hunks;
+        this.source = source;
+        this.destination = destination;
+    }
 
     public String getFromHash() {
         return fromHash;

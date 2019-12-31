@@ -21,26 +21,32 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.di
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Hunk implements Serializable {
-    @JsonProperty
-    private String context;
+    private final String context;
 
-    @JsonProperty
-    private int sourceLine;
+    private final int sourceLine;
 
-    @JsonProperty
-    private int sourceSpan;
+    private final int sourceSpan;
 
-    @JsonProperty
-    private int destinationLine;
+    private final int destinationLine;
 
-    @JsonProperty
-    private int destinationSpan;
+    private final int destinationSpan;
 
-    @JsonProperty
-    private List<Segment> segments;
+    private final List<Segment> segments;
+
+    @JsonCreator
+    public Hunk(@JsonProperty("context") final String context, @JsonProperty("sourceLine") final int sourceLine, @JsonProperty("sourceSpan") final int sourceSpan, @JsonProperty("destinationLine") final int destinationLine, @JsonProperty("destinationSpan") final int destinationSpan, @JsonProperty("segments") final List<Segment> segments)
+    {
+        this.context = context;
+        this.sourceLine = sourceLine;
+        this.sourceSpan = sourceSpan;
+        this.destinationLine = destinationLine;
+        this.destinationSpan = destinationSpan;
+        this.segments = segments;
+    }
 
     public String getContext() {
         return context;
