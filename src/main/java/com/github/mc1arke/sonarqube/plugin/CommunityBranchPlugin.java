@@ -50,7 +50,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
     }
 
     @Override
-    public void load(CoreExtension.Context context) {
+    public void load(final CoreExtension.Context context) {
         if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityReportAnalysisComponentProvider.class, CommunityBranchEditionProvider.class);
         } else if (SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
@@ -80,16 +80,6 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .name("Provider")
                         .type(PropertyType.SINGLE_SELECT_LIST)
                         .options("Github", "BitbucketServer", "BitbucketCloud").build(),
-
-                PropertyDefinition.builder(CommunityBranchPluginConstants.IMAGE_URL_BASE)
-                        .category(PULL_REQUEST_CATEGORY_LABEL)
-                        .subCategory(GENERAL)
-                        .onQualifiers(Qualifiers.PROJECT)
-                        .name("Base image URL")
-                        .defaultValue("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/pr-decoration/src/main/resources/pr-decoration-images")
-                        .description("Used to fetch images for analysis comments")
-                        .type(PropertyType.STRING)
-                        .build(),
 
                 PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
@@ -180,7 +170,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
     }
 
     @Override
-    public void define(Plugin.Context context) {
+    public void define(final Plugin.Context context) {
         if (SonarQubeSide.SCANNER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
                                   CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class);

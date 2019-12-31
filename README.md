@@ -23,6 +23,11 @@ Either build the project or [download a compatible release version of the plugin
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
 * __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Bitbucket Server, and only as an experimental feature
 
+# Properties
+Property key | Description 
+--- | ---
+com.github.mc1arke.sonarqube.plugin.branch.image-url-base | Can be set in `sonar.properties` file on the SonarQube server and is used to load the images for the PR comments. [Default base image location link.](https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images)
+
 ## Bitbucket Server
 To enable setting of several properties in SonarQube on project level is required.
 
