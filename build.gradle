@@ -29,9 +29,6 @@ group 'com.github.mc1arke.sonarqube.plugin'
 
 repositories {
     mavenCentral()
-    maven {
-        url 'https://dl.bintray.com/americanexpress/maven/'
-    }
     ivy {
         url 'https://binaries.sonarsource.com/'
         patternLayout({a ->
@@ -64,8 +61,6 @@ dependencies {
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.13.2'
     testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.24.1'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.62'
-    compile 'io.aexp.nodes.graphql:nodes:0.5.0'
 }
 
 

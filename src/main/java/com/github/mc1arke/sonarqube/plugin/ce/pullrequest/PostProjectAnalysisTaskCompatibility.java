@@ -29,7 +29,6 @@ public interface PostProjectAnalysisTaskCompatibility extends SonarqubeCompatibi
         interface PostProjectAnalysisTaskCompatibilityMinor0
                 extends PostProjectAnalysisTaskCompatibilityMajor8, SonarqubeCompatibility.Major8.Minor0 {
 
-            //forward compatibility for SonarQube 8.0
             String getDescription();
 
             /**
