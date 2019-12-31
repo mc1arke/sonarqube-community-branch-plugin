@@ -23,8 +23,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Diff implements Serializable
-{
+public class Diff implements Serializable {
     @JsonProperty
     private String fromHash;
 

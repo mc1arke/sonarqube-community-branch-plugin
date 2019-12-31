@@ -23,8 +23,7 @@ import java.io.Serializable;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class User implements Serializable
-{
+public class User implements Serializable {
     @JsonProperty
     private String name;
 

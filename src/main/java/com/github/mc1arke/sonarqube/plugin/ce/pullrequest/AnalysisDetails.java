@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginConstants;
 import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
 import org.apache.commons.lang.StringUtils;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
@@ -121,7 +122,7 @@ public class AnalysisDetails {
 
         List<QualityGate.Condition> failedConditions = findFailedConditions();
 
-        String baseImageUrl = configuration.get("sonar.pullrequest.base.image.url")
+        String baseImageUrl = configuration.get(CommunityBranchPluginConstants.IMAGE_URL_BASE)
                 .orElse("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images");
 
         Document document = new Document(new Paragraph((QualityGate.Status.OK == getQualityGateStatus() ?
@@ -176,7 +177,7 @@ public class AnalysisDetails {
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
         final DefaultIssue issue = componentIssue.getIssue();
 
-        String baseImageUrl = configuration.get("sonar.pullrequest.base.image.url")
+        String baseImageUrl = configuration.get(CommunityBranchPluginConstants.IMAGE_URL_BASE)
                 .orElse("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images");
 
         Document document = new Document(

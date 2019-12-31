@@ -73,22 +73,26 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .category(CoreProperties.CATEGORY_GENERAL).subCategory(CoreProperties.SUBCATEGORY_BRANCHES)
                         .defaultValue(CommunityBranchConfigurationLoader.DEFAULT_BRANCH_REGEX).build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.provider").subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder("sonar.pullrequest.provider")
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(GENERAL)
-                        .onlyOnQualifiers(Qualifiers.PROJECT).name("Provider").type(PropertyType.SINGLE_SELECT_LIST)
+                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                        .name("Provider")
+                        .type(PropertyType.SINGLE_SELECT_LIST)
                         .options("Github", "BitbucketServer", "BitbucketCloud").build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.base.image.url")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
-                        .onlyOnQualifiers(Qualifiers.PROJECT)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.IMAGE_URL_BASE)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(GENERAL)
+                        .onQualifiers(Qualifiers.PROJECT)
                         .name("Base image URL")
                         .defaultValue("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/pr-decoration/src/main/resources/pr-decoration-images")
-                        .description("Default: https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images")
+                        .description("Used to fetch images for analysis comments")
                         .type(PropertyType.STRING)
                         .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.summary.comment.enabled")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(GENERAL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("Enable summary comment")
@@ -97,8 +101,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .defaultValue("true")
                         .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.file.comment.enabled")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_FILE_COMMENT_ENABLED)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(GENERAL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("Enable file comment")
@@ -107,8 +111,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .defaultValue("true")
                         .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.delete.comments.enabled")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_DELETE_COMMENTS_ENABLED)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(GENERAL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("Enable deleting comments")
@@ -117,14 +121,17 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .defaultValue("false")
                         .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.bitbucket.url").subCategory(PULL_REQUEST_CATEGORY_LABEL)
-                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT)
-                        .name("URL for Bitbucket (Server or Cloud) instance").description(
-                        "Example: http://bitbucket.local")
-                        .type(PropertyType.STRING).build(),
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_URL)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
+                        .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
+                        .onQualifiers(Qualifiers.PROJECT)
+                        .name("URL for Bitbucket (Server or Cloud) instance")
+                        .description("Example: http://bitbucket.local")
+                        .type(PropertyType.STRING)
+                        .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.bitbucket.token")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_TOKEN)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onQualifiers(Qualifiers.PROJECT)
                         .name("The token for the user to comment to the PR on Bitbucket (Server or Cloud) instance")
@@ -132,8 +139,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .type(PropertyType.STRING)
                         .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.bitbucket.comment.userSlug")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("Comment User Slug")
@@ -141,8 +148,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .type(PropertyType.STRING)
                         .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.bitbucket.repositorySlug")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("Repository Slug")
@@ -150,24 +157,26 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .type(PropertyType.STRING)
                         .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.bitbucket.userSlug")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_USER_SLUG)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("User Slug")
                         .description("This is used for '/users' repos. Only set one User Slug or ProjectKey!")
                         .type(PropertyType.STRING)
+                        .index(2)
                         .build(),
 
-                PropertyDefinition.builder("sonar.pullrequest.bitbucket.projectKey")
-                        .subCategory(PULL_REQUEST_CATEGORY_LABEL)
+                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_PROJECT_KEY)
+                        .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("ProjectKey")
                         .description("This is used for '/projects' repos. Only set one User Slug or ProjectKey!")
                         .type(PropertyType.STRING)
+                        .index(1)
                         .build()
-                             );
+        );
     }
 
     @Override

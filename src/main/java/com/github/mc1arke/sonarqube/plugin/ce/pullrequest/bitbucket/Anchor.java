@@ -23,8 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
-public class Anchor implements Serializable
-{
+public class Anchor implements Serializable {
     @JsonProperty
     private int line;
 

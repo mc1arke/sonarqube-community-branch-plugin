@@ -23,8 +23,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class File implements Serializable
-{
+public class File implements Serializable {
     @JsonProperty
     private String parent;
 

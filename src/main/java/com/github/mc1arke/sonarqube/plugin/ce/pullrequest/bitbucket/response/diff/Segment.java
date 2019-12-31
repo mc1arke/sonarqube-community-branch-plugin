@@ -23,8 +23,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Segment implements Serializable
-{
+public class Segment implements Serializable {
     @JsonProperty
     private String type;
 

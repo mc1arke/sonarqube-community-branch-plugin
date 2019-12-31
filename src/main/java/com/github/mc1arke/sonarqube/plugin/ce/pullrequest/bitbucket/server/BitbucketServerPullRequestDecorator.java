@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginConstants;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
@@ -29,7 +30,11 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.Anchor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.FileComment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.SummaryComment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity.Comment;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.*;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.Diff;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.DiffLine;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.DiffPage;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.Hunk;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.Segment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -91,17 +96,17 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
         try {
             Configuration configuration = configurationRepository.getConfiguration();
-            final String hostURL = getMandatoryProperty("sonar.pullrequest.bitbucket.url", configuration);
-            final String apiToken = getMandatoryProperty("sonar.pullrequest.bitbucket.token", configuration);
-            final String repositorySlug = getMandatoryProperty("sonar.pullrequest.bitbucket.repositorySlug", configuration);
+            final String hostURL = getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_URL, configuration);
+            final String apiToken = getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_TOKEN, configuration);
+            final String repositorySlug = getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG, configuration);
             final String pullRequestId = analysisDetails.getBranchName();
-            final String userSlug = configuration.get("sonar.pullrequest.bitbucket.userSlug").orElse(StringUtils.EMPTY);
-            final String projectKey = configuration.get("sonar.pullrequest.bitbucket.projectKey").orElse(StringUtils.EMPTY);
-            final String commentUserSlug = configuration.get("sonar.pullrequest.bitbucket.comment.userSlug").orElse(StringUtils.EMPTY);
+            final String userSlug = configuration.get(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_USER_SLUG).orElse(StringUtils.EMPTY);
+            final String projectKey = configuration.get(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_PROJECT_KEY).orElse(StringUtils.EMPTY);
+            final String commentUserSlug = configuration.get(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG).orElse(StringUtils.EMPTY);
 
-            final boolean summaryCommentEnabled = Boolean.parseBoolean(getMandatoryProperty("sonar.pullrequest.summary.comment.enabled", configuration));
-            final boolean fileCommentEnabled = Boolean.parseBoolean(getMandatoryProperty("sonar.pullrequest.file.comment.enabled", configuration));
-            final boolean deleteCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty("sonar.pullrequest.delete.comments.enabled", configuration));
+            final boolean summaryCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_COMMENT_SUMMARY_ENABLED, configuration));
+            final boolean fileCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_FILE_COMMENT_ENABLED, configuration));
+            final boolean deleteCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_DELETE_COMMENTS_ENABLED, configuration));
 
             final String commentUrl;
             final String activityUrl;
@@ -115,7 +120,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 diffUrl = String.format(FULL_PR_DIFF_API, hostURL, projectKey, repositorySlug, pullRequestId);
                 activityUrl = String.format(FULL_PR_ACTIVITIES_API, hostURL, projectKey, repositorySlug, pullRequestId, 250);
             } else {
-                throw new IllegalStateException("Property userSlug or projectKey needs to be set.");
+                throw new IllegalStateException(String.format("Property userSlug (%s) for /user repo or projectKey (%s) for /projects repo needs to be set.", CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_USER_SLUG, CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_PROJECT_KEY));
             }
             LOGGER.info(String.format("Comment URL is: %s ", commentUrl));
             LOGGER.info(String.format("Activity URL is: %s ", activityUrl));

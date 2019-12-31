@@ -23,8 +23,7 @@ import java.io.Serializable;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ActivityPage implements Serializable
-{
+public class ActivityPage implements Serializable {
     @JsonProperty
     private int size;
 

@@ -23,8 +23,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Hunk implements Serializable
-{
+public class Hunk implements Serializable {
     @JsonProperty
     private String context;
 

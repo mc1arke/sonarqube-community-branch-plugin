@@ -29,7 +29,7 @@ import static org.hamcrest.core.Is.is;
 public class BitbucketServerPullRequestDecoratorTest {
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().port(8089));
+    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig().port(8089));
 
     @InjectMocks
     private BitbucketServerPullRequestDecorator bitbucketServerPullRequestDecorator;
