@@ -25,11 +25,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SummaryComment implements Serializable {
     @JsonProperty
-    private String text;
+    private final String text;
 
     @JsonCreator
-    public SummaryComment(String text)
-    {
+    public SummaryComment(final String text) {
         super();
         this.text = text;
     }

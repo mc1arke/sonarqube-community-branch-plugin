@@ -20,6 +20,8 @@ package com.github.mc1arke.sonarqube.plugin;
 
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityBranchEditionProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.BitbucketServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
@@ -81,7 +83,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .type(PropertyType.SINGLE_SELECT_LIST)
                         .options("Github", "BitbucketServer", "BitbucketCloud").build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)
+                PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(GENERAL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
@@ -91,7 +93,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .defaultValue("true")
                         .build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_FILE_COMMENT_ENABLED)
+                PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_FILE_COMMENT_ENABLED)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(GENERAL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
@@ -101,7 +103,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .defaultValue("true")
                         .build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_DELETE_COMMENTS_ENABLED)
+                PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_DELETE_COMMENTS_ENABLED)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(GENERAL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
@@ -111,7 +113,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .defaultValue("false")
                         .build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_URL)
+                PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onQualifiers(Qualifiers.PROJECT)
@@ -120,7 +122,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .type(PropertyType.STRING)
                         .build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_TOKEN)
+                PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_TOKEN)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onQualifiers(Qualifiers.PROJECT)
@@ -129,7 +131,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .type(PropertyType.STRING)
                         .build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG)
+                PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
@@ -138,7 +140,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .type(PropertyType.STRING)
                         .build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG)
+                PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
@@ -147,7 +149,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .type(PropertyType.STRING)
                         .build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_USER_SLUG)
+                PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_SLUG)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)
@@ -157,7 +159,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .index(2)
                         .build(),
 
-                PropertyDefinition.builder(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_PROJECT_KEY)
+                PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY)
                         .category(PULL_REQUEST_CATEGORY_LABEL)
                         .subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                         .onlyOnQualifiers(Qualifiers.PROJECT)

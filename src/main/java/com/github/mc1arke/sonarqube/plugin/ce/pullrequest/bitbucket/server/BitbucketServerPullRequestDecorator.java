@@ -20,7 +20,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginConstants;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
@@ -83,6 +82,18 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     private static final String FULL_PR_DIFF_API = "%s" + REST_API + PROJECT_PR_API + DIFF_API;
     private static final String FULL_PR_DIFF_USER_API = "%s" + REST_API + USER_PR_API + DIFF_API;
 
+    public static final String PULL_REQUEST_BITBUCKET_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.url";
+
+    public static final String PULL_REQUEST_BITBUCKET_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.token";
+
+    public static final String PULL_REQUEST_BITBUCKET_PROJECT_KEY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.projectKey";
+
+    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.userSlug";
+
+    public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.repositorySlug";
+
+    public static final String PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.comment.userSlug";
+
     private final ConfigurationRepository configurationRepository;
 
     public BitbucketServerPullRequestDecorator(ConfigurationRepository configurationRepository) {
@@ -96,17 +107,17 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
         try {
             Configuration configuration = configurationRepository.getConfiguration();
-            final String hostURL = getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_URL, configuration);
-            final String apiToken = getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_TOKEN, configuration);
-            final String repositorySlug = getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG, configuration);
+            final String hostURL = getMandatoryProperty(PULL_REQUEST_BITBUCKET_URL, configuration);
+            final String apiToken = getMandatoryProperty(PULL_REQUEST_BITBUCKET_TOKEN, configuration);
+            final String repositorySlug = getMandatoryProperty(PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG, configuration);
             final String pullRequestId = analysisDetails.getBranchName();
-            final String userSlug = configuration.get(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_USER_SLUG).orElse(StringUtils.EMPTY);
-            final String projectKey = configuration.get(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_PROJECT_KEY).orElse(StringUtils.EMPTY);
-            final String commentUserSlug = configuration.get(CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG).orElse(StringUtils.EMPTY);
+            final String userSlug = configuration.get(PULL_REQUEST_BITBUCKET_USER_SLUG).orElse(StringUtils.EMPTY);
+            final String projectKey = configuration.get(PULL_REQUEST_BITBUCKET_PROJECT_KEY).orElse(StringUtils.EMPTY);
+            final String commentUserSlug = configuration.get(PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG).orElse(StringUtils.EMPTY);
 
-            final boolean summaryCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_COMMENT_SUMMARY_ENABLED, configuration));
-            final boolean fileCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_FILE_COMMENT_ENABLED, configuration));
-            final boolean deleteCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty(CommunityBranchPluginConstants.PULL_REQUEST_DELETE_COMMENTS_ENABLED, configuration));
+            final boolean summaryCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED, configuration));
+            final boolean fileCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_FILE_COMMENT_ENABLED, configuration));
+            final boolean deleteCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED, configuration));
 
             final String commentUrl;
             final String activityUrl;
@@ -120,7 +131,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 diffUrl = String.format(FULL_PR_DIFF_API, hostURL, projectKey, repositorySlug, pullRequestId);
                 activityUrl = String.format(FULL_PR_ACTIVITIES_API, hostURL, projectKey, repositorySlug, pullRequestId, 250);
             } else {
-                throw new IllegalStateException(String.format("Property userSlug (%s) for /user repo or projectKey (%s) for /projects repo needs to be set.", CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_USER_SLUG, CommunityBranchPluginConstants.PULL_REQUEST_BITBUCKET_PROJECT_KEY));
+                throw new IllegalStateException(String.format("Property userSlug (%s) for /user repo or projectKey (%s) for /projects repo needs to be set.", PULL_REQUEST_BITBUCKET_USER_SLUG, PULL_REQUEST_BITBUCKET_PROJECT_KEY));
             }
             LOGGER.info(String.format("Comment URL is: %s ", commentUrl));
             LOGGER.info(String.format("Activity URL is: %s ", activityUrl));
@@ -142,7 +153,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 LOGGER.info(issue.toString());
 
                 String analysisIssueSummary = analysisDetails.createAnalysisIssueSummary(componentIssue, new MarkdownFormatterFactory());
-                String issuePath = analysisDetails.getSCMPathForIssue(componentIssue);
+                String issuePath = analysisDetails.getSCMPathForIssue(componentIssue).orElse(StringUtils.EMPTY);
                 int issueLine = issue.getLine() != null ? issue.getLine() : 0;
                 String issueType = getIssueType(diffPage, issuePath, issueLine);
                 String fileType = "TO";

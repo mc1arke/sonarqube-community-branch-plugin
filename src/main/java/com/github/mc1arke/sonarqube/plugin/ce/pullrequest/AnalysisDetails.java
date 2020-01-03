@@ -19,7 +19,6 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
-import com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginConstants;
 import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
 import org.apache.commons.lang.StringUtils;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
@@ -27,6 +26,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactor
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Image;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.ListItem;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Node;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
 import org.sonar.api.ce.posttask.Analysis;
@@ -67,6 +67,8 @@ public class AnalysisDetails {
                           new DuplicationMapping(BigDecimal.valueOf(5), "5"),
                           new DuplicationMapping(BigDecimal.TEN, "10"),
                           new DuplicationMapping(BigDecimal.valueOf(20), "20"));
+
+    public static final String IMAGE_URL_BASE = "com.github.mc1arke.sonarqube.plugin.branch.image-url-base";
 
     private final BranchDetails branchDetails;
     private final MeasuresHolder measuresHolder;
@@ -122,7 +124,7 @@ public class AnalysisDetails {
 
         List<QualityGate.Condition> failedConditions = findFailedConditions();
 
-        String baseImageUrl = configuration.get(CommunityBranchPluginConstants.IMAGE_URL_BASE)
+        String baseImageUrl = configuration.get(IMAGE_URL_BASE)
                 .orElse("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images");
 
         Document document = new Document(new Paragraph((QualityGate.Status.OK == getQualityGateStatus() ?
@@ -177,35 +179,32 @@ public class AnalysisDetails {
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
         final DefaultIssue issue = componentIssue.getIssue();
 
-        String baseImageUrl = configuration.get(CommunityBranchPluginConstants.IMAGE_URL_BASE)
+        String baseImageUrl = configuration.get(IMAGE_URL_BASE)
                 .orElse("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images");
 
-        Document document = new Document(
-                new Paragraph(new Text(String.format("Type: %s", issue.type().name()))),
-                new Paragraph(new Image(issue.severity(), String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase())), new Text(issue.severity())),
-                new Paragraph(new Text(String.format("Message: %s", issue.getMessage())))
-                );
-
         Long effort = issue.effortInMinutes();
-        if (effort != null) {
-            document.addChild(new Paragraph(new Text(String.format("Duration (min): %s", effort))));
-        }
+        Node effortNode = (null == effort ? new Text("") : new Paragraph(new Text(String.format("**Duration (min):** %s", effort))));
+
         String resolution = issue.resolution();
-        if (StringUtils.isNotBlank(resolution)) {
-            document.addChild(new Paragraph(new Text(String.format("Resolution: %s ", resolution))));
-        }
+        Node resolutionNode = (StringUtils.isBlank(resolution) ? new Text("") : new Paragraph(new Text(String.format("**Resolution:** %s ", resolution))));
+
+        Document document = new Document(
+                new Paragraph(new Text(String.format("**Type:** %s ", issue.type().name())), new Image(issue.type().name(), String.format("%s/checks/IssueType/%s.svg?sanitize=true", baseImageUrl, issue.type().name().toLowerCase()))),
+                new Paragraph(new Text(String.format("**Severity:** %s ", issue.severity())), new Image(issue.severity(), String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase()))),
+                new Paragraph(new Text(String.format("**Message:** %s", issue.getMessage()))),
+                effortNode,
+                resolutionNode
+        );
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
 
-    public String getSCMPathForIssue(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
-        final Component component = componentIssue.getComponent();
-        String scmPath = StringUtils.EMPTY;
+    public Optional<String> getSCMPathForIssue(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
+        Component component = componentIssue.getComponent();
         if (Component.Type.FILE.equals(component.getType())) {
-            scmPath = component.getReportAttributes().getScmPath().orElse(StringUtils.EMPTY);
+            return component.getReportAttributes().getScmPath();
         }
-        return scmPath;
+        return Optional.empty();
     }
-
 
     public PostAnalysisIssueVisitor getPostAnalysisIssueVisitor() {
         return postAnalysisIssueVisitor;

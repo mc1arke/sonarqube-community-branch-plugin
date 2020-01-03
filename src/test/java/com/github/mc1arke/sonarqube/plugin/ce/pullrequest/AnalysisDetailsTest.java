@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginConstants;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Formatter;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
@@ -495,7 +494,7 @@ public class AnalysisDetailsTest {
 
         Configuration configuration = mock(Configuration.class);
         doReturn(Optional.of("http://host.name/path")).when(configuration)
-                .get(eq(CommunityBranchPluginConstants.IMAGE_URL_BASE));
+                .get(eq(AnalysisDetails.IMAGE_URL_BASE));
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
