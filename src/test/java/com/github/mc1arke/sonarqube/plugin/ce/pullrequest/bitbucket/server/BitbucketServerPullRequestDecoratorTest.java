@@ -74,18 +74,6 @@ public class BitbucketServerPullRequestDecoratorTest {
                         .withHeader("Accept" , equalTo("application/json"))
                         .willReturn(
                                 aResponse()
-                                        .withStatus(400)
-                                        .withHeader("Content-Type", "application/json")
-                                        .withBody("{}")
-                        )
-        );
-        assertThat(bitbucketServerPullRequestDecorator.getPage(ACTIVITYURL, headers, ActivityPage.class), nullValue());
-
-        stubFor(
-                get(urlEqualTo("/activities"))
-                        .withHeader("Accept" , equalTo("application/json"))
-                        .willReturn(
-                                aResponse()
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(FileUtils.readFileToByteArray(new File("src/test/resources/bitbucket/activity.json")))
@@ -96,6 +84,21 @@ public class BitbucketServerPullRequestDecoratorTest {
         assertThat(activityPage.getSize(), is(3));
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void getPageActivityClassError() {
+
+        stubFor(
+                get(urlEqualTo("/activities"))
+                        .withHeader("Accept" , equalTo("application/json"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody("{}")
+                        )
+        );
+        bitbucketServerPullRequestDecorator.getPage(ACTIVITYURL, headers, ActivityPage.class);
+    }
 
     @Test
     public void getPageDiffClass() throws Exception {

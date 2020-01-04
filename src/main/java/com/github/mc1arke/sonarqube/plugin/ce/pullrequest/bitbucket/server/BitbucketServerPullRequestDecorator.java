@@ -138,9 +138,9 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             } else {
                 throw new IllegalStateException(String.format("Property userSlug (%s) for /user repo or projectKey (%s) for /projects repo needs to be set.", PULL_REQUEST_BITBUCKET_USER_SLUG, PULL_REQUEST_BITBUCKET_PROJECT_KEY));
             }
-            LOGGER.info(String.format("Comment URL is: %s ", commentUrl));
-            LOGGER.info(String.format("Activity URL is: %s ", activityUrl));
-            LOGGER.info(String.format("Diff URL is: %s ", diffUrl));
+            LOGGER.debug(String.format("Comment URL is: %s ", commentUrl));
+            LOGGER.debug(String.format("Activity URL is: %s ", activityUrl));
+            LOGGER.debug(String.format("Diff URL is: %s ", diffUrl));
 
             Map<String, String> headers = new HashMap<>();
             headers.put("Authorization", String.format("Bearer %s", apiToken));
@@ -155,8 +155,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status())).collect(Collectors.toList());
             for (PostAnalysisIssueVisitor.ComponentIssue componentIssue : componentIssues) {
                 final DefaultIssue issue = componentIssue.getIssue();
-                LOGGER.info(issue.toString());
-
                 String analysisIssueSummary = analysisDetails.createAnalysisIssueSummary(componentIssue, new MarkdownFormatterFactory());
                 String issuePath = analysisDetails.getSCMPathForIssue(componentIssue).orElse(StringUtils.EMPTY);
                 int issueLine = issue.getLine() != null ? issue.getLine() : 0;
@@ -220,7 +218,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         final ActivityPage activityPage = getPage(activityUrl, headers, ActivityPage.class);
         if (activityPage != null) {
             final List<Comment> commentsToDelete = getCommentsToDelete(userSlug, activityPage);
-            LOGGER.info(String.format("Deleting %s comments", commentsToDelete));
+            LOGGER.debug(String.format("Deleting %s comments", commentsToDelete));
             for (Comment comment : commentsToDelete) {
                 try {
                     boolean commentDeleted = deleteComment(commentUrl, headers, comment);
@@ -240,17 +238,19 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         boolean commentDeleted = false;
         String deleteCommentUrl = commentUrl + "/%s?version=%s";
         HttpDelete httpDelete = new HttpDelete(String.format(deleteCommentUrl, comment.getId(), comment.getVersion()));
-        LOGGER.info("delete " + comment.getId() + " " + comment.getVersion());
+        LOGGER.debug("delete " + comment.getId() + " " + comment.getVersion());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpDelete.addHeader(entry.getKey(), entry.getValue());
         }
         try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault()) {
             HttpResponse deleteResponse = closeableHttpClient.execute(httpDelete);
-            if (null != deleteResponse && deleteResponse.getStatusLine().getStatusCode() != 204) {
+            if (null == deleteResponse) {
+                LOGGER.error("HttpResponse for deleting comment was null");
+            } else if (deleteResponse.getStatusLine().getStatusCode() != 204) {
                 LOGGER.error(IOUtils.toString(deleteResponse.getEntity().getContent(), StandardCharsets.UTF_8.name()));
                 LOGGER.error("An error was returned in the response from the Bitbucket API. See the previous log messages for details");
-            } else if (null != deleteResponse) {
-                LOGGER.info(String.format("Comment %s version %s deleted", comment.getId(), comment.getVersion()));
+            } else {
+                LOGGER.debug(String.format("Comment %s version %s deleted", comment.getId(), comment.getVersion()));
                 commentDeleted = true;
             }
         }
@@ -269,23 +269,26 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     protected <T> T getPage(String diffUrl, Map<String, String> headers, Class<T> type) {
         T page = null;
         try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault()) {
-            LOGGER.info(String.format("Getting page %s", type));
+            LOGGER.debug(String.format("Getting page %s", type));
             HttpGet httpGet = new HttpGet(diffUrl);
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 httpGet.addHeader(entry.getKey(), entry.getValue());
             }
             HttpResponse httpResponse = closeableHttpClient.execute(httpGet);
-            if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
+            if (null == httpResponse) {
+                LOGGER.error(String.format("HttpResponse for getting page %s was null", type));
+            } else if (httpResponse.getStatusLine().getStatusCode() != 200) {
                 HttpEntity entity = httpResponse.getEntity();
-                LOGGER.error(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8.name()));
-            } else if (null != httpResponse) {
+                LOGGER.error("Error response from Bitbucket: " + IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8.name()));
+                throw new IllegalStateException(String.format("Error response returned from Bitbucket Server. Expected HTTP Status 200 but got %s", httpResponse.getStatusLine().getStatusCode()) );
+            } else {
                 HttpEntity entity = httpResponse.getEntity();
                 page = new ObjectMapper()
                         .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                         .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                         .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8.name()), type);
-                LOGGER.info(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(page));
+                LOGGER.debug(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(page));
             }
         } catch (IOException ex) {
             LOGGER.error(String.format("Could not get %s from Bitbucket Server", type.getName()), ex);
@@ -300,17 +303,18 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             httpPost.addHeader(entry.getKey(), entry.getValue());
         }
         httpPost.setEntity(requestEntity);
-        LOGGER.info(EntityUtils.toString(requestEntity));
+        LOGGER.debug(EntityUtils.toString(requestEntity));
         if (sendRequest) {
             try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault()) {
                 HttpResponse httpResponse = closeableHttpClient.execute(httpPost);
-                if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 201) {
+                if (null == httpResponse) {
+                    LOGGER.error("HttpResponse for posting comment was null");
+                } else if (httpResponse.getStatusLine().getStatusCode() != 201) {
                     HttpEntity entity = httpResponse.getEntity();
                     LOGGER.error(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8.name()));
-                } else if (null != httpResponse) {
+                } else {
                     HttpEntity entity = httpResponse.getEntity();
-                    LOGGER.info(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8.name()));
-                    LOGGER.info("Comment posted");
+                    LOGGER.debug(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8.name()));
                     commentPosted = true;
                 }
             }
