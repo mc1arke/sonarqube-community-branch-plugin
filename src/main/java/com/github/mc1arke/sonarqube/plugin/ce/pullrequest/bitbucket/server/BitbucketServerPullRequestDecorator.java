@@ -65,6 +65,18 @@ import java.util.stream.Collectors;
 
 public class BitbucketServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
+    public static final String PULL_REQUEST_BITBUCKET_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.url";
+
+    public static final String PULL_REQUEST_BITBUCKET_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.token";
+
+    public static final String PULL_REQUEST_BITBUCKET_PROJECT_KEY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.projectKey";
+
+    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.userSlug";
+
+    public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.repositorySlug";
+
+    public static final String PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.comment.userSlug";
+
     private static final Logger LOGGER = Loggers.get(BitbucketServerPullRequestDecorator.class);
     private static final List<String> OPEN_ISSUE_STATUSES =
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
@@ -86,17 +98,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     private static final String FULL_PR_DIFF_API = "%s" + REST_API + PROJECT_PR_API + DIFF_API;
     private static final String FULL_PR_DIFF_USER_API = "%s" + REST_API + USER_PR_API + DIFF_API;
 
-    public static final String PULL_REQUEST_BITBUCKET_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.url";
-
-    public static final String PULL_REQUEST_BITBUCKET_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.token";
-
-    public static final String PULL_REQUEST_BITBUCKET_PROJECT_KEY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.projectKey";
-
-    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.userSlug";
-
-    public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.repositorySlug";
-
-    public static final String PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.comment.userSlug";
 
     private final ConfigurationRepository configurationRepository;
 
@@ -198,8 +199,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             List<Segment> segments = hunk.getSegments();
             for (Segment segment : segments) {
                 Optional<DiffLine> optionalLine = segment.getLines().stream().filter(diffLine -> diffLine.getDestination() == issueLine).findFirst();
-                if (optionalLine.isPresent())
-                {
+                if (optionalLine.isPresent()) {
                     issueType = segment.getType();
                     break;
                 }
