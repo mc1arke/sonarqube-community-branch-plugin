@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,8 +36,7 @@ public class Diff implements Serializable {
     private final File destination;
 
     @JsonCreator
-    public Diff(@JsonProperty("fromHash") String fromHash, @JsonProperty("toHash") String toHash, @JsonProperty("hunks") List<Hunk> hunks, @JsonProperty("source") File source, @JsonProperty("destination") File destination)
-    {
+    public Diff(@JsonProperty("fromHash") String fromHash, @JsonProperty("toHash") String toHash, @JsonProperty("hunks") List<Hunk> hunks, @JsonProperty("source") File source, @JsonProperty("destination") File destination) {
         this.fromHash = fromHash;
         this.toHash = toHash;
         this.hunks = hunks;

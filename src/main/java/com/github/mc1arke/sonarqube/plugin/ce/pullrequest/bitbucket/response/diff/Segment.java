@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,8 +32,7 @@ public class Segment implements Serializable {
     private final boolean truncated;
 
     @JsonCreator
-    public Segment(@JsonProperty("type") final String type, @JsonProperty("lines") final List<DiffLine> lines, @JsonProperty("truncated") final boolean truncated)
-    {
+    public Segment(@JsonProperty("type") final String type, @JsonProperty("lines") final List<DiffLine> lines, @JsonProperty("truncated") final boolean truncated) {
         this.type = type;
         this.lines = lines;
         this.truncated = truncated;

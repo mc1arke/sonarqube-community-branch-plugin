@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,8 +37,7 @@ public class ActivityPage implements Serializable {
     private final Activity[] values;
 
     @JsonCreator
-    public ActivityPage(@JsonProperty("size") final int size, @JsonProperty("limit") final int limit, @JsonProperty("isLastPage") final boolean isLastPage, @JsonProperty("start") final int start, @JsonProperty("nextPageStart") final int nextPageStart, @JsonProperty("values") final Activity[] values)
-    {
+    public ActivityPage(@JsonProperty("size") final int size, @JsonProperty("limit") final int limit, @JsonProperty("isLastPage") final boolean isLastPage, @JsonProperty("start") final int start, @JsonProperty("nextPageStart") final int nextPageStart, @JsonProperty("values") final Activity[] values) {
         this.size = size;
         this.limit = limit;
         this.isLastPage = isLastPage;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,8 +36,7 @@ public class File implements Serializable {
     private final List<String> components;
 
     @JsonCreator
-    public File(@JsonProperty("parent") final String parent, @JsonProperty("name") final String name, @JsonProperty("extension") final String extension, @JsonProperty("toString") final String toString, @JsonProperty("components") final List<String> components)
-    {
+    public File(@JsonProperty("parent") final String parent, @JsonProperty("name") final String name, @JsonProperty("extension") final String extension, @JsonProperty("toString") final String toString, @JsonProperty("components") final List<String> components) {
         this.parent = parent;
         this.name = name;
         this.extension = extension;

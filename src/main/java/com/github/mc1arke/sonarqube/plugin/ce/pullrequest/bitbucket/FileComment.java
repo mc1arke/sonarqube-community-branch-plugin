@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,15 +24,21 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FileComment implements Serializable {
-    @JsonProperty
-    private String text;
+    private final String text;
 
-    @JsonProperty
-    private Anchor anchor;
+    private final Anchor anchor;
 
     @JsonCreator
-    public FileComment(String text, Anchor anchor) {
+    public FileComment(@JsonProperty("text") String text, @JsonProperty("anchor") Anchor anchor) {
         this.text = text;
         this.anchor = anchor;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public Anchor getAnchor() {
+        return anchor;
     }
 }

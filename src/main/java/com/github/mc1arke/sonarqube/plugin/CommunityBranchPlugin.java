@@ -81,7 +81,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                         .onlyOnQualifiers(Qualifiers.PROJECT)
                         .name("Provider")
                         .type(PropertyType.SINGLE_SELECT_LIST)
-                        .options("Github", "BitbucketServer", "BitbucketCloud").build(),
+                        .options("BitbucketServer").build(),
 
                 PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)
                         .category(PULL_REQUEST_CATEGORY_LABEL)

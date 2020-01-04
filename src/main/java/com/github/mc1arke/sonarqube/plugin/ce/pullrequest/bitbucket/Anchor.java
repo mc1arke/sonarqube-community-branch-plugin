@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,23 +24,35 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 
 public class Anchor implements Serializable {
-    @JsonProperty
-    private int line;
+    private final int line;
 
-    @JsonProperty
-    private String lineType;
+    private final String lineType;
 
-    @JsonProperty
-    private String path;
+    private final String path;
 
-    @JsonProperty
-    private String fileType;
+    private final String fileType;
 
     @JsonCreator
-    public Anchor(int line, String lineType, String path, String fileType) {
+    public Anchor(@JsonProperty("line") int line, @JsonProperty("lineType") String lineType, @JsonProperty("path") String path, @JsonProperty("fileType") String fileType) {
         this.line = line;
         this.lineType = lineType;
         this.path = path;
         this.fileType = fileType;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    public String getLineType() {
+        return lineType;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public String getFileType() {
+        return fileType;
     }
 }

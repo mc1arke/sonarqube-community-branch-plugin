@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,8 +36,7 @@ public class DiffLine implements Serializable {
     private final List<Integer> commentIds;
 
     @JsonCreator
-    public DiffLine(@JsonProperty("source") int source, @JsonProperty("destination") int destination, @JsonProperty("line") String line, @JsonProperty("truncated") boolean truncated, @JsonProperty("commentIds") List<Integer> commentIds)
-    {
+    public DiffLine(@JsonProperty("source") int source, @JsonProperty("destination") int destination, @JsonProperty("line") String line, @JsonProperty("truncated") boolean truncated, @JsonProperty("commentIds") List<Integer> commentIds) {
         this.source = source;
         this.destination = destination;
         this.line = line;

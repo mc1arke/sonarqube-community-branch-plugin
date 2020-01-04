@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,15 +24,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class User implements Serializable {
-    @JsonProperty
     private final String name;
 
-    @JsonProperty
     private final String slug;
 
     @JsonCreator
-    public User(@JsonProperty("name") final String name, @JsonProperty("slug") final String slug)
-    {
+    public User(@JsonProperty("name") final String name, @JsonProperty("slug") final String slug) {
         this.name = name;
         this.slug = slug;
     }

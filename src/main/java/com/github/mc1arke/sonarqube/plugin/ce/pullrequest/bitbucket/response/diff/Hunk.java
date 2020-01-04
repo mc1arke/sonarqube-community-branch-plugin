@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,8 +38,7 @@ public class Hunk implements Serializable {
     private final List<Segment> segments;
 
     @JsonCreator
-    public Hunk(@JsonProperty("context") final String context, @JsonProperty("sourceLine") final int sourceLine, @JsonProperty("sourceSpan") final int sourceSpan, @JsonProperty("destinationLine") final int destinationLine, @JsonProperty("destinationSpan") final int destinationSpan, @JsonProperty("segments") final List<Segment> segments)
-    {
+    public Hunk(@JsonProperty("context") final String context, @JsonProperty("sourceLine") final int sourceLine, @JsonProperty("sourceSpan") final int sourceSpan, @JsonProperty("destinationLine") final int destinationLine, @JsonProperty("destinationSpan") final int destinationSpan, @JsonProperty("segments") final List<Segment> segments) {
         this.context = context;
         this.sourceLine = sourceLine;
         this.sourceSpan = sourceSpan;

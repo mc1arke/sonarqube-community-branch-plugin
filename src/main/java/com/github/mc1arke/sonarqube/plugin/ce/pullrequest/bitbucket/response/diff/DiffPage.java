@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,8 +34,7 @@ public class DiffPage implements Serializable {
     private final List<Diff> diffs;
 
     @JsonCreator
-    public DiffPage(@JsonProperty("fromHash") final String fromHash, @JsonProperty("toHash") final String toHash, @JsonProperty("truncated") final boolean truncated, @JsonProperty("diffs") final List<Diff> diffs)
-    {
+    public DiffPage(@JsonProperty("fromHash") final String fromHash, @JsonProperty("toHash") final String toHash, @JsonProperty("truncated") final boolean truncated, @JsonProperty("diffs") final List<Diff> diffs) {
         this.fromHash = fromHash;
         this.toHash = toHash;
         this.truncated = truncated;
