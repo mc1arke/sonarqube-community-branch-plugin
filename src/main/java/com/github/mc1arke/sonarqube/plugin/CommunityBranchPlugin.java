@@ -20,6 +20,8 @@ package com.github.mc1arke.sonarqube.plugin;
 
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityBranchEditionProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.BitbucketServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
@@ -42,6 +44,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
     private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
     private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
+    private static final String GENERAL = "General";
+    private static final String BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Bitbucket";
 
     @Override
     public String getName() {
@@ -82,7 +86,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
             context.addExtensions(
                     PropertyDefinition.builder("sonar.pullrequest.provider").category(PULL_REQUEST_CATEGORY_LABEL)
                             .subCategory("General").onlyOnQualifiers(Qualifiers.PROJECT).name("Provider")
-                            .type(PropertyType.SINGLE_SELECT_LIST).options("Github").build(),
+                            .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer").build(),
 
                     PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
                             .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
@@ -106,9 +110,44 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.APP).name("The API URL for a GitHub instance").description(
                             "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
-                            .type(PropertyType.STRING).defaultValue("https://api.github.com").build());
-        }
+                            .type(PropertyType.STRING).defaultValue("https://api.github.com").build(),
 
+                    PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT).name("Enable summary comment").description("This enables the summary comment (if implemented).")
+                            .type(PropertyType.BOOLEAN).defaultValue("true").build(),
+
+                    PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_FILE_COMMENT_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT).name("Enable file comment").description("This enables commenting (if implemented).").type(PropertyType.BOOLEAN)
+                            .defaultValue("true").build(),
+
+                    PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_DELETE_COMMENTS_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT).name("Enable deleting comments").description("This cleans up the comments from previous runs (if implemented).")
+                            .type(PropertyType.BOOLEAN).defaultValue("false").build(),
+
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT).name("URL for Bitbucket (Server or Cloud) instance").description("Example: http://bitbucket.local").type(PropertyType.STRING).build(),
+
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_TOKEN).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT).name("The token for the user to comment to the PR on Bitbucket (Server or Cloud) instance")
+                            .description("Token used for authentication and commenting to your Bitbucket instance").type(PropertyType.STRING).build(),
+
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG)
+                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onlyOnQualifiers(Qualifiers.PROJECT).name("Comment User Slug")
+                            .description("User slug for the comment user. Needed only for comment deletion.").type(PropertyType.STRING).build(),
+
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG)
+                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onlyOnQualifiers(Qualifiers.PROJECT).name("Repository Slug").description(
+                            "Repository Slug see for example https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html")
+                            .type(PropertyType.STRING).build(),
+
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_SLUG).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT).name("User Slug").description("This is used for '/users' repos. Only set one User Slug or ProjectKey!")
+                            .type(PropertyType.STRING).index(2).build(),
+
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT).name("ProjectKey").description("This is used for '/projects' repos. Only set one User Slug or ProjectKey!")
+                            .type(PropertyType.STRING).index(1).build());
+        }
     }
 
     @Override

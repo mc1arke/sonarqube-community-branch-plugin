@@ -1,0 +1,293 @@
+{
+  "size": 3,
+  "limit": 25,
+  "isLastPage": true,
+  "values": [
+    {
+      "id": 46,
+      "createdDate": 1569581321745,
+      "user": {
+        "name": "susi.sonar",
+        "emailAddress": "susi.sonar@local",
+        "id": 2,
+        "displayName": "Susi Sonar",
+        "active": true,
+        "slug": "susi.sonar",
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "http://bitbucket.local/users/susi.sonar"
+            }
+          ]
+        }
+      },
+      "action": "COMMENTED",
+      "commentAction": "ADDED",
+      "comment": {
+        "properties": {
+          "repositoryId": 1
+        },
+        "id": 8,
+        "version": 0,
+        "text": "Type: CODE_SMELL \nSeverity: :arrow_down: MINOR \nMessage: Rename this method name to match the regular expression '^[a-z][a-zA-Z0-9]*$'. \nDuration (min): 5 \n",
+        "author": {
+          "name": "susi.sonar",
+          "emailAddress": "susi.sonar@local",
+          "id": 2,
+          "displayName": "Susi Sonar",
+          "active": true,
+          "slug": "susi.sonar",
+          "type": "NORMAL",
+          "links": {
+            "self": [
+              {
+                "href": "http://bitbucket.local/users/susi.sonar"
+              }
+            ]
+          }
+        },
+        "createdDate": 1569581321745,
+        "updatedDate": 1569581321745,
+        "comments": [],
+        "tasks": [],
+        "permittedOperations": {
+          "editable": false,
+          "deletable": true
+        }
+      },
+      "commentAnchor": {
+        "fromHash": "ef79002f0d97919e7c8660d4e01e08bd8078aec8",
+        "toHash": "991945536b1062d31c7f7aa396bd97c4d88defbf",
+        "line": 15,
+        "lineType": "ADDED",
+        "fileType": "TO",
+        "path": "src/com/sonar/sample/classes/ClassWithInvalidMethodName.java",
+        "diffType": "EFFECTIVE",
+        "orphaned": false
+      },
+      "diff": {
+        "source": null,
+        "destination": {
+          "components": [
+            "src",
+            "com",
+            "sonar",
+            "sample",
+            "classes",
+            "ClassWithInvalidMethodName.java"
+          ],
+          "parent": "src/com/sonar/sample/classes",
+          "name": "ClassWithInvalidMethodName.java",
+          "extension": "java",
+          "toString": "src/com/sonar/sample/classes/ClassWithInvalidMethodName.java"
+        },
+        "hunks": [
+          {
+            "context": "public class ClassWithInvalidMethodName {",
+            "sourceLine": 5,
+            "sourceSpan": 10,
+            "destinationLine": 5,
+            "destinationSpan": 15,
+            "segments": [
+              {
+                "type": "CONTEXT",
+                "lines": [
+                  {
+                    "destination": 5,
+                    "source": 5,
+                    "line": "",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 6,
+                    "source": 6,
+                    "line": "    private final static String WRONGMODIFIERORDER = \"WRONGMODIFIERORDER\"; //wrong modifier order && unused",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 7,
+                    "source": 7,
+                    "line": "",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 8,
+                    "source": 8,
+                    "line": "    private static final String UNUSEDCONSTANT = \"UNUSED\"; //unused",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 9,
+                    "source": 9,
+                    "line": "",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 10,
+                    "source": 10,
+                    "line": "    public String method_name_with_underscores() // method names should only be ^[a-z][a-zA-Z0-9]*$",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 11,
+                    "source": 11,
+                    "line": "    {",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 12,
+                    "source": 12,
+                    "line": "        return CONST_1;",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 13,
+                    "source": 13,
+                    "line": "    }",
+                    "truncated": false
+                  }
+                ],
+                "truncated": false
+              },
+              {
+                "type": "ADDED",
+                "lines": [
+                  {
+                    "destination": 14,
+                    "source": 14,
+                    "line": "",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 15,
+                    "source": 14,
+                    "line": "    public String method_name_with_underscores2() // method names should only be ^[a-z][a-zA-Z0-9]*$",
+                    "truncated": false,
+                    "commentIds": [
+                      8
+                    ]
+                  },
+                  {
+                    "destination": 16,
+                    "source": 14,
+                    "line": "    {",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 17,
+                    "source": 14,
+                    "line": "        return CONST_1;",
+                    "truncated": false
+                  },
+                  {
+                    "destination": 18,
+                    "source": 14,
+                    "line": "    }",
+                    "truncated": false
+                  }
+                ],
+                "truncated": false
+              },
+              {
+                "type": "CONTEXT",
+                "lines": [
+                  {
+                    "destination": 19,
+                    "source": 14,
+                    "line": "}",
+                    "truncated": false
+                  }
+                ],
+                "truncated": false
+              }
+            ],
+            "truncated": false
+          }
+        ],
+        "truncated": false,
+        "properties": {
+          "toHash": "991945536b1062d31c7f7aa396bd97c4d88defbf",
+          "current": true,
+          "fromHash": "ef79002f0d97919e7c8660d4e01e08bd8078aec8"
+        }
+      }
+    },
+    {
+      "id": 45,
+      "createdDate": 1569581321609,
+      "user": {
+        "name": "susi.sonar",
+        "emailAddress": "susi.sonar@local",
+        "id": 2,
+        "displayName": "Susi Sonar",
+        "active": true,
+        "slug": "susi.sonar",
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "http://bitbucket.local/users/susi.sonar"
+            }
+          ]
+        }
+      },
+      "action": "COMMENTED",
+      "commentAction": "ADDED",
+      "comment": {
+        "properties": {
+          "repositoryId": 1
+        },
+        "id": 7,
+        "version": 0,
+        "text": "Passed \n \n# Analysis Details \n## 1 Issues \n - 0 Bugs \n - 0 Vulnerabilities \n - 0 Security issues \n - 1 Code Smell \n## Coverage and Duplications \n - 0.0% Coverage (0% Estimated after merge) \n - 0.0% Duplicated Code (0% Estimated after merge) \n",
+        "author": {
+          "name": "susi.sonar",
+          "emailAddress": "susi.sonar@local",
+          "id": 2,
+          "displayName": "Susi Sonar",
+          "active": true,
+          "slug": "susi.sonar",
+          "type": "NORMAL",
+          "links": {
+            "self": [
+              {
+                "href": "http://bitbucket.local/users/susi.sonar"
+              }
+            ]
+          }
+        },
+        "createdDate": 1569581321609,
+        "updatedDate": 1569581321609,
+        "comments": [],
+        "tasks": [],
+        "permittedOperations": {
+          "editable": false,
+          "deletable": true
+        }
+      }
+    },
+    {
+      "id": 6,
+      "createdDate": 1569565467641,
+      "user": {
+        "name": "susi.sonar",
+        "emailAddress": "susi.sonar@local",
+        "id": 2,
+        "displayName": "Susi Sonar",
+        "active": true,
+        "slug": "susi.sonar",
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "http://bitbucket.local/users/susi.sonar"
+            }
+          ]
+        }
+      },
+      "action": "OPENED"
+    }
+  ],
+  "start": 0
+}

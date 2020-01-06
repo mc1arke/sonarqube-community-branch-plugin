@@ -21,4 +21,62 @@ Either build the project or [download a compatible release version of the plugin
 
 # Features
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
-* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, and only as an experimental feature
+* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, and Bitbucket Server, and only as an experimental feature
+
+# Properties
+Property key | Description 
+--- | ---
+com.github.mc1arke.sonarqube.plugin.branch.image-url-base | Can be set in `sonar.properties` file on the SonarQube server and is used to load the images for the PR comments. [Default base image location link.](https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images)
+
+## Bitbucket Server
+To enable setting of several properties in SonarQube on project level is required.
+
+The property "projectKey" or "userSlug" are mandatory in order to decide which API endpoint should be used.
+
+Tasks:
+- [x] overall comment
+- [x] enable and disable file comment and overall comment 
+- [x] file comment
+- [x] reset comments (all comments are reset by property userSlug. It's therefore highly recommended to create a user in your company that's only purpose it is to comment sonar issues)
+
+# Contribution
+To generate the jar file to copy to your Sonar Server execute ```./gradlew clean build``` inside of the project dir. This will put the jar under ```libs/sonarqube-community-branch-plugin*.jar```
+
+## SonarQube / Docker
+Add the plugin to the `extensions/plugins/` and also into the `lib/common/` directory of your SonarQube instance and restart the server.
+
+Quick start to your SonarQube docker container:
+```
+version: 2
+
+services:
+  sonarqube:
+    image: sonarqube
+    container_name: sonarqube
+    ports:
+      - 9000:9000
+    networks:
+      - sonarnet
+    environment:
+      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonar
+      - SONARQUBE_JDBC_USERNAME=sonar
+      - SONARQUBE_JDBC_PASSWORD=sonar
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+      - sonarqube_common:/opt/sonarqube/lib/common
+
+  db:
+    image: postgres
+    container_name: postgres
+    networks:
+      - sonarnet
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
+``` 

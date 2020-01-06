@@ -23,6 +23,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestPostAnalysi
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.RestApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.GraphqlCheckRunProvider;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.BitbucketServerPullRequestDecorator;
 import org.sonar.ce.task.projectanalysis.container.ReportAnalysisComponentProvider;
 
 import java.util.Arrays;
@@ -37,7 +38,8 @@ public class CommunityReportAnalysisComponentProvider implements ReportAnalysisC
     public List<Object> getComponents() {
         return Arrays.asList(CommunityBranchLoaderDelegate.class, PullRequestPostAnalysisTask.class,
                              PostAnalysisIssueVisitor.class, GithubPullRequestDecorator.class,
-                             GraphqlCheckRunProvider.class, RestApplicationAuthenticationProvider.class);
+                             GraphqlCheckRunProvider.class, RestApplicationAuthenticationProvider.class,
+                             BitbucketServerPullRequestDecorator.class);
     }
 
 }

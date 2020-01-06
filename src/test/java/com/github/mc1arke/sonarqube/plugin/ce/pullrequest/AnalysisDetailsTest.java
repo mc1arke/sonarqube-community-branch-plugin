@@ -494,7 +494,7 @@ public class AnalysisDetailsTest {
 
         Configuration configuration = mock(Configuration.class);
         doReturn(Optional.of("http://host.name/path")).when(configuration)
-                .get(eq("com.github.mc1arke.sonarqube.plugin.branch.image-url-base"));
+                .get(eq(AnalysisDetails.IMAGE_URL_BASE));
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,

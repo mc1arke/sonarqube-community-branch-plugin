@@ -67,6 +67,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
     @Deprecated
     @Override
     public void finished(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis) {
+        LOGGER.debug("found " + pullRequestDecorators.size() + " pull request decorators");
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
         if (!optionalPullRequest.isPresent()) {
@@ -121,8 +122,8 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
                                     projectAnalysis.getProject(), configuration);
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
+        LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
         pullRequestDecorator.decorateQualityGateStatus(analysisDetails);
-
     }
 
     private static Optional<PullRequestBuildStatusDecorator> findCurrentPullRequestStatusDecorator(
