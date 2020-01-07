@@ -22,17 +22,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class User {
-    private long id;
-    private String username;
+    private final String username;
 
     @JsonCreator
-    public User(@JsonProperty("id") long id, @JsonProperty("username") String username) {
-        this.id = id;
+    public User(@JsonProperty("username") String username) {
         this.username = username;
-    }
-
-    public long getId() {
-        return id;
     }
 
     public String getUsername() {

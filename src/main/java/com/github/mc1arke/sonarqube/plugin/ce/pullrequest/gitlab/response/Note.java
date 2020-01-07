@@ -22,18 +22,25 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Note {
-    private long id;
+    private final long id;
 
-    private User author;
+    private final boolean system;
+
+    private final User author;
 
     @JsonCreator
-    public Note(@JsonProperty("id") long id, @JsonProperty("author") User author) {
+    public Note(@JsonProperty("id") long id, @JsonProperty("system") boolean system, @JsonProperty("author") User author) {
         this.id = id;
+        this.system = system;
         this.author = author;
     }
 
     public long getId() {
         return id;
+    }
+
+    public boolean isSystem() {
+        return system;
     }
 
     public User getAuthor() {

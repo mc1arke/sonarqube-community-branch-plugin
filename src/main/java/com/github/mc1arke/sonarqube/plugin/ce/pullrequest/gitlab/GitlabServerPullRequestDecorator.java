@@ -38,8 +38,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Commit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.CommitDiscussion;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Discussion;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.MergeRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Note;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
@@ -108,46 +108,41 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final String userURL = restURL + "/user";
             final String projectURL = restURL + String.format("/projects/%s", URLEncoder.encode(repositorySlug, StandardCharsets.UTF_8.name()));
             final String statusUrl = projectURL + String.format("/statuses/%s", revision);
-            final String commitURL = projectURL + String.format("/repository/commits/%s", revision);
-            final String commitCommentUrl = commitURL + "/comments";
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
             final String prCommitsURL = mergeRequestURl + "/commits";
+            final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
 
 
             LOGGER.info(String.format("Status url is: %s ", statusUrl));
-            LOGGER.info(String.format("Commit comment url is: %s ", commitCommentUrl));
             LOGGER.info(String.format("PR commits url is: %s ", prCommitsURL));
+            LOGGER.info(String.format("MR discussion url is: %s ", mergeRequestDiscussionURL));
             LOGGER.info(String.format("User url is: %s ", userURL));
 
             Map<String, String> headers = new HashMap<>();
             headers.put("PRIVATE-TOKEN", apiToken);
             headers.put("Accept", "application/json");
 
-            User user=getUser(userURL, headers);
+            User user = getSingle(userURL, headers, User.class);
             LOGGER.info(String.format("Using user: %s ", user.getUsername()));
 
-            List<Commit> commits = getMRCommits(prCommitsURL, headers, deleteCommentsEnabled);
-            LOGGER.info(String.format("Commits in MR: %s ", commits.stream().map(Commit::getId).collect(Collectors.joining(", "))));
-            List<CommitDiscussion> commitDiscussions = new ArrayList<>();
-            for (Commit commit : commits) {
-                getCommitDiscussions(projectURL + String.format("/repository/commits/%s/discussions", commit.getId()), headers, deleteCommentsEnabled)
-                        .stream()
-                        .map(d -> new CommitDiscussion(commit, d))
-                        .forEach(commitDiscussions::add);
-            }
-            LOGGER.info(String.format("Commit Discussions in MR: %s ", commitDiscussions
+            List<String> commits = getPagedList(prCommitsURL, headers, deleteCommentsEnabled, new TypeReference<List<Commit>>() {
+            }).stream().map(Commit::getId).collect(Collectors.toList());
+            MergeRequest mergeRequest = getSingle(mergeRequestURl, headers, MergeRequest.class);
+
+            List<Discussion> discussions = getPagedList(mergeRequestDiscussionURL, headers, deleteCommentsEnabled, new TypeReference<List<Discussion>>() {
+            });
+
+            LOGGER.info(String.format("Discussions in MR: %s ", discussions
                     .stream()
-                    .map(CommitDiscussion::getDiscussion)
                     .map(Discussion::getId)
                     .collect(Collectors.joining(", "))));
 
-            for (CommitDiscussion commitDiscussion : commitDiscussions) {
-                for (Note note : commitDiscussion.getDiscussion().getNotes()) {
-                    if (note.getAuthor() != null && note.getAuthor().getUsername().equals(user.getUsername())) {
+            for (Discussion discussion : discussions) {
+                for (Note note : discussion.getNotes()) {
+                    if (!note.isSystem() && note.getAuthor() != null && note.getAuthor().getUsername().equals(user.getUsername())) {
                         //delete only our own comments
-                        deleteCommitDiscussionNote(projectURL + String.format("/repository/commits/%s/discussions/%s/notes/%s",
-                                commitDiscussion.getCommit().getId(),
-                                commitDiscussion.getDiscussion().getId(),
+                        deleteCommitDiscussionNote(mergeRequestDiscussionURL + String.format("/%s/notes/%s",
+                                discussion.getId(),
                                 note.getId()),
                                 headers, deleteCommentsEnabled);
                     }
@@ -162,30 +157,37 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 
             String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
-            List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("note", summaryComment));
+            List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("body", summaryComment));
 
             postStatus(statusUrl, headers, analysis, coverageValue, true);
 
-            postCommitComment(commitCommentUrl, headers, summaryContentParams, summaryCommentEnabled);
+            postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams, summaryCommentEnabled);
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);
                 if (path != null && issue.getIssue().getLine() != null) {
                     //only if we have a path and line number
                     String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());
-                    String issueRevision = scmInfoRepository.getScmInfo(issue.getComponent())
+                    if (scmInfoRepository.getScmInfo(issue.getComponent())
                             .filter(i -> i.hasChangesetForLine(issue.getIssue().getLine()))
                             .map(i -> i.getChangesetForLine(issue.getIssue().getLine()))
                             .map(Changeset::getRevision)
-                            .orElse(revision);
-                    String issueCommitURL = projectURL + String.format("/repository/commits/%s", issueRevision);
-                    String issueCommitCommentUrl = issueCommitURL + "/comments";
+                            .filter(commits::contains)
+                            .isPresent()) {
+                        //only if the change is on a commit, that belongs to this MR
 
-                    List<NameValuePair> fileContentParams = Arrays.asList(new BasicNameValuePair("note", fileComment),
-                            new BasicNameValuePair("path", path),
-                            new BasicNameValuePair("line", String.valueOf((int) issue.getIssue().getLine())),
-                            new BasicNameValuePair("line_type", "new"));
-                    postCommitComment(issueCommitCommentUrl, headers, fileContentParams, fileCommentEnabled);
+                        List<NameValuePair> fileContentParams = Arrays.asList(
+                                new BasicNameValuePair("body", fileComment),
+                                new BasicNameValuePair("position[base_sha]", mergeRequest.getDiffRefs().getBaseSha()),
+                                new BasicNameValuePair("position[start_sha]", mergeRequest.getDiffRefs().getStartSha()),
+                                new BasicNameValuePair("position[head_sha]", mergeRequest.getDiffRefs().getHeadSha()),
+                                new BasicNameValuePair("position[new_path]", path),
+                                new BasicNameValuePair("position[new_line]", String.valueOf(issue.getIssue().getLine())),
+                                new BasicNameValuePair("position[position_type]", "text"));
+                        postCommitComment(mergeRequestDiscussionURL, headers, fileContentParams, fileCommentEnabled);
+                    } else {
+                        LOGGER.info(String.format("Skipping %s:%d since the commit does not belong to the MR", path, issue.getIssue().getLine()));
+                    }
                 }
             }
         } catch (IOException ex) {
@@ -194,7 +196,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
     }
 
-    private User getUser(String userURL, Map<String, String> headers) throws IOException {
+    private <X> X getSingle(String userURL, Map<String, String> headers, Class<X> type) throws IOException {
         HttpGet httpGet = new HttpGet(userURL);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
@@ -207,13 +209,13 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         } else if (null != httpResponse) {
             LOGGER.debug(httpResponse.toString());
             HttpEntity entity = httpResponse.getEntity();
-            User user = new ObjectMapper()
+            X user = new ObjectMapper()
                     .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                     .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), User.class);
+                    .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), type);
 
-            LOGGER.info("User received");
+            LOGGER.info(type + " received");
 
             return user;
         } else {
@@ -221,14 +223,13 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         }
     }
 
-    private List<Commit> getMRCommits(String prCommitsURL, Map<String, String> headers, boolean sendRequest) throws IOException {
-        //https://docs.gitlab.com/ee/api/merge_requests.html#get-single-mr-commits
-        HttpGet httpGet = new HttpGet(prCommitsURL);
+    private <X> List<X> getPagedList(String commitDiscussionURL, Map<String, String> headers, boolean sendRequest, TypeReference<List<X>> typeRef) throws IOException {
+         HttpGet httpGet = new HttpGet(commitDiscussionURL);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
         }
 
-        List<Commit> commits = new ArrayList<>();
+        List<X> discussions = new ArrayList<>();
 
         if (sendRequest) {
             HttpResponse httpResponse = HttpClients.createDefault().execute(httpGet);
@@ -239,54 +240,17 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             } else if (null != httpResponse) {
                 LOGGER.debug(httpResponse.toString());
                 HttpEntity entity = httpResponse.getEntity();
-                List<Commit> pagedCommits = new ObjectMapper()
+                List<X> pagedDiscussions = new ObjectMapper()
                         .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                         .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), new TypeReference<List<Commit>>() {
-                        });
-                commits.addAll(pagedCommits);
-                LOGGER.info("Commits received");
-                String nextURL = getNextUrl(httpResponse);
-                if (nextURL != null) {
-                    LOGGER.info("Getting next page");
-                    commits.addAll(getMRCommits(nextURL, headers, sendRequest));
-                }
-            }
-        }
-        return commits;
-    }
-
-    private List<Discussion> getCommitDiscussions(String commitDiscussionURL, Map<String, String> headers, boolean sendRequest) throws IOException {
-        //https://docs.gitlab.com/ee/api/discussions.html#list-project-commit-discussion-items
-        HttpGet httpGet = new HttpGet(commitDiscussionURL);
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            httpGet.addHeader(entry.getKey(), entry.getValue());
-        }
-
-        List<Discussion> discussions = new ArrayList<>();
-
-        if (sendRequest) {
-            HttpResponse httpResponse = HttpClients.createDefault().execute(httpGet);
-            if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
-                LOGGER.error(httpResponse.toString());
-                LOGGER.error(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
-                throw new IllegalStateException("An error was returned in the response from the Gitlab API. See the previous log messages for details");
-            } else if (null != httpResponse) {
-                LOGGER.debug(httpResponse.toString());
-                HttpEntity entity = httpResponse.getEntity();
-                List<Discussion> pagedDiscussions = new ObjectMapper()
-                        .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
-                        .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), new TypeReference<List<Discussion>>() {
-                        });
+                        .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), typeRef);
                 discussions.addAll(pagedDiscussions);
                 LOGGER.info("Commit discussions received");
                 String nextURL = getNextUrl(httpResponse);
                 if (nextURL != null) {
                     LOGGER.info("Getting next page");
-                    discussions.addAll(getCommitDiscussions(nextURL, headers, sendRequest));
+                    discussions.addAll(getPagedList(nextURL, headers, sendRequest, typeRef));
                 }
             }
         }
@@ -301,6 +265,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         }
 
         if (sendRequest) {
+            LOGGER.info("Deleting {} with headers {}", commitDiscussionNoteURL, headers);
+
             HttpResponse httpResponse = HttpClients.createDefault().execute(httpDelete);
             validateGitlabResponse(httpResponse, 204, "Commit discussions note deleted");
         }

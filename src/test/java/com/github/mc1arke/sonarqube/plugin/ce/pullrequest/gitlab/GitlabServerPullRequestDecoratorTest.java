@@ -99,12 +99,21 @@ public class GitlabServerPullRequestDecoratorTest {
                 "  \"id\": 1,\n" +
                 "  \"username\": \"" + user + "\"}")));
 
+        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName)).willReturn(okJson("{\n" +
+                "  \"id\": 15235,\n" +
+                "  \"iid\": " + branchName + ",\n" +
+                "  \"diff_refs\": {\n" +
+                "    \"base_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\",\n" +
+                "    \"head_sha\":\"" + commitSHA + "\",\n" +
+                "    \"start_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\"}\n" +
+                "}")));
+
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/commits")).willReturn(okJson("[\n" +
                 "  {\n" +
                 "    \"id\": \"" + commitSHA + "\"\n" +
                 "  }]")));
 
-        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/repository/commits/" + commitSHA + "/discussions")).willReturn(okJson("[\n" +
+        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions")).willReturn(okJson("[\n" +
                 "  {\n" +
                 "    \"id\": \"" + discussionId + "\",\n" +
                 "    \"individual_note\": false,\n" +
@@ -119,7 +128,7 @@ public class GitlabServerPullRequestDecoratorTest {
                 "          \"username\": \"" + user + "\"\n" +
                 "        }}]}]")));
 
-        wireMockRule.stubFor(delete(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/repository/commits/" + commitSHA + "/discussions/" + discussionId + "/notes/" + noteId)).willReturn(noContent()));
+        wireMockRule.stubFor(delete(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions/" + discussionId + "/notes/" + noteId)).willReturn(noContent()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/statuses/" + commitSHA))
                 .withQueryParam("name", equalTo("SonarQube"))
@@ -128,12 +137,18 @@ public class GitlabServerPullRequestDecoratorTest {
                 .withQueryParam("coverage", equalTo(coverage.getValue()))
                 .willReturn(created()));
 
-        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/repository/commits/" + commitSHA + "/comments"))
-                .withRequestBody(equalTo("note=summary"))
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
+                .withRequestBody(equalTo("body=summary"))
                 .willReturn(created()));
 
-        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/repository/commits/" + commitSHA + "/comments"))
-                .withRequestBody(equalTo("note=issue&path=" + urlEncode(filePath) + "&line=" + lineNumber + "&line_type=new"))
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
+                .withRequestBody(equalTo("body=issue&" +
+                        urlEncode("position[base_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
+                        urlEncode("position[start_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
+                        urlEncode("position[head_sha]") + "=" + commitSHA + "&" +
+                        urlEncode("position[new_path]") + "=" + urlEncode(filePath) + "&" +
+                        urlEncode("position[new_line]") + "=" + lineNumber + "&" +
+                        urlEncode("position[position_type]") + "=text"))
                 .willReturn(created()));
 
         Server server = mock(Server.class);
