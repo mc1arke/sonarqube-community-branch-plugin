@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -224,7 +225,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
 
     private <X> List<X> getPagedList(String commitDiscussionURL, Map<String, String> headers, boolean sendRequest, TypeReference<List<X>> typeRef) throws IOException {
-         HttpGet httpGet = new HttpGet(commitDiscussionURL);
+        HttpGet httpGet = new HttpGet(commitDiscussionURL);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
         }
@@ -246,11 +247,11 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                         .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), typeRef);
                 discussions.addAll(pagedDiscussions);
-                LOGGER.info("Commit discussions received");
-                String nextURL = getNextUrl(httpResponse);
-                if (nextURL != null) {
+                LOGGER.info("MR discussions received");
+                Optional<String> nextURL = getNextUrl(httpResponse);
+                if (nextURL.isPresent()) {
                     LOGGER.info("Getting next page");
-                    discussions.addAll(getPagedList(nextURL, headers, sendRequest, typeRef));
+                    discussions.addAll(getPagedList(nextURL.get(), headers, sendRequest, typeRef));
                 }
             }
         }
@@ -333,18 +334,18 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 String.format("%s must be specified in the project configuration", propertyName)));
     }
 
-    private static String getNextUrl(HttpResponse httpResponse) {
+    private static Optional<String> getNextUrl(HttpResponse httpResponse) {
         Header linkHeader = httpResponse.getFirstHeader("Link");
         if (linkHeader != null) {
             Matcher matcher = Pattern.compile("<([^>]+)>;[\\s]*rel=\"([a-z]+)\"").matcher(linkHeader.getValue());
             while (matcher.find()) {
                 if (matcher.group(2).equals("next")) {
                     //found the next rel return the URL
-                    return matcher.group(1);
+                    return Optional.of(matcher.group(1));
                 }
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     @Override
