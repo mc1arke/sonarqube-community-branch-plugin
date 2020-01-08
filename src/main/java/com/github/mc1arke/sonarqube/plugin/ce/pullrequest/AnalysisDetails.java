@@ -268,7 +268,7 @@ public class AnalysisDetails {
                 .map(MeasureWrapper::new);
     }
 
-    private Optional<QualityGate.Condition> findQualityGateCondition(String metricKey) {
+    public Optional<QualityGate.Condition> findQualityGateCondition(String metricKey) {
         return qualityGate.getConditions().stream().filter(c -> metricKey.equals(c.getMetricKey())).findFirst();
     }
 

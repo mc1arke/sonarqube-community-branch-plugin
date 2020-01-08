@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Markus Heberling
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,23 +16,29 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
-
-import org.junit.Test;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+public class Discussion {
+    private final String id;
 
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(8, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    private final List<Note> notes;
+
+    @JsonCreator
+    public Discussion(@JsonProperty("id") String id, @JsonProperty("notes") List<Note> notes) {
+        this.id = id;
+        this.notes = notes;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public List<Note> getNotes() {
+        return notes;
     }
 }
