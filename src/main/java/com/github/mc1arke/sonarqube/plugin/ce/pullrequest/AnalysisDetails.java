@@ -32,6 +32,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.ce.posttask.QualityGate.EvaluationStatus;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
@@ -106,13 +107,19 @@ public class AnalysisDetails {
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
         BigDecimal newCoverage =
-                findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY).map(QualityGate.Condition::getValue)
-                        .map(BigDecimal::new).orElse(null);
+                findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
+                    .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                    .map(QualityGate.Condition::getValue)
+                    .map(BigDecimal::new)
+                    .orElse(null);
 
         double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
 
         BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
-                .map(QualityGate.Condition::getValue).map(BigDecimal::new).orElse(null);
+            .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+            .map(QualityGate.Condition::getValue)
+            .map(BigDecimal::new)
+            .orElse(null);
 
         double duplications =
                 findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
