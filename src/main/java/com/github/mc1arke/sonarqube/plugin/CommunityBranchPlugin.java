@@ -87,7 +87,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
             SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(
                     PropertyDefinition.builder("sonar.pullrequest.provider").category(PULL_REQUEST_CATEGORY_LABEL)
-                            .subCategory("General").onlyOnQualifiers(Qualifiers.PROJECT).name("Provider")
+                            .subCategory("General").onQualifiers(Qualifiers.PROJECT).name("Provider")
                             .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer", "GitlabServer").build(),
 
                     PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
