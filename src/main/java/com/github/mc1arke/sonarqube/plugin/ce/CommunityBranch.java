@@ -27,7 +27,7 @@ import org.sonar.db.component.ComponentDto;
 /**
  * @author Michael Clarke
  */
-public class CommunityBranch implements Branch {
+public class CommunityBranch implements Branch, BranchCompatibility.BranchCompatibilityMajor7.BranchCompatibilityMinor9 {
 
     private final String name;
     private final BranchType branchType;

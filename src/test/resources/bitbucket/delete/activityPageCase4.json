@@ -1,0 +1,30 @@
+{
+  "isLastPage": true,
+  "values": [
+    {
+      "id": 1
+    },
+    {
+      "id": 2,
+      "comment": {
+        "id": 1000,
+        "text": "This comment will NOT be removed cause the user slug is not susi.sonar",
+        "author": {
+          "name": "Jay Unit",
+          "slug": "jay.unit"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "comment": {
+        "id": 1001,
+        "text": "This comment will be removed cause it has the correct user slug",
+        "author": {
+          "name": "Susi Sonar",
+          "slug": "susi.sonar"
+        }
+      }
+    }
+  ]
+}

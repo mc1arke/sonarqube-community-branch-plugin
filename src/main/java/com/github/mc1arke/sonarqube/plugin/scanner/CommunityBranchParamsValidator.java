@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchParamsValidator implements BranchParamsValidator {
+public class CommunityBranchParamsValidator implements BranchParamsValidator, BranchParamsValidatorCompatibility.BranchParamsValidatorCompatibilityMajor7.BranchParamsValidatorCompatibilityMinor9, BranchParamsValidatorCompatibility.BranchParamsValidatorCompatibilityMajor8.BranchParamsValidatorCompatibilityMinor0 {
 
     private final GlobalConfiguration globalConfiguration;
 
@@ -44,5 +44,10 @@ public class CommunityBranchParamsValidator implements BranchParamsValidator {
                     "The legacy 'sonar.branch' parameter cannot be used at the same time as '%s' or '%s'",
                     ScannerProperties.BRANCH_NAME, ScannerProperties.BRANCH_TARGET));
         }
+    }
+
+    @Override
+    public void validate(List<String> validationMessages) {
+        //no-op - nothing to validate
     }
 }

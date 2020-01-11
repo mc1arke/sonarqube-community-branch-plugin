@@ -22,6 +22,7 @@ import com.github.mc1arke.sonarqube.plugin.classloader.DefaultElevatedClassLoade
 import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactory;
 import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactoryProvider;
 import org.sonar.api.Plugin;
+import org.sonar.api.SonarQubeSide;
 
 import java.util.Objects;
 
@@ -55,11 +56,14 @@ public class CommunityBranchPluginBootstrap implements Plugin {
 
     @Override
     public void define(Context context) {
+        if (SonarQubeSide.SCANNER != context.getRuntime().getSonarQubeSide()) {
+            return;
+        }
         try {
             ClassLoader classLoader =
                     elevatedClassLoaderFactoryProvider.createFactory(context).createClassLoader(getClass());
             Class<?> targetClass = classLoader.loadClass(getClass().getName().replace("Bootstrap", ""));
-            Object instance = targetClass.newInstance();
+            Object instance = targetClass.getDeclaredConstructor().newInstance();
             if (!(instance instanceof Plugin)) {
                 throw new IllegalStateException(
                         String.format("Expected loaded class to be instance of '%s' but was '%s'",

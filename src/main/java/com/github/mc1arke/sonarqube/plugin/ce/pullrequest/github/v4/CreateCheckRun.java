@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CheckRun;
 import io.aexp.nodes.graphql.annotations.GraphQLArgument;
 import io.aexp.nodes.graphql.annotations.GraphQLProperty;
 

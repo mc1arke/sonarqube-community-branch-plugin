@@ -60,10 +60,14 @@ dependencies {
     compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar')
     testCompile fileTree(dir: sonarLibraries, include: '**/*.jar')
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.24.0'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
+    testCompile group: 'org.assertj', name: 'assertj-core', version: '3.13.2'
+    testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.24.1'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
     compile 'org.bouncycastle:bcpkix-jdk15on:1.62'
-    compile 'io.aexp.nodes.graphql:nodes:0.5.0'
+    compile('io.aexp.nodes.graphql:nodes:0.5.0') {
+        exclude group: 'com.fasterxml.jackson.core'
+    }
 }
 
 
@@ -112,3 +116,8 @@ tasks.shadowJar.configure {
 }
 
 assemble.dependsOn('shadowJar')
+
+pitest {
+    timestampedReports = false
+    avoidCallsTo = ['org.sonar.api.utils.log.Logger']
+}

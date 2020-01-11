@@ -18,12 +18,15 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
-
 public interface PullRequestBuildStatusDecorator {
+
+    String PULL_REQUEST_COMMENT_SUMMARY_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.comment.summary.enabled";
+
+    String PULL_REQUEST_FILE_COMMENT_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.file.comment.enabled";
+
+    String PULL_REQUEST_DELETE_COMMENTS_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.delete.comments.enabled";
 
     String name();
 
-    void decorateQualityGateStatus(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis);
-
+    void decorateQualityGateStatus(AnalysisDetails analysisDetails);
 }

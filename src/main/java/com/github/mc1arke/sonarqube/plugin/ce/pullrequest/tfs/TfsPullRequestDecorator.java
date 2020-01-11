@@ -1,9 +1,9 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.tfs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
@@ -39,11 +39,12 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
     }
 
     @Override
-    public void decorateQualityGateStatus(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis) {
+    public void decorateQualityGateStatus(AnalysisDetails analysis) {
         try {
             Configuration configuration = configurationRepository.getConfiguration();
 
             List<Issue> issues = postAnalysisIssueVisitor.getIssues().stream()
+                    .map(i -> i.getIssue())
                     .filter(i -> OPEN_ISSUE_STATUSES.contains(i.status()))
                     .map(this::toTfsIssue)
                     .collect(Collectors.toList());
@@ -51,7 +52,7 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
             Message message = Message.newBuilder()
                     .issues(issues)
                     .projectName(getMandatoryProperty("sonar.pullrequest.vsts.project", configuration))
-                    .pullRequestId(Integer.parseInt(projectAnalysis.getBranch().get().getName().get()))
+                    .pullRequestId(Integer.parseInt(analysis.getBranchName()))
                     .repositoryId(getMandatoryProperty("sonar.pullrequest.vsts.repository", configuration))
                     .build();
 

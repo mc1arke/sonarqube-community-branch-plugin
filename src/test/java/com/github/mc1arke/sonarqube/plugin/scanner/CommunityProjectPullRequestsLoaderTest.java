@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -117,6 +118,27 @@ public class CommunityProjectPullRequestsLoaderTest {
     }
 
     @Test
+    public void testAllPullRequestsFromNonEmptyServerResponseWithoutBase() {
+        WsResponse mockResponse = mock(WsResponse.class);
+        when(scannerWsClient.call(any())).thenReturn(mockResponse);
+
+        StringReader stringReader = new StringReader(
+                "{\"pullRequests\":[{\"key\":\"101\",\"title\":\"dummybranch\",\"branch\":\"dummybranch\",\"status\":{\"qualityGateStatus\":\"OK\",\"bugs\":0,\"vulnerabilities\":0,\"codeSmells\":0},\"analysisDate\":\"\"}]}");
+        when(mockResponse.contentReader()).thenReturn(stringReader);
+
+        CommunityProjectPullRequestsLoader testCase = new CommunityProjectPullRequestsLoader(scannerWsClient);
+        ProjectPullRequests response = testCase.load("key");
+        assertFalse(response.isEmpty());
+
+        PullRequestInfo responseInfo = response.get("dummybranch");
+        assertNotNull(responseInfo);
+        assertEquals(0, responseInfo.getAnalysisDate());
+        assertNull(responseInfo.getBase());
+        assertEquals("dummybranch", responseInfo.getBranch());
+        assertEquals("101", responseInfo.getKey());
+    }
+
+    @Test
     public void testMessageExceptionOnIOException() {
         WsResponse mockResponse = mock(WsResponse.class);
         when(scannerWsClient.call(any())).thenReturn(mockResponse);
@@ -164,17 +186,7 @@ public class CommunityProjectPullRequestsLoaderTest {
 
     @Test
     public void testEmptyListOn404HttpResponse() {
-        WsResponse mockResponse = mock(WsResponse.class);
-        when(scannerWsClient.call(any())).thenReturn(mockResponse);
-
-        Reader mockReader = new BufferedReader(new StringReader(GsonHelper.create()
-                                                                        .toJson(new CommunityProjectPullRequestsLoader.PullRequestsResponse(
-                                                                                new ArrayList<>())))) {
-            public void close() {
-                throw new HttpException("url", 404, "content");
-            }
-        };
-        when(mockResponse.contentReader()).thenReturn(mockReader);
+        when(scannerWsClient.call(any())).thenThrow(new HttpException("url", 404, "content"));
 
         CommunityProjectPullRequestsLoader testCase = new CommunityProjectPullRequestsLoader(scannerWsClient);
         assertTrue(testCase.load("project").isEmpty());
