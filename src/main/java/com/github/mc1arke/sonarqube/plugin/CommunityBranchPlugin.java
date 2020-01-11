@@ -174,7 +174,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.PROJECT)
                             .name("Repository Slug for the Gitlab (Server or Cloud) instance")
-                            .description("The repository slug can be eiter in the form of user/repo or it can be the Project ID")
+                            .description("The repository slug can be either in the form of user/repo or it can be the Project ID")
                             .type(PropertyType.STRING)
                             .build()
             );
