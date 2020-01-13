@@ -48,10 +48,12 @@ import org.sonar.server.measure.Rating;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -124,7 +126,7 @@ public class AnalysisDetails {
         double duplications =
                 findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
 
-        NumberFormat decimalFormat = new DecimalFormat("#0.00");
+        NumberFormat decimalFormat = new DecimalFormat("#0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 
         Map<RuleType, Long> issueCounts = countRuleByType();
         long issueTotal = issueCounts.values().stream().mapToLong(l -> l).sum();
@@ -302,7 +304,7 @@ public class AnalysisDetails {
                             condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is worse than" :
                             "is better than", Rating.valueOf(Integer.parseInt(condition.getErrorThreshold())));
         } else if (metric.getType() == Metric.ValueType.PERCENT) {
-            NumberFormat numberFormat = new DecimalFormat("#0.00");
+            NumberFormat numberFormat = new DecimalFormat("#0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
             return String.format("%s%% %s (%s %s%%)", numberFormat.format(new BigDecimal(condition.getValue())),
                                  metric.getName(),
                                  condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
