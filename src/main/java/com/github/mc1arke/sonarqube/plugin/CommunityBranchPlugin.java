@@ -87,7 +87,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
             SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(
                     PropertyDefinition.builder("sonar.pullrequest.provider").category(PULL_REQUEST_CATEGORY_LABEL)
-                            .subCategory("General").onlyOnQualifiers(Qualifiers.PROJECT).name("Provider")
+                            .subCategory("General").onQualifiers(Qualifiers.PROJECT).name("Provider")
                             .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer", "GitlabServer").build(),
 
                     PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
@@ -115,15 +115,15 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .type(PropertyType.STRING).defaultValue("https://api.github.com").build(),
 
                     PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
-                            .onlyOnQualifiers(Qualifiers.PROJECT).name("Enable summary comment").description("This enables the summary comment (if implemented).")
+                            .onQualifiers(Qualifiers.PROJECT).name("Enable summary comment").description("This enables the summary comment (if implemented).")
                             .type(PropertyType.BOOLEAN).defaultValue("true").build(),
 
                     PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_FILE_COMMENT_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
-                            .onlyOnQualifiers(Qualifiers.PROJECT).name("Enable file comment").description("This enables commenting (if implemented).").type(PropertyType.BOOLEAN)
+                            .onQualifiers(Qualifiers.PROJECT).name("Enable file comment").description("This enables commenting (if implemented).").type(PropertyType.BOOLEAN)
                             .defaultValue("true").build(),
 
                     PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_DELETE_COMMENTS_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
-                            .onlyOnQualifiers(Qualifiers.PROJECT).name("Enable deleting comments").description("This cleans up the comments from previous runs (if implemented).")
+                            .onQualifiers(Qualifiers.PROJECT).name("Enable deleting comments").description("This cleans up the comments from previous runs (if implemented).")
                             .type(PropertyType.BOOLEAN).defaultValue("false").build(),
 
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
@@ -134,7 +134,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .description("Token used for authentication and commenting to your Bitbucket instance").type(PropertyType.STRING).build(),
 
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG)
-                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onlyOnQualifiers(Qualifiers.PROJECT).name("Comment User Slug")
+                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT).name("Comment User Slug")
                             .description("User slug for the comment user. Needed only for comment deletion.").type(PropertyType.STRING).build(),
 
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG)
@@ -172,7 +172,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                     PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG)
                             .category(PULL_REQUEST_CATEGORY_LABEL)
                             .subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
-                            .onQualifiers(Qualifiers.PROJECT)
+                            .onlyOnQualifiers(Qualifiers.PROJECT)
                             .name("Repository Slug for the Gitlab (Server or Cloud) instance")
                             .description("The repository slug can be either in the form of user/repo or it can be the Project ID")
                             .type(PropertyType.STRING)
