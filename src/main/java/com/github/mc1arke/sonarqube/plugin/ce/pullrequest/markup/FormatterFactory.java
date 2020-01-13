@@ -26,6 +26,8 @@ public interface FormatterFactory {
 
     Formatter<Image> imageFormatter();
 
+    Formatter<Link> linkFormatter();
+
     Formatter<List> listFormatter();
 
     Formatter<ListItem> listItemFormatter();

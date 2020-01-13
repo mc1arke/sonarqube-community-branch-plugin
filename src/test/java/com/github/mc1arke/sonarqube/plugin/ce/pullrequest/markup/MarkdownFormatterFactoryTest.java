@@ -45,6 +45,13 @@ public class MarkdownFormatterFactoryTest {
     }
 
     @Test
+    public void testLinkFormatter() {
+        MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
+        assertEquals("[Text](http://url)", testCase.linkFormatter().format(new Link("http://url", new Text("Text")), testCase));
+        assertEquals("[http://url](http://url)", testCase.linkFormatter().format(new Link("http://url"), testCase));
+    }
+
+    @Test
     public void testListFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
         assertEquals("- List Item 1" + System.lineSeparator() + System.lineSeparator(), testCase.listFormatter()
