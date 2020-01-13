@@ -23,10 +23,13 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Formatter;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Image;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Link;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.ListItem;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.Analysis;
@@ -80,7 +83,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, null);
 
         assertEquals("branchName", testCase.getBranchName());
     }
@@ -99,7 +102,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, null);
 
         assertEquals("commitId", testCase.getCommitSha());
     }
@@ -117,7 +120,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, null);
 
         assertEquals(QualityGate.Status.ERROR, testCase.getQualityGateStatus());
     }
@@ -135,7 +138,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, null);
 
         assertEquals(analysis.getDate(), testCase.getAnalysisDate());
     }
@@ -153,7 +156,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, null);
 
         assertEquals("Analysis ID", testCase.getAnalysisId());
     }
@@ -171,7 +174,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, null);
 
         assertEquals("Project Key", testCase.getAnalysisProjectKey());
     }
@@ -179,6 +182,7 @@ public class AnalysisDetailsTest {
     @Test
     public void testCreateAnalysisSummary() {
         AnalysisDetails.BranchDetails branchDetails = mock(AnalysisDetails.BranchDetails.class);
+        doReturn("5").when(branchDetails).getBranchName();
 
         TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
         AnalysisDetails.MeasuresHolder measuresHolder = mock(AnalysisDetails.MeasuresHolder.class);
@@ -288,7 +292,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -344,7 +348,8 @@ public class AnalysisDetailsTest {
                                                           new ListItem(new Image("No duplication information",
                                                                                  "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/Duplications/NoDuplicationInfo.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
-                                                                  "No duplication information (12.30% Estimated after merge)"))));
+                                                                  "No duplication information (12.30% Estimated after merge)"))),
+                                                 new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
@@ -354,6 +359,7 @@ public class AnalysisDetailsTest {
     @Test
     public void testCreateAnalysisSummary2() {
         AnalysisDetails.BranchDetails branchDetails = mock(AnalysisDetails.BranchDetails.class);
+        doReturn("5").when(branchDetails).getBranchName();
 
         TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
         AnalysisDetails.MeasuresHolder measuresHolder = mock(AnalysisDetails.MeasuresHolder.class);
@@ -395,7 +401,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -440,7 +446,8 @@ public class AnalysisDetailsTest {
                                                           new ListItem(new Image("20 percent duplication",
                                                                                  "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/Duplications/20.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
-                                                                  "18.00% Duplicated Code (21.78% Estimated after merge)"))));
+                                                                  "18.00% Duplicated Code (21.78% Estimated after merge)"))),
+                                                 new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
@@ -449,6 +456,7 @@ public class AnalysisDetailsTest {
     @Test
     public void testCreateAnalysisSummary3() {
         AnalysisDetails.BranchDetails branchDetails = mock(AnalysisDetails.BranchDetails.class);
+        doReturn("5").when(branchDetails).getBranchName();
 
         TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
         AnalysisDetails.MeasuresHolder measuresHolder = mock(AnalysisDetails.MeasuresHolder.class);
@@ -498,7 +506,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -543,7 +551,8 @@ public class AnalysisDetailsTest {
                                                           new ListItem(new Image("10 percent duplication",
                                                                                  "http://host.name/path/checks/Duplications/10.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
-                                                                  "10.00% Duplicated Code (21.78% Estimated after merge)"))));
+                                                                  "10.00% Duplicated Code (21.78% Estimated after merge)"))),
+                                                 new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
@@ -552,6 +561,7 @@ public class AnalysisDetailsTest {
     @Test
     public void testCreateAnalysisSummary4() {
         AnalysisDetails.BranchDetails branchDetails = mock(AnalysisDetails.BranchDetails.class);
+        doReturn("5").when(branchDetails).getBranchName();
 
         TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
         AnalysisDetails.MeasuresHolder measuresHolder = mock(AnalysisDetails.MeasuresHolder.class);
@@ -593,7 +603,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -638,7 +648,8 @@ public class AnalysisDetailsTest {
                                                           new ListItem(new Image("20plus percent duplication",
                                                                                  "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/Duplications/20plus.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
-                                                                  "30.00% Duplicated Code (21.78% Estimated after merge)"))));
+                                                                  "30.00% Duplicated Code (21.78% Estimated after merge)"))),
+                                                 new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
@@ -686,7 +697,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), postAnalysisIssueVisitor,
                                     mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
-                                    mock(Analysis.class), mock(Project.class), mock(Configuration.class));
+                                    mock(Analysis.class), mock(Project.class), mock(Configuration.class), null);
         assertSame(postAnalysisIssueVisitor, analysisDetails.getPostAnalysisIssueVisitor());
     }
 
@@ -713,7 +724,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails testCase =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                                     qualityGate, measuresHolder, mock(Analysis.class), mock(Project.class),
-                                    mock(Configuration.class));
+                                    mock(Configuration.class), null);
         assertThatThrownBy(() -> testCase.createAnalysisSummary(mock(FormatterFactory.class)))
                 .hasMessage("Could not invoke getDoubleValue").isExactlyInstanceOf(IllegalStateException.class)
                 .hasCauseExactlyInstanceOf(InvocationTargetException.class);

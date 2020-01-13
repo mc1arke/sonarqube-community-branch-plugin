@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Markus Heberling
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,21 +18,21 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-public final class Heading extends Node {
+public final class Link extends Node {
 
-    private final int level;
+    private final String url;
 
-    public Heading(int level, Node... children) {
+    public Link(String url, Node... children) {
         super(children);
-        this.level = level;
-    }
+        this.url=url;
+      }
 
-    int getLevel() {
-        return level;
+    public String getUrl() {
+        return url;
     }
 
     @Override
     boolean isValidChild(Node child) {
-        return child instanceof Text || child instanceof Image || child instanceof Link;
+        return child instanceof Text;
     }
 }

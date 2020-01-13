@@ -40,4 +40,8 @@ public class ParagraphTest {
         assertTrue(new Paragraph().isValidChild(new Image("", "")));
     }
 
+    @Test
+    public void testIsValidChildValidChildLink() {
+        assertTrue(new Paragraph().isValidChild(new Link("")));
+    }
 }

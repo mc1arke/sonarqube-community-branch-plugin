@@ -23,6 +23,7 @@ import org.sonar.api.ce.posttask.Branch;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.Configuration;
+import org.sonar.api.platform.Server;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
@@ -39,18 +40,21 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
     private static final Logger LOGGER = Loggers.get(PullRequestPostAnalysisTask.class);
 
     private final List<PullRequestBuildStatusDecorator> pullRequestDecorators;
+    private final Server server;
     private final ConfigurationRepository configurationRepository;
     private final PostAnalysisIssueVisitor postAnalysisIssueVisitor;
     private final MetricRepository metricRepository;
     private final MeasureRepository measureRepository;
     private final TreeRootHolder treeRootHolder;
 
-    public PullRequestPostAnalysisTask(ConfigurationRepository configurationRepository,
+    public PullRequestPostAnalysisTask(Server server,
+                                       ConfigurationRepository configurationRepository,
                                        List<PullRequestBuildStatusDecorator> pullRequestDecorators,
                                        PostAnalysisIssueVisitor postAnalysisIssueVisitor,
                                        MetricRepository metricRepository, MeasureRepository measureRepository,
                                        TreeRootHolder treeRootHolder) {
         super();
+        this.server = server;
         this.configurationRepository = configurationRepository;
         this.pullRequestDecorators = pullRequestDecorators;
         this.postAnalysisIssueVisitor = postAnalysisIssueVisitor;
@@ -119,7 +123,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
                                     postAnalysisIssueVisitor, qualityGate,
                                     new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
                                                                        treeRootHolder), analysis,
-                                    projectAnalysis.getProject(), configuration);
+                                    projectAnalysis.getProject(), configuration, server.getPublicRootUrl());
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
         LOGGER.info("using pull request decorator" + pullRequestDecorator.name());

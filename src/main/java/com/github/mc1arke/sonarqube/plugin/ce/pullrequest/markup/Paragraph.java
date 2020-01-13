@@ -26,6 +26,6 @@ public final class Paragraph extends Node {
 
     @Override
     boolean isValidChild(Node child) {
-        return child instanceof Image || child instanceof Text;
+        return child instanceof Image || child instanceof Text || child instanceof Link;
     }
 }

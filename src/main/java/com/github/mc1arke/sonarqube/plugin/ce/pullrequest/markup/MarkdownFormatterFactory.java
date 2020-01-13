@@ -56,6 +56,16 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
     }
 
     @Override
+    public Formatter<Link> linkFormatter() {
+        return new BaseFormatter<Link>() {
+            @Override
+            public String format(Link node, FormatterFactory formatterFactory) {
+                return String.format("[%s](%s)", node.getChildren().isEmpty() ? node.getUrl() : childContents(node, formatterFactory), node.getUrl());
+            }
+        };
+    }
+
+    @Override
     public Formatter<List> listFormatter() {
         return new BaseFormatter<List>() {
             @Override

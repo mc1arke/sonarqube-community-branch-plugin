@@ -40,4 +40,9 @@ public class ListItemTest {
         assertTrue(new ListItem().isValidChild(new Image("", "")));
     }
 
+    @Test
+    public void testIsValidChildLink() {
+        assertTrue(new ListItem().isValidChild(new Link("")));
+    }
+
 }

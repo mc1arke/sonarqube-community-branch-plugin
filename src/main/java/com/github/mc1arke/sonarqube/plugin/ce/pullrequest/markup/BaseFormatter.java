@@ -41,6 +41,8 @@ abstract class BaseFormatter<N extends Node> implements Formatter<N> {
             return (Formatter<N>) formatterFactory.paragraphFormatter();
         } else if (node instanceof Text) {
             return (Formatter<N>) formatterFactory.textFormatter();
+        } else if (node instanceof Link) {
+            return (Formatter<N>) formatterFactory.linkFormatter();
         } else {
             throw new IllegalArgumentException("Unknown node type: " + node.getClass().getName());
         }

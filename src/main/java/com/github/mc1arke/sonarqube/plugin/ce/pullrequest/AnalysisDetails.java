@@ -25,6 +25,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Image;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Link;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.ListItem;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Node;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
@@ -47,6 +48,7 @@ import org.sonar.core.issue.DefaultIssue;
 import org.sonar.server.measure.Rating;
 
 import java.math.BigDecimal;
+import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -73,6 +75,7 @@ public class AnalysisDetails {
 
     public static final String IMAGE_URL_BASE = "com.github.mc1arke.sonarqube.plugin.branch.image-url-base";
 
+    private final String publicRootURL;
     private final BranchDetails branchDetails;
     private final MeasuresHolder measuresHolder;
     private final PostAnalysisIssueVisitor postAnalysisIssueVisitor;
@@ -83,8 +86,9 @@ public class AnalysisDetails {
 
     AnalysisDetails(BranchDetails branchDetails, PostAnalysisIssueVisitor postAnalysisIssueVisitor,
                     QualityGate qualityGate, MeasuresHolder measuresHolder, Analysis analysis, Project project,
-                    Configuration configuration) {
+                    Configuration configuration, String publicRootURL) {
         super();
+        this.publicRootURL = publicRootURL;
         this.branchDetails = branchDetails;
         this.measuresHolder = measuresHolder;
         this.postAnalysisIssueVisitor = postAnalysisIssueVisitor;
@@ -180,7 +184,8 @@ public class AnalysisDetails {
                                                                  .map(i -> i + "% Duplicated Code")
                                                                  .orElse("No duplication information") + " (" +
                                                          decimalFormat.format(duplications) +
-                                                         "% Estimated after merge)"))));
+                                                         "% Estimated after merge)"))),
+                                         new Link(publicRootURL + "/dashboard?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName(), new Text("View in SonarQube")));
 
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
@@ -202,7 +207,8 @@ public class AnalysisDetails {
                 new Paragraph(new Text(String.format("**Severity:** %s ", issue.severity())), new Image(issue.severity(), String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase()))),
                 new Paragraph(new Text(String.format("**Message:** %s", issue.getMessage()))),
                 effortNode,
-                resolutionNode
+                resolutionNode,
+                new Link(publicRootURL + "/project/issues?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issue.key() + "&open=" + issue.key(), new Text("View in SonarQube"))
         );
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
