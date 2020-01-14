@@ -126,7 +126,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             User user = getSingle(userURL, headers, User.class);
             LOGGER.info(String.format("Using user: %s ", user.getUsername()));
 
-            List<String> commits = getPagedList(prCommitsURL, headers, deleteCommentsEnabled, new TypeReference<List<Commit>>() {
+            List<String> commits = getPagedList(prCommitsURL, headers, true, new TypeReference<List<Commit>>() {
             }).stream().map(Commit::getId).collect(Collectors.toList());
             MergeRequest mergeRequest = getSingle(mergeRequestURl, headers, MergeRequest.class);
 
@@ -169,6 +169,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 if (path != null && issue.getIssue().getLine() != null) {
                     //only if we have a path and line number
                     String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());
+
                     if (scmInfoRepository.getScmInfo(issue.getComponent())
                             .filter(i -> i.hasChangesetForLine(issue.getIssue().getLine()))
                             .map(i -> i.getChangesetForLine(issue.getIssue().getLine()))
@@ -182,9 +183,11 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                                 new BasicNameValuePair("position[base_sha]", mergeRequest.getDiffRefs().getBaseSha()),
                                 new BasicNameValuePair("position[start_sha]", mergeRequest.getDiffRefs().getStartSha()),
                                 new BasicNameValuePair("position[head_sha]", mergeRequest.getDiffRefs().getHeadSha()),
+                                new BasicNameValuePair("position[old_path]", path),
                                 new BasicNameValuePair("position[new_path]", path),
                                 new BasicNameValuePair("position[new_line]", String.valueOf(issue.getIssue().getLine())),
                                 new BasicNameValuePair("position[position_type]", "text"));
+
                         postCommitComment(mergeRequestDiscussionURL, headers, fileContentParams, fileCommentEnabled);
                     } else {
                         LOGGER.info(String.format("Skipping %s:%d since the commit does not belong to the MR", path, issue.getIssue().getLine()));
