@@ -185,6 +185,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                                 new BasicNameValuePair("position[base_sha]", mergeRequest.getDiffRefs().getBaseSha()),
                                 new BasicNameValuePair("position[start_sha]", mergeRequest.getDiffRefs().getStartSha()),
                                 new BasicNameValuePair("position[head_sha]", mergeRequest.getDiffRefs().getHeadSha()),
+                                new BasicNameValuePair("position[old_path]", path),
                                 new BasicNameValuePair("position[new_path]", path),
                                 new BasicNameValuePair("position[new_line]", String.valueOf(issue.getIssue().getLine())),
                                 new BasicNameValuePair("position[position_type]", "text"));
