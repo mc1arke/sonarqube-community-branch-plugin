@@ -28,5 +28,5 @@ public interface PullRequestBuildStatusDecorator {
 
     String name();
 
-    void decorateQualityGateStatus(AnalysisDetails analysisDetails);
+    void decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration configuration);
 }

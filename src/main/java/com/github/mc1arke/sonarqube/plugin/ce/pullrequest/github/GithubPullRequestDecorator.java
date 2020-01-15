@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 
 public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
@@ -30,9 +31,9 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
     }
 
     @Override
-    public void decorateQualityGateStatus(AnalysisDetails analysisDetails) {
+    public void decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration unifyConfiguration) {
         try {
-            checkRunProvider.createCheckRun(analysisDetails);
+            checkRunProvider.createCheckRun(analysisDetails, unifyConfiguration);
         } catch (Exception ex) {
             throw new IllegalStateException("Could not decorate Pull Request on Github", ex);
         }

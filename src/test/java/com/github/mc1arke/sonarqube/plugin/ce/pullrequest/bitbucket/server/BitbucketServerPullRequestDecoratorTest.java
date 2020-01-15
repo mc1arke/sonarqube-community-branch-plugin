@@ -49,7 +49,7 @@ public class BitbucketServerPullRequestDecoratorTest {
 
     @Before
     public void setUp() {
-        bitbucketServerPullRequestDecorator = new BitbucketServerPullRequestDecorator(null);
+        bitbucketServerPullRequestDecorator = new BitbucketServerPullRequestDecorator();
 
         headers = new HashMap<>();
         headers.put("Authorization", String.format("Bearer %s", APITOKEN));

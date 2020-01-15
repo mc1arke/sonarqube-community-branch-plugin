@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Commit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Discussion;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.MergeRequest;
@@ -57,13 +58,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.platform.Server;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
-import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 
@@ -73,37 +72,34 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     private static final List<String> OPEN_ISSUE_STATUSES =
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());
+
     public static final String PULLREQUEST_GITLAB_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
     public static final String PULLREQUEST_GITLAB_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.token";
-    public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.repositorySlug";
+    public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "sonar.pullrequest.gitlab.repositorySlug";
 
-
-    private final ConfigurationRepository configurationRepository;
     private final Server server;
     private final ScmInfoRepository scmInfoRepository;
 
-    public GitlabServerPullRequestDecorator(Server server, ConfigurationRepository configurationRepository, ScmInfoRepository scmInfoRepository) {
+    public GitlabServerPullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository) {
         super();
-        this.configurationRepository = configurationRepository;
         this.server = server;
         this.scmInfoRepository = scmInfoRepository;
     }
 
     @Override
-    public void decorateQualityGateStatus(AnalysisDetails analysis) {
+    public void decorateQualityGateStatus(AnalysisDetails analysis, UnifyConfiguration unifyConfiguration) {
         LOGGER.info("starting to analyze with " + analysis.toString());
         String revision = analysis.getCommitSha();
 
         try {
-            Configuration configuration = configurationRepository.getConfiguration();
-            final String hostURL = getMandatoryProperty(PULLREQUEST_GITLAB_URL, configuration);
-            final String apiToken = getMandatoryProperty(PULLREQUEST_GITLAB_TOKEN, configuration);
-            final String repositorySlug = getMandatoryProperty(PULLREQUEST_GITLAB_REPOSITORY_SLUG, configuration);
+            final String hostURL = unifyConfiguration.getRequiredServerProperty(PULLREQUEST_GITLAB_URL);
+            final String apiToken = unifyConfiguration.getRequiredServerProperty(PULLREQUEST_GITLAB_TOKEN);
+            final String repositorySlug = unifyConfiguration.getRequiredProperty(PULLREQUEST_GITLAB_REPOSITORY_SLUG);
             final String pullRequestId = analysis.getBranchName();
 
-            final boolean summaryCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED, configuration));
-            final boolean fileCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_FILE_COMMENT_ENABLED, configuration));
-            final boolean deleteCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED, configuration));
+            final boolean summaryCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED));
+            final boolean fileCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_FILE_COMMENT_ENABLED));
+            final boolean deleteCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED));
 
             final String restURL = String.format("%s/api/v4", hostURL);
             final String userURL = restURL + "/user";
@@ -330,11 +326,6 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             LOGGER.debug(httpResponse.toString());
             LOGGER.info(successLogMessage);
         }
-    }
-
-    private static String getMandatoryProperty(String propertyName, Configuration configuration) {
-        return configuration.get(propertyName).orElseThrow(() -> new IllegalStateException(
-                String.format("%s must be specified in the project configuration", propertyName)));
     }
 
     private static Optional<String> getNextUrl(HttpResponse httpResponse) {

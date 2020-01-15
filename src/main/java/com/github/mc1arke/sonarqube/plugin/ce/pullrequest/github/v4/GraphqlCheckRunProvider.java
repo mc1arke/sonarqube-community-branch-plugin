@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.CheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.RepositoryAuthenticationToken;
@@ -34,15 +35,11 @@ import io.aexp.nodes.graphql.GraphQLTemplate;
 import io.aexp.nodes.graphql.InputObject;
 import io.aexp.nodes.graphql.internal.Error;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.config.Configuration;
-import org.sonar.api.config.PropertyDefinition;
-import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.platform.Server;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -62,6 +59,12 @@ import java.util.stream.Collectors;
 
 public class GraphqlCheckRunProvider implements CheckRunProvider {
 
+    public static final String PULL_REQUEST_GITHUB_URL = "sonar.pullrequest.github.endpoint";
+    public static final String PULL_REQUEST_GITHUB_TOKEN = "sonar.alm.github.app.privateKey.secured";
+    public static final String PULL_REQUEST_GITHUB_REPOSITORY = "sonar.pullrequest.github.repository";
+    public static final String PULL_REQUEST_GITHUB_APP_ID = "sonar.alm.github.app.id";
+    public static final String PULL_REQUEST_GITHUB_APP_NAME = "sonar.alm.github.app.name";
+
     private static final Logger LOGGER = Loggers.get(GraphqlCheckRunProvider.class);
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ssXXX";
 
@@ -69,40 +72,30 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
     private final Clock clock;
     private final GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider;
     private final Server server;
-    private final ConfigurationRepository configurationRepository;
-    private final PropertyDefinitions propertyDefinitions;
 
     public GraphqlCheckRunProvider(Clock clock,
                                    GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider,
-                                   Server server, ConfigurationRepository configurationRepository,
-                                   PropertyDefinitions propertyDefinitions) {
-        this(new DefaultGraphqlProvider(), clock, githubApplicationAuthenticationProvider, server,
-             configurationRepository, propertyDefinitions);
+                                   Server server) {
+        this(new DefaultGraphqlProvider(), clock, githubApplicationAuthenticationProvider, server);
     }
 
     GraphqlCheckRunProvider(GraphqlProvider graphqlProvider, Clock clock,
                             GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider,
-                            Server server, ConfigurationRepository configurationRepository,
-                            PropertyDefinitions propertyDefinitions) {
+                            Server server) {
         super();
         this.graphqlProvider = graphqlProvider;
         this.clock = clock;
         this.githubApplicationAuthenticationProvider = githubApplicationAuthenticationProvider;
         this.server = server;
-        this.configurationRepository = configurationRepository;
-        this.propertyDefinitions = propertyDefinitions;
     }
 
     @Override
-    public void createCheckRun(AnalysisDetails analysisDetails) throws IOException, GeneralSecurityException {
-        Configuration configuration = configurationRepository.getConfiguration();
-        String apiUrl = getMandatoryProperty("sonar.pullrequest.github.endpoint", configuration, propertyDefinitions);
-        String apiPrivateKey =
-                getMandatoryProperty("sonar.alm.github.app.privateKey.secured", configuration, propertyDefinitions);
-        String projectPath =
-                getMandatoryProperty("sonar.pullrequest.github.repository", configuration, propertyDefinitions);
-        String appId = getMandatoryProperty("sonar.alm.github.app.id", configuration, propertyDefinitions);
-        String appName = getMandatoryProperty("sonar.alm.github.app.name", configuration, propertyDefinitions);
+    public void createCheckRun(AnalysisDetails analysisDetails, UnifyConfiguration unifyConfiguration) throws IOException, GeneralSecurityException {
+        String apiUrl = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_URL);
+        String apiPrivateKey = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_TOKEN);
+        String projectPath = unifyConfiguration.getRequiredProperty(PULL_REQUEST_GITHUB_REPOSITORY);
+        String appId = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_APP_ID);
+        String appName = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_APP_NAME);
 
         RepositoryAuthenticationToken repositoryAuthenticationToken =
                 githubApplicationAuthenticationProvider.getInstallationToken(apiUrl, appId, apiPrivateKey, projectPath);
@@ -194,14 +187,5 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
             default:
                 throw new IllegalArgumentException("Unknown severity value: " + sonarqubeSeverity);
         }
-    }
-
-
-    private static String getMandatoryProperty(String propertyName, Configuration configuration,
-                                               PropertyDefinitions propertyDefinitions) {
-        return configuration.get(propertyName).orElseGet(
-                () -> Optional.ofNullable(propertyDefinitions.get(propertyName)).map(PropertyDefinition::defaultValue)
-                        .map(v -> "".equals(v) ? null : v).orElseThrow(() -> new IllegalStateException(
-                                String.format("%s must be specified in the project configuration", propertyName))));
     }
 }

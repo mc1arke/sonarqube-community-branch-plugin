@@ -4,6 +4,7 @@
 #Gradle
 /.gradle/
 /build/
+.gradletasknamecache
 
 #Intellij
 /out/

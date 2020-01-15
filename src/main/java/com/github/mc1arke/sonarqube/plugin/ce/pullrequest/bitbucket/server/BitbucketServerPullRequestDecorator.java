@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
@@ -47,11 +48,9 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
-import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.core.issue.DefaultIssue;
 
 import java.io.IOException;
@@ -69,11 +68,11 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
     public static final String PULL_REQUEST_BITBUCKET_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.token";
 
-    public static final String PULL_REQUEST_BITBUCKET_PROJECT_KEY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.projectKey";
+    public static final String PULL_REQUEST_BITBUCKET_PROJECT_KEY = "sonar.pullrequest.bitbucket.projectKey";
 
-    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.userSlug";
+    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "sonar.pullrequest.bitbucket.userSlug";
 
-    public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.repositorySlug";
+    public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "sonar.pullrequest.bitbucket.repositorySlug";
 
     public static final String PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.comment.userSlug";
 
@@ -98,31 +97,22 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     private static final String FULL_PR_DIFF_API = "%s" + REST_API + PROJECT_PR_API + DIFF_API;
     private static final String FULL_PR_DIFF_USER_API = "%s" + REST_API + USER_PR_API + DIFF_API;
 
-
-    private final ConfigurationRepository configurationRepository;
-
-    public BitbucketServerPullRequestDecorator(ConfigurationRepository configurationRepository) {
-        super();
-        this.configurationRepository = configurationRepository;
-    }
-
     @Override
-    public void decorateQualityGateStatus(AnalysisDetails analysisDetails) {
+    public void decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration configuration) {
         LOGGER.info("starting to analyze with " + analysisDetails.toString());
 
         try {
-            Configuration configuration = configurationRepository.getConfiguration();
-            final String hostURL = getMandatoryProperty(PULL_REQUEST_BITBUCKET_URL, configuration);
-            final String apiToken = getMandatoryProperty(PULL_REQUEST_BITBUCKET_TOKEN, configuration);
-            final String repositorySlug = getMandatoryProperty(PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG, configuration);
+            final String hostURL = configuration.getRequiredServerProperty(PULL_REQUEST_BITBUCKET_URL);
+            final String apiToken = configuration.getRequiredServerProperty(PULL_REQUEST_BITBUCKET_TOKEN);
+            final String repositorySlug = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG);
             final String pullRequestId = analysisDetails.getBranchName();
-            final String userSlug = configuration.get(PULL_REQUEST_BITBUCKET_USER_SLUG).orElse(StringUtils.EMPTY);
-            final String projectKey = configuration.get(PULL_REQUEST_BITBUCKET_PROJECT_KEY).orElse(StringUtils.EMPTY);
-            final String commentUserSlug = configuration.get(PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG).orElse(StringUtils.EMPTY);
+            final String userSlug = configuration.getProperty(PULL_REQUEST_BITBUCKET_USER_SLUG).orElse(StringUtils.EMPTY);
+            final String projectKey = configuration.getProperty(PULL_REQUEST_BITBUCKET_PROJECT_KEY).orElse(StringUtils.EMPTY);
+            final String commentUserSlug = configuration.getServerProperty(PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG).orElse(StringUtils.EMPTY);
 
-            final boolean summaryCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED, configuration));
-            final boolean fileCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_FILE_COMMENT_ENABLED, configuration));
-            final boolean deleteCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED, configuration));
+            final boolean summaryCommentEnabled = Boolean.parseBoolean(configuration.getRequiredServerProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED));
+            final boolean fileCommentEnabled = Boolean.parseBoolean(configuration.getRequiredServerProperty(PULL_REQUEST_FILE_COMMENT_ENABLED));
+            final boolean deleteCommentsEnabled = Boolean.parseBoolean(configuration.getRequiredServerProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED));
 
             final String commentUrl;
             final String activityUrl;
@@ -320,11 +310,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             }
         }
         return commentPosted;
-    }
-
-    private static String getMandatoryProperty(String propertyName, Configuration configuration) {
-        return configuration.get(propertyName).orElseThrow(() -> new IllegalStateException(
-                String.format("%s must be specified in the project configuration", propertyName)));
     }
 
     @Override

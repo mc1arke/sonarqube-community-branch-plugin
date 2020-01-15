@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Branch;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
@@ -86,9 +87,10 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
         }
 
         Configuration configuration = configurationRepository.getConfiguration();
+        UnifyConfiguration unifyConfiguration = new UnifyConfiguration(configuration, projectAnalysis.getScannerContext());
 
         Optional<PullRequestBuildStatusDecorator> optionalPullRequestDecorator =
-                findCurrentPullRequestStatusDecorator(configuration, pullRequestDecorators);
+                findCurrentPullRequestStatusDecorator(unifyConfiguration, pullRequestDecorators);
 
         if (!optionalPullRequestDecorator.isPresent()) {
             LOGGER.info("No decorator found for this Pull Request");
@@ -127,16 +129,16 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
         LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
-        pullRequestDecorator.decorateQualityGateStatus(analysisDetails);
+        pullRequestDecorator.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
     }
 
     private static Optional<PullRequestBuildStatusDecorator> findCurrentPullRequestStatusDecorator(
-            Configuration configuration, List<PullRequestBuildStatusDecorator> pullRequestDecorators) {
+            UnifyConfiguration unifyConfiguration, List<PullRequestBuildStatusDecorator> pullRequestDecorators) {
 
-        Optional<String> optionalImplementationName = configuration.get("sonar.pullrequest.provider");
+        Optional<String> optionalImplementationName = unifyConfiguration.getProperty(CommunityBranchPlugin.PULL_REQUEST_PROVIDER);
 
         if (!optionalImplementationName.isPresent()) {
-            LOGGER.debug("'sonar.pullrequest.provider' property not set");
+            LOGGER.debug(CommunityBranchPlugin.PULL_REQUEST_PROVIDER + " property not set");
             return Optional.empty();
         }
 

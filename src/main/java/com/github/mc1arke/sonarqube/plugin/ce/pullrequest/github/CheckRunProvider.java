@@ -19,10 +19,11 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 public interface CheckRunProvider {
-    void createCheckRun(AnalysisDetails analysisDetails) throws IOException, GeneralSecurityException;
+    void createCheckRun(AnalysisDetails analysisDetails, UnifyConfiguration unifyConfiguration) throws IOException, GeneralSecurityException;
 }
