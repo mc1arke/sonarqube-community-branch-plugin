@@ -19,50 +19,45 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 public class GithubPullRequestDecoratorTest {
 
+    private CheckRunProvider checkRunProvider = mock(CheckRunProvider.class);
+    private AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+    private UnifyConfiguration unifyConfiguration = mock(UnifyConfiguration.class);
+    private GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(checkRunProvider);
+
     @Test
     public void testName() {
-        assertEquals("Github", new GithubPullRequestDecorator(mock(CheckRunProvider.class)).name());
+        assertThat(testCase.name()).isEqualTo("Github");
     }
 
     @Test
     public void testDecorateQualityGatePropagateException() throws IOException, GeneralSecurityException {
-        CheckRunProvider checkRunProvider = mock(CheckRunProvider.class);
         Exception dummyException = new IOException("Dummy Exception");
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(checkRunProvider);
+        doThrow(dummyException).when(checkRunProvider).createCheckRun(any(), any());
 
-        doThrow(dummyException).when(checkRunProvider).createCheckRun(any());
-        assertThatThrownBy(() -> testCase.decorateQualityGateStatus(analysisDetails))
+        assertThatThrownBy(() -> testCase.decorateQualityGateStatus(analysisDetails, unifyConfiguration))
                 .hasMessage("Could not decorate Pull Request on Github")
                 .isExactlyInstanceOf(IllegalStateException.class).hasCause(dummyException);
     }
 
     @Test
     public void testDecorateQualityGateReturnValue() throws IOException, GeneralSecurityException {
-        CheckRunProvider checkRunProvider = spy(CheckRunProvider.class);
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(checkRunProvider);
+        testCase.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
 
-        ArgumentCaptor<AnalysisDetails> argumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
-
-        testCase.decorateQualityGateStatus(analysisDetails);
-        verify(checkRunProvider).createCheckRun(argumentCaptor.capture());
-        assertEquals(analysisDetails, argumentCaptor.getValue());
+        verify(checkRunProvider).createCheckRun(analysisDetails, unifyConfiguration);
     }
 }

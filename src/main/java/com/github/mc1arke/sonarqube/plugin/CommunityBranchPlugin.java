@@ -22,11 +22,13 @@ import com.github.mc1arke.sonarqube.plugin.ce.CommunityBranchEditionProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.BitbucketServerPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.GraphqlCheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectPullRequestsLoader;
+import com.github.mc1arke.sonarqube.plugin.scanner.ScannerConfigurationLoaderSensor;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
 import org.sonar.api.CoreProperties;
@@ -43,6 +45,7 @@ import org.sonar.core.extension.CoreExtension;
  */
 public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
+    public static final String PULL_REQUEST_PROVIDER = "sonar.pullrequest.provider";
     private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
     private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
     private static final String GENERAL = "General";
@@ -86,29 +89,29 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
         if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide() ||
             SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(
-                    PropertyDefinition.builder("sonar.pullrequest.provider").category(PULL_REQUEST_CATEGORY_LABEL)
+                    PropertyDefinition.builder(PULL_REQUEST_PROVIDER).category(PULL_REQUEST_CATEGORY_LABEL)
                             .subCategory("General").onQualifiers(Qualifiers.PROJECT).name("Provider")
                             .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer", "GitlabServer").build(),
 
-                    PropertyDefinition.builder("sonar.alm.github.app.privateKey.secured")
+                    PropertyDefinition.builder(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_TOKEN)
                             .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.APP).name("App Private Key").type(PropertyType.TEXT).build(),
 
-                    PropertyDefinition.builder("sonar.alm.github.app.name").category(PULL_REQUEST_CATEGORY_LABEL)
+                    PropertyDefinition.builder(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_APP_NAME).category(PULL_REQUEST_CATEGORY_LABEL)
                             .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP)
                             .name("App Name").defaultValue("SonarQube Community Pull Request Analysis")
                             .type(PropertyType.STRING).build(),
 
-                    PropertyDefinition.builder("sonar.alm.github.app.id").category(PULL_REQUEST_CATEGORY_LABEL)
+                    PropertyDefinition.builder(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_APP_ID).category(PULL_REQUEST_CATEGORY_LABEL)
                             .subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.APP)
                             .name("App ID").type(PropertyType.STRING).build(),
 
-                    PropertyDefinition.builder("sonar.pullrequest.github.repository")
+                    PropertyDefinition.builder(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_REPOSITORY)
                             .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onlyOnQualifiers(Qualifiers.PROJECT).name("Repository identifier")
                             .description("Example: SonarSource/sonarqube").type(PropertyType.STRING).build(),
 
-                    PropertyDefinition.builder("sonar.pullrequest.github.endpoint")
+                    PropertyDefinition.builder(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_URL)
                             .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.APP).name("The API URL for a GitHub instance").description(
                             "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
@@ -185,7 +188,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
     public void define(Plugin.Context context) {
         if (SonarQubeSide.SCANNER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
-                                  CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class);
+                                  CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class,
+                                  ScannerConfigurationLoaderSensor.class);
         }
     }
 }

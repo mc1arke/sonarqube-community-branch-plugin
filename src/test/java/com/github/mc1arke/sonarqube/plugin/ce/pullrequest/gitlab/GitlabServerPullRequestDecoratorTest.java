@@ -4,22 +4,24 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Optional;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.ce.posttask.ScannerContext;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
@@ -56,16 +58,19 @@ public class GitlabServerPullRequestDecoratorTest {
         String filePath = "/path/to/file";
         int lineNumber = 5;
 
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
         Configuration configuration = mock(Configuration.class);
 
-        when(configurationRepository.getConfiguration()).thenReturn(configuration);
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_URL)).thenReturn(Optional.of(wireMockRule.baseUrl()));
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_TOKEN)).thenReturn(Optional.of("token"));
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG)).thenReturn(Optional.of(repositorySlug));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_DELETE_COMMENTS_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_FILE_COMMENT_ENABLED)).thenReturn(Optional.of("true"));
+
+        ScannerContext scannerContext = mock(ScannerContext.class);
+        when(scannerContext.getProperties()).thenReturn(new HashMap<>());
+
+        UnifyConfiguration unifyConfiguration = new UnifyConfiguration(configuration, scannerContext);
 
         QualityGate.Condition coverage = mock(QualityGate.Condition.class);
         when(coverage.getStatus()).thenReturn(QualityGate.EvaluationStatus.OK);
@@ -155,10 +160,8 @@ public class GitlabServerPullRequestDecoratorTest {
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
 
-        GitlabServerPullRequestDecorator pullRequestDecorator = new GitlabServerPullRequestDecorator(server, configurationRepository, scmInfoRepository);
-
-
-        pullRequestDecorator.decorateQualityGateStatus(analysisDetails);
+        GitlabServerPullRequestDecorator pullRequestDecorator = new GitlabServerPullRequestDecorator(server, scmInfoRepository);
+        pullRequestDecorator.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
     }
 
     private String urlEncode(String value) {

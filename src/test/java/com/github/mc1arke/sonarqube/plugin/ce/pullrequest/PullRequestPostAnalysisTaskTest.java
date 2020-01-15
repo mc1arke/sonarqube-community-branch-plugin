@@ -18,6 +18,8 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.Analysis;
@@ -25,6 +27,7 @@ import org.sonar.api.ce.posttask.Branch;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.ce.posttask.ScannerContext;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
@@ -34,6 +37,7 @@ import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,25 +51,36 @@ import static org.mockito.Mockito.verify;
 
 public class PullRequestPostAnalysisTaskTest {
 
+    private PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
+    private Branch branch = mock(Branch.class);
+    private ScannerContext scannerContext = mock(ScannerContext.class);
+
+    private Server server = mock(Server.class);
+    private ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
+    private Configuration configuration = mock(Configuration.class);
+    private List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
+    private PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
+    private MetricRepository metricRepository = mock(MetricRepository.class);
+    private MeasureRepository measureRepository = mock(MeasureRepository.class);
+    private TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
+
+    private PullRequestPostAnalysisTask testCase =
+            new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
+                    postAnalysisIssueVisitor, metricRepository, measureRepository,
+                    treeRootHolder);
+
+    @Before
+    public void init() {
+        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
+        doReturn(scannerContext).when(projectAnalysis).getScannerContext();
+        doReturn(new HashMap<>()).when(scannerContext).getProperties();
+        doReturn(configuration).when(configurationRepository).getConfiguration();
+    }
+
     @Test
     public void testFinishedNonPullRequest() {
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Branch branch = mock(Branch.class);
         doReturn(Branch.Type.LONG).when(branch).getType();
-        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
 
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
-
-        PullRequestPostAnalysisTask testCase =
-                new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
-                                                postAnalysisIssueVisitor, metricRepository, measureRepository,
-                                                treeRootHolder);
         testCase.finished(projectAnalysis);
 
         verify(branch).getType();
@@ -74,24 +89,9 @@ public class PullRequestPostAnalysisTaskTest {
 
     @Test
     public void testFinishedNoBranchName() {
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Branch branch = mock(Branch.class);
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.empty()).when(branch).getName();
-        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
 
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
-
-        PullRequestPostAnalysisTask testCase =
-                new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
-                                                postAnalysisIssueVisitor, metricRepository, measureRepository,
-                                                treeRootHolder);
         testCase.finished(projectAnalysis);
 
         verify(branch).getName();
@@ -100,50 +100,22 @@ public class PullRequestPostAnalysisTaskTest {
 
     @Test
     public void testFinishedNoProviderSet() {
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Branch branch = mock(Branch.class);
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("branchName")).when(branch).getName();
-        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
 
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
+        doReturn(Optional.empty()).when(configuration).get(eq(CommunityBranchPlugin.PULL_REQUEST_PROVIDER));
 
-        Configuration configuration = mock(Configuration.class);
-        doReturn(Optional.empty()).when(configuration).get(eq("sonar.pullrequest.provider"));
-        doReturn(configuration).when(configurationRepository).getConfiguration();
-
-        PullRequestPostAnalysisTask testCase =
-                new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
-                                                postAnalysisIssueVisitor, metricRepository, measureRepository,
-                                                treeRootHolder);
         testCase.finished(projectAnalysis);
 
         verify(configurationRepository).getConfiguration();
-        verify(configuration).get("sonar.pullrequest.provider");
+        verify(configuration).get(CommunityBranchPlugin.PULL_REQUEST_PROVIDER);
         verify(projectAnalysis, never()).getAnalysis();
     }
 
     @Test
     public void testFinishedNoProviderMatchingName() {
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Branch branch = mock(Branch.class);
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("branchName")).when(branch).getName();
-        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
-
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
 
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
         doReturn("decorator-name-1").when(decorator1).name();
@@ -153,18 +125,12 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn("decorator-name-2").when(decorator2).name();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        Configuration configuration = mock(Configuration.class);
-        doReturn(Optional.of("missing-provider")).when(configuration).get(eq("sonar.pullrequest.provider"));
-        doReturn(configuration).when(configurationRepository).getConfiguration();
+        doReturn(Optional.of("missing-provider")).when(configuration).get(eq(CommunityBranchPlugin.PULL_REQUEST_PROVIDER));
 
-        PullRequestPostAnalysisTask testCase =
-                new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
-                                                postAnalysisIssueVisitor, metricRepository, measureRepository,
-                                                treeRootHolder);
         testCase.finished(projectAnalysis);
 
         verify(configurationRepository).getConfiguration();
-        verify(configuration).get("sonar.pullrequest.provider");
+        verify(configuration).get(CommunityBranchPlugin.PULL_REQUEST_PROVIDER);
         verify(decorator1).name();
         verify(decorator2).name();
         verify(projectAnalysis, never()).getAnalysis();
@@ -172,19 +138,8 @@ public class PullRequestPostAnalysisTaskTest {
 
     @Test
     public void testFinishedNoAnalysis() {
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Branch branch = mock(Branch.class);
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
-        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
-
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
 
         doReturn(Optional.empty()).when(projectAnalysis).getAnalysis();
 
@@ -196,37 +151,20 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn("decorator-name-2").when(decorator2).name();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        Configuration configuration = mock(Configuration.class);
-        doReturn(Optional.of("decorator-name-2")).when(configuration).get(eq("sonar.pullrequest.provider"));
-        doReturn(configuration).when(configurationRepository).getConfiguration();
+        doReturn(Optional.of("decorator-name-2")).when(configuration).get(eq(CommunityBranchPlugin.PULL_REQUEST_PROVIDER));
 
-        PullRequestPostAnalysisTask testCase =
-                new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
-                                                postAnalysisIssueVisitor, metricRepository, measureRepository,
-                                                treeRootHolder);
         testCase.finished(projectAnalysis);
 
         verify(configurationRepository).getConfiguration();
         verify(projectAnalysis).getAnalysis();
-        verify(decorator2, never()).decorateQualityGateStatus(any());
+        verify(decorator2, never()).decorateQualityGateStatus(any(), any());
     }
 
 
     @Test
     public void testFinishedAnalysisWithNoRevision() {
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Branch branch = mock(Branch.class);
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
-        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
-
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
 
         Analysis analysis = mock(Analysis.class);
         doReturn(Optional.empty()).when(analysis).getRevision();
@@ -240,37 +178,20 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn("decorator-name-2").when(decorator2).name();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        Configuration configuration = mock(Configuration.class);
-        doReturn(Optional.of("decorator-name-2")).when(configuration).get(eq("sonar.pullrequest.provider"));
-        doReturn(configuration).when(configurationRepository).getConfiguration();
+        doReturn(Optional.of("decorator-name-2")).when(configuration).get(eq(CommunityBranchPlugin.PULL_REQUEST_PROVIDER));
 
-        PullRequestPostAnalysisTask testCase =
-                new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
-                                                postAnalysisIssueVisitor, metricRepository, measureRepository,
-                                                treeRootHolder);
         testCase.finished(projectAnalysis);
 
         verify(configurationRepository).getConfiguration();
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis, never()).getQualityGate();
-        verify(decorator2, never()).decorateQualityGateStatus(any());
+        verify(decorator2, never()).decorateQualityGateStatus(any(), any());
     }
 
     @Test
     public void testFinishedAnalysisWithNoQualityGate() {
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Branch branch = mock(Branch.class);
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
-        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
-
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
 
         Analysis analysis = mock(Analysis.class);
         doReturn(Optional.of("revision")).when(analysis).getRevision();
@@ -284,40 +205,23 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn("decorator-name-2").when(decorator2).name();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        Configuration configuration = mock(Configuration.class);
-        doReturn(Optional.of("decorator-name-2")).when(configuration).get(eq("sonar.pullrequest.provider"));
-        doReturn(configuration).when(configurationRepository).getConfiguration();
+        doReturn(Optional.of("decorator-name-2")).when(configuration).get(eq(CommunityBranchPlugin.PULL_REQUEST_PROVIDER));
 
-        PullRequestPostAnalysisTask testCase =
-                new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
-                                                postAnalysisIssueVisitor, metricRepository, measureRepository,
-                                                treeRootHolder);
         testCase.finished(projectAnalysis);
 
         verify(configurationRepository).getConfiguration();
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis).getQualityGate();
-        verify(decorator2, never()).decorateQualityGateStatus(any());
+        verify(decorator2, never()).decorateQualityGateStatus(any(), any());
     }
 
     @Test
     public void testFinishedAnalysisDecorationRequest() {
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Branch branch = mock(Branch.class);
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
-        doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
 
         Project project = mock(Project.class);
         doReturn(project).when(projectAnalysis).getProject();
-
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
 
         Analysis analysis = mock(Analysis.class);
         doReturn(Optional.of("revision")).when(analysis).getRevision();
@@ -335,22 +239,17 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn("decorator-name-2").when(decorator2).name();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        Configuration configuration = mock(Configuration.class);
-        doReturn(Optional.of("decorator-name-2")).when(configuration).get(eq("sonar.pullrequest.provider"));
-        doReturn(configuration).when(configurationRepository).getConfiguration();
+        doReturn(Optional.of("decorator-name-2")).when(configuration).get(eq(CommunityBranchPlugin.PULL_REQUEST_PROVIDER));
 
-        PullRequestPostAnalysisTask testCase =
-                new PullRequestPostAnalysisTask(server, configurationRepository, pullRequestBuildStatusDecorators,
-                                                postAnalysisIssueVisitor, metricRepository, measureRepository,
-                                                treeRootHolder);
         testCase.finished(projectAnalysis);
 
         ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
+        ArgumentCaptor<UnifyConfiguration> unifyConfigurationArgumentCaptor = ArgumentCaptor.forClass(UnifyConfiguration.class);
 
         verify(configurationRepository).getConfiguration();
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis).getQualityGate();
-        verify(decorator2).decorateQualityGateStatus(analysisDetailsArgumentCaptor.capture());
+        verify(decorator2).decorateQualityGateStatus(analysisDetailsArgumentCaptor.capture(), unifyConfigurationArgumentCaptor.capture());
 
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(new AnalysisDetails.BranchDetails("pull-request", "revision"),
@@ -359,13 +258,11 @@ public class PullRequestPostAnalysisTaskTest {
                                                                        treeRootHolder), analysis, project,
                                     null);
         assertThat(analysisDetailsArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(analysisDetails);
+        assertThat(unifyConfigurationArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(new UnifyConfiguration(configuration, scannerContext));
     }
 
     @Test
     public void testCorrectDescriptionReturnedForTask() {
-        assertThat(new PullRequestPostAnalysisTask(mock(Server.class), mock(ConfigurationRepository.class), new ArrayList<>(),
-                                                   mock(PostAnalysisIssueVisitor.class), mock(MetricRepository.class),
-                                                   mock(MeasureRepository.class), mock(TreeRootHolder.class))
-                           .getDescription()).isEqualTo("Pull Request Decoration");
+        assertThat(testCase.getDescription()).isEqualTo("Pull Request Decoration");
     }
 }
