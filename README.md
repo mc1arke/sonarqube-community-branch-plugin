@@ -26,7 +26,6 @@ The plugin is intended to support the [features and parameters specified in the 
 # Properties
 Property key | Description 
 --- | ---
-com.github.mc1arke.sonarqube.plugin.branch.image-url-base | Can be set in `sonar.properties` file on the SonarQube server and is used to load the images for the PR comments. [Default base image location link.](https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images)
 
 ## Bitbucket Server
 To enable setting of several properties in SonarQube on project level is required.
