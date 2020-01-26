@@ -28,14 +28,11 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.ListItem;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.rules.RuleType;
@@ -79,11 +76,10 @@ public class AnalysisDetailsTest {
         QualityGate qualityGate = mock(QualityGate.class);
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
-        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, null);
+                                    project, null);
 
         assertEquals("branchName", testCase.getBranchName());
     }
@@ -98,11 +94,10 @@ public class AnalysisDetailsTest {
         QualityGate qualityGate = mock(QualityGate.class);
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
-        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, null);
+                                    project, null);
 
         assertEquals("commitId", testCase.getCommitSha());
     }
@@ -116,11 +111,10 @@ public class AnalysisDetailsTest {
         doReturn(QualityGate.Status.ERROR).when(qualityGate).getStatus();
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
-        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, null);
+                                    project, null);
 
         assertEquals(QualityGate.Status.ERROR, testCase.getQualityGateStatus());
     }
@@ -134,11 +128,10 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         doReturn(new Date()).when(analysis).getDate();
         Project project = mock(Project.class);
-        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, null);
+                                    project, null);
 
         assertEquals(analysis.getDate(), testCase.getAnalysisDate());
     }
@@ -152,11 +145,10 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         doReturn("Analysis ID").when(analysis).getAnalysisUuid();
         Project project = mock(Project.class);
-        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, null);
+                                    project, null);
 
         assertEquals("Analysis ID", testCase.getAnalysisId());
     }
@@ -170,11 +162,10 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
         doReturn("Project Key").when(project).getKey();
-        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, null);
+                                    project, null);
 
         assertEquals("Project Key", testCase.getAnalysisProjectKey());
     }
@@ -288,11 +279,9 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
-        Configuration configuration = mock(Configuration.class);
-
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, "http://localhost:9000");
+                                    project, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -305,7 +294,7 @@ public class AnalysisDetailsTest {
         verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
 
         Document expectedDocument = new Document(new Paragraph(new Image("Failed",
-                                                                         "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/QualityGateBadge/failed.svg?sanitize=true")),
+                                                                         "http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/failed.svg?sanitize=true")),
                                                  new List(List.Style.BULLET,
                                                           new ListItem(new Text("12 Lines to Cover (is less than 20)")),
                                                           new ListItem(new Text("2 Code Smells (is greater than 0)")),
@@ -321,20 +310,20 @@ public class AnalysisDetailsTest {
                                                  new Heading(2, new Text("5 Issues")), new List(List.Style.BULLET,
                                                                                                 new ListItem(
                                                                                                         new Image("Bug",
-                                                                                                                  "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/bug.svg?sanitize=true"),
+                                                                                                                  "http://localhost:9000/static/communityBranchPlugin/common/bug.svg?sanitize=true"),
                                                                                                         new Text(" "),
                                                                                                         new Text(
                                                                                                                 "2 Bugs")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Vulnerability",
-                                                                                                        "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
                                                                                                                      "2 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
@@ -342,11 +331,11 @@ public class AnalysisDetailsTest {
                                                  new Heading(2, new Text("Coverage and Duplications")),
                                                  new List(List.Style.BULLET, new ListItem(
                                                          new Image("No coverage information",
-                                                                   "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/CoverageChart/NoCoverageInfo.svg?sanitize=true"),
+                                                                   "http://localhost:9000/static/communityBranchPlugin/checks/CoverageChart/NoCoverageInfo.svg?sanitize=true"),
                                                          new Text(" "), new Text(
                                                          "No coverage information (12.30% Estimated after merge)")),
                                                           new ListItem(new Image("No duplication information",
-                                                                                 "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/Duplications/NoDuplicationInfo.svg?sanitize=true"),
+                                                                                 "http://localhost:9000/static/communityBranchPlugin/checks/Duplications/NoDuplicationInfo.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "No duplication information (12.30% Estimated after merge)"))),
                                                  new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
@@ -397,11 +386,9 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
-        Configuration configuration = mock(Configuration.class);
-
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, "http://localhost:9000");
+                                    project, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -414,25 +401,25 @@ public class AnalysisDetailsTest {
         verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
 
         Document expectedDocument = new Document(new Paragraph(new Image("Passed",
-                                                                         "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/QualityGateBadge/passed.svg?sanitize=true")),
+                                                                         "http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/passed.svg?sanitize=true")),
                                                  new Text(""), new Heading(1, new Text("Analysis Details")),
                                                  new Heading(2, new Text("0 Issues")), new List(List.Style.BULLET,
                                                                                                 new ListItem(
                                                                                                         new Image("Bug",
-                                                                                                                  "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/bug.svg?sanitize=true"),
+                                                                                                                  "http://localhost:9000/static/communityBranchPlugin/common/bug.svg?sanitize=true"),
                                                                                                         new Text(" "),
                                                                                                         new Text(
                                                                                                                 "0 Bugs")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Vulnerability",
-                                                                                                        "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
                                                                                                                      "0 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
@@ -440,11 +427,11 @@ public class AnalysisDetailsTest {
                                                  new Heading(2, new Text("Coverage and Duplications")),
                                                  new List(List.Style.BULLET, new ListItem(
                                                          new Image("25 percent coverage",
-                                                                   "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/CoverageChart/25.svg?sanitize=true"),
+                                                                   "http://localhost:9000/static/communityBranchPlugin/checks/CoverageChart/25.svg?sanitize=true"),
                                                          new Text(" "),
                                                          new Text("33.00% Coverage (21.78% Estimated after merge)")),
                                                           new ListItem(new Image("20 percent duplication",
-                                                                                 "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/Duplications/20.svg?sanitize=true"),
+                                                                                 "http://localhost:9000/static/communityBranchPlugin/checks/Duplications/20.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "18.00% Duplicated Code (21.78% Estimated after merge)"))),
                                                  new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
@@ -500,13 +487,9 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
-        Configuration configuration = mock(Configuration.class);
-        doReturn(Optional.of("http://host.name/path")).when(configuration)
-                .get(eq(AnalysisDetails.IMAGE_URL_BASE));
-
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, "http://localhost:9000");
+                                    project, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -519,25 +502,25 @@ public class AnalysisDetailsTest {
         verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
 
         Document expectedDocument = new Document(new Paragraph(
-                new Image("Passed", "http://host.name/path/checks/QualityGateBadge/passed.svg?sanitize=true")),
+                new Image("Passed", "http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/passed.svg?sanitize=true")),
                                                  new Text(""), new Heading(1, new Text("Analysis Details")),
                                                  new Heading(2, new Text("1 Issue")), new List(List.Style.BULLET,
                                                                                                new ListItem(
                                                                                                        new Image("Bug",
-                                                                                                                 "http://host.name/path/common/bug.svg?sanitize=true"),
+                                                                                                                 "http://localhost:9000/static/communityBranchPlugin/common/bug.svg?sanitize=true"),
                                                                                                        new Text(" "),
                                                                                                        new Text(
                                                                                                                "1 Bug")),
                                                                                                new ListItem(new Image(
                                                                                                        "Vulnerability",
-                                                                                                       "http://host.name/path/common/vulnerability.svg?sanitize=true"),
+                                                                                                       "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
                                                                                                             new Text(
                                                                                                                     " "),
                                                                                                             new Text(
                                                                                                                     "0 Vulnerabilities")),
                                                                                                new ListItem(new Image(
                                                                                                        "Code Smell",
-                                                                                                       "http://host.name/path/common/vulnerability.svg?sanitize=true"),
+                                                                                                       "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
                                                                                                             new Text(
                                                                                                                     " "),
                                                                                                             new Text(
@@ -545,11 +528,11 @@ public class AnalysisDetailsTest {
                                                  new Heading(2, new Text("Coverage and Duplications")),
                                                  new List(List.Style.BULLET, new ListItem(
                                                          new Image("25 percent coverage",
-                                                                   "http://host.name/path/checks/CoverageChart/25.svg?sanitize=true"),
+                                                                   "http://localhost:9000/static/communityBranchPlugin/checks/CoverageChart/25.svg?sanitize=true"),
                                                          new Text(" "),
                                                          new Text("25.00% Coverage (21.78% Estimated after merge)")),
                                                           new ListItem(new Image("10 percent duplication",
-                                                                                 "http://host.name/path/checks/Duplications/10.svg?sanitize=true"),
+                                                                                 "http://localhost:9000/static/communityBranchPlugin/checks/Duplications/10.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "10.00% Duplicated Code (21.78% Estimated after merge)"))),
                                                  new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
@@ -599,11 +582,9 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
-        Configuration configuration = mock(Configuration.class);
-
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration, "http://localhost:9000");
+                                    project, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -616,25 +597,25 @@ public class AnalysisDetailsTest {
         verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
 
         Document expectedDocument = new Document(new Paragraph(new Image("Passed",
-                                                                         "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/QualityGateBadge/passed.svg?sanitize=true")),
+                                                                         "http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/passed.svg?sanitize=true")),
                                                  new Text(""), new Heading(1, new Text("Analysis Details")),
                                                  new Heading(2, new Text("0 Issues")), new List(List.Style.BULLET,
                                                                                                 new ListItem(
                                                                                                         new Image("Bug",
-                                                                                                                  "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/bug.svg?sanitize=true"),
+                                                                                                                  "http://localhost:9000/static/communityBranchPlugin/common/bug.svg?sanitize=true"),
                                                                                                         new Text(" "),
                                                                                                         new Text(
                                                                                                                 "0 Bugs")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Vulnerability",
-                                                                                                        "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
                                                                                                                      "0 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
@@ -642,11 +623,11 @@ public class AnalysisDetailsTest {
                                                  new Heading(2, new Text("Coverage and Duplications")),
                                                  new List(List.Style.BULLET, new ListItem(
                                                          new Image("0 percent coverage",
-                                                                   "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/CoverageChart/0.svg?sanitize=true"),
+                                                                   "http://localhost:9000/static/communityBranchPlugin/checks/CoverageChart/0.svg?sanitize=true"),
                                                          new Text(" "),
                                                          new Text("0.00% Coverage (21.78% Estimated after merge)")),
                                                           new ListItem(new Image("20plus percent duplication",
-                                                                                 "https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images/checks/Duplications/20plus.svg?sanitize=true"),
+                                                                                 "http://localhost:9000/static/communityBranchPlugin/checks/Duplications/20plus.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "30.00% Duplicated Code (21.78% Estimated after merge)"))),
                                                  new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
@@ -697,7 +678,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), postAnalysisIssueVisitor,
                                     mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
-                                    mock(Analysis.class), mock(Project.class), mock(Configuration.class), null);
+                                    mock(Analysis.class), mock(Project.class), null);
         assertSame(postAnalysisIssueVisitor, analysisDetails.getPostAnalysisIssueVisitor());
     }
 
@@ -724,7 +705,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails testCase =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                                     qualityGate, measuresHolder, mock(Analysis.class), mock(Project.class),
-                                    mock(Configuration.class), null);
+                                    null);
         assertThatThrownBy(() -> testCase.createAnalysisSummary(mock(FormatterFactory.class)))
                 .hasMessage("Could not invoke getDoubleValue").isExactlyInstanceOf(IllegalStateException.class)
                 .hasCauseExactlyInstanceOf(InvocationTargetException.class);
