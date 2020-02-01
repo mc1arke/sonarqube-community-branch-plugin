@@ -30,7 +30,9 @@ import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
@@ -119,11 +121,17 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
                                     postAnalysisIssueVisitor, qualityGate,
                                     new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
                                                                        treeRootHolder), analysis,
-                                    projectAnalysis.getProject(), configuration);
+                                    projectAnalysis.getProject(), configuration, getScannerProperties(projectAnalysis));
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
         LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
         pullRequestDecorator.decorateQualityGateStatus(analysisDetails);
+    }
+
+    private static Map<String, String> getScannerProperties(PostProjectAnalysisTask.ProjectAnalysis projectAnalysis) {
+        return projectAnalysis.getScannerContext() != null
+                ? projectAnalysis.getScannerContext().getProperties()
+                : new HashMap<>();
     }
 
     private static Optional<PullRequestBuildStatusDecorator> findCurrentPullRequestStatusDecorator(

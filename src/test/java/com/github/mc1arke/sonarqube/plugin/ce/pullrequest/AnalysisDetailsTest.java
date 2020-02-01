@@ -45,11 +45,7 @@ import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 import org.sonar.core.issue.DefaultIssue;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -80,7 +76,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         assertEquals("branchName", testCase.getBranchName());
     }
@@ -99,7 +95,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         assertEquals("commitId", testCase.getCommitSha());
     }
@@ -117,7 +113,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         assertEquals(QualityGate.Status.ERROR, testCase.getQualityGateStatus());
     }
@@ -135,7 +131,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         assertEquals(analysis.getDate(), testCase.getAnalysisDate());
     }
@@ -153,7 +149,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         assertEquals("Analysis ID", testCase.getAnalysisId());
     }
@@ -171,7 +167,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         assertEquals("Project Key", testCase.getAnalysisProjectKey());
     }
@@ -288,7 +284,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -395,7 +391,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -498,7 +494,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -593,7 +589,7 @@ public class AnalysisDetailsTest {
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, configuration);
+                                    project, configuration, new HashMap<>());
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -686,7 +682,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), postAnalysisIssueVisitor,
                                     mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
-                                    mock(Analysis.class), mock(Project.class), mock(Configuration.class));
+                                    mock(Analysis.class), mock(Project.class), mock(Configuration.class), new HashMap<>());
         assertSame(postAnalysisIssueVisitor, analysisDetails.getPostAnalysisIssueVisitor());
     }
 
@@ -713,7 +709,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails testCase =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                                     qualityGate, measuresHolder, mock(Analysis.class), mock(Project.class),
-                                    mock(Configuration.class));
+                                    mock(Configuration.class), new HashMap<>());
         assertThatThrownBy(() -> testCase.createAnalysisSummary(mock(FormatterFactory.class)))
                 .hasMessage("Could not invoke getDoubleValue").isExactlyInstanceOf(IllegalStateException.class)
                 .hasCauseExactlyInstanceOf(InvocationTargetException.class);

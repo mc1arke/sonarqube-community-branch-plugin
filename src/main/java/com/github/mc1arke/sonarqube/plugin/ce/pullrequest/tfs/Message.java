@@ -12,6 +12,8 @@ public class Message {
 
     private int pullRequestId;
 
+    private String buildId;
+
     private Message() {
         // Nothing
     }
@@ -34,6 +36,10 @@ public class Message {
 
     public int getPullRequestId() {
         return pullRequestId;
+    }
+
+    public String getBuildId() {
+        return buildId;
     }
 
     public static class Builder {
@@ -61,6 +67,11 @@ public class Message {
 
         public Builder pullRequestId(int pullRequestId) {
             message.pullRequestId = pullRequestId;
+            return this;
+        }
+
+        public Builder buildId(String buildId) {
+            message.buildId = buildId;
             return this;
         }
 

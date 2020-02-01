@@ -77,10 +77,11 @@ public class AnalysisDetails {
     private final Analysis analysis;
     private final Project project;
     private final Configuration configuration;
+    private final Map<String, String> scannerProperties;
 
     AnalysisDetails(BranchDetails branchDetails, PostAnalysisIssueVisitor postAnalysisIssueVisitor,
                     QualityGate qualityGate, MeasuresHolder measuresHolder, Analysis analysis, Project project,
-                    Configuration configuration) {
+                    Configuration configuration, Map<String, String> scannerProperties) {
         super();
         this.branchDetails = branchDetails;
         this.measuresHolder = measuresHolder;
@@ -89,6 +90,7 @@ public class AnalysisDetails {
         this.analysis = analysis;
         this.project = project;
         this.configuration = configuration;
+        this.scannerProperties = scannerProperties;
     }
 
     public String getBranchName() {
@@ -255,6 +257,12 @@ public class AnalysisDetails {
         return project.getKey();
     }
 
+    public String getScannerProperty(String key)
+    {
+        return this.scannerProperties.containsKey(key)
+                ? this.scannerProperties.get((key))
+                : "";
+    }
 
     private List<QualityGate.Condition> findFailedConditions() {
         return qualityGate.getConditions().stream().filter(c -> c.getStatus() == QualityGate.EvaluationStatus.ERROR)

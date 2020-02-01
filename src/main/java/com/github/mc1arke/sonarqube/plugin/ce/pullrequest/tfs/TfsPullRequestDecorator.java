@@ -54,6 +54,7 @@ public class TfsPullRequestDecorator implements PullRequestBuildStatusDecorator 
                     .projectName(getMandatoryProperty("sonar.pullrequest.vsts.project", configuration))
                     .pullRequestId(Integer.parseInt(analysis.getBranchName()))
                     .repositoryId(getMandatoryProperty("sonar.pullrequest.vsts.repository", configuration))
+                    .buildId(analysis.getScannerProperty("sonar.build.id"))
                     .build();
 
             ObjectMapper mapper = new ObjectMapper();
