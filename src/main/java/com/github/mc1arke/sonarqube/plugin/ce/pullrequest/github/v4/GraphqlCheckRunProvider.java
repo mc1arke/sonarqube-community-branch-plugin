@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,6 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.CheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.RepositoryAuthenticationToken;
@@ -40,6 +39,8 @@ import org.sonar.api.rule.Severity;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -90,12 +91,12 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
     }
 
     @Override
-    public void createCheckRun(AnalysisDetails analysisDetails, UnifyConfiguration unifyConfiguration) throws IOException, GeneralSecurityException {
-        String apiUrl = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_URL);
-        String apiPrivateKey = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_TOKEN);
-        String projectPath = unifyConfiguration.getRequiredProperty(PULL_REQUEST_GITHUB_REPOSITORY);
-        String appId = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_APP_ID);
-        String appName = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_APP_NAME);
+    public void createCheckRun(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
+                               ProjectAlmSettingDto projectAlmSettingDto) throws IOException, GeneralSecurityException {
+        String apiUrl = almSettingDto.getUrl();
+        String apiPrivateKey = almSettingDto.getPrivateKey();
+        String projectPath = projectAlmSettingDto.getAlmSlug();
+        String appId = almSettingDto.getAppId();
 
         RepositoryAuthenticationToken repositoryAuthenticationToken =
                 githubApplicationAuthenticationProvider.getInstallationToken(apiUrl, appId, apiPrivateKey, projectPath);
@@ -131,7 +132,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
         InputObject<Object> repositoryInputObject =
                 graphqlProvider.createInputObject().put("repositoryId", repositoryAuthenticationToken.getRepositoryId())
-                        .put("name", appName + " Results").put("headSha", analysisDetails.getCommitSha())
+                        .put("name", "Sonarqube Results").put("headSha", analysisDetails.getCommitSha())
                         .put("status", RequestableCheckStatusState.COMPLETED).put("conclusion", QualityGate.Status.OK ==
                                                                                                 analysisDetails
                                                                                                         .getQualityGateStatus() ?
@@ -188,4 +189,5 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                 throw new IllegalArgumentException("Unknown severity value: " + sonarqubeSeverity);
         }
     }
+
 }

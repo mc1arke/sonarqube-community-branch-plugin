@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,7 @@ import org.sonar.db.component.BranchType;
 import org.sonar.scanner.protocol.output.ScannerReport;
 import org.sonar.server.project.Project;
 
+import javax.annotation.Nonnull;
 import java.util.Optional;
 
 /**
@@ -45,7 +46,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
     }
 
     @Override
-    public void load(ScannerReport.Metadata metadata) {
+    public void load(@Nonnull ScannerReport.Metadata metadata) {
         Branch branch = load(metadata, metadataHolder.getProject(), dbClient);
 
         metadataHolder.setBranch(branch);
@@ -67,7 +68,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
                 throw new IllegalStateException("Could not find main branch");
             }
         } else {
-            String targetBranch = StringUtils.trimToNull(metadata.getMergeBranchName());
+            String targetBranch = StringUtils.trimToNull(metadata.getReferenceBranchName());
             ScannerReport.Metadata.BranchType branchType = metadata.getBranchType();
             if (null == targetBranchName) {
                 targetBranchName = targetBranch;
@@ -75,9 +76,8 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
 
             if (ScannerReport.Metadata.BranchType.PULL_REQUEST == branchType) {
                 return createPullRequest(metadata, dbClient, branchName, projectUuid, targetBranch, targetBranchName);
-            } else if (ScannerReport.Metadata.BranchType.LONG == branchType ||
-                       ScannerReport.Metadata.BranchType.SHORT == branchType) {
-                return createBranch(dbClient, branchName, projectUuid, targetBranch, branchType, targetBranchName);
+            } else if (ScannerReport.Metadata.BranchType.BRANCH == branchType) {
+                return createBranch(dbClient, branchName, projectUuid, targetBranch, targetBranchName);
             } else {
                 throw new IllegalStateException(String.format("Invalid branch type '%s'", branchType.name()));
             }
@@ -100,7 +100,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
     }
 
     private static Branch createBranch(DbClient dbClient, String branchName, String projectUuid, String targetBranch,
-                                       ScannerReport.Metadata.BranchType branchType, String targetBranchName) {
+                                       String targetBranchName) {
         String targetUuid;
         if (null == targetBranch) {
             targetUuid = projectUuid;
@@ -113,8 +113,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
                         String.format("Could not find target branch '%s' in project", targetBranch));
             }
         }
-        return new CommunityBranch(branchName, ScannerReport.Metadata.BranchType.LONG == branchType ? BranchType.LONG :
-                                               BranchType.SHORT,
+        return new CommunityBranch(branchName, BranchType.BRANCH,
                                    findBranchByKey(projectUuid, branchName, dbClient).map(BranchDto::isMain)
                                            .orElse(false), targetUuid, null, targetBranchName);
     }

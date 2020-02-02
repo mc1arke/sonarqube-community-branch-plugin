@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -72,15 +72,12 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
 
         try {
             BranchType branchType = BranchType.valueOf(branchTypeParam);
-            if (branchType == BranchType.LONG || branchType == BranchType.SHORT) {
-                return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch),
-                                                 new BranchSupport.Branch(branch, branchType), null, null);
-            }
+            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch),
+                                             new BranchSupport.Branch(branch, branchType), null, null);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(String.format("Unsupported branch type '%s'", branchTypeParam), ex);
         }
 
-        throw new IllegalArgumentException(String.format("Unsupported branch type '%s'", branchTypeParam));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -99,7 +99,7 @@ public class CommunityBranchPluginTest {
         testCase.load(context);
 
         final ArgumentCaptor<Class> argumentCaptor = ArgumentCaptor.forClass(Class.class);
-        verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
+        verify(context).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
 
         assertEquals(Arrays.asList(CommunityReportAnalysisComponentProvider.class, CommunityBranchEditionProvider.class),
@@ -117,7 +117,7 @@ public class CommunityBranchPluginTest {
         testCase.load(context);
 
         final ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
+        verify(context).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
         assertEquals(22, argumentCaptor.getAllValues().size());
 
