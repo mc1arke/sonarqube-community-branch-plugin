@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.CheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.RepositoryAuthenticationToken;
@@ -42,6 +41,8 @@ import org.sonar.api.rule.Severity;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -63,12 +64,6 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang.ArrayUtils.isEmpty;
 
 public class GraphqlCheckRunProvider implements CheckRunProvider {
-
-    public static final String PULL_REQUEST_GITHUB_URL = "sonar.pullrequest.github.endpoint";
-    public static final String PULL_REQUEST_GITHUB_TOKEN = "sonar.alm.github.app.privateKey.secured";
-    public static final String PULL_REQUEST_GITHUB_REPOSITORY = "sonar.pullrequest.github.repository";
-    public static final String PULL_REQUEST_GITHUB_APP_ID = "sonar.alm.github.app.id";
-    public static final String PULL_REQUEST_GITHUB_APP_NAME = "sonar.alm.github.app.name";
 
     private static final Logger LOGGER = Loggers.get(GraphqlCheckRunProvider.class);
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ssXXX";
@@ -95,12 +90,12 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
     }
 
     @Override
-    public DecorationResult createCheckRun(AnalysisDetails analysisDetails, UnifyConfiguration unifyConfiguration) throws IOException, GeneralSecurityException {
-        String apiUrl = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_URL);
-        String apiPrivateKey = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_TOKEN);
-        String projectPath = unifyConfiguration.getRequiredProperty(PULL_REQUEST_GITHUB_REPOSITORY);
-        String appId = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_APP_ID);
-        String appName = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_APP_NAME);
+    public DecorationResult createCheckRun(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
+                               ProjectAlmSettingDto projectAlmSettingDto) throws IOException, GeneralSecurityException {
+        String apiUrl = Optional.ofNullable(almSettingDto.getUrl()).orElseThrow(() -> new IllegalArgumentException("No URL has been set for Github connections"));
+        String apiPrivateKey = Optional.ofNullable(almSettingDto.getPrivateKey()).orElseThrow(() -> new IllegalArgumentException("No private key has been set for Github connections"));
+        String projectPath = Optional.ofNullable(projectAlmSettingDto.getAlmSlug()).orElseThrow(() -> new IllegalArgumentException("No repository name has been set for Github connections"));
+        String appId = Optional.ofNullable(almSettingDto.getAppId()).orElseThrow(() -> new IllegalArgumentException("No App ID has been set for Github connections"));
 
         RepositoryAuthenticationToken repositoryAuthenticationToken =
                 githubApplicationAuthenticationProvider.getInstallationToken(apiUrl, appId, apiPrivateKey, projectPath);
@@ -127,7 +122,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
         Map<String, Object> inputObjectArguments = new HashMap<>();
         inputObjectArguments.put("repositoryId", repositoryAuthenticationToken.getRepositoryId());
-        inputObjectArguments.put("name", appName + " Results");
+        inputObjectArguments.put("name", "Sonarqube Results");
         inputObjectArguments.put("status", RequestableCheckStatusState.COMPLETED);
         inputObjectArguments.put("conclusion", QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ?
                                    CheckConclusionState.SUCCESS : CheckConclusionState.FAILURE);
@@ -141,7 +136,6 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                         .format(clock.instant()));
         inputObjectArguments.put("externalId", analysisDetails.getAnalysisId());
         inputObjectArguments.put("output", checkRunOutputContentBuilder.build());
-
 
         InputObject.Builder<Object> repositoryInputObjectBuilder = graphqlProvider.createInputObject();
         inputObjectArguments.forEach(repositoryInputObjectBuilder::put);
@@ -269,4 +263,5 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                 throw new IllegalArgumentException("Unknown severity value: " + sonarqubeSeverity);
         }
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,19 +25,16 @@ import java.util.Optional;
 /**
  * @author Michael Clarke
  */
-/*package*/ class CommunityComponentKey extends BranchSupport.ComponentKey implements ComponentKeyCompatibility.ComponentKeyCompatibilityMajor7.ComponentKeyCompatibilityMinor9 {
+/*package*/ class CommunityComponentKey extends BranchSupport.ComponentKey {
 
     private final String key;
     private final String dbKey;
-    private final String deprecatedBranchName;
     private final BranchSupport.Branch branch;
     private final String pullRequestKey;
 
-    /*package*/ CommunityComponentKey(String key, String dbKey, BranchSupport.Branch branch, String pullRequestKey,
-                                      String deprecatedBranchName) {
+    /*package*/ CommunityComponentKey(String key, String dbKey, BranchSupport.Branch branch, String pullRequestKey) {
         this.key = key;
         this.dbKey = dbKey;
-        this.deprecatedBranchName = deprecatedBranchName;
         this.branch = branch;
         this.pullRequestKey = pullRequestKey;
     }
@@ -50,11 +47,6 @@ import java.util.Optional;
     @Override
     public String getDbKey() {
         return dbKey;
-    }
-
-    @Override
-    public Optional<String> getDeprecatedBranchName() {
-        return Optional.ofNullable(deprecatedBranchName);
     }
 
     @Override
@@ -72,6 +64,6 @@ import java.util.Optional;
         if (key.equals(dbKey)) {
             return this;
         }
-        return new CommunityComponentKey(key, key, null, null, deprecatedBranchName);
+        return new CommunityComponentKey(key, key, null, null);
     }
 }

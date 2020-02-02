@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,12 +54,12 @@ public class CommunityProjectPullRequestsLoader implements ProjectPullRequestsLo
     private static final Logger LOGGER = Loggers.get(CommunityProjectPullRequestsLoader.class);
     private static final String PROJECT_PULL_REQUESTS_URL = "/api/project_pull_requests/list?project=";
 
-    private final ScannerWsClientWrapper scannerWsClient;
+    private final ScannerWsClient scannerWsClient;
     private final Gson gson;
 
     public CommunityProjectPullRequestsLoader(ScannerWsClient scannerWsClient) {
         super();
-        this.scannerWsClient = new ScannerWsClientWrapper(scannerWsClient);
+        this.scannerWsClient = scannerWsClient;
         this.gson =
                 new GsonBuilder().registerTypeAdapter(PullRequestInfo.class, createPullRequestInfoJsonDeserialiser())
                         .create();

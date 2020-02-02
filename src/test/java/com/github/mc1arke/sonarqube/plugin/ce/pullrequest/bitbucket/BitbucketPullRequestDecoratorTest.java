@@ -2,7 +2,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.Annotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateAnnotationsRequest;
@@ -11,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
@@ -21,6 +19,8 @@ import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
 import org.sonar.core.issue.DefaultIssue;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -53,33 +53,35 @@ public class BitbucketPullRequestDecoratorTest {
     private static final String IMAGE_URL = "https://image-url";
 
     private AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-    private UnifyConfiguration unifyConfiguration = mock(UnifyConfiguration.class);
 
     private BitbucketClient client = mock(BitbucketClient.class);
 
     private BitbucketServerPullRequestDecorator underTest = new BitbucketServerPullRequestDecorator(client);
 
+    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+
     @Before
     public void setUp() {
-        when(unifyConfiguration.getRequiredProperty(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY)).thenReturn(PROJECT);
-        when(unifyConfiguration.getRequiredProperty(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG)).thenReturn(REPO);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(PROJECT);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(REPO);
     }
 
     @Test
     public void testValidAnalysis() throws IOException {
-        when(client.supportsCodeInsights()).thenReturn(true);
+        when(client.supportsCodeInsights(eq(almSettingDto))).thenReturn(true);
 
         mockValidAnalysis();
         final ArgumentCaptor<CreateReportRequest> reportCaptor = ArgumentCaptor.forClass(CreateReportRequest.class);
         final ArgumentCaptor<CreateAnnotationsRequest> annotationsCaptor = ArgumentCaptor.forClass(CreateAnnotationsRequest.class);
 
-        underTest.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        verify(client).createReport(eq(PROJECT), eq(REPO), eq(COMMIT), reportCaptor.capture());
+        verify(client).createReport(eq(PROJECT), eq(REPO), eq(COMMIT), reportCaptor.capture(), eq(almSettingDto));
         verifyExpectedReport(reportCaptor.getValue());
 
-        verify(client).deleteAnnotations(PROJECT, REPO, COMMIT);
-        verify(client).createAnnotations(eq(PROJECT), eq(REPO), eq(COMMIT), annotationsCaptor.capture());
+        verify(client).deleteAnnotations(PROJECT, REPO, COMMIT, almSettingDto);
+        verify(client).createAnnotations(eq(PROJECT), eq(REPO), eq(COMMIT), annotationsCaptor.capture(), eq(almSettingDto));
 
         CreateAnnotationsRequest actualAnnotations = annotationsCaptor.getValue();
         assertThat(actualAnnotations.getAnnotations()).size().isEqualTo(1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
 import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
-import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
@@ -35,6 +34,7 @@ import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.ce.posttask.QualityGate.EvaluationStatus;
+import org.sonar.api.ce.posttask.ScannerContext;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
@@ -83,11 +83,12 @@ public class AnalysisDetails {
     private final QualityGate qualityGate;
     private final Analysis analysis;
     private final Project project;
+    private final ScannerContext scannerContext;
     private final Configuration configuration;
 
     AnalysisDetails(BranchDetails branchDetails, PostAnalysisIssueVisitor postAnalysisIssueVisitor,
                     QualityGate qualityGate, MeasuresHolder measuresHolder, Analysis analysis, Project project,
-                    Configuration configuration, String publicRootURL) {
+                    Configuration configuration, String publicRootURL, ScannerContext scannerContext) {
         super();
         this.publicRootURL = publicRootURL;
         this.branchDetails = branchDetails;
@@ -96,6 +97,7 @@ public class AnalysisDetails {
         this.qualityGate = qualityGate;
         this.analysis = analysis;
         this.project = project;
+        this.scannerContext = scannerContext;
         this.configuration = configuration;
     }
 
@@ -119,12 +121,16 @@ public class AnalysisDetails {
         return qualityGate.getStatus();
     }
 
+    public Optional<String> getScannerProperty(String propertyName) {
+        return Optional.ofNullable(scannerContext.getProperties().get(propertyName));
+    }
+
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
         BigDecimal newCoverage = getNewCoverage().orElse(null);
 
 
-        double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
+        double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).orElse(0D);
 
         BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
                 .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
@@ -133,7 +139,7 @@ public class AnalysisDetails {
                 .orElse(null);
 
         double duplications =
-                findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
+                findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(Measure::getDoubleValue).orElse(0D);
 
         NumberFormat decimalFormat = new DecimalFormat("#0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 
@@ -292,11 +298,10 @@ public class AnalysisDetails {
                 .collect(Collectors.toList());
     }
 
-    public Optional<MeasureWrapper> findMeasure(String metricKey) {
+    public Optional<Measure> findMeasure(String metricKey) {
         return measuresHolder.getMeasureRepository().getRawMeasure(measuresHolder.getTreeRootHolder().getRoot(),
                                                                    measuresHolder.getMetricRepository()
-                                                                           .getByKey(metricKey))
-                .map(MeasureWrapper::new);
+                                                                           .getByKey(metricKey));
     }
 
     public Optional<QualityGate.Condition> findQualityGateCondition(String metricKey) {
@@ -409,25 +414,6 @@ public class AnalysisDetails {
         private String getImageName() {
             return imageName;
         }
-    }
-
-    private static class MeasureWrapper implements SonarqubeCompatibility.Major7.Minor9 {
-
-        private final Measure measure;
-
-        MeasureWrapper(Measure measure) {
-            super();
-            this.measure = measure;
-        }
-
-        Double getDoubleValue() {
-            try {
-                return (Double) Measure.class.getDeclaredMethod("getDoubleValue").invoke(measure);
-            } catch (ReflectiveOperationException ex) {
-                throw new IllegalStateException("Could not invoke getDoubleValue", ex);
-            }
-        }
-
     }
 
 }

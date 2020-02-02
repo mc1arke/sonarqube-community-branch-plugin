@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,12 +48,12 @@ public class CommunityProjectBranchesLoader implements ProjectBranchesLoader {
             String.format("/%s/%s?%s=", ProjectBranchesParameters.CONTROLLER, ProjectBranchesParameters.ACTION_LIST,
                           ProjectBranchesParameters.PARAM_PROJECT);
 
-    private final ScannerWsClientWrapper scannerWsClient;
+    private final ScannerWsClient scannerWsClient;
     private final Gson gson;
 
     public CommunityProjectBranchesLoader(ScannerWsClient scannerWsClient) {
         super();
-        this.scannerWsClient = new ScannerWsClientWrapper(scannerWsClient);
+        this.scannerWsClient = scannerWsClient;
         this.gson = GsonHelper.create();
     }
 
