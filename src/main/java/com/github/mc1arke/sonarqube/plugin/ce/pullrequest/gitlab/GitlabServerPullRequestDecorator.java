@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Markus Heberling
+ * Copyright (C) 2020 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,12 +25,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Commit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Discussion;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.MergeRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Note;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -38,9 +34,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -51,6 +47,9 @@ import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonar.db.alm.setting.ALM;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -69,14 +68,15 @@ import java.util.stream.Collectors;
 
 public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
+    public static final String PULLREQUEST_GITLAB_URL =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
+    public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.repositorySlug";
+
     private static final Logger LOGGER = Loggers.get(GitlabServerPullRequestDecorator.class);
     private static final List<String> OPEN_ISSUE_STATUSES =
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());
-
-    public static final String PULLREQUEST_GITLAB_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
-    public static final String PULLREQUEST_GITLAB_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.token";
-    public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "sonar.pullrequest.gitlab.repositorySlug";
 
     private final Server server;
     private final ScmInfoRepository scmInfoRepository;
@@ -88,22 +88,24 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
 
     @Override
-    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysis, UnifyConfiguration unifyConfiguration) {
+    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysis, AlmSettingDto almSettingDto,
+                                          ProjectAlmSettingDto projectAlmSettingDto) {
         LOGGER.info("starting to analyze with " + analysis.toString());
         String revision = analysis.getCommitSha();
 
         try {
-            final String hostURL = unifyConfiguration.getRequiredServerProperty(PULLREQUEST_GITLAB_URL);
-            final String apiToken = unifyConfiguration.getRequiredServerProperty(PULLREQUEST_GITLAB_TOKEN);
-            final String repositorySlug = unifyConfiguration.getRequiredProperty(PULLREQUEST_GITLAB_REPOSITORY_SLUG);
+            final String hostURL = analysis.getScannerProperty(PULLREQUEST_GITLAB_URL).orElseThrow(
+                    () -> new IllegalStateException(String.format(
+                            "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
+                            PULLREQUEST_GITLAB_URL)));
+            final String apiToken = almSettingDto.getPersonalAccessToken();
+            final String repositorySlug = analysis.getScannerProperty(PULLREQUEST_GITLAB_REPOSITORY_SLUG).orElseThrow(
+                    () -> new IllegalStateException(String.format(
+                            "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
+                            PULLREQUEST_GITLAB_REPOSITORY_SLUG)));
             final String pullRequestId = analysis.getBranchName();
 
-            final boolean summaryCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED));
-            final boolean fileCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_FILE_COMMENT_ENABLED));
-            final boolean deleteCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED));
-
             final String restURL = String.format("%s/api/v4", hostURL);
-            final String userURL = restURL + "/user";
             final String projectURL = restURL + String.format("/projects/%s", URLEncoder
                     .encode(repositorySlug, StandardCharsets.UTF_8.name()));
             final String statusUrl = projectURL + String.format("/statuses/%s", revision);
@@ -111,21 +113,17 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final String prCommitsURL = mergeRequestURl + "/commits";
             final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
 
-            final String prHtmlUrl = String.format("%s/%s/merge_requests/%s", hostURL, repositorySlug, pullRequestId);
+            final String prHtmlUrl = analysis.getScannerProperty(PULLREQUEST_GITLAB_PROJECT_URL).map(url -> String.format("%s/merge_requests/%s", url, pullRequestId)).orElse(null);
 
             LOGGER.info(String.format("Status url is: %s ", statusUrl));
             LOGGER.info(String.format("PR commits url is: %s ", prCommitsURL));
             LOGGER.info(String.format("MR discussion url is: %s ", mergeRequestDiscussionURL));
-            LOGGER.info(String.format("User url is: %s ", userURL));
 
             Map<String, String> headers = new HashMap<>();
             headers.put("PRIVATE-TOKEN", apiToken);
             headers.put("Accept", "application/json");
 
-            User user = getSingle(userURL, headers, User.class);
-            LOGGER.info(String.format("Using user: %s ", user.getUsername()));
-
-            List<String> commits = getPagedList(prCommitsURL, headers, true, new TypeReference<List<Commit>>() {
+            List<String> commits = getPagedList(prCommitsURL, headers, new TypeReference<List<Commit>>() {
             }).stream().map(Commit::getId).collect(Collectors.toList());
             MergeRequest mergeRequest = getSingle(mergeRequestURl, headers, MergeRequest.class);
 
@@ -157,9 +155,9 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.ZERO).toString();
 
-            postStatus(statusUrl, headers, analysis, coverageValue, true);
+            postStatus(statusUrl, headers, analysis, coverageValue);
 
-            postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams, summaryCommentEnabled);
+            postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams);
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);
@@ -185,7 +183,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                                 new BasicNameValuePair("position[new_line]", String.valueOf(issue.getIssue().getLine())),
                                 new BasicNameValuePair("position[position_type]", "text"));
 
-                        postCommitComment(mergeRequestDiscussionURL, headers, fileContentParams, fileCommentEnabled);
+                        postCommitComment(mergeRequestDiscussionURL, headers, fileContentParams);
                     } else {
                         LOGGER.info(String.format("Skipping %s:%d since the commit does not belong to the MR", path, issue.getIssue().getLine()));
                     }
@@ -199,34 +197,43 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
     }
 
+    @Override
+    public ALM alm() {
+        return ALM.GITLAB;
+    }
+
     private <X> X getSingle(String userURL, Map<String, String> headers, Class<X> type) throws IOException {
         HttpGet httpGet = new HttpGet(userURL);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
         }
-        HttpResponse httpResponse = HttpClients.createSystem().execute(httpGet);
-        if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
-            LOGGER.error(httpResponse.toString());
-            LOGGER.error(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
-            throw new IllegalStateException("An error was returned in the response from the Gitlab API. See the previous log messages for details");
-        } else if (null != httpResponse) {
-            LOGGER.debug(httpResponse.toString());
-            HttpEntity entity = httpResponse.getEntity();
-            X user = new ObjectMapper()
+        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+            HttpResponse httpResponse = httpClient.execute(httpGet);
+            if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
+                LOGGER.error(httpResponse.toString());
+                LOGGER.error(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
+                throw new IllegalStateException(
+                        "An error was returned in the response from the Gitlab API. See the previous log messages for details");
+            } else if (null != httpResponse) {
+                LOGGER.debug(httpResponse.toString());
+                HttpEntity entity = httpResponse.getEntity();
+                X user = new ObjectMapper()
                     .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                     .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), type);
 
-            LOGGER.info(type + " received");
+                LOGGER.info(type + " received");
 
-            return user;
-        } else {
-            throw new IOException("No response reveived");
+                return user;
+            } else {
+                throw new IOException("No response reveived");
+            }
         }
     }
 
-    private <X> List<X> getPagedList(String commitDiscussionURL, Map<String, String> headers, boolean sendRequest, TypeReference<List<X>> typeRef) throws IOException {
+    private <X> List<X> getPagedList(String commitDiscussionURL, Map<String, String> headers,
+                                     TypeReference<List<X>> typeRef) throws IOException {
         HttpGet httpGet = new HttpGet(commitDiscussionURL);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
@@ -234,8 +241,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
         List<X> discussions = new ArrayList<>();
 
-        if (sendRequest) {
-            HttpResponse httpResponse = HttpClients.createSystem().execute(httpGet);
+        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+            HttpResponse httpResponse = httpClient.execute(httpGet);
             if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
                 LOGGER.error(httpResponse.toString());
                 LOGGER.error(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
@@ -253,7 +260,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 Optional<String> nextURL = getNextUrl(httpResponse);
                 if (nextURL.isPresent()) {
                     LOGGER.info("Getting next page");
-                    discussions.addAll(getPagedList(nextURL.get(), headers, sendRequest, typeRef));
+                    discussions.addAll(getPagedList(nextURL.get(), headers, typeRef));
                 }
             }
         }
@@ -275,7 +282,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         }
     }
 
-    private void postCommitComment(String commitCommentUrl, Map<String, String> headers, List<NameValuePair> params, boolean sendRequest) throws IOException {
+    private void postCommitComment(String commitCommentUrl, Map<String, String> headers, List<NameValuePair> params)
+            throws IOException {
         //https://docs.gitlab.com/ee/api/commits.html#post-comment-to-commit
         HttpPost httpPost = new HttpPost(commitCommentUrl);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -283,15 +291,16 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         }
         httpPost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
 
-        if (sendRequest) {
-            LOGGER.info("Posting {} with headers {} to {}", params, headers, commitCommentUrl);
+        LOGGER.info("Posting {} with headers {} to {}", params, headers, commitCommentUrl);
 
-            HttpResponse httpResponse = HttpClients.createSystem().execute(httpPost);
+        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+            HttpResponse httpResponse = httpClient.execute(httpPost);
             validateGitlabResponse(httpResponse, 201, "Comment posted");
         }
     }
 
-    private void postStatus(String statusPostUrl, Map<String, String> headers, AnalysisDetails analysis, String coverage, boolean sendRequest) throws IOException{
+    private void postStatus(String statusPostUrl, Map<String, String> headers, AnalysisDetails analysis,
+                            String coverage) throws IOException {
         //See https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
         statusPostUrl += "?name=SonarQube";
         String status = (analysis.getQualityGateStatus() == QualityGate.Status.OK ? "success" : "failed");
@@ -309,8 +318,9 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpPost.addHeader(entry.getKey(), entry.getValue());
         }
-        if (sendRequest) {
-            HttpResponse httpResponse = HttpClients.createSystem().execute(httpPost);
+
+        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+            HttpResponse httpResponse = httpClient.execute(httpPost);
             if (null != httpResponse && httpResponse.toString().contains("Cannot transition status")) {
                 // Workaround for https://gitlab.com/gitlab-org/gitlab-ce/issues/25807
                 LOGGER.debug("Transition status is already {}", status);
@@ -343,10 +353,5 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             }
         }
         return Optional.empty();
-    }
-
-    @Override
-    public String name() {
-        return "GitlabServer";
     }
 }

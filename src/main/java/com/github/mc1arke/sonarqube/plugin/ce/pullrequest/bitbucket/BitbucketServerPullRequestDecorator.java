@@ -21,7 +21,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketException;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.Annotation;
@@ -37,6 +36,9 @@ import org.sonar.api.rules.RuleType;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.db.alm.setting.ALM;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -53,16 +55,6 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toSet;
 
 public class BitbucketServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
-
-    public static final String PULL_REQUEST_BITBUCKET_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.url";
-
-    public static final String PULL_REQUEST_BITBUCKET_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.token";
-
-    public static final String PULL_REQUEST_BITBUCKET_PROJECT_KEY = "sonar.pullrequest.bitbucket.projectKey";
-
-    public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "sonar.pullrequest.bitbucket.repositorySlug";
-
-    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "sonar.pullrequest.bitbucket.userSlug";
 
     private static final Logger LOGGER = Loggers.get(BitbucketServerPullRequestDecorator.class);
 
@@ -81,30 +73,31 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     }
 
     @Override
-    public String name() {
-        return "BitbucketServer";
-    }
-
-    @Override
-    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration configuration) {
+    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
         try {
-            if(!client.supportsCodeInsights()) {
+            if(!client.supportsCodeInsights(almSettingDto)) {
                 LOGGER.warn("Your Bitbucket instances does not support the Code Insights API.");
                 return DEFAULT_DECORATION_RESULT;
             }
-            String project = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_PROJECT_KEY);
+            String project = projectAlmSettingDto.getAlmSlug();
 
-            String repo = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG);
+            String repo = projectAlmSettingDto.getAlmRepo();
             client.createReport(project, repo,
                     analysisDetails.getCommitSha(),
-                    toReport(analysisDetails)
+                    toReport(analysisDetails),
+                    almSettingDto
             );
-            updateAnnotations(project, repo, analysisDetails);
+            updateAnnotations(project, repo, analysisDetails, almSettingDto);
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }
 
         return DEFAULT_DECORATION_RESULT;
+    }
+
+    @Override
+    public ALM alm() {
+        return ALM.BITBUCKET;
     }
 
     private CreateReportRequest toReport(AnalysisDetails analysisDetails) {
@@ -128,10 +121,10 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 asInsightStatus(analysisDetails.getQualityGateStatus()));
     }
 
-    private void updateAnnotations(String project, String repo, AnalysisDetails analysisDetails) throws IOException {
+    private void updateAnnotations(String project, String repo, AnalysisDetails analysisDetails, AlmSettingDto almSettingDto) throws IOException {
         final AtomicInteger chunkCounter = new AtomicInteger(0);
 
-        client.deleteAnnotations(project, repo, analysisDetails.getCommitSha());
+        client.deleteAnnotations(project, repo, analysisDetails.getCommitSha(), almSettingDto);
 
         Map<Object, Set<Annotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
@@ -151,7 +144,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
         for (Set<Annotation> annotations : annotationChunks.values()) {
             try {
-                client.createAnnotations(project, repo, analysisDetails.getCommitSha(), new CreateAnnotationsRequest(annotations));
+                client.createAnnotations(project, repo, analysisDetails.getCommitSha(), new CreateAnnotationsRequest(annotations), almSettingDto);
             } catch (BitbucketException e) {
                 if (e.isError(BitbucketException.PAYLOAD_TOO_LARGE)) {
                     LOGGER.warn("The annotations will be truncated since the maximum number of annotations for this report has been reached.");

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,19 +16,29 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws;
 
-import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.AlmSettingsWsAction;
+import org.sonar.api.server.ws.WebService;
 
-import java.util.Optional;
+import java.util.List;
 
-public interface ComponentKeyCompatibility extends SonarqubeCompatibility {
+public class AlmSettingsWs implements WebService {
+    private final List<AlmSettingsWsAction> actions;
 
-    interface ComponentKeyCompatibilityMajor7 extends ComponentKeyCompatibility, SonarqubeCompatibility.Major7 {
+    public AlmSettingsWs(List<AlmSettingsWsAction> actions) {
+        super();
+        this.actions = actions;
+    }
 
-        interface ComponentKeyCompatibilityMinor9 extends ComponentKeyCompatibilityMajor7, SonarqubeCompatibility.Major7.Minor9 {
+    @Override
+    public void define(Context context) {
+        NewController controller = context.createController("api/alm_settings");
 
-            Optional<String> getDeprecatedBranchName();
+        for (AlmSettingsWsAction action : actions) {
+            action.define(controller);
         }
+
+        controller.done();
     }
 }

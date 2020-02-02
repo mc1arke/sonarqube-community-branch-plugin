@@ -21,7 +21,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateAnnotationsRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateReportRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ErrorResponse;
@@ -32,9 +31,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.sonar.api.ce.ComputeEngineSide;
-import org.sonar.api.config.Configuration;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
+import org.sonar.db.alm.setting.AlmSettingDto;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -46,21 +45,17 @@ public class BitbucketClient {
     private static final Logger LOGGER = Loggers.get(BitbucketClient.class);
     private static final String REPORT_KEY = "com.github.mc1arke.sonarqube";
     private static final MediaType APPLICATION_JSON_MEDIA_TYPE = MediaType.get("application/json");
-    private final Configuration configuration;
 
     private OkHttpClient client;
     private ObjectMapper objectMapper;
 
-    public BitbucketClient(Configuration configuration) {
-        this.configuration = configuration;
-    }
 
-    public ServerProperties getServerProperties() throws IOException {
+    public ServerProperties getServerProperties(AlmSettingDto almSettingDto) throws IOException {
         Request req = new Request.Builder()
                 .get()
-                .url(format("%s/rest/api/1.0/application-properties", baseUrl()))
+                .url(format("%s/rest/api/1.0/application-properties", almSettingDto.getUrl()))
                 .build();
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = getClient(almSettingDto).newCall(req).execute()) {
             validate(response);
 
             return getObjectMapper().reader().forType(ServerProperties.class)
@@ -70,44 +65,44 @@ public class BitbucketClient {
         }
     }
 
-    public void createReport(String project, String repository, String commit, CreateReportRequest request) throws IOException {
+    public void createReport(String project, String repository, String commit, CreateReportRequest request, AlmSettingDto almSettingDto) throws IOException {
         String body = getObjectMapper().writeValueAsString(request);
         Request req = new Request.Builder()
                 .put(RequestBody.create(APPLICATION_JSON_MEDIA_TYPE, body))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", baseUrl(), project, repository, commit, REPORT_KEY))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", almSettingDto.getUrl(), project, repository, commit, REPORT_KEY))
                 .build();
 
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = getClient(almSettingDto).newCall(req).execute()) {
             validate(response);
         }
     }
 
-    public void createAnnotations(String project, String repository, String commit, CreateAnnotationsRequest request) throws IOException {
+    public void createAnnotations(String project, String repository, String commit, CreateAnnotationsRequest request, AlmSettingDto almSettingDto) throws IOException {
         if (request.getAnnotations().isEmpty()) {
             return;
         }
         Request req = new Request.Builder()
                 .post(RequestBody.create(APPLICATION_JSON_MEDIA_TYPE, getObjectMapper().writeValueAsString(request)))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", baseUrl(), project, repository, commit, REPORT_KEY))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", almSettingDto.getUrl(), project, repository, commit, REPORT_KEY))
                 .build();
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = getClient(almSettingDto).newCall(req).execute()) {
             validate(response);
         }
     }
 
-    public void deleteAnnotations(String project, String repository, String commit) throws IOException {
+    public void deleteAnnotations(String project, String repository, String commit, AlmSettingDto almSettingDto) throws IOException {
         Request req = new Request.Builder()
                 .delete()
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", baseUrl(), project, repository, commit, REPORT_KEY))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", almSettingDto, project, repository, commit, REPORT_KEY))
                 .build();
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = getClient(almSettingDto).newCall(req).execute()) {
             validate(response);
         }
     }
 
-    public boolean supportsCodeInsights() {
+    public boolean supportsCodeInsights(AlmSettingDto almSettingDto) {
         try {
-            ServerProperties server = getServerProperties();
+            ServerProperties server = getServerProperties(almSettingDto);
             LOGGER.debug(format("Your Bitbucket Server installation is version %s", server.getVersion()));
             if (server.hasCodeInsightsApi()) {
                 return true;
@@ -133,13 +128,13 @@ public class BitbucketClient {
         }
     }
 
-    private OkHttpClient getClient() {
+    private OkHttpClient getClient(AlmSettingDto almSettingDto) {
         client = Optional.ofNullable(client).orElseGet(() ->
                 new OkHttpClient.Builder()
                         .authenticator(((route, response) ->
                                 response.request()
                                         .newBuilder()
-                                        .header("Authorization", format("Bearer %s", getToken()))
+                                        .header("Authorization", format("Bearer %s", almSettingDto.getPersonalAccessToken()))
                                         .header("Accept", APPLICATION_JSON_MEDIA_TYPE.toString())
                                         .build()
                         ))
@@ -154,17 +149,5 @@ public class BitbucketClient {
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         );
         return objectMapper;
-    }
-
-    private String baseUrl() {
-        return configuration.get(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(format("Missing required property %s", BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL))
-                );
-    }
-
-    private String getToken() {
-        return configuration.get(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_TOKEN)
-                .orElseThrow(() -> new IllegalArgumentException("Personal Access Token for Bitbucket Server is missing"));
     }
 }

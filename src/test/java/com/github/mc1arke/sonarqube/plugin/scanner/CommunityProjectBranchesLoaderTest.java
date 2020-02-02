@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -79,7 +79,7 @@ public class CommunityProjectBranchesLoaderTest {
 
         List<BranchInfo> infos = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            infos.add(new BranchInfo("key" + i, BranchType.LONG, i == 1, "target" + i));
+            infos.add(new BranchInfo("key" + i, BranchType.BRANCH, i == 1, "target" + i));
         }
 
         StringReader stringReader = new StringReader(
