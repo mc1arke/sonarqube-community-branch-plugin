@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,9 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import org.sonar.db.alm.setting.ALM;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
@@ -30,13 +33,19 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
     }
 
     @Override
-    public void decorateQualityGateStatus(AnalysisDetails analysisDetails) {
+    public void decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
+                                          ProjectAlmSettingDto projectAlmSettingDto) {
         try {
-            checkRunProvider.createCheckRun(analysisDetails);
+            checkRunProvider.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
         } catch (Exception ex) {
             throw new IllegalStateException("Could not decorate Pull Request on Github", ex);
         }
 
+    }
+
+    @Override
+    public ALM alm() {
+        return ALM.GITHUB;
     }
 
     @Override

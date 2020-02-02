@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Markus Heberling
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,29 +16,29 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws;
 
-import java.util.List;
+import org.sonar.db.alm.setting.ALM;
+import org.sonarqube.ws.AlmSettings;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+public final class AlmTypeMapper {
 
-public class Discussion {
-    private final String id;
-
-    private final List<Note> notes;
-
-    @JsonCreator
-    public Discussion(@JsonProperty("id") String id, @JsonProperty("notes") List<Note> notes) {
-        this.id = id;
-        this.notes = notes;
+    private AlmTypeMapper() {
+        super();
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public List<Note> getNotes() {
-        return notes;
+    public static AlmSettings.Alm toAlmWs(ALM alm) {
+        switch (alm) {
+            case AZURE_DEVOPS:
+                return AlmSettings.Alm.azure;
+            case BITBUCKET:
+                return AlmSettings.Alm.bitbucket;
+            case GITHUB:
+                return AlmSettings.Alm.github;
+            case GITLAB:
+                return AlmSettings.Alm.gitlab;
+            default:
+                throw new IllegalStateException(String.format("Unknown ALM '%s'", alm.name()));
+        }
     }
 }

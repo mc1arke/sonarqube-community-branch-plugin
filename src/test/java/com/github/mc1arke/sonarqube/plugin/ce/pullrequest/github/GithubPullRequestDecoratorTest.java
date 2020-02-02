@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,8 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -28,6 +30,7 @@ import java.security.GeneralSecurityException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -47,8 +50,12 @@ public class GithubPullRequestDecoratorTest {
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(checkRunProvider);
 
-        doThrow(dummyException).when(checkRunProvider).createCheckRun(any());
-        assertThatThrownBy(() -> testCase.decorateQualityGateStatus(analysisDetails))
+        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+
+        doThrow(dummyException).when(checkRunProvider).createCheckRun(any(), any(), any());
+        assertThatThrownBy(
+                () -> testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .hasMessage("Could not decorate Pull Request on Github")
                 .isExactlyInstanceOf(IllegalStateException.class).hasCause(dummyException);
     }
@@ -59,10 +66,13 @@ public class GithubPullRequestDecoratorTest {
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(checkRunProvider);
 
+        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+
         ArgumentCaptor<AnalysisDetails> argumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
 
-        testCase.decorateQualityGateStatus(analysisDetails);
-        verify(checkRunProvider).createCheckRun(argumentCaptor.capture());
+        testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+        verify(checkRunProvider).createCheckRun(argumentCaptor.capture(), eq(almSettingDto), eq(projectAlmSettingDto));
         assertEquals(analysisDetails, argumentCaptor.getValue());
     }
 }

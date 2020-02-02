@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,7 +77,7 @@ public class CommunityBranchLoaderDelegateTest {
     @Test
     public void testNoBranchDetailsExistingBranchMatch() {
         BranchDto branchDto = mock(BranchDto.class);
-        when(branchDto.getBranchType()).thenReturn(BranchType.SHORT);
+        when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(branchDto.getKey()).thenReturn("branchKey");
         when(branchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
         when(branchDto.getProjectUuid()).thenReturn("projectUuid");
@@ -97,10 +97,9 @@ public class CommunityBranchLoaderDelegateTest {
         ArgumentCaptor<CommunityBranch> branchArgumentCaptor = ArgumentCaptor.forClass(CommunityBranch.class);
 
         verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
-        assertEquals(BranchType.SHORT, branchArgumentCaptor.getValue().getType());
-        assertNull(branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals(BranchType.BRANCH, branchArgumentCaptor.getValue().getType());
+        assertNull(branchArgumentCaptor.getValue().getTargetBranchName());
         assertEquals("branchKey", branchArgumentCaptor.getValue().getName());
-        assertFalse(branchArgumentCaptor.getValue().isLegacyFeature());
         assertFalse(branchArgumentCaptor.getValue().isMain());
         assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
         assertNull(branchArgumentCaptor.getValue().getTargetBranchName());
@@ -128,9 +127,9 @@ public class CommunityBranchLoaderDelegateTest {
     }
 
     @Test
-    public void testBranchNameMatchingShortBranch() {
+    public void testBranchNameMatchingBranch() {
         BranchDto branchDto = mock(BranchDto.class);
-        when(branchDto.getBranchType()).thenReturn(BranchType.SHORT);
+        when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(branchDto.getKey()).thenReturn("branchKey");
         when(branchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
         when(branchDto.getProjectUuid()).thenReturn("projectUuid");
@@ -141,7 +140,7 @@ public class CommunityBranchLoaderDelegateTest {
 
         ScannerReport.Metadata metadata =
                 ScannerReport.Metadata.getDefaultInstance().toBuilder().setBranchName("branch")
-                        .setBranchType(ScannerReport.Metadata.BranchType.SHORT).build();
+                        .setBranchType(ScannerReport.Metadata.BranchType.BRANCH).build();
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.branchDao()).thenReturn(branchDao);
@@ -154,50 +153,12 @@ public class CommunityBranchLoaderDelegateTest {
         ArgumentCaptor<CommunityBranch> branchArgumentCaptor = ArgumentCaptor.forClass(CommunityBranch.class);
 
         verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
-        assertEquals(BranchType.SHORT, branchArgumentCaptor.getValue().getType());
-        assertEquals("projectUuid", branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals(BranchType.BRANCH, branchArgumentCaptor.getValue().getType());
+        assertEquals("projectUuid", branchArgumentCaptor.getValue().getReferenceBranchUuid());
         assertEquals("branch", branchArgumentCaptor.getValue().getName());
-        assertFalse(branchArgumentCaptor.getValue().isLegacyFeature());
         assertFalse(branchArgumentCaptor.getValue().isMain());
         assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
         assertNull(branchArgumentCaptor.getValue().getTargetBranchName());
-    }
-
-    @Test
-    public void testBranchNameMatchingLongBranch() {
-        BranchDto branchDto = mock(BranchDto.class);
-        when(branchDto.getBranchType()).thenReturn(BranchType.LONG);
-        when(branchDto.getKey()).thenReturn("branchKey");
-        when(branchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
-        when(branchDto.getProjectUuid()).thenReturn("projectUuid");
-        when(branchDto.getUuid()).thenReturn("branchUuid");
-
-        BranchDao branchDao = mock(BranchDao.class);
-        when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("branch"))).thenReturn(Optional.of(branchDto));
-
-        ScannerReport.Metadata metadata =
-                ScannerReport.Metadata.getDefaultInstance().toBuilder().setBranchName("branch")
-                        .setTargetBranchName("targetBranchName")
-                        .setBranchType(ScannerReport.Metadata.BranchType.LONG).build();
-
-        DbClient dbClient = mock(DbClient.class);
-        when(dbClient.branchDao()).thenReturn(branchDao);
-
-        MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
-        when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
-
-        new CommunityBranchLoaderDelegate(dbClient, metadataHolder).load(metadata);
-
-        ArgumentCaptor<CommunityBranch> branchArgumentCaptor = ArgumentCaptor.forClass(CommunityBranch.class);
-
-        verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
-        assertEquals(BranchType.LONG, branchArgumentCaptor.getValue().getType());
-        assertEquals("projectUuid", branchArgumentCaptor.getValue().getMergeBranchUuid());
-        assertEquals("branch", branchArgumentCaptor.getValue().getName());
-        assertFalse(branchArgumentCaptor.getValue().isLegacyFeature());
-        assertFalse(branchArgumentCaptor.getValue().isMain());
-        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
-        assertEquals("targetBranchName", branchArgumentCaptor.getValue().getTargetBranchName());
     }
 
     @Test
@@ -213,7 +174,7 @@ public class CommunityBranchLoaderDelegateTest {
 
         ScannerReport.Metadata metadata =
                 ScannerReport.Metadata.getDefaultInstance().toBuilder().setBranchName("sourceBranch")
-                        .setMergeBranchName("branch").setBranchType(ScannerReport.Metadata.BranchType.PULL_REQUEST)
+                        .setReferenceBranchName("branch").setBranchType(ScannerReport.Metadata.BranchType.PULL_REQUEST)
                         .setTargetBranchName("")
                         .build();
 
@@ -229,9 +190,8 @@ public class CommunityBranchLoaderDelegateTest {
 
         verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
         assertEquals(BranchType.PULL_REQUEST, branchArgumentCaptor.getValue().getType());
-        assertEquals("mergeBranchUuid", branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals("mergeBranchUuid", branchArgumentCaptor.getValue().getReferenceBranchUuid());
         assertEquals("sourceBranch", branchArgumentCaptor.getValue().getName());
-        assertFalse(branchArgumentCaptor.getValue().isLegacyFeature());
         assertFalse(branchArgumentCaptor.getValue().isMain());
         assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
         assertEquals("branch", branchArgumentCaptor.getValue().getTargetBranchName());
@@ -244,7 +204,7 @@ public class CommunityBranchLoaderDelegateTest {
 
         ScannerReport.Metadata metadata =
                 ScannerReport.Metadata.getDefaultInstance().toBuilder().setBranchName("sourceBranch")
-                        .setMergeBranchName("branch").setBranchType(ScannerReport.Metadata.BranchType.PULL_REQUEST)
+                        .setReferenceBranchName("branch").setBranchType(ScannerReport.Metadata.BranchType.PULL_REQUEST)
                         .build();
 
         DbClient dbClient = mock(DbClient.class);
@@ -262,16 +222,16 @@ public class CommunityBranchLoaderDelegateTest {
 
 
     @Test
-    public void testBranchNameMatchingShortBranchWithTargetBranch() {
+    public void testBranchNameMatchingBranchWithTargetBranch() {
         BranchDto sourceBranchDto = mock(BranchDto.class);
-        when(sourceBranchDto.getBranchType()).thenReturn(BranchType.SHORT);
+        when(sourceBranchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(sourceBranchDto.getKey()).thenReturn("branchKey");
         when(sourceBranchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
         when(sourceBranchDto.getProjectUuid()).thenReturn("projectUuid");
         when(sourceBranchDto.getUuid()).thenReturn("branchUuid");
 
         BranchDto targetBranchDto = mock(BranchDto.class);
-        when(targetBranchDto.getBranchType()).thenReturn(BranchType.LONG);
+        when(targetBranchDto.getBranchType()).thenReturn(BranchType.PULL_REQUEST);
         when(targetBranchDto.getKey()).thenReturn("targetBranchKey");
         when(targetBranchDto.getMergeBranchUuid()).thenReturn("targetMergeBranchUuid");
         when(targetBranchDto.getProjectUuid()).thenReturn("projectUuid");
@@ -285,7 +245,8 @@ public class CommunityBranchLoaderDelegateTest {
 
         ScannerReport.Metadata metadata =
                 ScannerReport.Metadata.getDefaultInstance().toBuilder().setBranchName("branch")
-                        .setBranchType(ScannerReport.Metadata.BranchType.SHORT).setMergeBranchName("mergeBranchName")
+                        .setBranchType(ScannerReport.Metadata.BranchType.BRANCH)
+                        .setReferenceBranchName("mergeBranchName")
                         .setTargetBranchName("targetBranchThatDoesNotMatchMergeBranch")
                         .build();
 
@@ -300,8 +261,8 @@ public class CommunityBranchLoaderDelegateTest {
         ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.forClass(Branch.class);
 
         verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
-        assertEquals(BranchType.SHORT, branchArgumentCaptor.getValue().getType());
-        assertEquals("targetBranchUuid", branchArgumentCaptor.getValue().getMergeBranchUuid());
+        assertEquals(BranchType.BRANCH, branchArgumentCaptor.getValue().getType());
+        assertEquals("targetBranchUuid", branchArgumentCaptor.getValue().getReferenceBranchUuid());
         assertEquals("branch", branchArgumentCaptor.getValue().getName());
         assertFalse(branchArgumentCaptor.getValue().isMain());
         assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
@@ -309,9 +270,9 @@ public class CommunityBranchLoaderDelegateTest {
     }
 
     @Test
-    public void testBranchNameMatchingShortBranchWithTargetBranchMissingTargetBranch() {
+    public void testBranchNameMatchingBranchWithTargetBranchMissingTargetBranch() {
         BranchDto sourceBranchDto = mock(BranchDto.class);
-        when(sourceBranchDto.getBranchType()).thenReturn(BranchType.SHORT);
+        when(sourceBranchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(sourceBranchDto.getKey()).thenReturn("branchKey");
         when(sourceBranchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
         when(sourceBranchDto.getProjectUuid()).thenReturn("projectUuid");
@@ -324,7 +285,8 @@ public class CommunityBranchLoaderDelegateTest {
 
         ScannerReport.Metadata metadata =
                 ScannerReport.Metadata.getDefaultInstance().toBuilder().setBranchName("branch")
-                        .setBranchType(ScannerReport.Metadata.BranchType.SHORT).setMergeBranchName("mergeBranchName")
+                        .setBranchType(ScannerReport.Metadata.BranchType.BRANCH)
+                        .setReferenceBranchName("mergeBranchName")
                         .build();
 
         DbClient dbClient = mock(DbClient.class);

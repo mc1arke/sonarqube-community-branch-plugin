@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -63,32 +63,12 @@ public class CommunityBranchSupportDelegateTest {
     }
 
     @Test
-    public void testCreateComponentKeyShortBranch() {
-        Map<String, String> params = new HashMap<>();
-        params.put("branch", "feature/dummy");
-        params.put("branchType", "SHORT");
-
-        CommunityComponentKey componentKey =
-                new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
-                        .createComponentKey("xxx", params);
-        assertEquals("xxx:BRANCH:feature/dummy", componentKey.getDbKey());
-        assertEquals("xxx", componentKey.getKey());
-        assertFalse(componentKey.getPullRequestKey().isPresent());
-        assertFalse(componentKey.isMainBranch());
-        assertTrue(componentKey.getBranch().isPresent());
-        assertEquals("feature/dummy", componentKey.getBranch().get().getName());
-        assertFalse(componentKey.getDeprecatedBranchName().isPresent());
-        assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
-        assertEquals(BranchType.SHORT, componentKey.getBranch().get().getType());
-    }
-
-    @Test
-    public void testCreateComponentKeyLongBranch() {
+    public void testCreateComponentKeyBranchType() {
         Map<String, String> params = new HashMap<>();
         params.put("branch", "release-1.1");
-        params.put("branchType", "LONG");
+        params.put("branchType", "BRANCH");
 
-        CommunityComponentKey componentKey =
+        BranchSupport.ComponentKey componentKey =
                 new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
                         .createComponentKey("yyy", params);
 
@@ -98,9 +78,8 @@ public class CommunityBranchSupportDelegateTest {
         assertFalse(componentKey.isMainBranch());
         assertTrue(componentKey.getBranch().isPresent());
         assertEquals("release-1.1", componentKey.getBranch().get().getName());
-        assertFalse(componentKey.getDeprecatedBranchName().isPresent());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
-        assertEquals(BranchType.LONG, componentKey.getBranch().get().getType());
+        assertEquals(BranchType.BRANCH, componentKey.getBranch().get().getType());
     }
 
     @Test
@@ -117,7 +96,6 @@ public class CommunityBranchSupportDelegateTest {
         assertEquals("pullrequestkey", componentKey.getPullRequestKey().get());
         assertFalse(componentKey.isMainBranch());
         assertFalse(componentKey.getBranch().isPresent());
-        assertFalse(componentKey.getDeprecatedBranchName().isPresent());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
         CommunityComponentKey mainBranchComponentKey = componentKey.getMainBranchComponentKey();
         assertSame(mainBranchComponentKey, mainBranchComponentKey.getMainBranchComponentKey());
@@ -149,18 +127,6 @@ public class CommunityBranchSupportDelegateTest {
     }
 
     @Test
-    public void testCreateComponentKeyInvalidBranchTypeParameter2() {
-        Map<String, String> params = new HashMap<>();
-        params.put("branchType", "PULL_REQUEST");
-
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Unsupported branch type 'PULL_REQUEST'"));
-
-        new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
-                .createComponentKey("xxx", params);
-    }
-
-    @Test
     public void testCreateBranchComponentComponentKeyComponentDtoKeyMismatch() {
         DbSession dbSession = mock(DbSession.class);
         OrganizationDto organizationDto = mock(OrganizationDto.class);
@@ -174,7 +140,7 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getUuid()).thenReturn("componentUuid");
-        when(branchDto.getBranchType()).thenReturn(BranchType.SHORT);
+        when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
 
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(12345678901234L);
@@ -182,7 +148,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.LONG)));
+        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -222,7 +188,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.LONG)));
+        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -273,7 +239,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getUuid()).thenReturn("componentUuid");
         when(branchDto.getKey()).thenReturn("dummy");
-        when(branchDto.getBranchType()).thenReturn(BranchType.LONG);
+        when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
 
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(1234567890123L);
@@ -281,7 +247,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.LONG)));
+        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -313,7 +279,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getUuid()).thenReturn("componentUuid");
         when(branchDto.getKey()).thenReturn("dummy");
-        when(branchDto.getBranchType()).thenReturn(BranchType.SHORT);
+        when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
 
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(1234567890123L);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,16 +28,16 @@ public class CommunityBranchConfiguration implements BranchConfiguration {
 
     private final String branchName;
     private final BranchType branchType;
-    private final String longLivingSonarReferenceBranch;
+    private final String referenceBranchName;
     private final String targetScmBranch;
     private final String pullRequestKey;
 
-    /*package*/ CommunityBranchConfiguration(String branchName, BranchType branchType,
-                                             String longLivingSonarReferenceBranch, String targetScmBranch,
+    /*package*/ CommunityBranchConfiguration(String branchName, BranchType branchType, String referenceBranchName,
+                                             String targetScmBranch,
                                              String pullRequestKey) {
         this.branchName = branchName;
         this.branchType = branchType;
-        this.longLivingSonarReferenceBranch = longLivingSonarReferenceBranch;
+        this.referenceBranchName = referenceBranchName;
         this.targetScmBranch = targetScmBranch;
         this.pullRequestKey = pullRequestKey;
     }
@@ -53,8 +53,8 @@ public class CommunityBranchConfiguration implements BranchConfiguration {
     }
 
     @Override
-    public String longLivingSonarReferenceBranch() {
-        return longLivingSonarReferenceBranch;
+    public String referenceBranchName() {
+        return referenceBranchName;
     }
 
     @Override

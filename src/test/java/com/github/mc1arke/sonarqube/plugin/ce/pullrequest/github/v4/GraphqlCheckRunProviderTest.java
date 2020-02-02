@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,15 +34,13 @@ import io.aexp.nodes.graphql.InputObject;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.config.Configuration;
-import org.sonar.api.config.PropertyDefinition;
-import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.platform.Server;
 import org.sonar.api.rule.Severity;
 import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
 import org.sonar.core.issue.DefaultIssue;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -74,78 +72,6 @@ import static org.mockito.Mockito.when;
 public class GraphqlCheckRunProviderTest {
 
     @Test
-    public void createCheckRunThrowsExceptionOnMissingProperty() {
-        GraphqlProvider graphqlProvider = mock(GraphqlProvider.class);
-        Clock clock = mock(Clock.class);
-        GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider =
-                mock(GithubApplicationAuthenticationProvider.class);
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-
-        Configuration configuration = mock(Configuration.class);
-        when(configurationRepository.getConfiguration()).thenReturn(configuration);
-
-        PropertyDefinitions propertyDefinitions = new PropertyDefinitions();
-
-        GraphqlCheckRunProvider testCase =
-                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server,
-                                            configurationRepository, propertyDefinitions);
-        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails))
-                .isExactlyInstanceOf(IllegalStateException.class)
-                .hasMessage("sonar.pullrequest.github.endpoint must be specified in the project configuration");
-    }
-
-    @Test
-    public void createCheckRunTreatsEmptyStringAsNullDefaultPropertyValue() {
-        GraphqlProvider graphqlProvider = mock(GraphqlProvider.class);
-        Clock clock = mock(Clock.class);
-        GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider =
-                mock(GithubApplicationAuthenticationProvider.class);
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-
-        Configuration configuration = mock(Configuration.class);
-        when(configurationRepository.getConfiguration()).thenReturn(configuration);
-
-        PropertyDefinition propertyDefinition =
-                PropertyDefinition.builder("sonar.pullrequest.github.endpoint").defaultValue("").build();
-        PropertyDefinitions propertyDefinitions = new PropertyDefinitions(propertyDefinition);
-
-        GraphqlCheckRunProvider testCase =
-                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server,
-                                            configurationRepository, propertyDefinitions);
-        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails))
-                .isExactlyInstanceOf(IllegalStateException.class)
-                .hasMessage("sonar.pullrequest.github.endpoint must be specified in the project configuration");
-    }
-
-    @Test
-    public void createCheckRunOnMissingPropertyWithBlankDefault() {
-        GraphqlProvider graphqlProvider = mock(GraphqlProvider.class);
-        Clock clock = mock(Clock.class);
-        GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider =
-                mock(GithubApplicationAuthenticationProvider.class);
-        Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-
-        Configuration configuration = mock(Configuration.class);
-        when(configurationRepository.getConfiguration()).thenReturn(configuration);
-
-        PropertyDefinition propertyDefinition = PropertyDefinition.builder("sonar.pullrequest.github.endpoint").build();
-        PropertyDefinitions propertyDefinitions = new PropertyDefinitions(propertyDefinition);
-
-        GraphqlCheckRunProvider testCase =
-                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server,
-                                            configurationRepository, propertyDefinitions);
-        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails))
-                .isExactlyInstanceOf(IllegalStateException.class)
-                .hasMessage("sonar.pullrequest.github.endpoint must be specified in the project configuration");
-    }
-
-    @Test
     public void createCheckRunExceptionOnErrorResponse() throws IOException, GeneralSecurityException {
         GraphqlProvider graphqlProvider = mock(GraphqlProvider.class, RETURNS_DEEP_STUBS);
         Clock clock = Clock.fixed(Instant.ofEpochSecond(1234567890), ZoneId.of("UTC"));
@@ -153,7 +79,6 @@ public class GraphqlCheckRunProviderTest {
                 mock(GithubApplicationAuthenticationProvider.class);
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
 
         PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
         when(postAnalysisIssueVisitor.getIssues()).thenReturn(new ArrayList<>());
@@ -167,12 +92,6 @@ public class GraphqlCheckRunProviderTest {
         when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
         when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
-
-        Configuration configuration = mock(Configuration.class);
-        when(configuration.get(anyString()))
-                .then(i -> "sonar.pullrequest.github.endpoint".equals(i.getArguments()[0]) ? Optional.empty() :
-                           Optional.of(i.getArguments()[0]));
-        when(configurationRepository.getConfiguration()).thenReturn(configuration);
 
         RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
         when(repositoryAuthenticationToken.getAuthenticationToken()).thenReturn("dummyAuthToken");
@@ -190,22 +109,22 @@ public class GraphqlCheckRunProviderTest {
         when(graphQLTemplate.mutate(any(), eq(CreateCheckRun.class))).thenReturn(graphQLResponseEntity);
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
-        PropertyDefinition propertyDefinition =
-                PropertyDefinition.builder("sonar.pullrequest.github.endpoint").defaultValue("http://host.name")
-                        .build();
-        PropertyDefinitions propertyDefinitions = new PropertyDefinitions(propertyDefinition);
+        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        when(almSettingDto.getUrl()).thenReturn("http://host.name");
+        when(almSettingDto.getAppId()).thenReturn("app id");
+        when(almSettingDto.getPrivateKey()).thenReturn("private key");
 
         GraphqlCheckRunProvider testCase =
-                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server,
-                                            configurationRepository, propertyDefinitions);
-        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails)).hasMessage(
+                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server);
+        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto))
+                .hasMessage(
                 "An error was returned in the response from the Github API:" + System.lineSeparator() +
                 "- Error{message='example message', locations=[]}").isExactlyInstanceOf(IllegalStateException.class);
 
         verify(githubApplicationAuthenticationProvider)
-                .getInstallationToken(eq("http://host.name"), eq("sonar.alm.github.app.id"),
-                                      eq("sonar.alm.github.app.privateKey.secured"),
-                                      eq("sonar.pullrequest.github.repository"));
+                .getInstallationToken(eq("http://host.name"), eq("app id"), eq("private key"), eq("dummy/repo"));
 
     }
 
@@ -220,7 +139,6 @@ public class GraphqlCheckRunProviderTest {
                 .thenReturn(mock(RepositoryAuthenticationToken.class));
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
 
         ReportAttributes reportAttributes = mock(ReportAttributes.class);
         when(reportAttributes.getScmPath()).thenReturn(Optional.of("path"));
@@ -249,22 +167,13 @@ public class GraphqlCheckRunProviderTest {
         when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
 
-        Configuration configuration = mock(Configuration.class);
-        when(configuration.get(anyString()))
-                .then(i -> "sonar.pullrequest.github.endpoint".equals(i.getArguments()[0]) ? Optional.empty() :
-                           Optional.of(i.getArguments()[0]));
-        when(configurationRepository.getConfiguration()).thenReturn(configuration);
-
-
-        PropertyDefinition propertyDefinition =
-                PropertyDefinition.builder("sonar.pullrequest.github.endpoint").defaultValue("http://host.name")
-                        .build();
-        PropertyDefinitions propertyDefinitions = new PropertyDefinitions(propertyDefinition);
+        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
 
         GraphqlCheckRunProvider testCase =
-                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server,
-                                            configurationRepository, propertyDefinitions);
-        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails)).hasMessage("Unknown severity value: dummy")
+                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server);
+        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto))
+                .hasMessage("Unknown severity value: dummy")
                 .isExactlyInstanceOf(IllegalArgumentException.class);
     }
 
@@ -287,7 +196,6 @@ public class GraphqlCheckRunProviderTest {
                 mock(GithubApplicationAuthenticationProvider.class);
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
 
         DefaultIssue issue1 = mock(DefaultIssue.class);
         when(issue1.getLine()).thenReturn(2);
@@ -377,12 +285,6 @@ public class GraphqlCheckRunProviderTest {
         when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
 
-        Configuration configuration = mock(Configuration.class);
-        when(configuration.get(anyString())).then(i -> "sonar.pullrequest.github.endpoint".equals(i.getArguments()[0]) ?
-                                                       Optional.of("http://host.name") :
-                                                       Optional.of(i.getArguments()[0]));
-        when(configurationRepository.getConfiguration()).thenReturn(configuration);
-
         ArgumentCaptor<String> authenticationProviderArgumentCaptor = ArgumentCaptor.forClass(String.class);
         RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
         when(repositoryAuthenticationToken.getAuthenticationToken()).thenReturn("dummyAuthToken");
@@ -432,12 +334,16 @@ public class GraphqlCheckRunProviderTest {
                 .thenReturn(graphQLResponseEntity);
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
-        PropertyDefinitions propertyDefinitions = new PropertyDefinitions();
+        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        when(almSettingDto.getUrl()).thenReturn("http://host.name");
+        when(almSettingDto.getAppId()).thenReturn("app id");
+        when(almSettingDto.getPrivateKey()).thenReturn("private key");
 
         GraphqlCheckRunProvider testCase =
-                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server,
-                                            configurationRepository, propertyDefinitions);
-        testCase.createCheckRun(analysisDetails);
+                new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server);
+        testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         assertEquals(1, requestBuilders.size());
 
@@ -457,12 +363,9 @@ public class GraphqlCheckRunProviderTest {
         assertEquals("createCheckRun", argumentsArgumentCaptor.getValue().getDotPath());
         assertEquals(1, argumentsArgumentCaptor.getValue().getArguments().size());
         assertEquals("input", argumentsArgumentCaptor.getValue().getArguments().get(0).getKey());
-//        assertThat(argumentsArgumentCaptor.getValue().getArguments().get(0).getValue()).usingRecursiveComparison().isEqualTo(inputObjects.get(1));
 
-        assertEquals(
-                Arrays.asList("http://host.name", "sonar.alm.github.app.id", "sonar.alm.github.app.privateKey.secured",
-                              "sonar.pullrequest.github.repository"),
-                authenticationProviderArgumentCaptor.getAllValues());
+        assertEquals(Arrays.asList("http://host.name", "app id", "private key", "dummy/repo"),
+                     authenticationProviderArgumentCaptor.getAllValues());
 
         List<InputObject<Object>> expectedAnnotationObjects = new ArrayList<>();
         int position = 0;
@@ -508,7 +411,7 @@ public class GraphqlCheckRunProviderTest {
         assertThat(annotationArgumentCaptor.getValue()).isEqualTo(expectedAnnotationObjects);
 
         verify(inputObjectBuilders.get(position + 1)).put(eq("repositoryId"), eq("repository ID"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("name"), eq("sonar.alm.github.app.name Results"));
+        verify(inputObjectBuilders.get(position + 1)).put(eq("name"), eq("Sonarqube Results"));
         verify(inputObjectBuilders.get(position + 1)).put(eq("headSha"), eq("commit SHA"));
         verify(inputObjectBuilders.get(position + 1)).put(eq("status"), eq(RequestableCheckStatusState.COMPLETED));
         verify(inputObjectBuilders.get(position + 1)).put(eq("conclusion"), eq(status == QualityGate.Status.OK ?
@@ -529,12 +432,9 @@ public class GraphqlCheckRunProviderTest {
         GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider =
                 mock(GithubApplicationAuthenticationProvider.class);
         Server server = mock(Server.class);
-        ConfigurationRepository configurationRepository = mock(ConfigurationRepository.class);
-        PropertyDefinitions propertyDefinitions = new PropertyDefinitions();
-        assertThat(new GraphqlCheckRunProvider(clock, githubApplicationAuthenticationProvider, server,
-                                               configurationRepository, propertyDefinitions)).usingRecursiveComparison()
+        assertThat(new GraphqlCheckRunProvider(clock, githubApplicationAuthenticationProvider, server))
+                .usingRecursiveComparison()
                 .isEqualTo(new GraphqlCheckRunProvider(new DefaultGraphqlProvider(), clock,
-                                                       githubApplicationAuthenticationProvider, server,
-                                                       configurationRepository, propertyDefinitions));
+                                                       githubApplicationAuthenticationProvider, server));
     }
 }

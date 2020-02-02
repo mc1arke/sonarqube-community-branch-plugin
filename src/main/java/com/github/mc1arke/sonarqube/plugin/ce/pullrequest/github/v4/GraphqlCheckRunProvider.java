@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,15 +34,13 @@ import io.aexp.nodes.graphql.GraphQLTemplate;
 import io.aexp.nodes.graphql.InputObject;
 import io.aexp.nodes.graphql.internal.Error;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.config.Configuration;
-import org.sonar.api.config.PropertyDefinition;
-import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.platform.Server;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -69,40 +67,30 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
     private final Clock clock;
     private final GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider;
     private final Server server;
-    private final ConfigurationRepository configurationRepository;
-    private final PropertyDefinitions propertyDefinitions;
 
     public GraphqlCheckRunProvider(Clock clock,
                                    GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider,
-                                   Server server, ConfigurationRepository configurationRepository,
-                                   PropertyDefinitions propertyDefinitions) {
-        this(new DefaultGraphqlProvider(), clock, githubApplicationAuthenticationProvider, server,
-             configurationRepository, propertyDefinitions);
+                                   Server server) {
+        this(new DefaultGraphqlProvider(), clock, githubApplicationAuthenticationProvider, server);
     }
 
     GraphqlCheckRunProvider(GraphqlProvider graphqlProvider, Clock clock,
                             GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider,
-                            Server server, ConfigurationRepository configurationRepository,
-                            PropertyDefinitions propertyDefinitions) {
+                            Server server) {
         super();
         this.graphqlProvider = graphqlProvider;
         this.clock = clock;
         this.githubApplicationAuthenticationProvider = githubApplicationAuthenticationProvider;
         this.server = server;
-        this.configurationRepository = configurationRepository;
-        this.propertyDefinitions = propertyDefinitions;
     }
 
     @Override
-    public void createCheckRun(AnalysisDetails analysisDetails) throws IOException, GeneralSecurityException {
-        Configuration configuration = configurationRepository.getConfiguration();
-        String apiUrl = getMandatoryProperty("sonar.pullrequest.github.endpoint", configuration, propertyDefinitions);
-        String apiPrivateKey =
-                getMandatoryProperty("sonar.alm.github.app.privateKey.secured", configuration, propertyDefinitions);
-        String projectPath =
-                getMandatoryProperty("sonar.pullrequest.github.repository", configuration, propertyDefinitions);
-        String appId = getMandatoryProperty("sonar.alm.github.app.id", configuration, propertyDefinitions);
-        String appName = getMandatoryProperty("sonar.alm.github.app.name", configuration, propertyDefinitions);
+    public void createCheckRun(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
+                               ProjectAlmSettingDto projectAlmSettingDto) throws IOException, GeneralSecurityException {
+        String apiUrl = almSettingDto.getUrl();
+        String apiPrivateKey = almSettingDto.getPrivateKey();
+        String projectPath = projectAlmSettingDto.getAlmSlug();
+        String appId = almSettingDto.getAppId();
 
         RepositoryAuthenticationToken repositoryAuthenticationToken =
                 githubApplicationAuthenticationProvider.getInstallationToken(apiUrl, appId, apiPrivateKey, projectPath);
@@ -138,7 +126,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
         InputObject<Object> repositoryInputObject =
                 graphqlProvider.createInputObject().put("repositoryId", repositoryAuthenticationToken.getRepositoryId())
-                        .put("name", appName + " Results").put("headSha", analysisDetails.getCommitSha())
+                        .put("name", "Sonarqube Results").put("headSha", analysisDetails.getCommitSha())
                         .put("status", RequestableCheckStatusState.COMPLETED).put("conclusion", QualityGate.Status.OK ==
                                                                                                 analysisDetails
                                                                                                         .getQualityGateStatus() ?
@@ -196,12 +184,4 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         }
     }
 
-
-    private static String getMandatoryProperty(String propertyName, Configuration configuration,
-                                               PropertyDefinitions propertyDefinitions) {
-        return configuration.get(propertyName).orElseGet(
-                () -> Optional.ofNullable(propertyDefinitions.get(propertyName)).map(PropertyDefinition::defaultValue)
-                        .map(v -> "".equals(v) ? null : v).orElseThrow(() -> new IllegalStateException(
-                                String.format("%s must be specified in the project configuration", propertyName))));
-    }
 }

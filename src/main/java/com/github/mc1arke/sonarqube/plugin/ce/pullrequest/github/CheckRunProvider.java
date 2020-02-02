@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,10 +19,13 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 public interface CheckRunProvider {
-    void createCheckRun(AnalysisDetails analysisDetails) throws IOException, GeneralSecurityException;
+    void createCheckRun(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
+                        ProjectAlmSettingDto projectAlmSettingDto) throws IOException, GeneralSecurityException;
 }
