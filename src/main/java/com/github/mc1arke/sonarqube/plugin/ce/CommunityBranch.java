@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce;
 
-import org.apache.logging.log4j.util.Strings;
+import org.apache.commons.lang.StringUtils;
 import org.sonar.ce.task.projectanalysis.analysis.Branch;
 import org.sonar.core.component.ComponentKeys;
 import org.sonar.db.component.BranchType;
@@ -27,22 +27,22 @@ import org.sonar.db.component.ComponentDto;
 /**
  * @author Michael Clarke
  */
-public class CommunityBranch implements Branch, BranchCompatibility.BranchCompatibilityMajor7.BranchCompatibilityMinor9 {
+public class CommunityBranch implements Branch {
 
     private final String name;
     private final BranchType branchType;
     private final boolean main;
-    private final String mergeBranchUuid;
+    private final String referenceBranchUuid;
     private final String pullRequestKey;
     private final String targetBranchName;
 
-    public CommunityBranch(String name, BranchType branchType, boolean main, String mergeBranchUuid,
+    public CommunityBranch(String name, BranchType branchType, boolean main, String referenceBranchUuid,
                            String pullRequestKey, String targetBranchName) {
         super();
         this.name = name;
         this.branchType = branchType;
         this.main = main;
-        this.mergeBranchUuid = mergeBranchUuid;
+        this.referenceBranchUuid = referenceBranchUuid;
         this.pullRequestKey = pullRequestKey;
         this.targetBranchName = targetBranchName;
     }
@@ -63,13 +63,8 @@ public class CommunityBranch implements Branch, BranchCompatibility.BranchCompat
     }
 
     @Override
-    public boolean isLegacyFeature() {
-        return false;
-    }
-
-    @Override
-    public String getMergeBranchUuid() {
-        return mergeBranchUuid;
+    public String getReferenceBranchUuid() {
+        return referenceBranchUuid;
     }
 
     @Override
@@ -91,7 +86,7 @@ public class CommunityBranch implements Branch, BranchCompatibility.BranchCompat
         if (null == fileOrDirPath) {
             effectiveKey = projectKey;
         } else {
-            effectiveKey = ComponentKeys.createEffectiveKey(projectKey, Strings.trimToNull(fileOrDirPath));
+            effectiveKey = ComponentKeys.createEffectiveKey(projectKey, StringUtils.trimToNull(fileOrDirPath));
         }
 
         if (main) {

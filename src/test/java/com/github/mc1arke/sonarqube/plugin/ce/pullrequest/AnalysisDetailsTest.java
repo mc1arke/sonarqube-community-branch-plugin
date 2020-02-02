@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,8 @@ import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.ce.posttask.ScannerContext;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.rules.RuleType;
@@ -44,7 +46,6 @@ import org.sonar.ce.task.projectanalysis.metric.Metric;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 import org.sonar.core.issue.DefaultIssue;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,7 +55,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,10 +76,12 @@ public class AnalysisDetailsTest {
         QualityGate qualityGate = mock(QualityGate.class);
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
+        Configuration configuration = mock(Configuration.class);
+        ScannerContext scannerContext = mock(ScannerContext.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, null, scannerContext);
 
         assertEquals("branchName", testCase.getBranchName());
     }
@@ -94,10 +96,11 @@ public class AnalysisDetailsTest {
         QualityGate qualityGate = mock(QualityGate.class);
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
+        ScannerContext scannerContext = mock(ScannerContext.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, null, scannerContext);
 
         assertEquals("commitId", testCase.getCommitSha());
     }
@@ -111,10 +114,11 @@ public class AnalysisDetailsTest {
         doReturn(QualityGate.Status.ERROR).when(qualityGate).getStatus();
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
+        ScannerContext scannerContext = mock(ScannerContext.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, null, scannerContext);
 
         assertEquals(QualityGate.Status.ERROR, testCase.getQualityGateStatus());
     }
@@ -128,10 +132,11 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         doReturn(new Date()).when(analysis).getDate();
         Project project = mock(Project.class);
+        ScannerContext scannerContext = mock(ScannerContext.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, null, scannerContext);
 
         assertEquals(analysis.getDate(), testCase.getAnalysisDate());
     }
@@ -145,10 +150,11 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         doReturn("Analysis ID").when(analysis).getAnalysisUuid();
         Project project = mock(Project.class);
+        ScannerContext scannerContext = mock(ScannerContext.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, null, scannerContext);
 
         assertEquals("Analysis ID", testCase.getAnalysisId());
     }
@@ -162,10 +168,11 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
         doReturn("Project Key").when(project).getKey();
+        ScannerContext scannerContext = mock(ScannerContext.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, null, scannerContext);
 
         assertEquals("Project Key", testCase.getAnalysisProjectKey());
     }
@@ -279,9 +286,11 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
+        ScannerContext scannerContext = mock(ScannerContext.class);
+
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, "http://localhost:9000");
+                                    project, "http://localhost:9000", scannerContext);
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -386,9 +395,11 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
+        ScannerContext scannerContext = mock(ScannerContext.class);
+
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, "http://localhost:9000");
+                                    project, "http://localhost:9000", scannerContext);
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -487,9 +498,11 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
+        ScannerContext scannerContext = mock(ScannerContext.class);
+
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, "http://localhost:9000");
+                                    project, "http://localhost:9000", scannerContext);
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -582,9 +595,11 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
+        ScannerContext scannerContext = mock(ScannerContext.class);
+
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, "http://localhost:9000");
+                                    project, "http://localhost:9000", scannerContext);
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -678,7 +693,8 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), postAnalysisIssueVisitor,
                                     mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
-                                    mock(Analysis.class), mock(Project.class), null);
+                                    mock(Analysis.class), mock(Project.class), null,
+                                    mock(ScannerContext.class));
         assertSame(postAnalysisIssueVisitor, analysisDetails.getPostAnalysisIssueVisitor());
     }
 
@@ -687,28 +703,6 @@ public class AnalysisDetailsTest {
         AnalysisDetails.BranchDetails branchDetails = new AnalysisDetails.BranchDetails("branchName", "commitId");
         assertEquals("branchName", branchDetails.getBranchName());
         assertEquals("commitId", branchDetails.getCommitId());
-    }
-
-    @Test
-    public void testReflectiveOperationPropagated() {
-        AnalysisDetails.MeasuresHolder measuresHolder = mock(AnalysisDetails.MeasuresHolder.class);
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        doReturn(Optional.of(Measure.newMeasureBuilder().create(2))).when(measureRepository)
-                .getRawMeasure(any(), any());
-        doReturn(mock(TreeRootHolder.class)).when(measuresHolder).getTreeRootHolder();
-        doReturn(mock(MetricRepository.class)).when(measuresHolder).getMetricRepository();
-        doReturn(measureRepository).when(measuresHolder).getMeasureRepository();
-
-        QualityGate qualityGate = mock(QualityGate.class);
-        doReturn(new ArrayList<>()).when(qualityGate).getConditions();
-
-        AnalysisDetails testCase =
-                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
-                                    qualityGate, measuresHolder, mock(Analysis.class), mock(Project.class),
-                                    null);
-        assertThatThrownBy(() -> testCase.createAnalysisSummary(mock(FormatterFactory.class)))
-                .hasMessage("Could not invoke getDoubleValue").isExactlyInstanceOf(IllegalStateException.class)
-                .hasCauseExactlyInstanceOf(InvocationTargetException.class);
     }
 
 }

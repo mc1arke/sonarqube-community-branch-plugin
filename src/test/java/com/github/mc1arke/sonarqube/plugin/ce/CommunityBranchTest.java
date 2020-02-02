@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -68,8 +68,8 @@ public class CommunityBranchTest {
     }
 
     @Test
-    public void testGenerateKeyNonMainBranchNonNullFileOfPathContentShortBranch() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.SHORT, false, null, null, null);
+    public void testGenerateKeyNonMainBranchNonNullFileOfPathContentBranch() {
+        CommunityBranch testCase = new CommunityBranch("name", BranchType.BRANCH, false, null, null, null);
 
         assertEquals("projectKey:path:BRANCH:name", testCase.generateKey("projectKey", "path"));
     }
@@ -87,7 +87,7 @@ public class CommunityBranchTest {
                 .expectMessage(IsEqual.equalTo("Only a branch of type PULL_REQUEST can have a pull request ID"));
         expectedException.expect(IllegalStateException.class);
 
-        new CommunityBranch("name", BranchType.SHORT, false, null, "prKey", null).getPullRequestKey();
+        new CommunityBranch("name", BranchType.BRANCH, false, null, "prKey", null).getPullRequestKey();
     }
 
 }
