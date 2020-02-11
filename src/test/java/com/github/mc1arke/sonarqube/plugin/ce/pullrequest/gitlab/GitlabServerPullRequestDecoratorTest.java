@@ -112,78 +112,60 @@ public class GitlabServerPullRequestDecoratorTest {
         when(scmInfo.getChangesetForLine(anyInt())).thenReturn(Changeset.newChangesetBuilder().setDate(0L).setRevision(commitSHA).build());
         when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/user")).withHeader("PRIVATE-TOKEN", equalTo("token")).willReturn(okJson("{\n" +
-                                                                                                                                 "  \"id\": 1,\n" +
-                                                                                                                                 "  \"username\": \"" +
-                                                                                                                                 user +
-                                                                                                                                 "\"}")));
+                "  \"id\": 1,\n" +
+                "  \"username\": \"" + user + "\"}")));
 
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName)).willReturn(okJson("{\n" +
-                                                                                                                                                      "  \"id\": 15235,\n" +
-                                                                                                                                                      "  \"iid\": " +
-                                                                                                                                                      branchName +
-                                                                                                                                                      ",\n" +
-                                                                                                                                                      "  \"diff_refs\": {\n" +
-                                                                                                                                                      "    \"base_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\",\n" +
-                                                                                                                                                      "    \"head_sha\":\"" +
-                                                                                                                                                      commitSHA +
-                                                                                                                                                      "\",\n" +
-                                                                                                                                                      "    \"start_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\"}\n" +
-                                                                                                                                                      "}")));
+                "  \"id\": 15235,\n" +
+                "  \"iid\": " + branchName + ",\n" +
+                "  \"diff_refs\": {\n" +
+                "    \"base_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\",\n" +
+                "    \"head_sha\":\"" + commitSHA + "\",\n" +
+                "    \"start_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\"}\n" +
+                "}")));
 
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/commits")).willReturn(okJson("[\n" +
-                                                                                                                                                                   "  {\n" +
-                                                                                                                                                                   "    \"id\": \"" +
-                                                                                                                                                                   commitSHA +
-                                                                                                                                                                   "\"\n" +
-                                                                                                                                                                   "  }]")));
+                "  {\n" +
+                "    \"id\": \"" + commitSHA + "\"\n" +
+                "  }]")));
 
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions")).willReturn(okJson("[\n" +
-                                                                                                                                                                       "  {\n" +
-                                                                                                                                                                       "    \"id\": \"" +
-                                                                                                                                                                       discussionId +
-                                                                                                                                                                       "\",\n" +
-                                                                                                                                                                       "    \"individual_note\": false,\n" +
-                                                                                                                                                                       "    \"notes\": [\n" +
-                                                                                                                                                                       "      {\n" +
-                                                                                                                                                                       "        \"id\": " +
-                                                                                                                                                                       noteId +
-                                                                                                                                                                       ",\n" +
-                                                                                                                                                                       "        \"type\": \"DiscussionNote\",\n" +
-                                                                                                                                                                       "        \"body\": \"discussion text\",\n" +
-                                                                                                                                                                       "        \"attachment\": null,\n" +
-                                                                                                                                                                       "        \"author\": {\n" +
-                                                                                                                                                                       "          \"id\": 1,\n" +
-                                                                                                                                                                       "          \"username\": \"" +
-                                                                                                                                                                       user +
-                                                                                                                                                                       "\"\n" +
-                                                                                                                                                                       "        }}]}]")));
+                "  {\n" +
+                "    \"id\": \"" + discussionId + "\",\n" +
+                "    \"individual_note\": false,\n" +
+                "    \"notes\": [\n" +
+                "      {\n" +
+                "        \"id\": " + noteId + ",\n" +
+                "        \"type\": \"DiscussionNote\",\n" +
+                "        \"body\": \"discussion text\",\n" +
+                "        \"attachment\": null,\n" +
+                "        \"author\": {\n" +
+                "          \"id\": 1,\n" +
+                "          \"username\": \"" + user + "\"\n" +
+                "        }}]}]")));
 
         wireMockRule.stubFor(delete(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions/" + discussionId + "/notes/" + noteId)).willReturn(noContent()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/statuses/" + commitSHA))
-                                     .withQueryParam("name", equalTo("SonarQube"))
-                                     .withQueryParam("state", equalTo("failed")).withQueryParam("target_url",
-                                                                                                equalTo(sonarRootUrl +
-                                                                                                        "/dashboard?id=" +
-                                                                                                        projectKey +
-                                                                                                        "&pullRequest=" +
-                                                                                                        branchName))
-                                     .withQueryParam("coverage", equalTo(coverage.getValue())).willReturn(created()));
+                .withQueryParam("name", equalTo("SonarQube"))
+                .withQueryParam("state", equalTo("failed"))
+                .withQueryParam("target_url", equalTo(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + branchName))
+                .withQueryParam("coverage", equalTo(coverage.getValue()))
+                .willReturn(created()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
-                                     .withRequestBody(equalTo("body=summary")).willReturn(created()));
+                .withRequestBody(equalTo("body=summary"))
+                .willReturn(created()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
-                                     .withRequestBody(equalTo("body=issue&" + urlEncode("position[base_sha]") +
-                                                              "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
-                                                              urlEncode("position[start_sha]") +
-                                                              "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
-                                                              urlEncode("position[head_sha]") + "=" + commitSHA + "&" +
-                                                              urlEncode("position[old_path]") + "=" + urlEncode(filePath) + "&" +urlEncode("position[new_path]") + "=" +
-                                                              urlEncode(filePath) + "&" +
-                                                              urlEncode("position[new_line]") + "=" + lineNumber + "&" +
-                                                              urlEncode("position[position_type]") + "=text"))
-                                     .willReturn(created()));
+                .withRequestBody(equalTo("body=issue&" +
+                        urlEncode("position[base_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
+                        urlEncode("position[start_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
+                        urlEncode("position[head_sha]") + "=" + commitSHA + "&" +
+                        urlEncode("position[old_path]") + "=" + urlEncode(filePath) + "&" +urlEncode("position[new_path]") + "=" + urlEncode(filePath) + "&" +
+                        urlEncode("position[new_line]") + "=" + lineNumber + "&" +
+                        urlEncode("position[position_type]") + "=text"))
+                .willReturn(created()));
 
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
