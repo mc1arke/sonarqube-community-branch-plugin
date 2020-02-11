@@ -26,7 +26,10 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Commit;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Discussion;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.MergeRequest;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Note;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -34,6 +37,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -107,6 +111,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             final String projectURL = apiURL + String.format("/projects/%s", URLEncoder
                     .encode(repositorySlug, StandardCharsets.UTF_8.name()));
+            final String userURL = apiURL + "/user";
             final String statusUrl = projectURL + String.format("/statuses/%s", revision);
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
             final String prCommitsURL = mergeRequestURl + "/commits";
@@ -117,16 +122,21 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             LOGGER.info(String.format("Status url is: %s ", statusUrl));
             LOGGER.info(String.format("PR commits url is: %s ", prCommitsURL));
             LOGGER.info(String.format("MR discussion url is: %s ", mergeRequestDiscussionURL));
+            LOGGER.info(String.format("User url is: %s ", userURL));
 
             Map<String, String> headers = new HashMap<>();
             headers.put("PRIVATE-TOKEN", apiToken);
             headers.put("Accept", "application/json");
 
+            User user = getSingle(userURL, headers, User.class);
+            LOGGER.info(String.format("Using user: %s ", user.getUsername()));
+
             List<String> commits = getPagedList(prCommitsURL, headers, new TypeReference<List<Commit>>() {
             }).stream().map(Commit::getId).collect(Collectors.toList());
             MergeRequest mergeRequest = getSingle(mergeRequestURl, headers, MergeRequest.class);
 
-            List<Discussion> discussions = getPagedList(mergeRequestDiscussionURL, headers, deleteCommentsEnabled, new TypeReference<List<Discussion>>() {
+
+            List<Discussion> discussions = getPagedList(mergeRequestDiscussionURL, headers, new TypeReference<List<Discussion>>() {
             });
 
             LOGGER.info(String.format("Discussions in MR: %s ", discussions
@@ -141,7 +151,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                         deleteCommitDiscussionNote(mergeRequestDiscussionURL + String.format("/%s/notes/%s",
                                 discussion.getId(),
                                 note.getId()),
-                                headers, deleteCommentsEnabled);
+                                headers);
                     }
                 }
             }
@@ -266,23 +276,22 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         return discussions;
     }
 
-    private void deleteCommitDiscussionNote(String commitDiscussionNoteURL, Map<String, String> headers, boolean sendRequest) throws IOException {
+    private void deleteCommitDiscussionNote(String commitDiscussionNoteURL, Map<String, String> headers) throws IOException {
         //https://docs.gitlab.com/ee/api/discussions.html#delete-a-commit-thread-note
         HttpDelete httpDelete = new HttpDelete(commitDiscussionNoteURL);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpDelete.addHeader(entry.getKey(), entry.getValue());
         }
 
-        if (sendRequest) {
+        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
             LOGGER.info("Deleting {} with headers {}", commitDiscussionNoteURL, headers);
 
-            HttpResponse httpResponse = HttpClients.createSystem().execute(httpDelete);
+            HttpResponse httpResponse = httpClient.execute(httpDelete);
             validateGitlabResponse(httpResponse, 204, "Commit discussions note deleted");
         }
     }
 
-    private void postCommitComment(String commitCommentUrl, Map<String, String> headers, List<NameValuePair> params)
-            throws IOException {
+    private void postCommitComment(String commitCommentUrl, Map<String, String> headers, List<NameValuePair> params) throws IOException {
         //https://docs.gitlab.com/ee/api/commits.html#post-comment-to-commit
         HttpPost httpPost = new HttpPost(commitCommentUrl);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
