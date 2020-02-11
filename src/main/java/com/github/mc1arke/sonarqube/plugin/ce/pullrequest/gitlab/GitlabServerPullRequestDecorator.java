@@ -67,8 +67,8 @@ import java.util.stream.Collectors;
 
 public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
-    public static final String PULLREQUEST_GITLAB_URL =
-            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
+    public static final String PULLREQUEST_GITLAB_API_URL =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.api.url";
     public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG =
             "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.repositorySlug";
 
@@ -93,10 +93,10 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         String revision = analysis.getCommitSha();
 
         try {
-            final String hostURL = analysis.getScannerProperty(PULLREQUEST_GITLAB_URL).orElseThrow(
+            final String apiURL = analysis.getScannerProperty(PULLREQUEST_GITLAB_API_URL).orElseThrow(
                     () -> new IllegalStateException(String.format(
                             "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
-                            PULLREQUEST_GITLAB_URL)));
+                            PULLREQUEST_GITLAB_API_URL)));
             final String apiToken = almSettingDto.getPersonalAccessToken();
             final String repositorySlug = analysis.getScannerProperty(PULLREQUEST_GITLAB_REPOSITORY_SLUG).orElseThrow(
                     () -> new IllegalStateException(String.format(
@@ -104,8 +104,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                             PULLREQUEST_GITLAB_REPOSITORY_SLUG)));
             final String pullRequestId = analysis.getBranchName();
 
-            final String restURL = String.format("%s/api/v4", hostURL);
-            final String projectURL = restURL + String.format("/projects/%s", URLEncoder.encode(repositorySlug, StandardCharsets.UTF_8.name()));
+            final String projectURL = apiURL + String.format("/projects/%s", URLEncoder.encode(repositorySlug, StandardCharsets.UTF_8.name()));
             final String statusUrl = projectURL + String.format("/statuses/%s", revision);
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
             final String prCommitsURL = mergeRequestURl + "/commits";
