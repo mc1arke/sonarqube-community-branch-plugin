@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonar.api.notifications.AnalysisWarnings;
+import org.sonar.api.utils.System2;
 import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.BranchConfigurationLoader;
 import org.sonar.scanner.scan.branch.BranchInfo;
@@ -51,7 +52,8 @@ public class CommunityBranchConfigurationLoaderTest {
     private final ExpectedException expectedException = ExpectedException.none();
 
     private final AnalysisWarnings analysisWarnings = mock(AnalysisWarnings.class);
-    private final BranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(analysisWarnings);
+    private final System2 system2 = mock(System2.class);
+    private final BranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(system2, analysisWarnings);
 
     @Rule
     public ExpectedException expectedException() {
