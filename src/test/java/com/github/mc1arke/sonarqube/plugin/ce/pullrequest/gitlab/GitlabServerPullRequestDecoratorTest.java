@@ -78,10 +78,10 @@ public class GitlabServerPullRequestDecoratorTest {
         when(almSettingDto.getPersonalAccessToken()).thenReturn("token");
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        when(analysisDetails.getScannerProperty(eq(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_API_URL)))
+        when(analysisDetails.getScannerProperty(eq(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL)))
                 .thenReturn(Optional.of(wireMockRule.baseUrl()+"/api/v4"));
         when(analysisDetails
-                     .getScannerProperty(eq(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG)))
+                     .getScannerProperty(eq(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID)))
                 .thenReturn(Optional.of(repositorySlug));
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
         when(analysisDetails.getBranchName()).thenReturn(branchName);
