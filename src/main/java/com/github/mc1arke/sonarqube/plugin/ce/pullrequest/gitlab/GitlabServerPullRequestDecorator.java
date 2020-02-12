@@ -78,6 +78,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             "sonar.pullrequest.gitlab.projectId";
     public static final String PULLREQUEST_GITLAB_PROJECT_URL =
             "sonar.pullrequest.gitlab.projectUrl";
+    public static final String PULLREQUEST_GITLAB_PIPELINE_ID =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId";
 
     private static final Logger LOGGER = Loggers.get(GitlabServerPullRequestDecorator.class);
     private static final List<String> OPEN_ISSUE_STATUSES =
@@ -166,7 +168,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.ZERO).toString();
 
-            postStatus(statusUrl, headers, analysis, coverageValue);
+            postStatus(new StringBuilder(statusUrl), headers, analysis, coverageValue);
 
             postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams);
 
@@ -309,22 +311,22 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         }
     }
 
-    private void postStatus(String statusPostUrl, Map<String, String> headers, AnalysisDetails analysis,
+    private void postStatus(StringBuilder statusPostUrl, Map<String, String> headers, AnalysisDetails analysis,
                             String coverage) throws IOException {
         //See https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
-        statusPostUrl += "?name=SonarQube";
+        statusPostUrl.append("?name=SonarQube");
         String status = (analysis.getQualityGateStatus() == QualityGate.Status.OK ? "success" : "failed");
-        statusPostUrl += "&state=" + status;
-        statusPostUrl += "&target_url=" + URLEncoder.encode(String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl(),
+        statusPostUrl.append("&state=").append(status);
+        statusPostUrl.append("&target_url=").append(URLEncoder.encode(String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl(),
                 URLEncoder.encode(analysis.getAnalysisProjectKey(),
                         StandardCharsets.UTF_8.name()), URLEncoder
                         .encode(analysis.getBranchName(),
-                                StandardCharsets.UTF_8.name())), StandardCharsets.UTF_8.name());
-        statusPostUrl+="&description="+URLEncoder.encode("SonarQube Status", StandardCharsets.UTF_8.name());
-        statusPostUrl+="&coverage="+coverage;
-        //TODO: add pipelineId if we have it
+                                StandardCharsets.UTF_8.name())), StandardCharsets.UTF_8.name()));
+        statusPostUrl.append("&description=").append(URLEncoder.encode("SonarQube Status", StandardCharsets.UTF_8.name()));
+        statusPostUrl.append("&coverage=").append(coverage);
+        analysis.getScannerProperty(PULLREQUEST_GITLAB_PIPELINE_ID).ifPresent(pipelineId -> statusPostUrl.append("&pipeline_id=").append(pipelineId));
 
-        HttpPost httpPost = new HttpPost(statusPostUrl);
+        HttpPost httpPost = new HttpPost(statusPostUrl.toString());
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpPost.addHeader(entry.getKey(), entry.getValue());
         }
