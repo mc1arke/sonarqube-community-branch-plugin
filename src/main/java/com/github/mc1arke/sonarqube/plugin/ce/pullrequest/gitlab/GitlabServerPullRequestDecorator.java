@@ -153,10 +153,10 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 }
             }
 
-            QualityGate.Condition newCoverageCondition = analysis.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                    .orElseThrow(() -> new IllegalStateException("Could not find New Coverage Condition in analysis"));
-            String coverageValue = newCoverageCondition.getStatus().equals(QualityGate.EvaluationStatus.NO_VALUE) ? "0" : newCoverageCondition.getValue();
-
+            String coverageValue = analysis.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
+                    .filter(condition -> condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
+                    .map(QualityGate.Condition::getValue)
+                    .orElse("0");
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 
