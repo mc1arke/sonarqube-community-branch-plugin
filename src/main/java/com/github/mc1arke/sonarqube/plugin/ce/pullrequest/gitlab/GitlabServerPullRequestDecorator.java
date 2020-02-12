@@ -71,10 +71,12 @@ import java.util.stream.Collectors;
 
 public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
-    public static final String PULLREQUEST_GITLAB_API_URL =
-            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.api.url";
-    public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG =
-            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.repositorySlug";
+    public static final String PULLREQUEST_GITLAB_INSTANCE_URL =
+            "sonar.pullrequest.gitlab.instanceUrl";
+    public static final String PULLREQUEST_GITLAB_PROJECT_ID =
+            "sonar.pullrequest.gitlab.projectId";
+    public static final String PULLREQUEST_GITLAB_PROJECT_URL =
+            "sonar.pullrequest.gitlab.projectUrl";
 
     private static final Logger LOGGER = Loggers.get(GitlabServerPullRequestDecorator.class);
     private static final List<String> OPEN_ISSUE_STATUSES =
@@ -97,18 +99,18 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         String revision = analysis.getCommitSha();
 
         try {
-            final String apiURL = analysis.getScannerProperty(PULLREQUEST_GITLAB_API_URL).orElseThrow(
+            final String apiURL = analysis.getScannerProperty(PULLREQUEST_GITLAB_INSTANCE_URL).orElseThrow(
                     () -> new IllegalStateException(String.format(
                             "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
-                            PULLREQUEST_GITLAB_API_URL)));
+                            PULLREQUEST_GITLAB_INSTANCE_URL)));
             final String apiToken = almSettingDto.getPersonalAccessToken();
-            final String repositorySlug = analysis.getScannerProperty(PULLREQUEST_GITLAB_REPOSITORY_SLUG).orElseThrow(
+            final String projectId = analysis.getScannerProperty(PULLREQUEST_GITLAB_PROJECT_ID).orElseThrow(
                     () -> new IllegalStateException(String.format(
                             "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
-                            PULLREQUEST_GITLAB_REPOSITORY_SLUG)));
+                            PULLREQUEST_GITLAB_PROJECT_ID)));
             final String pullRequestId = analysis.getBranchName();
 
-            final String projectURL = apiURL + String.format("/projects/%s", URLEncoder.encode(repositorySlug, StandardCharsets.UTF_8.name()));
+            final String projectURL = apiURL + String.format("/projects/%s", URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()));
             final String userURL = apiURL + "/user";
             final String statusUrl = projectURL + String.format("/statuses/%s", revision);
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
