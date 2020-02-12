@@ -43,18 +43,20 @@ public class ScannerPullRequestPropertySensor implements Sensor {
     @Override
     public void execute(SensorContext sensorContext) {
         if (Boolean.parseBoolean(system2.envVariable("GITLAB_CI"))) {
-            Optional.ofNullable(system2.envVariable("CI_API_V4_URL")).ifPresent(
-                    v -> sensorContext.addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_API_URL, v));
+            Optional.ofNullable(system2.envVariable("CI_API_V4_URL")).ifPresent(v -> sensorContext
+                    .addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL, v));
             Optional.ofNullable(system2.envVariable("CI_PROJECT_PATH")).ifPresent(v -> sensorContext
-                    .addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG, v));
+                    .addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID, v));
+            Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_PROJECT_URL")).ifPresent(v -> sensorContext
+                    .addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL, v));
         }
 
-        Optional.ofNullable(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_API_URL)).ifPresent(
-                v -> sensorContext.addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_API_URL, v));
-        Optional.ofNullable(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG))
-                .ifPresent(v -> sensorContext
-                        .addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG,
-                                            v));
+        Optional.ofNullable(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL)).ifPresent(
+                v -> sensorContext.addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL, v));
+        Optional.ofNullable(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID)).ifPresent(
+                v -> sensorContext.addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID, v));
+        Optional.ofNullable(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL)).ifPresent(
+                v -> sensorContext.addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL, v));
     }
 
 }
