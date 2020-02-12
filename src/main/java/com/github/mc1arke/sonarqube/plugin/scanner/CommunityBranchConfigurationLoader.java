@@ -20,8 +20,10 @@ package com.github.mc1arke.sonarqube.plugin.scanner;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -65,6 +67,8 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
     @Override
     public BranchConfiguration load(Map<String, String> localSettings, ProjectBranches projectBranches,
                                     ProjectPullRequests pullRequests) {
+        localSettings = autoConfigure(localSettings);
+
         if (projectBranches.isEmpty()) {
             if (isTargetingDefaultBranch(localSettings)) {
                 return new DefaultBranchConfiguration();
@@ -91,6 +95,27 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         }
 
         return new DefaultBranchConfiguration();
+    }
+
+    private Map<String, String> autoConfigure(Map<String, String> localSettings) {
+        Map<String, String> mutableLocalSettings=new HashMap<>(localSettings);
+        if (Boolean.parseBoolean(system2.envVariable("GITLAB_CI"))) {
+            //GitLab CI auto configuration
+            if (system2.envVariable("CI_MERGE_REQUEST_IID") != null) {
+                // we are inside a merge request
+                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_IID")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_KEY, v));
+                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BRANCH, v));
+                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_TARGET_BRANCH_NAME")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BASE, v));
+            } else {
+                // branch or tag
+                Optional.ofNullable(system2.envVariable("CI_COMMIT_REF_NAME")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.BRANCH_NAME, v));
+            }
+        }
+        return Collections.unmodifiableMap(mutableLocalSettings);
     }
 
     private static boolean isTargetingDefaultBranch(Map<String, String> localSettings) {
