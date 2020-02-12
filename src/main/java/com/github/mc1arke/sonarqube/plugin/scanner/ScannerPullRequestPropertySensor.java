@@ -49,6 +49,8 @@ public class ScannerPullRequestPropertySensor implements Sensor {
                     .addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID, v));
             Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_PROJECT_URL")).ifPresent(v -> sensorContext
                     .addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL, v));
+            Optional.ofNullable(system2.envVariable("CI_PIPELINE_ID")).ifPresent(v -> sensorContext
+                    .addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID, v));
         }
 
         Optional.ofNullable(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL)).ifPresent(
@@ -57,6 +59,8 @@ public class ScannerPullRequestPropertySensor implements Sensor {
                 v -> sensorContext.addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID, v));
         Optional.ofNullable(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL)).ifPresent(
                 v -> sensorContext.addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL, v));
+        Optional.ofNullable(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID)).ifPresent(
+                v -> sensorContext.addContextProperty(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID, v));
     }
 
 }
