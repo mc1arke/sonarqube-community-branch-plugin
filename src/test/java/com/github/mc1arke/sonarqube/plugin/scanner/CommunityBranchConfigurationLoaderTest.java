@@ -24,6 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonar.api.utils.MessageException;
+import org.sonar.api.utils.System2;
 import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.BranchInfo;
 import org.sonar.scanner.scan.branch.BranchType;
@@ -55,7 +56,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testExceptionWhenNoExistingBranchAndBranchParamsPresent() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         ProjectBranches branchInfo = mock(ProjectBranches.class);
         when(branchInfo.isEmpty()).thenReturn(true);
 
@@ -71,7 +72,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testDefaultConfigWhenNoExistingBranchAndBranchNameParamMaster() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         ProjectBranches branchInfo = mock(ProjectBranches.class);
         when(branchInfo.isEmpty()).thenReturn(true);
 
@@ -84,7 +85,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testErrorWhenNoExistingBranchAndBranchTargetMasterButNoSourceBranch() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         ProjectBranches branchInfo = mock(ProjectBranches.class);
         when(branchInfo.isEmpty()).thenReturn(true);
 
@@ -103,7 +104,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testDefaultConfigWhenNoExistingBranchAndBranchParamsAllMaster() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         ProjectBranches branchInfo = mock(ProjectBranches.class);
         when(branchInfo.isEmpty()).thenReturn(true);
 
@@ -117,7 +118,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testExceptionWhenNoExistingBranchAndPullRequestAndBranchParametersPresent() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         ProjectBranches branchInfo = mock(ProjectBranches.class);
         when(branchInfo.isEmpty()).thenReturn(true);
 
@@ -136,7 +137,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testDefaultBranchInfoWhenNoBranchParametersSpecifiedAndNoBranchesExist() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
 
         ProjectBranches branchInfo = mock(ProjectBranches.class);
         when(branchInfo.isEmpty()).thenReturn(true);
@@ -151,14 +152,14 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testDefaultBranchInfoWhenNoParametersSpecified() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         assertEquals(DefaultBranchConfiguration.class, testCase.load(new HashMap<>(), mock(ProjectBranches.class),
                                                                      mock(ProjectPullRequests.class)).getClass());
     }
 
     @Test
     public void testValidBranchInfoWhenAllBranchParametersSpecified() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.branch.name", "feature/shortLivedFeatureBranch");
         parameters.put("sonar.branch.target", "master");
@@ -186,7 +187,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testValidBranchInfoWhenOnlySourceBranchSpecifiedAndMasterExists() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.branch.name", "feature/shortLivedBranch");
 
@@ -208,7 +209,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testValidBranchInfoWhenOnlySourceBranchSpecifiedAndMasterExists2() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.branch.name", "feature/shortLivedBranch");
         parameters.put("sonar.branch.target", "");
@@ -231,7 +232,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testExceptionWhenOnlySourceBranchSpecifiedAndNoMasterExists() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.branch.name", "feature/shortLivedBranch");
 
@@ -250,7 +251,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testUnknownTargetBranch() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.branch.name", "feature/shortLivedBranch");
         parameters.put("sonar.branch.target", "feature/otherShortLivedBranch");
@@ -272,7 +273,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testExistingBranchOnlySourceParameters() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.branch.name", "longLivedBranch");
 
@@ -294,7 +295,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testPullRequestAllParameters() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.pullrequest.branch", "feature/sourceBranch");
         parameters.put("sonar.pullrequest.base", "target");
@@ -320,7 +321,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testPullRequestMandatoryParameters() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.pullrequest.branch", "feature/sourceBranch");
         parameters.put("sonar.pullrequest.key", "pr-key");
@@ -344,7 +345,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testPullRequestMandatoryParameters2() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.pullrequest.branch", "feature/sourceBranch");
         parameters.put("sonar.pullrequest.key", "pr-key");
@@ -370,7 +371,7 @@ public class CommunityBranchConfigurationLoaderTest {
 
     @Test
     public void testPullRequestNoSuchTarget() {
-        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader();
+        CommunityBranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(System2.INSTANCE);
         Map<String, String> parameters = new HashMap<>();
         parameters.put("sonar.pullrequest.branch", "feature/sourceBranch");
         parameters.put("sonar.pullrequest.base", "missingTarget");
