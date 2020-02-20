@@ -110,7 +110,7 @@ public class GraphqlCheckRunProviderTest {
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
@@ -335,7 +335,7 @@ public class GraphqlCheckRunProviderTest {
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
