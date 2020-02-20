@@ -94,7 +94,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                                ProjectAlmSettingDto projectAlmSettingDto) throws IOException, GeneralSecurityException {
         String apiUrl = Optional.ofNullable(almSettingDto.getUrl()).orElseThrow(() -> new IllegalArgumentException("No URL has been set for Github connections"));
         String apiPrivateKey = Optional.ofNullable(almSettingDto.getPrivateKey()).orElseThrow(() -> new IllegalArgumentException("No private key has been set for Github connections"));
-        String projectPath = Optional.ofNullable(projectAlmSettingDto.getAlmSlug()).orElseThrow(() -> new IllegalArgumentException("No repository name has been set for Github connections"));
+        String projectPath = Optional.ofNullable(projectAlmSettingDto.getAlmRepo()).orElseThrow(() -> new IllegalArgumentException("No repository name has been set for Github connections"));
         String appId = Optional.ofNullable(almSettingDto.getAppId()).orElseThrow(() -> new IllegalArgumentException("No App ID has been set for Github connections"));
 
         RepositoryAuthenticationToken repositoryAuthenticationToken =
