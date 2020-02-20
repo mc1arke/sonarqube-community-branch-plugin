@@ -114,7 +114,7 @@ public class GraphqlCheckRunProviderTest {
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
@@ -169,7 +169,7 @@ public class GraphqlCheckRunProviderTest {
         when(almSettingDto.getUrl()).thenReturn("url");
         when(almSettingDto.getAppId()).thenReturn("app ID");
         when(almSettingDto.getPrivateKey()).thenReturn("key");
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn("group/repo");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("group/repo");
 
         GraphqlCheckRunProvider testCase =
                 new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server);
@@ -382,7 +382,7 @@ public class GraphqlCheckRunProviderTest {
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn(basePath);
         when(almSettingDto.getAppId()).thenReturn("app id");
@@ -538,7 +538,7 @@ public class GraphqlCheckRunProviderTest {
         Server server = mock(Server.class);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
@@ -612,7 +612,7 @@ public class GraphqlCheckRunProviderTest {
         when(almSettingDto.getUrl()).thenReturn("url");
         when(almSettingDto.getPrivateKey()).thenReturn("private key");
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn("alm/repo");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("alm/repo");
 
         GraphqlCheckRunProvider underTest = new GraphqlCheckRunProvider(mock(Clock.class), mock(GithubApplicationAuthenticationProvider.class), mock(Server.class));
         assertThatThrownBy(() -> underTest.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto))
