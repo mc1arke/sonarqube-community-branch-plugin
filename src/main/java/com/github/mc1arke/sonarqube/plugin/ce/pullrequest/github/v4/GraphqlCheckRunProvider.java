@@ -99,7 +99,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                                ProjectAlmSettingDto projectAlmSettingDto) throws IOException, GeneralSecurityException {
         String apiUrl = almSettingDto.getUrl();
         String apiPrivateKey = almSettingDto.getPrivateKey();
-        String projectPath = projectAlmSettingDto.getAlmSlug();
+        String projectPath = projectAlmSettingDto.getAlmRepo();
         String appId = almSettingDto.getAppId();
 
         RepositoryAuthenticationToken repositoryAuthenticationToken =
