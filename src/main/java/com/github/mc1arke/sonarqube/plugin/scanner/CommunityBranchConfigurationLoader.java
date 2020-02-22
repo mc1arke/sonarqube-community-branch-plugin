@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.scanner;
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.utils.MessageException;
+import org.sonar.api.utils.System2;
 import org.sonar.core.config.ScannerProperties;
 import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.BranchConfigurationLoader;
@@ -31,8 +32,11 @@ import org.sonar.scanner.scan.branch.ProjectBranches;
 import org.sonar.scanner.scan.branch.ProjectPullRequests;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -50,6 +54,12 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
     private static final Set<String> PULL_REQUEST_ANALYSIS_PARAMETERS = new HashSet<>(
             Arrays.asList(ScannerProperties.PULL_REQUEST_BRANCH, ScannerProperties.PULL_REQUEST_KEY,
                           ScannerProperties.PULL_REQUEST_BASE));
+    private final System2 system2;
+
+    public CommunityBranchConfigurationLoader(System2 system2) {
+        this.system2 = system2;
+    }
+
 
     @Override
     public BranchConfiguration load(Map<String, String> localSettings, Supplier<Map<String, String>> supplier,
@@ -82,6 +92,8 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
     @Override
     public BranchConfiguration load(Map<String, String> localSettings, ProjectBranches projectBranches,
                                     ProjectPullRequests pullRequests) {
+        localSettings = autoConfigure(localSettings);
+
         if (projectBranches.isEmpty()) {
             if (isTargetingDefaultBranch(localSettings)) {
                 return new DefaultBranchConfiguration();
@@ -105,6 +117,27 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         }
 
         return new DefaultBranchConfiguration();
+    }
+
+    private Map<String, String> autoConfigure(Map<String, String> localSettings) {
+        Map<String, String> mutableLocalSettings=new HashMap<>(localSettings);
+        if (Boolean.parseBoolean(system2.envVariable("GITLAB_CI"))) {
+            //GitLab CI auto configuration
+            if (system2.envVariable("CI_MERGE_REQUEST_IID") != null) {
+                // we are inside a merge request
+                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_IID")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_KEY, v));
+                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BRANCH, v));
+                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_TARGET_BRANCH_NAME")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BASE, v));
+            } else {
+                // branch or tag
+                Optional.ofNullable(system2.envVariable("CI_COMMIT_REF_NAME")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.BRANCH_NAME, v));
+            }
+        }
+        return Collections.unmodifiableMap(mutableLocalSettings);
     }
 
     private static boolean isTargetingDefaultBranch(Map<String, String> localSettings) {
