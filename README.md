@@ -13,7 +13,7 @@ Use the following table to find the correct plugin version for each SonarQube ve
 
 SonarQube Version | Plugin Version
 ------------------|---------------
-7.8+              | 1.2.0
+7.8 - 8.0         | 1.3.0
 7.4 - 7.7         | 1.0.2
 
 # Installation
@@ -21,22 +21,14 @@ Either build the project or [download a compatible release version of the plugin
 
 # Features
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
-* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, Gitlab and Bitbucket Server, and only as an experimental feature
+* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, Gitlab and Bitbucket Server
 
 # Properties
-Property key | Description 
---- | ---
 
 ## Bitbucket Server
 To enable setting of several properties in SonarQube on project level is required.
 
 The property "projectKey" or "userSlug" are mandatory in order to decide which API endpoint should be used.
-
-Tasks:
-- [x] overall comment
-- [x] enable and disable file comment and overall comment 
-- [x] file comment
-- [x] reset comments (all comments are reset by property userSlug. It's therefore highly recommended to create a user in your company that's only purpose it is to comment sonar issues)
 
 # Contribution
 To generate the jar file to copy to your Sonar Server execute ```./gradlew clean build``` inside of the project dir. This will put the jar under ```libs/sonarqube-community-branch-plugin*.jar```
