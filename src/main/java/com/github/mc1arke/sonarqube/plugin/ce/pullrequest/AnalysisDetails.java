@@ -192,8 +192,7 @@ public class AnalysisDetails {
         Document document;
         if (compact) {
             document = new Document(
-                    new Paragraph(
-                    new Image(issue.type().name(), String.format("%s/checks/IssueType/%s.svg?sanitize=true", baseImageUrl, issue.type().name().toLowerCase()))), 
+                    new Image(issue.type().name(), String.format("%s/checks/IssueType/%s.svg?sanitize=true", baseImageUrl, issue.type().name().toLowerCase())), 
                     new Image(issue.severity(), String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase())),
                     new Link(publicRootURL + "/project/issues?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issue.key() + "&open=" + issue.key(), new Text(issue.getRuleKey().rule())),
                     new Text(String.format(": %s", issue.getMessage()))
