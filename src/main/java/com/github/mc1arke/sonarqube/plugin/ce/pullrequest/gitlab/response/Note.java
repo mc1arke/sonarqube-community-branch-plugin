@@ -23,27 +23,59 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Note {
     private final long id;
+    
+    private final String type;
+
+    private final String body;
 
     private final boolean system;
 
     private final User author;
 
+    private final Position position;
+    
+    private String discussionId;
+
     @JsonCreator
-    public Note(@JsonProperty("id") long id, @JsonProperty("system") boolean system, @JsonProperty("author") User author) {
+    public Note(@JsonProperty("id") long id, @JsonProperty("type") String type,  @JsonProperty("body") String body, @JsonProperty("system") boolean system, @JsonProperty("author") User author, @JsonProperty("position") Position position) {
         this.id = id;
+        this.body = body;
+        this.type = type;
         this.system = system;
         this.author = author;
+        this.position = position;
     }
 
     public long getId() {
         return id;
     }
 
-    public boolean isSystem() {
+    public String getType() {
+		return type;
+	}
+
+	public String getBody() {
+		return body;
+	}
+
+	public boolean isSystem() {
         return system;
     }
 
     public User getAuthor() {
         return author;
     }
+
+	public Position getPosition() {
+		return position;
+	}
+
+	public String getDiscussionId() {
+		return discussionId;
+	}
+
+	public void setDiscussionId(String discussionId) {
+		this.discussionId = discussionId;
+	}
+    
 }

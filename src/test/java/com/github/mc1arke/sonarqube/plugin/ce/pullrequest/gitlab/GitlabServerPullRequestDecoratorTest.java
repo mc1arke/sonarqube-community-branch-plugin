@@ -63,6 +63,8 @@ public class GitlabServerPullRequestDecoratorTest {
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_URL)).thenReturn(Optional.of(wireMockRule.baseUrl()));
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_TOKEN)).thenReturn(Optional.of("token"));
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG)).thenReturn(Optional.of(repositorySlug));
+        when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_COMPACT_COMMENTS_ENABLED)).thenReturn(Optional.of("true"));
+        when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_DELETE_COMMENTS_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_FILE_COMMENT_ENABLED)).thenReturn(Optional.of("true"));
@@ -87,7 +89,7 @@ public class GitlabServerPullRequestDecoratorTest {
         when(issueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(issueVisitor);
         when(analysisDetails.createAnalysisSummary(Mockito.any())).thenReturn("summary");
-        when(analysisDetails.createAnalysisIssueSummary(Mockito.any(), Mockito.any())).thenReturn("issue");
+        when(analysisDetails.createAnalysisIssueSummary(Mockito.any(), Mockito.any(), Mockito.anyBoolean())).thenReturn("issue");
         when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of(filePath));
 
         ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);

@@ -36,6 +36,7 @@ import org.sonar.api.SonarQubeSide;
 import org.sonar.core.extension.CoreExtension;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -119,7 +120,7 @@ public class CommunityBranchPluginTest {
         final ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
-        assertEquals(22, argumentCaptor.getAllValues().size());
+        assertEquals(24, argumentCaptor.getAllValues().size());
 
         assertEquals(Arrays.asList(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class),
                      argumentCaptor.getAllValues().subList(0, 2));

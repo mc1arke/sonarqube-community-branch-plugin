@@ -184,25 +184,36 @@ public class AnalysisDetails {
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
 
-    public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
+    public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory, boolean compact) {
         final DefaultIssue issue = componentIssue.getIssue();
 
         String baseImageUrl = getBaseImageUrl();
 
-        Long effort = issue.effortInMinutes();
-        Node effortNode = (null == effort ? new Text("") : new Paragraph(new Text(String.format("**Duration (min):** %s", effort))));
+        Document document;
+        if (compact) {
+            document = new Document(
+                    new Paragraph(
+                    new Image(issue.type().name(), String.format("%s/checks/IssueType/%s.svg?sanitize=true", baseImageUrl, issue.type().name().toLowerCase()))), 
+                    new Image(issue.severity(), String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase())),
+                    new Link(publicRootURL + "/project/issues?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issue.key() + "&open=" + issue.key(), new Text(issue.getRuleKey().rule())),
+                    new Text(String.format(": %s", issue.getMessage()))
+            );
+        	
+        } else {
+            Long effort = issue.effortInMinutes();
+            Node effortNode = (null == effort ? new Text("") : new Paragraph(new Text(String.format("**Duration (min):** %s", effort))));
 
-        String resolution = issue.resolution();
-        Node resolutionNode = (StringUtils.isBlank(resolution) ? new Text("") : new Paragraph(new Text(String.format("**Resolution:** %s ", resolution))));
-
-        Document document = new Document(
-                new Paragraph(new Text(String.format("**Type:** %s ", issue.type().name())), new Image(issue.type().name(), String.format("%s/checks/IssueType/%s.svg?sanitize=true", baseImageUrl, issue.type().name().toLowerCase()))),
-                new Paragraph(new Text(String.format("**Severity:** %s ", issue.severity())), new Image(issue.severity(), String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase()))),
-                new Paragraph(new Text(String.format("**Message:** %s", issue.getMessage()))),
-                effortNode,
-                resolutionNode,
-                new Link(publicRootURL + "/project/issues?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issue.key() + "&open=" + issue.key(), new Text("View in SonarQube"))
-        );
+            String resolution = issue.resolution();
+            Node resolutionNode = (StringUtils.isBlank(resolution) ? new Text("") : new Paragraph(new Text(String.format("**Resolution:** %s ", resolution))));
+            document = new Document(
+                    new Paragraph(new Text(String.format("**Type:** %s ", issue.type().name())), new Image(issue.type().name(), String.format("%s/checks/IssueType/%s.svg?sanitize=true", baseImageUrl, issue.type().name().toLowerCase()))),
+                    new Paragraph(new Text(String.format("**Severity:** %s ", issue.severity())), new Image(issue.severity(), String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase()))),
+                    new Text(String.format("**Message:** %s %s", issue.getRuleKey(), issue.getMessage())),
+                    effortNode,
+                    resolutionNode,
+                    new Link(publicRootURL + "/project/issues?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issue.key() + "&open=" + issue.key(), new Text("View in SonarQube"))
+            );
+        }
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
 

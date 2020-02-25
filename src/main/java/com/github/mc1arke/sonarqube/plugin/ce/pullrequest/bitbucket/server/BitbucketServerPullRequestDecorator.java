@@ -155,7 +155,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status())).collect(Collectors.toList());
             for (PostAnalysisIssueVisitor.ComponentIssue componentIssue : componentIssues) {
                 final DefaultIssue issue = componentIssue.getIssue();
-                String analysisIssueSummary = analysisDetails.createAnalysisIssueSummary(componentIssue, new MarkdownFormatterFactory());
+                String analysisIssueSummary = analysisDetails.createAnalysisIssueSummary(componentIssue, new MarkdownFormatterFactory(), true);
                 String issuePath = analysisDetails.getSCMPathForIssue(componentIssue).orElse(StringUtils.EMPTY);
                 int issueLine = issue.getLine() != null ? issue.getLine() : 0;
                 String issueType = getIssueType(diffPage, issuePath, issueLine);
