@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,18 +48,15 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Positi
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -115,7 +111,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             for (Discussion discussion : discussions) {
                 for (Note note : discussion.getNotes()) {
                      Position position = note.getPosition();
-                    if ("DiffNote".equals(note.getType()) && position!=null && StringUtils.isNotBlank(position.getNewLine())) {
+                    if ("DiffNote".equals(note.getType()) && position!=null && position.getNewLine()!=null && position.getNewLine().trim().length() > 0) {
                     	lineComments.put(position.getNewLine(), note);	
                     } else if (deleteCommentsEnabled) {
                     	deleteCommitDiscussionNote(pullRequestId, discussion.getId(), note.getId());
