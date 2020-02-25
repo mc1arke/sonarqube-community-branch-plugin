@@ -84,6 +84,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.repositorySlug";
 	public static final String PULLREQUEST_COMPACT_COMMENTS_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.compactComments";
 	public static final String PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.canFailPipeline";
+	public static final String PULLREQUEST_COMMENTS_MIN_SEVERITY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.minSeverityComments";
 
 
     private final ConfigurationRepository configurationRepository;
@@ -147,7 +148,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 		    List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 		    for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
 		        String path = analysis.getSCMPathForIssue(issue).orElse(null);
-		        if (path != null && issue.getIssue().getLine() != null) {
+		        if (path != null && issue.getIssue().getLine() != null && isPrinted(issue.getIssue().severity())) {
 		            //only if we have a path and line number
 		            String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory(), compactCommentsEnabled);
 
@@ -452,6 +453,33 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 		headers.put("Accept", "application/json");
 		return headers;
 	}
+	
+	protected boolean isPrinted(String severity) {
+	    final String minSeverity = getMandatoryProperty(PULLREQUEST_COMMENTS_MIN_SEVERITY);
+	    if (severity==null) {
+	    	return true;
+	    }
+	    switch(severity.toUpperCase()) {
+	    case "INFO":
+	    	if ("MINOR".equals(minSeverity)) {
+	    		return false;
+	    	}
+	    case "MINOR":
+	    	if ("MAJOR".equals(minSeverity)) {
+	    		return false;
+	    	}
+	    case "MAJOR":
+	    	if ("CRITICAL".equals(minSeverity)) {
+	    		return false;
+	    	}
+	    case "CRITICAL":
+	    	if ("BLOCKER".equals(minSeverity)) {
+	    		return false;
+	    	}
+	    }
+		return true;
+	}
+
     
 	protected Optional<ScmInfo> getScmInfoForComponent(Component component) {
 		return scmInfoRepository.getScmInfo(component);

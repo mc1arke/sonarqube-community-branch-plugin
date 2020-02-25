@@ -184,7 +184,12 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
                     PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.PROJECT).name("Fail pipeline if gate not reached").description("Fail the pipeline if the Qualitiy Gate passed succesfully.").type(PropertyType.BOOLEAN)
-                            .defaultValue("true").build()
+                            .defaultValue("true").build(),
+                            
+                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_COMMENTS_MIN_SEVERITY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT).name("Min Comment Severity")
+                            .type(PropertyType.SINGLE_SELECT_LIST).options("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO").build()
+                            
             );
         }
     }
