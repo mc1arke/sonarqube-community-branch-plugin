@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Optional;
 
 public class RestApplicationAuthenticationProvider implements GithubApplicationAuthenticationProvider {
 
@@ -53,16 +54,18 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
     private static final String APP_PREVIEW_ACCEPT_HEADER = "application/vnd.github.machine-man-preview+json";
 
     private final Clock clock;
+    private final LinkHeaderReader linkHeaderReader;
     private final UrlConnectionProvider urlProvider;
 
-    public RestApplicationAuthenticationProvider(Clock clock) {
-        this(clock, new DefaultUrlConnectionProvider());
+    public RestApplicationAuthenticationProvider(Clock clock, LinkHeaderReader linkHeaderReader) {
+        this(clock, linkHeaderReader, new DefaultUrlConnectionProvider());
     }
 
-    RestApplicationAuthenticationProvider(Clock clock, UrlConnectionProvider urlProvider) {
+    RestApplicationAuthenticationProvider(Clock clock, LinkHeaderReader linkHeaderReader, UrlConnectionProvider urlProvider) {
         super();
         this.clock = clock;
         this.urlProvider = urlProvider;
+        this.linkHeaderReader = linkHeaderReader;
     }
 
     @Override
@@ -97,38 +100,48 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
             try (Reader reader = new InputStreamReader(accessTokenConnection.getInputStream())) {
                 AppToken appToken = objectMapper.readerFor(AppToken.class).readValue(reader);
 
-                URLConnection installationRepositoriesConnection =
-                        urlProvider.createUrlConnection(installation.getRepositoriesUrl());
-                ((HttpURLConnection) installationRepositoriesConnection).setRequestMethod("GET");
-                installationRepositoriesConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
-                installationRepositoriesConnection.setRequestProperty(AUTHORIZATION_HEADER,
-                                                                      BEARER_AUTHORIZATION_HEADER_PREFIX +
-                                                                      appToken.getToken());
-                String repositoryNodeId = null;
-                try (Reader installationRepositoriesReader = new InputStreamReader(
-                        installationRepositoriesConnection.getInputStream())) {
-                    InstallationRepositories installationRepositories =
-                            objectMapper.readerFor(InstallationRepositories.class)
-                                    .readValue(installationRepositoriesReader);
-                    for (Repository repository : installationRepositories.getRepositories()) {
-                        if (projectPath.equals(repository.getFullName())) {
-                            repositoryNodeId = repository.getNodeId();
-                            break;
-                        }
-                    }
-                    if (null == repositoryNodeId) {
-                        continue;
-                    }
+                String targetUrl = installation.getRepositoriesUrl();
 
+                Optional<RepositoryAuthenticationToken> potentialRepositoryAuthenticationToken = findRepositoryAuthenticationToken(appToken, targetUrl, projectPath, objectMapper);
+
+                if (potentialRepositoryAuthenticationToken.isPresent()) {
+                    return potentialRepositoryAuthenticationToken.get();
                 }
-
-                return new RepositoryAuthenticationToken(repositoryNodeId, appToken.getToken());
 
             }
         }
 
         throw new IllegalStateException(
                 "No token could be found with access to the requested repository with the given application ID and key");
+    }
+
+    private Optional<RepositoryAuthenticationToken> findRepositoryAuthenticationToken(AppToken appToken, String targetUrl,
+                                                                                      String projectPath, ObjectMapper objectMapper) throws IOException {
+        URLConnection installationRepositoriesConnection = urlProvider.createUrlConnection(targetUrl);
+        ((HttpURLConnection) installationRepositoriesConnection).setRequestMethod("GET");
+        installationRepositoriesConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
+        installationRepositoriesConnection.setRequestProperty(AUTHORIZATION_HEADER,
+                                                              BEARER_AUTHORIZATION_HEADER_PREFIX + appToken.getToken());
+
+        try (Reader installationRepositoriesReader = new InputStreamReader(
+                installationRepositoriesConnection.getInputStream())) {
+            InstallationRepositories installationRepositories =
+                    objectMapper.readerFor(InstallationRepositories.class).readValue(installationRepositoriesReader);
+            for (Repository repository : installationRepositories.getRepositories()) {
+                if (projectPath.equals(repository.getFullName())) {
+                    return Optional.of(new RepositoryAuthenticationToken(repository.getNodeId(), appToken.getToken()));
+                }
+            }
+
+        }
+
+        Optional<String> nextLink = linkHeaderReader.findNextLink(installationRepositoriesConnection.getHeaderField("Link"));
+
+        if (!nextLink.isPresent()) {
+            return Optional.empty();
+        }
+
+        return findRepositoryAuthenticationToken(appToken, nextLink.get(), projectPath, objectMapper);
     }
 
 
