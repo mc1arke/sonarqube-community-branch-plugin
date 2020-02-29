@@ -93,7 +93,7 @@ public class GitlabServerPullRequestDecoratorTest {
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(issueVisitor);
         when(analysisDetails.createAnalysisSummary(Mockito.any())).thenReturn("summary");
         when(analysisDetails.createAnalysisIssueSummary(Mockito.any(), Mockito.any())).thenReturn("issue");
-        when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of(filePath));
+        when(componentIssue.getSCMPath()).thenReturn(Optional.of(filePath));
 
         ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
         ScmInfo scmInfo = mock(ScmInfo.class);

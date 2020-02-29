@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import org.sonar.api.issue.Issue;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.issue.IssueVisitor;
 import org.sonar.core.issue.DefaultIssue;
@@ -25,6 +26,8 @@ import org.sonar.core.issue.DefaultIssue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class PostAnalysisIssueVisitor extends IssueVisitor {
 
@@ -37,6 +40,12 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
     public List<ComponentIssue> getIssues() {
         return Collections.unmodifiableList(collectedIssues);
+    }
+
+    public List<ComponentIssue> getDecoratedIssues() {
+        return collectedIssues.stream()
+                .filter(ComponentIssue::isNeedDecorate)
+                .collect(Collectors.toList());
     }
 
     public static class ComponentIssue {
@@ -56,6 +65,18 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
         public DefaultIssue getIssue() {
             return issue;
+        }
+
+        public Optional<String> getSCMPath() {
+            if (Component.Type.FILE.equals(component.getType())) {
+                return component.getReportAttributes().getScmPath();
+            }
+
+            return Optional.empty();
+        }
+
+        public boolean isNeedDecorate() {
+            return !Issue.STATUS_CLOSED.equals(issue.getStatus()) && !Issue.STATUS_RESOLVED.equals(issue.getStatus());
         }
     }
 }

@@ -58,7 +58,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.platform.Server;
 import org.sonar.api.utils.log.Logger;
@@ -69,9 +68,6 @@ import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
     private static final Logger LOGGER = Loggers.get(GitlabServerPullRequestDecorator.class);
-    private static final List<String> OPEN_ISSUE_STATUSES =
-            Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
-                    .collect(Collectors.toList());
 
     public static final String PULLREQUEST_GITLAB_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
     public static final String PULLREQUEST_GITLAB_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.token";
@@ -151,7 +147,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             String coverageValue = newCoverageCondition.getStatus().equals(QualityGate.EvaluationStatus.NO_VALUE) ? "0" : newCoverageCondition.getValue();
 
 
-            List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
+            List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getDecoratedIssues();
 
             String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
             List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("body", summaryComment));
@@ -161,7 +157,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams, summaryCommentEnabled);
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
-                String path = analysis.getSCMPathForIssue(issue).orElse(null);
+                String path = issue.getSCMPath().orElse(null);
                 if (path != null && issue.getIssue().getLine() != null) {
                     //only if we have a path and line number
                     String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());

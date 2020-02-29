@@ -32,12 +32,19 @@ public class Comment implements Serializable {
 
     private final User author;
 
+    private final Comment[] comments;
+
     @JsonCreator
-    public Comment(@JsonProperty("id") final int id, @JsonProperty("version") final int version, @JsonProperty("text") final String text, @JsonProperty("author") final User author) {
+    public Comment(@JsonProperty("id") final int id,
+                   @JsonProperty("version") final int version,
+                   @JsonProperty("text") final String text,
+                   @JsonProperty("author") final User author,
+                   @JsonProperty("comments") final Comment[] comments) {
         this.id = id;
         this.version = version;
         this.text = text;
         this.author = author;
+        this.comments = comments;
     }
 
     public int getId() {
@@ -54,5 +61,9 @@ public class Comment implements Serializable {
 
     public User getAuthor() {
         return author;
+    }
+
+    public Comment[] getComments() {
+        return comments;
     }
 }

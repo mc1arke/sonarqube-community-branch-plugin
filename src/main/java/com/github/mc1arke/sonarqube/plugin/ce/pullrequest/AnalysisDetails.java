@@ -38,7 +38,6 @@ import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Metric;
 import org.sonar.api.rules.RuleType;
-import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.Measure;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
@@ -208,14 +207,6 @@ public class AnalysisDetails {
 
     public String getBaseImageUrl() {
         return publicRootURL + "/static/communityBranchPlugin";
-    }
-
-    public Optional<String> getSCMPathForIssue(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
-        Component component = componentIssue.getComponent();
-        if (Component.Type.FILE.equals(component.getType())) {
-            return component.getReportAttributes().getScmPath();
-        }
-        return Optional.empty();
     }
 
     public PostAnalysisIssueVisitor getPostAnalysisIssueVisitor() {

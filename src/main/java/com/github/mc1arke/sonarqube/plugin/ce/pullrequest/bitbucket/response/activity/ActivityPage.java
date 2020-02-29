@@ -37,7 +37,13 @@ public class ActivityPage implements Serializable {
     private final Activity[] values;
 
     @JsonCreator
-    public ActivityPage(@JsonProperty("size") final int size, @JsonProperty("limit") final int limit, @JsonProperty("isLastPage") final boolean isLastPage, @JsonProperty("start") final int start, @JsonProperty("nextPageStart") final int nextPageStart, @JsonProperty("values") final Activity[] values) {
+    public ActivityPage(
+            @JsonProperty("size") final int size,
+            @JsonProperty("limit") final int limit,
+            @JsonProperty("isLastPage") final boolean isLastPage,
+            @JsonProperty("start") final int start,
+            @JsonProperty("nextPageStart") final int nextPageStart,
+            @JsonProperty("values") final Activity[] values) {
         this.size = size;
         this.limit = limit;
         this.isLastPage = isLastPage;
