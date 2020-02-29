@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff;
 
 import java.io.Serializable;
 import java.util.List;
@@ -24,24 +24,21 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Diff implements Serializable {
+public class DiffPage implements Serializable {
     private final String fromHash;
 
     private final String toHash;
 
-    private final List<Hunk> hunks;
+    private final boolean truncated;
 
-    private final File source;
-
-    private final File destination;
+    private final List<Diff> diffs;
 
     @JsonCreator
-    public Diff(@JsonProperty("fromHash") String fromHash, @JsonProperty("toHash") String toHash, @JsonProperty("hunks") List<Hunk> hunks, @JsonProperty("source") File source, @JsonProperty("destination") File destination) {
+    public DiffPage(@JsonProperty("fromHash") final String fromHash, @JsonProperty("toHash") final String toHash, @JsonProperty("truncated") final boolean truncated, @JsonProperty("diffs") final List<Diff> diffs) {
         this.fromHash = fromHash;
         this.toHash = toHash;
-        this.hunks = hunks;
-        this.source = source;
-        this.destination = destination;
+        this.truncated = truncated;
+        this.diffs = diffs;
     }
 
     public String getFromHash() {
@@ -52,15 +49,11 @@ public class Diff implements Serializable {
         return toHash;
     }
 
-    public List<Hunk> getHunks() {
-        return hunks;
+    public boolean isTruncated() {
+        return truncated;
     }
 
-    public File getSource() {
-        return source;
-    }
-
-    public File getDestination() {
-        return destination;
+    public List<Diff> getDiffs() {
+        return diffs;
     }
 }

@@ -1,9 +1,9 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.SummaryComment;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity.ActivityPage;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.DiffPage;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.HttpUtils;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.activity.ActivityPage;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff.DiffPage;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.entity.ContentType;
@@ -67,7 +67,7 @@ public class BitbucketServerPullRequestDecoratorTest {
                                         .withBody("")
                         )
         );
-        assertThat(bitbucketServerPullRequestDecorator.getPage(ACTIVITYURL, headers, ActivityPage.class), nullValue());
+        assertThat(HttpUtils.getPage(ACTIVITYURL, headers, ActivityPage.class), nullValue());
 
         stubFor(
                 get(urlEqualTo("/activities"))
@@ -79,7 +79,7 @@ public class BitbucketServerPullRequestDecoratorTest {
                                         .withBody(FileUtils.readFileToByteArray(new File("src/test/resources/bitbucket/activity.json")))
                         )
         );
-        ActivityPage activityPage = bitbucketServerPullRequestDecorator.getPage(ACTIVITYURL, headers, ActivityPage.class);
+        ActivityPage activityPage = HttpUtils.getPage(ACTIVITYURL, headers, ActivityPage.class);
         assertThat(activityPage, notNullValue());
         assertThat(activityPage.getSize(), is(3));
     }
@@ -97,7 +97,7 @@ public class BitbucketServerPullRequestDecoratorTest {
                                         .withBody("{}")
                         )
         );
-        bitbucketServerPullRequestDecorator.getPage(ACTIVITYURL, headers, ActivityPage.class);
+        HttpUtils.getPage(ACTIVITYURL, headers, ActivityPage.class);
     }
 
     @Test
@@ -112,7 +112,7 @@ public class BitbucketServerPullRequestDecoratorTest {
                                         .withBody(FileUtils.readFileToByteArray(new File("src/test/resources/bitbucket/diff.json")))
                         )
         );
-        DiffPage page = bitbucketServerPullRequestDecorator.getPage(DIFFURL, headers, DiffPage.class);
+        DiffPage page = HttpUtils.getPage(DIFFURL, headers, DiffPage.class);
         assertThat(page, notNullValue());
         assertThat(page.getDiffs().size(), is(1));
     }
@@ -185,7 +185,7 @@ public class BitbucketServerPullRequestDecoratorTest {
                                         .withBody(FileUtils.readFileToByteArray(new File("src/test/resources/bitbucket/diff.json")))
                         )
         );
-        DiffPage diffPage = bitbucketServerPullRequestDecorator.getPage(DIFFURL, headers, DiffPage.class);
+        DiffPage diffPage = HttpUtils.getPage(DIFFURL, headers, DiffPage.class);
 
         // wrong file
         String issueType = bitbucketServerPullRequestDecorator.getIssueType(diffPage, "src/DoesNotExist.java", 15);

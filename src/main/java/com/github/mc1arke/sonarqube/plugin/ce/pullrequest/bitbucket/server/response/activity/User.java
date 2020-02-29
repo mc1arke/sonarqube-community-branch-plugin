@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019 Oliver Jedinger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,23 +16,29 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.activity;
 
-import org.junit.Test;
+import java.io.Serializable;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import static org.junit.Assert.assertEquals;
+public class User implements Serializable {
+    private final String name;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+    private final String slug;
 
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(9, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    @JsonCreator
+    public User(@JsonProperty("name") final String name, @JsonProperty("slug") final String slug) {
+        this.name = name;
+        this.slug = slug;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getSlug() {
+        return slug;
     }
 }

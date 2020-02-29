@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff;
 
 import java.io.Serializable;
 import java.util.List;
@@ -24,29 +24,43 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Segment implements Serializable {
-    private final String type;
+public class Diff implements Serializable {
+    private final String fromHash;
 
-    private final List<DiffLine> lines;
+    private final String toHash;
 
-    private final boolean truncated;
+    private final List<Hunk> hunks;
+
+    private final File source;
+
+    private final File destination;
 
     @JsonCreator
-    public Segment(@JsonProperty("type") final String type, @JsonProperty("lines") final List<DiffLine> lines, @JsonProperty("truncated") final boolean truncated) {
-        this.type = type;
-        this.lines = lines;
-        this.truncated = truncated;
+    public Diff(@JsonProperty("fromHash") String fromHash, @JsonProperty("toHash") String toHash, @JsonProperty("hunks") List<Hunk> hunks, @JsonProperty("source") File source, @JsonProperty("destination") File destination) {
+        this.fromHash = fromHash;
+        this.toHash = toHash;
+        this.hunks = hunks;
+        this.source = source;
+        this.destination = destination;
     }
 
-    public String getType() {
-        return type;
+    public String getFromHash() {
+        return fromHash;
     }
 
-    public List<DiffLine> getLines() {
-        return lines;
+    public String getToHash() {
+        return toHash;
     }
 
-    public boolean isTruncated() {
-        return truncated;
+    public List<Hunk> getHunks() {
+        return hunks;
+    }
+
+    public File getSource() {
+        return source;
+    }
+
+    public File getDestination() {
+        return destination;
     }
 }

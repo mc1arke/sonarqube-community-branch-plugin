@@ -16,44 +16,36 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.activity;
 
 import java.io.Serializable;
-import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class DiffPage implements Serializable {
-    private final String fromHash;
+public class Activity implements Serializable {
+    private final int id;
 
-    private final String toHash;
+    private final User user;
 
-    private final boolean truncated;
-
-    private final List<Diff> diffs;
+    private final Comment comment;
 
     @JsonCreator
-    public DiffPage(@JsonProperty("fromHash") final String fromHash, @JsonProperty("toHash") final String toHash, @JsonProperty("truncated") final boolean truncated, @JsonProperty("diffs") final List<Diff> diffs) {
-        this.fromHash = fromHash;
-        this.toHash = toHash;
-        this.truncated = truncated;
-        this.diffs = diffs;
+    public Activity(@JsonProperty("id") final int id, @JsonProperty("user") final User user, @JsonProperty("comment") final Comment comment) {
+        this.id = id;
+        this.user = user;
+        this.comment = comment;
     }
 
-    public String getFromHash() {
-        return fromHash;
+    public int getId() {
+        return id;
     }
 
-    public String getToHash() {
-        return toHash;
+    public User getUser() {
+        return user;
     }
 
-    public boolean isTruncated() {
-        return truncated;
-    }
-
-    public List<Diff> getDiffs() {
-        return diffs;
+    public Comment getComment() {
+        return comment;
     }
 }

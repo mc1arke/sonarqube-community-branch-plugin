@@ -18,30 +18,26 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity.Activity;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity.ActivityPage;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.Anchor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.FileComment;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.SummaryComment;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity.Comment;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.Diff;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.DiffLine;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.DiffPage;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.Hunk;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.Segment;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.HttpUtils;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.activity.Activity;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.activity.ActivityPage;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.activity.Comment;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff.Diff;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff.DiffLine;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff.DiffPage;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff.Hunk;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff.Segment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -64,17 +60,17 @@ import java.util.stream.Collectors;
 
 public class BitbucketServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
-    public static final String PULL_REQUEST_BITBUCKET_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.url";
+    public static final String PULL_REQUEST_BITBUCKET_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.server.url";
 
-    public static final String PULL_REQUEST_BITBUCKET_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.token";
+    public static final String PULL_REQUEST_BITBUCKET_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.server.token";
 
-    public static final String PULL_REQUEST_BITBUCKET_PROJECT_KEY = "sonar.pullrequest.bitbucket.projectKey";
+    public static final String PULL_REQUEST_BITBUCKET_PROJECT_KEY = "sonar.pullrequest.bitbucket.server.projectKey";
 
-    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "sonar.pullrequest.bitbucket.userSlug";
+    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "sonar.pullrequest.bitbucket.server.userSlug";
 
-    public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "sonar.pullrequest.bitbucket.repositorySlug";
+    public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "sonar.pullrequest.bitbucket.server.repositorySlug";
 
-    public static final String PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.comment.userSlug";
+    public static final String PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.server.comment.userSlug";
 
     private static final Logger LOGGER = Loggers.get(BitbucketServerPullRequestDecorator.class);
     private static final List<String> OPEN_ISSUE_STATUSES =
@@ -141,8 +137,8 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             StringEntity summaryCommentEntity = new StringEntity(new ObjectMapper().writeValueAsString(new SummaryComment(analysisSummary)), ContentType.APPLICATION_JSON);
             postComment(commentUrl, headers, summaryCommentEntity, summaryCommentEnabled);
 
-            DiffPage diffPage = getPage(diffUrl, headers, DiffPage.class);
-            List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status())).collect(Collectors.toList());
+            DiffPage diffPage = HttpUtils.getPage(diffUrl, headers, DiffPage.class);
+            List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = getOpenComponentIssues(analysisDetails);
             for (PostAnalysisIssueVisitor.ComponentIssue componentIssue : componentIssues) {
                 final DefaultIssue issue = componentIssue.getIssue();
                 String analysisIssueSummary = analysisDetails.createAnalysisIssueSummary(componentIssue, new MarkdownFormatterFactory());
@@ -162,6 +158,10 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             throw new IllegalStateException("Could not decorate Pull Request on Bitbucket Server", ex);
         }
 
+    }
+
+    protected List<PostAnalysisIssueVisitor.ComponentIssue> getOpenComponentIssues(AnalysisDetails analysisDetails) {
+        return analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status())).collect(Collectors.toList());
     }
 
     protected String getIssueType(DiffPage diffPage, String issuePath, int issueLine) {
@@ -205,7 +205,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             return false;
         }
         boolean commentsRemoved = false;
-        final ActivityPage activityPage = getPage(activityUrl, headers, ActivityPage.class);
+        final ActivityPage activityPage = HttpUtils.getPage(activityUrl, headers, ActivityPage.class);
         if (activityPage != null) {
             final List<Comment> commentsToDelete = getCommentsToDelete(userSlug, activityPage);
             LOGGER.debug(String.format("Deleting %s comments", commentsToDelete));
@@ -249,41 +249,11 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
     protected List<Comment> getCommentsToDelete(String userSlug, ActivityPage activityPage) {
         return Arrays.stream(activityPage.getValues())
-                        .filter(a -> a.getComment() != null)
-                        .filter(a -> a.getComment().getAuthor() != null)
-                        .filter(a -> userSlug.equals(a.getComment().getAuthor().getSlug()))
-                        .map(Activity::getComment)
-                        .collect(Collectors.toList());
-    }
-
-    protected <T> T getPage(String diffUrl, Map<String, String> headers, Class<T> type) {
-        T page = null;
-        try (CloseableHttpClient closeableHttpClient = HttpClients.createDefault()) {
-            LOGGER.debug(String.format("Getting page %s", type));
-            HttpGet httpGet = new HttpGet(diffUrl);
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                httpGet.addHeader(entry.getKey(), entry.getValue());
-            }
-            HttpResponse httpResponse = closeableHttpClient.execute(httpGet);
-            if (null == httpResponse) {
-                LOGGER.error(String.format("HttpResponse for getting page %s was null", type));
-            } else if (httpResponse.getStatusLine().getStatusCode() != 200) {
-                HttpEntity entity = httpResponse.getEntity();
-                LOGGER.error("Error response from Bitbucket: " + IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8.name()));
-                throw new IllegalStateException(String.format("Error response returned from Bitbucket Server. Expected HTTP Status 200 but got %s", httpResponse.getStatusLine().getStatusCode()) );
-            } else {
-                HttpEntity entity = httpResponse.getEntity();
-                page = new ObjectMapper()
-                        .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
-                        .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8.name()), type);
-                LOGGER.debug(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(page));
-            }
-        } catch (IOException ex) {
-            LOGGER.error(String.format("Could not get %s from Bitbucket Server", type.getName()), ex);
-        }
-        return type.cast(page);
+                .filter(a -> a.getComment() != null)
+                .filter(a -> a.getComment().getAuthor() != null)
+                .filter(a -> userSlug.equals(a.getComment().getAuthor().getSlug()))
+                .map(Activity::getComment)
+                .collect(Collectors.toList());
     }
 
     protected boolean postComment(String commentUrl, Map<String, String> headers, StringEntity requestEntity, boolean sendRequest) throws IOException {

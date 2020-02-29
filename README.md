@@ -21,53 +21,46 @@ Either build the project or [download a compatible release version of the plugin
 
 # Features
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
-* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, Gitlab and Bitbucket Server
+* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, Gitlab, Bitbucket Server and Bitbucket Cloud
 
-# Properties
+# Pull request decoration
 
 ## Bitbucket Server
+
 To enable setting of several properties in SonarQube on project level is required.
 
 The property "projectKey" or "userSlug" are mandatory in order to decide which API endpoint should be used.
 
+## Bitbucket Cloud
+
+Please be aware that when using the Bitbucket cloud PR decoration feature the resulting HTML that gets rendered by
+Bitbucket is misbehaving. We have already opened a ticket for further investigation and will update this note once it
+is resolved.
+
+| Property         | Description                                                     | Example             |
+|------------------|-----------------------------------------------------------------|---------------------|
+| `appPassword`    | The App password used for accessing the Bitbucket API           | ySHHJDFZIUDFJGHJGDF |
+| `appUsername`    | The App username used for accessing the Bitbucket API           | username            |
+| `userUuid`       | The user uuid that is used when deleting old comments           | {UUID}              |
+| `workspace`      | The workspace used for the pull request decoration              | organization        |
+| `repositorySlug` | The repository slug used. This is your project id in bitbucket. | sonartest           |
+
 # Contribution
 To generate the jar file to copy to your Sonar Server execute ```./gradlew clean build``` inside of the project dir. This will put the jar under ```libs/sonarqube-community-branch-plugin*.jar```
 
-## SonarQube / Docker
+## Development with a local sonarqube
+
 Add the plugin to the `extensions/plugins/` and also into the `lib/common/` directory of your SonarQube instance and restart the server.
 
-Quick start to your SonarQube docker container:
-```
-version: 2
+## Development with docker
 
-services:
-  sonarqube:
-    image: sonarqube
-    container_name: sonarqube
-    ports:
-      - 9000:9000
-    networks:
-      - sonarnet
-    environment:
-      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonar
-      - SONARQUBE_JDBC_USERNAME=sonar
-      - SONARQUBE_JDBC_PASSWORD=sonar
-    volumes:
-      - sonarqube_conf:/opt/sonarqube/conf
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
-      - sonarqube_common:/opt/sonarqube/lib/common
+You can use the `docker-compose.yaml` file from inside the `./development` folder for local testing against the LTS version of sonarqube.
 
-  db:
-    image: postgres
-    container_name: postgres
-    networks:
-      - sonarnet
-    environment:
-      - POSTGRES_USER=sonar
-      - POSTGRES_PASSWORD=sonar
-    volumes:
-      - postgresql:/var/lib/postgresql
-      - postgresql_data:/var/lib/postgresql/data
-``` 
+Now it would be very easy for you to set up a simple bash script that does the following:
+
+* Rebuild the plugin
+* Copy the jar into the correct place
+* Restart/start your sonarqube server with the plugin JAR mounted in the correct places
+
+Please note that as of now it is *not* possible to debug the plugin. You'll still need a local instance if you
+want to use debugging tools.

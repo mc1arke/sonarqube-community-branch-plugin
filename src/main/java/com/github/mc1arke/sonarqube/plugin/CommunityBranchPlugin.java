@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityBranchEditionProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.cloud.BitbucketCloudPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.BitbucketServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.GraphqlCheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabServerPullRequestDecorator;
@@ -49,7 +50,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
     private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
     private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
     private static final String GENERAL = "General";
-    private static final String BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Bitbucket";
+    private static final String BITBUCKET_SERVER_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Bitbucket Server";
+    private static final String BITBUCKET_CLOUD_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Bitbucket Cloud";
     private static final String GITLAB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Gitlab";
 
     @Override
@@ -91,8 +93,9 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
             context.addExtensions(
                     PropertyDefinition.builder(PULL_REQUEST_PROVIDER).category(PULL_REQUEST_CATEGORY_LABEL)
                             .subCategory("General").onQualifiers(Qualifiers.PROJECT).name("Provider")
-                            .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer", "GitlabServer").build(),
+                            .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer", "GitlabServer", "BitbucketCloud").build(),
 
+                    // Github
                     PropertyDefinition.builder(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_TOKEN)
                             .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.APP).name("App Private Key").type(PropertyType.TEXT).build(),
@@ -129,30 +132,78 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .onQualifiers(Qualifiers.PROJECT).name("Enable deleting comments").description("This cleans up the comments from previous runs (if implemented).")
                             .type(PropertyType.BOOLEAN).defaultValue("false").build(),
 
-                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
-                            .onQualifiers(Qualifiers.PROJECT).name("URL for Bitbucket (Server or Cloud) instance").description("Example: http://bitbucket.local").type(PropertyType.STRING).build(),
+                    // Bitbucket Server
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_SERVER_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT).name("URL for Bitbucket Server instance").description("Example: http://bitbucket.local").type(PropertyType.STRING).build(),
 
-                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_TOKEN).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
-                            .onQualifiers(Qualifiers.PROJECT).name("The token for the user to comment to the PR on Bitbucket (Server or Cloud) instance")
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_TOKEN).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_SERVER_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT).name("Authentication token")
                             .description("Token used for authentication and commenting to your Bitbucket instance").type(PropertyType.STRING).build(),
 
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_COMMENT_USER_SLUG)
-                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT).name("Comment User Slug")
+                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_SERVER_INTEGRATION_SUBCATEGORY_LABEL).onQualifiers(Qualifiers.PROJECT).name("Comment User Slug")
                             .description("User slug for the comment user. Needed only for comment deletion.").type(PropertyType.STRING).build(),
 
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG)
-                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL).onlyOnQualifiers(Qualifiers.PROJECT).name("Repository Slug").description(
+                            .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_SERVER_INTEGRATION_SUBCATEGORY_LABEL).onlyOnQualifiers(Qualifiers.PROJECT).name("Repository Slug").description(
                             "Repository Slug see for example https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html")
                             .type(PropertyType.STRING).build(),
 
-                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_SLUG).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_SLUG).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_SERVER_INTEGRATION_SUBCATEGORY_LABEL)
                             .onlyOnQualifiers(Qualifiers.PROJECT).name("User Slug").description("This is used for '/users' repos. Only set one User Slug or ProjectKey!")
                             .type(PropertyType.STRING).index(2).build(),
 
-                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
+                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_SERVER_INTEGRATION_SUBCATEGORY_LABEL)
                             .onlyOnQualifiers(Qualifiers.PROJECT).name("ProjectKey").description("This is used for '/projects' repos. Only set one User Slug or ProjectKey!")
                             .type(PropertyType.STRING).index(1).build(),
 
+                    // Bitbucket Cloud
+                    PropertyDefinition.builder(BitbucketCloudPullRequestDecorator.PULL_REQUEST_BITBUCKET_APP_PASSWORD)
+                            .category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(BITBUCKET_CLOUD_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT)
+                            .name("Authentication password")
+                            .description("The app password used for authenticating with the Bitbucket cloud API. https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html")
+                            .type(PropertyType.PASSWORD)
+                            .build(),
+
+                    PropertyDefinition.builder(BitbucketCloudPullRequestDecorator.PULL_REQUEST_BITBUCKET_APP_USERNAME)
+                            .category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(BITBUCKET_CLOUD_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT)
+                            .name("Authentication username")
+                            .description("Username used for authentication. Authentication will look like: username:app_password")
+                            .type(PropertyType.STRING)
+                            .build(),
+
+                    PropertyDefinition.builder(BitbucketCloudPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_UUID)
+                            .category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(BITBUCKET_CLOUD_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT)
+                            .name("User UUID")
+                            .description("The UUID of the user under which the comment should appear. (Expl: \"{54dssfg5-6495-41f3-b4bc-23sdf345}\" ")
+                            .type(PropertyType.STRING)
+                            .build(),
+
+                    PropertyDefinition.builder(BitbucketCloudPullRequestDecorator.PULL_REQUEST_BITBUCKET_WORKSPACE)
+                            .category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(BITBUCKET_CLOUD_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT)
+                            .name("Workspace / Team")
+                            .description("Workspace name. See: https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Bworkspace%7D")
+                            .type(PropertyType.STRING)
+                            .build(),
+
+                    PropertyDefinition.builder(BitbucketCloudPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG)
+                            .category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(BITBUCKET_CLOUD_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onlyOnQualifiers(Qualifiers.PROJECT)
+                            .name("Repository slug")
+                            .description("The repository slug. See: https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Bworkspace%7D/%7Brepo_slug%7D")
+                            .type(PropertyType.STRING)
+                            .build(),
+
+                    // Gitlab
                     PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_URL)
                             .category(PULL_REQUEST_CATEGORY_LABEL)
                             .subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)

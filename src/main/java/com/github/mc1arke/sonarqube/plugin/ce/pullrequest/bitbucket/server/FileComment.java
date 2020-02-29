@@ -16,23 +16,29 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SummaryComment implements Serializable {
+public class FileComment implements Serializable {
     private final String text;
 
+    private final Anchor anchor;
+
     @JsonCreator
-    public SummaryComment(@JsonProperty("text") final String text) {
-        super();
+    public FileComment(@JsonProperty("text") String text, @JsonProperty("anchor") Anchor anchor) {
         this.text = text;
+        this.anchor = anchor;
     }
 
     public String getText() {
         return text;
+    }
+
+    public Anchor getAnchor() {
+        return anchor;
     }
 }

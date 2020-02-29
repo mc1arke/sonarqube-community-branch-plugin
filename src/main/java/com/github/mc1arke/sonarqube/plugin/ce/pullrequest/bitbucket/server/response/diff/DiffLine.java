@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff;
 
 import java.io.Serializable;
 import java.util.List;

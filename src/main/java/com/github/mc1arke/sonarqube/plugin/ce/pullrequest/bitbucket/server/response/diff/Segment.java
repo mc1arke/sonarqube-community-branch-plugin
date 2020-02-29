@@ -16,36 +16,37 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.response.diff;
 
 import java.io.Serializable;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Activity implements Serializable {
-    private final int id;
+public class Segment implements Serializable {
+    private final String type;
 
-    private final User user;
+    private final List<DiffLine> lines;
 
-    private final Comment comment;
+    private final boolean truncated;
 
     @JsonCreator
-    public Activity(@JsonProperty("id") final int id, @JsonProperty("user") final User user, @JsonProperty("comment") final Comment comment) {
-        this.id = id;
-        this.user = user;
-        this.comment = comment;
+    public Segment(@JsonProperty("type") final String type, @JsonProperty("lines") final List<DiffLine> lines, @JsonProperty("truncated") final boolean truncated) {
+        this.type = type;
+        this.lines = lines;
+        this.truncated = truncated;
     }
 
-    public int getId() {
-        return id;
+    public String getType() {
+        return type;
     }
 
-    public User getUser() {
-        return user;
+    public List<DiffLine> getLines() {
+        return lines;
     }
 
-    public Comment getComment() {
-        return comment;
+    public boolean isTruncated() {
+        return truncated;
     }
 }
