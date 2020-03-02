@@ -142,7 +142,7 @@ public class GitlabServerPullRequestDecoratorTest {
                 .withQueryParam("coverage", equalTo(coverage.getValue()))
                 .willReturn(created()));
 
-        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/notes"))
                 .withRequestBody(equalTo("body=summary"))
                 .willReturn(created()));
 

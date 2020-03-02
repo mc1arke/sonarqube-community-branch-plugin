@@ -108,6 +108,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
             final String prCommitsURL = mergeRequestURl + "/commits";
             final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
+            final String mergeRequestNoteURL = mergeRequestURl + "/notes";
 
 
             LOGGER.info(String.format("Status url is: %s ", statusUrl));
@@ -158,7 +159,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             postStatus(statusUrl, headers, analysis, coverageValue, true);
 
-            postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams, summaryCommentEnabled);
+            postCommitComment(mergeRequestNoteURL, headers, summaryContentParams, summaryCommentEnabled);
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);
