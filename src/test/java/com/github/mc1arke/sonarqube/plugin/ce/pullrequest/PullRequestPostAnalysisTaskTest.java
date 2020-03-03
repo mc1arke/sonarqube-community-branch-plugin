@@ -28,6 +28,7 @@ import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.ce.posttask.ScannerContext;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.platform.Server;
+import org.sonar.ce.task.CeTask;
 import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
@@ -39,11 +40,9 @@ import org.sonar.db.alm.setting.AlmSettingDao;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import org.sonar.db.ce.CeScannerContextDao;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -490,6 +489,10 @@ public class PullRequestPostAnalysisTaskTest {
         QualityGate qualityGate = mock(QualityGate.class);
         doReturn(qualityGate).when(projectAnalysis).getQualityGate();
 
+        org.sonar.api.ce.posttask.CeTask ceTask = mock(org.sonar.api.ce.posttask.CeTask.class);
+        doReturn(ceTask).when(projectAnalysis).getCeTask();
+        when(ceTask.getId()).thenReturn("");
+
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
         doReturn("decorator-name-1").when(decorator1).name();
         doReturn(ALM.BITBUCKET).when(decorator1).alm();
@@ -521,7 +524,12 @@ public class PullRequestPostAnalysisTaskTest {
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        ScannerContext scannerContext = mock(ScannerContext.class);
+        //ScannerContext scannerContext = mock(ScannerContext.class);
+        ScannerContext scannerContext =  new ScannerContext() {
+            private final Map<String, String> props = new HashMap<String, String>();
+            @Override
+            public Map<String, String> getProperties() { return this.props; }
+        };
         doReturn(scannerContext).when(projectAnalysis).getScannerContext();
 
         PullRequestPostAnalysisTask testCase =

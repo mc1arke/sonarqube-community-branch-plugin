@@ -82,11 +82,6 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
     @Override
     public void finished(Context context) {
         ProjectAnalysis projectAnalysis = context.getProjectAnalysis();
-
-        ScannerContext scannerContext = projectAnalysis.getScannerContext().getProperties().size() > 0
-                ? projectAnalysis.getScannerContext()
-                : GetScannerContext(projectAnalysis.getCeTask().getId());
-
         LOGGER.debug("found " + pullRequestDecorators.size() + " pull request decorators");
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
@@ -157,6 +152,10 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
         String commitId = revision.get();
 
+        ScannerContext scannerContext = projectAnalysis.getScannerContext().getProperties().size() > 0
+                ? projectAnalysis.getScannerContext()
+                : GetScannerContext(projectAnalysis.getCeTask().getId());
+
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(new AnalysisDetails.BranchDetails(optionalBranchName.get(), commitId),
                                     postAnalysisIssueVisitor, qualityGate,
@@ -170,7 +169,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
     }
 
-    private ScannerContext GetScannerContext(String ceTaskId)
+    public ScannerContext GetScannerContext(String ceTaskId)
     {
         ScannerContext scannerContext =  new ScannerContext() {
             private final Map<String, String> props = new HashMap<String, String>();
