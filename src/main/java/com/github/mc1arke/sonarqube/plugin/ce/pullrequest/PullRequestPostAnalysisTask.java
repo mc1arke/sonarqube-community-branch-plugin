@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import org.sonar.api.ce.posttask.ScannerContext;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Branch;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
@@ -36,8 +37,12 @@ import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
@@ -77,6 +82,11 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
     @Override
     public void finished(Context context) {
         ProjectAnalysis projectAnalysis = context.getProjectAnalysis();
+
+        ScannerContext scannerContext = projectAnalysis.getScannerContext().getProperties().size() > 0
+                ? projectAnalysis.getScannerContext()
+                : GetScannerContext(projectAnalysis.getCeTask().getId());
+
         LOGGER.debug("found " + pullRequestDecorators.size() + " pull request decorators");
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
@@ -108,7 +118,6 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             projectAlmSettingDto = optionalProjectAlmSettingDto.get();
             String almSettingUuid = projectAlmSettingDto.getAlmSettingUuid();
             optionalAlmSettingDto = dbClient.almSettingDao().selectByUuid(dbSession, almSettingUuid);
-
         }
 
         if (!optionalAlmSettingDto.isPresent()) {
@@ -154,11 +163,45 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
                                     new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
                                                                        treeRootHolder), analysis,
                                     projectAnalysis.getProject(), configuration, server.getPublicRootUrl(),
-                                    projectAnalysis.getScannerContext());
+                                    scannerContext);
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
         LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
         pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+    }
+
+    private ScannerContext GetScannerContext(String ceTaskId)
+    {
+        ScannerContext scannerContext =  new ScannerContext() {
+            private final Map<String, String> props = new HashMap<String, String>();
+            @Override
+            public Map<String, String> getProperties() { return this.props; }
+        };
+
+        try (DbSession dbSession = dbClient.openSession(false)) {
+
+            try {
+                String scannerContextStr = dbClient.ceScannerContextDao().selectScannerContext(dbSession, ceTaskId).orElse("");
+
+                LOGGER.trace("GetScannerContext: ScannerContextStr =" + scannerContextStr);
+
+                Pattern p = Pattern.compile("(\\w.+)=(.+)");
+                Matcher m = p.matcher(scannerContextStr);
+                HashMap<String, String> map = new HashMap<String, String>();
+
+                while (m.find()) {
+                    map.put(m.group(1), m.group(2));
+                }
+                LOGGER.trace("GetScannerContext: map =" + map);
+
+                scannerContext.getProperties().putAll(map);
+
+            } catch (Exception ex)
+            {
+                LOGGER.error("AZURE: ***ERROR***:" + ex);
+            }
+            return scannerContext;
+        }
     }
 
 
