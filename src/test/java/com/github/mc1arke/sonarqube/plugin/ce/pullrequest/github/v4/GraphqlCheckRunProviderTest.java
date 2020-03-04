@@ -195,12 +195,33 @@ public class GraphqlCheckRunProviderTest {
     }
 
 
+
     private void createCheckRunHappyPath(QualityGate.Status status) throws IOException, GeneralSecurityException {
+        String[] messageInput = {
+            "issue 1",
+            "issue 2",
+            "issue 3",
+            "issue 4",
+            "issue 5",
+            "issue 6",
+            "issue \\ \" \\\" \"\\ \\\\ \"\" 7"
+        };
+
+        String[] messageOutput = {
+            "issue 1",
+            "issue 2",
+            "issue 3",
+            "issue 4",
+            "issue 5",
+            "issue 6",
+            "issue \\\\ \\\" \\\\\\\" \\\"\\\\ \\\\\\\\ \\\"\\\" 7"
+        };
+
         when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
 
         DefaultIssue issue1 = mock(DefaultIssue.class);
         when(issue1.getLine()).thenReturn(2);
-        when(issue1.getMessage()).thenReturn("issue 1");
+        when(issue1.getMessage()).thenReturn(messageInput[0]);
         when(issue1.severity()).thenReturn(Severity.INFO);
 
         ReportAttributes reportAttributes = mock(ReportAttributes.class);
@@ -215,7 +236,7 @@ public class GraphqlCheckRunProviderTest {
 
         DefaultIssue issue2 = mock(DefaultIssue.class);
         when(issue2.getLine()).thenReturn(null);
-        when(issue2.getMessage()).thenReturn("issue 2");
+        when(issue2.getMessage()).thenReturn(messageInput[1]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue2 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue2.getComponent()).thenReturn(component1);
@@ -231,7 +252,7 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue3 = mock(DefaultIssue.class);
         when(issue3.getLine()).thenReturn(9);
         when(issue3.severity()).thenReturn(Severity.CRITICAL);
-        when(issue3.getMessage()).thenReturn("issue 3");
+        when(issue3.getMessage()).thenReturn(messageInput[2]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue3 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue3.getComponent()).thenReturn(component2);
@@ -246,7 +267,7 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue4 = mock(DefaultIssue.class);
         when(issue4.getLine()).thenReturn(2);
         when(issue4.severity()).thenReturn(Severity.CRITICAL);
-        when(issue4.getMessage()).thenReturn("issue 4");
+        when(issue4.getMessage()).thenReturn(messageInput[3]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue4 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue4.getComponent()).thenReturn(component3);
@@ -255,7 +276,7 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue5 = mock(DefaultIssue.class);
         when(issue5.getLine()).thenReturn(1999);
         when(issue5.severity()).thenReturn(Severity.MAJOR);
-        when(issue5.getMessage()).thenReturn("issue 5");
+        when(issue5.getMessage()).thenReturn(messageInput[4]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue5 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue5.getComponent()).thenReturn(component2);
@@ -264,15 +285,24 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue6 = mock(DefaultIssue.class);
         when(issue6.getLine()).thenReturn(42);
         when(issue6.severity()).thenReturn(Severity.MINOR);
-        when(issue6.getMessage()).thenReturn("issue 6");
+        when(issue6.getMessage()).thenReturn(messageInput[5]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue6 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue6.getComponent()).thenReturn(component2);
         when(componentIssue6.getIssue()).thenReturn(issue6);
 
+        DefaultIssue issue7 = mock(DefaultIssue.class);
+        when(issue7.getLine()).thenReturn(42);
+        when(issue7.severity()).thenReturn(Severity.MINOR);
+        when(issue7.getMessage()).thenReturn(messageInput[6]);
+
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue7 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+        when(componentIssue7.getComponent()).thenReturn(component2);
+        when(componentIssue7.getIssue()).thenReturn(issue7);
+
         List<PostAnalysisIssueVisitor.ComponentIssue> issueList =
                 Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4, componentIssue5,
-                              componentIssue6);
+                              componentIssue6, componentIssue7);
         PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
         when(postAnalysisIssueVisitor.getIssues()).thenReturn(issueList);
 
@@ -386,7 +416,7 @@ public class GraphqlCheckRunProviderTest {
                                        sonarQubeSeverity.equals(Severity.MINOR) ||
                                        sonarQubeSeverity.equals(Severity.MAJOR) ? CheckAnnotationLevel.WARNING :
                                        CheckAnnotationLevel.FAILURE));
-            verify(fileBuilder).put(eq("message"), eq("issue " + (i + 1)));
+            verify(fileBuilder).put(eq("message"), eq(messageOutput[i]));
             verify(inputObjectBuilders.get(position)).build();
 
             expectedAnnotationObjects.add(inputObjects.get(position));

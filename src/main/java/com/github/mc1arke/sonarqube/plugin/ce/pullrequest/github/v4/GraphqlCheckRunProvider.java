@@ -114,7 +114,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                             .put("path", componentIssue.getComponent().getReportAttributes().getScmPath().get())
                             .put("location", issueLocation)
                             .put("annotationLevel", mapToGithubAnnotationLevel(componentIssue.getIssue().severity()))
-                            .put("message", componentIssue.getIssue().getMessage().replaceAll("\"", "\\\\\"")).build();
+                            .put("message", componentIssue.getIssue().getMessage().replaceAll("\\\\","\\\\\\\\").replaceAll("\"", "\\\\\"")).build();
                 }).collect(Collectors.toList());
 
         InputObject<Object> checkRunOutputContent = graphqlProvider.createInputObject().put("title", "Quality Gate " +
