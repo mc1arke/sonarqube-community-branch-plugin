@@ -1,5 +1,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.GitStatusState;
+
 public class GitPullRequestStatus {
     /**
      * ID of the iteration to associate status with. Minimum value is 1.

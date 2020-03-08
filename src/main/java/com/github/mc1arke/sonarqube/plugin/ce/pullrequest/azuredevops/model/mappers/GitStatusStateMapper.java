@@ -1,5 +1,6 @@
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.mappers;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.GitStatusState;
 import org.sonar.api.ce.posttask.QualityGate;
 
 public class GitStatusStateMapper {

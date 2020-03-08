@@ -1,4 +1,4 @@
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums;
 
 /**
  * State of the status.
