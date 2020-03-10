@@ -1,6 +1,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 
 public class IdentityRef {
+    public IdentityRef(){};
     public SubjectDescriptor Descriptor;
     public String DisplayName;
     public String Url;

@@ -12,9 +12,9 @@ public class CommentThreadStatusMapper {
     public static CommentThreadStatus toCommentThreadStatus(String issueStatus) {
         switch (issueStatus) {
             case "Open":
-                return CommentThreadStatus.Active;
+                return CommentThreadStatus.active;
             default:
-                return CommentThreadStatus.Fixed;
+                return CommentThreadStatus.fixed;
         }
     }
 }

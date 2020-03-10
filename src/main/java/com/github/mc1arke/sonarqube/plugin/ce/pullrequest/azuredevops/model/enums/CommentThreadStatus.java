@@ -7,30 +7,30 @@ public enum CommentThreadStatus {
     /**
      * The thread status is unknown.
      */
-    Unknown,
+    unknown,
     /**
      * The thread status is active.
      */
-    Active,
+    active,
     /**
      * The thread status is resolved as fixed.
      */
-    Fixed,
+    fixed,
     /**
      * The thread status is resolved as won't fix.
      */
-    WontFix,
+    wontFix,
     /**
      * The thread status is closed.
      */
-    Closed,
+    closed,
     /**
      * The thread status is resolved as by design.
      */
-    ByDesign,
+    byDesign,
     /**
      * The thread status is pending.
      */
-    Pending
+    pending
 }
 

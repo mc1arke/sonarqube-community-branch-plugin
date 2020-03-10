@@ -1,28 +1,30 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 
-import org.sonar.core.issue.DefaultIssue;
+import org.sonar.db.protobuf.DbIssues;
 
 import java.io.Serializable;
 
 public class CommentThreadContext implements Serializable {
 
-    final String filePath;
-    final CommentPosition leftFileStart;
-    final CommentPosition leftFileEnd;
-    final CommentPosition rightFileStart;
-    final CommentPosition rightFileEnd;
+    private String filePath;
+    private CommentPosition leftFileStart;
+    private CommentPosition leftFileEnd;
+    private CommentPosition rightFileStart;
+    private CommentPosition rightFileEnd;
 
-    public CommentThreadContext(String filePath, Integer line){
+    public CommentThreadContext() {};
+
+    public CommentThreadContext(String filePath, DbIssues.Locations locations){
         this.filePath = filePath;
         this.leftFileEnd = null;
         this.leftFileStart = null;
         this.rightFileEnd = new CommentPosition(
-                line,
-                1
+                locations.getTextRange().getEndLine(),
+                locations.getTextRange().getEndOffset()
         );
         this.rightFileStart = new CommentPosition(
-                line,
-                0
+                locations.getTextRange().getStartLine(),
+                locations.getTextRange().getStartOffset()
         );
     }
     /**
@@ -30,6 +32,12 @@ public class CommentThreadContext implements Serializable {
      */
     public String getFilePath(){
         return this.filePath;
+    };
+    /**
+     * File path relative to the root of the repository. It's up to the client to
+     */
+    public void setFilePath(String value){
+        this.filePath = value;
     };
 
     /**
@@ -40,10 +48,25 @@ public class CommentThreadContext implements Serializable {
     };
 
     /**
+     * Position of first character of the thread's span in left file. ///
+     */
+    public void setLeftFileStart(CommentPosition value)
+    {
+        this.leftFileStart = value;
+    };
+
+    /**
      * Position of last character of the thread's span in left file. ///
      */
     public CommentPosition getLeftFileEnd(){
         return this.leftFileEnd;
+    };
+    /**
+     * Position of last character of the thread's span in left file. ///
+     */
+    public void setLeftFileEnd(CommentPosition value)
+    {
+        this.leftFileEnd = value;
     };
 
     /**
@@ -52,11 +75,25 @@ public class CommentThreadContext implements Serializable {
     public CommentPosition getRightFileStart(){
         return this.rightFileStart;
     };
+    /**
+     * Position of first character of the thread's span in right file. ///
+     */
+    public void setRightFileStart(CommentPosition value)
+    {
+        this.rightFileStart = value;
+    };
 
     /**
      * Position of last character of the thread's span in right file. ///
      */
     public CommentPosition getRightFileEnd(){
         return this.rightFileEnd;
+    };
+    /**
+     * Position of last character of the thread's span in right file. ///
+     */
+    public void setRightFileEnd(CommentPosition value)
+    {
+        this.rightFileEnd = value;
     };
 }

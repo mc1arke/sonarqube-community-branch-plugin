@@ -12,14 +12,16 @@ import java.util.List;
  */
 public class Comment implements Serializable {
 
-    final String content;
-    final CommentType commentType;
+    private String content;
+    private CommentType commentType;
     private Integer parentCommentId;
+
+    public Comment(){}
 
     public Comment(String content){
         this.content = content;
         this.parentCommentId = 0;
-        this.commentType = CommentType.Text;
+        this.commentType = CommentType.text;
     }
     /**
      * The ID of the parent comment. This is used for replies.
@@ -42,44 +44,51 @@ public class Comment implements Serializable {
     /**
      * The comment type at the time of creation.
      */
-    public CommentType privateCommentType(){
+    public CommentType getCommentType(){
         return this.commentType;
     };
     /**
+     * The comment type at the time of creation.
+     */
+    public void setCommentType(CommentType value){
+        this.commentType = value;
+    };
+
+    /**
      * The comment ID. IDs start at 1 and are unique to a pull request.
      */
-    private Integer id;
+    public Integer id;
     /**
      * The parent thread ID. Used for internal server purposes only -- note
      * that this field is not exposed to the REST client.
      */
-    private Integer threadId;
+    public Integer threadId;
     /**
      * The author of the comment.
      */
-    private IdentityRef author;
+    public IdentityRef author;
     /**
      * The date the comment was first published.;
      */
-    private Date publishedDate;
+    public Date publishedDate;
     /**
      * The date the comment was last updated.
      */
-    private Date lastUpdatedDate;
+    public Date lastUpdatedDate;
     /**
      * The date the comment's content was last updated.
      */
-    private Date lastContentUpdatedDate;
+    public Date lastContentUpdatedDate;
     /**
      * Whether or not this comment was soft-deleted.
      */
-    private Boolean isDeleted;
+    public Boolean isDeleted;
     /**
      * A list of the users who have liked this comment.
      */
-    private List<IdentityRef> usersLiked;
+    public List<IdentityRef> usersLiked;
     /**
      * Links to other related objects.
      */
-    private ReferenceLinks links;
+    public ReferenceLinks links;
 }

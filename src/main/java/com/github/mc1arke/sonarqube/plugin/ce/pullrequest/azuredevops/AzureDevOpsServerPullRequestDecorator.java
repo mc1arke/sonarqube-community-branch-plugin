@@ -1,14 +1,16 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.CommentThread;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.GitPullRequestStatus;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.GitStatusContext;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.*;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.mappers.GitStatusStateMapper;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -22,18 +24,26 @@ import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import org.sonar.db.protobuf.DbIssues;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Base64;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+
 
 public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
     private enum ApiZone {
         status,
         thread
     }
+
     private String authorizationHeader;
     private static final String AZURE_API_VERSION = "api-version=5.0-preview.1";
     private static final Logger LOGGER = Loggers.get(AzureDevOpsServerPullRequestDecorator.class);
@@ -48,8 +58,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     public static final String PULLREQUEST_AZUREDEVOPS_PROJECT_ID = "sonar.pullrequest.vsts.project";       // sonar.pullrequest.vsts.project=MyProject
     public static final String PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME = "sonar.pullrequest.vsts.repository";//sonar.pullrequest.vsts.repository=MyReposytory
     // SONAR URL MASK
-    public static final String SONAR_ISSUE_URL_MASK = "%s/project/issues?id=%s&issues=%s&open=%s&pullRequest=%s"; //http://sonarqube.shtormtech.ru/project/issues?id=ProjId&issues=AXCuh6CgT2BpyN1RPU03&open=AXCuh6CgT2BpyN1RPU03&pullRequest=8513
-    public static final String SONAR_RULE_URL_MASK = "%s/coding_rules?open=%s&rule_key=%s"; //http://sonarqube.shtormtech.ru/coding_rules?open=csharpsquid%3AS1135&rule_key=csharpsquid%3AS1135
+    public static final String SONAR_ISSUE_URL_MASK = "%s/project/issues?id=%s&issues=%s&open=%s&pullRequest=%s"; //http://localhost/project/issues?id=ProjId&issues=AXCuh6CgT2BpyN1RPU03&open=AXCuh6CgT2BpyN1RPU03&pullRequest=8513
+    public static final String SONAR_RULE_URL_MASK = "%s/coding_rules?open=%s&rule_key=%s"; //http://localhost/coding_rules?open=csharpsquid%3AS1135&rule_key=csharpsquid%3AS1135
 
     private final Server server;
     private final ScmInfoRepository scmInfoRepository;
@@ -87,21 +97,21 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                             "Could not decorate AzureDevops pullRequest. '%s' has not been set in scanner properties",
                             PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME)));
 
-            final String projectId = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElse("Not found: PULLREQUEST_AZUREDEVOPS_PROJECT_ID");
+            final String azureProjectId = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElse("Not found: PULLREQUEST_AZUREDEVOPS_PROJECT_ID");
             final String sonarBranch = analysisDetails.getBranchName();
-            if (almSettingDto.getPersonalAccessToken() == null ) {
+            if (almSettingDto.getPersonalAccessToken() == null) {
                 throw new IllegalStateException("Could not decorate AzureDevops pullRequest. Access token has not been set");
             }
             setAuthorizationHeader(almSettingDto.getPersonalAccessToken());
 
-            LOGGER.info(String.format("AZURE: azureUrl is: %s ", azureUrl));
-            LOGGER.info(String.format("AZURE: baseBranch is: %s ", baseBranch));
-            LOGGER.info(String.format("AZURE: branch is: %s ", branch));
-            LOGGER.info(String.format("AZURE: pullRequestId is: %s ", pullRequestId));
-            LOGGER.info(String.format("AZURE: projectId is: %s ", projectId));
-            LOGGER.info(String.format("AZURE: repositoryName is: %s ", repositoryName));
-            LOGGER.info(String.format("AZURE: revision Commit/revision is: %s ", revision));
-            LOGGER.info(String.format("AZURE: sonarBranch is: %s ", sonarBranch));
+            LOGGER.trace(String.format("azureUrl is: %s ", azureUrl));
+            LOGGER.trace(String.format("baseBranch is: %s ", baseBranch));
+            LOGGER.trace(String.format("branch is: %s ", branch));
+            LOGGER.trace(String.format("pullRequestId is: %s ", pullRequestId));
+            LOGGER.trace(String.format("vstsProjectId is: %s ", azureProjectId));
+            LOGGER.trace(String.format("repositoryName is: %s ", repositoryName));
+            LOGGER.trace(String.format("revision Commit/revision is: %s ", revision));
+            LOGGER.trace(String.format("sonarBranch is: %s ", sonarBranch));
 
             sendPost(
                     getApiUrl(ApiZone.status, analysisDetails),
@@ -109,37 +119,82 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
             );
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
-            LOGGER.info(String.format("AZURE: issue count: %s ", openIssues.size()));
+            LOGGER.trace(String.format("AZURE: issue count: %s ", openIssues.size()));
+
+            ArrayList<CommentThread> respCommentThreads = new ArrayList(Arrays.asList(sendGet(getApiUrl(ApiZone.thread, analysisDetails), CommentThreadResponse.class).getValue()));
+            LOGGER.trace(String.format("AZURE: respCommentThreads count: %s ", respCommentThreads.size()));
+            respCommentThreads.removeIf(x -> x.getThreadContext() == null || x.isDeleted);
+            LOGGER.trace(String.format("AZURE: respCommentThreads AFTER REMOVE count: %s ", respCommentThreads.size()));
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String filePath = "/" + analysisDetails.getSCMPathForIssue(issue).orElse(null);
                 Integer line = issue.getIssue().getLine();
                 if (filePath != null && line != null) {
                     try {
-                        LOGGER.info(String.format("AZURE ISSUE: authorLogin: %s ", issue.getIssue().authorLogin()));
-                        LOGGER.info(String.format("AZURE ISSUE: type: %s ", issue.getIssue().type().toString()));
-                        LOGGER.info(String.format("AZURE ISSUE: type: %s ", issue.getIssue().severity()));
-                        LOGGER.info(String.format("AZURE ISSUE: changes size: %s ", issue.getIssue().changes().size()));
-                        LOGGER.info(String.format("AZURE ISSUE: key: %s ", issue.getIssue().key()));
-                        LOGGER.info(String.format("AZURE ISSUE: selectedAt: %s ", issue.getIssue().selectedAt()));
-                        LOGGER.info(String.format("AZURE ISSUE: componentKey: %s ", issue.getIssue().componentKey()));
-                        LOGGER.info(String.format("AZURE ISSUE: getLocations: %s ", Objects.requireNonNull(issue.getIssue().getLocations()).toString()));
-                        LOGGER.info(String.format("AZURE ISSUE: getRuleKey: %s ", issue.getIssue().getRuleKey()));
-                        LOGGER.info(String.format("AZURE COMPONENT: getDescription: %s ", issue.getComponent().getDescription()));
-                        LOGGER.info(String.format("AZURE COMPONENT: getFileAttributes: %s ", issue.getComponent().getFileAttributes().toString()));
-                        LOGGER.info(String.format("AZURE COMPONENT: getReportAttributes: %s ", issue.getComponent().getReportAttributes().toString()));
-                        LOGGER.info(String.format("AZURE COMPONENT: getViewAttributes: %s ", issue.getComponent().getViewAttributes().toString()));
-                        LOGGER.info(String.format("AZURE COMPONENT: getSubViewAttributes: %s ", issue.getComponent().getSubViewAttributes().toString()));
 
-                        //LOGGER.info(String.format("AZURE ISSUE: currentChange.diffs: %s ", issue.getIssue().currentChange().diffs().size()));
+                        LOGGER.trace(String.format("ISSUE: authorLogin: %s ", issue.getIssue().authorLogin()));
+                        LOGGER.trace(String.format("ISSUE: key: %s ", issue.getIssue().key()));
+                        LOGGER.trace(String.format("ISSUE: type: %s ", issue.getIssue().type().toString()));
+                        LOGGER.trace(String.format("ISSUE: severity: %s ", issue.getIssue().severity()));
+                        LOGGER.trace(String.format("ISSUE: changes size: %s ", issue.getIssue().changes().size()));
+                        LOGGER.trace(String.format("ISSUE: selectedAt: %s ", issue.getIssue().selectedAt()));
+                        LOGGER.trace(String.format("ISSUE: componentKey: %s ", issue.getIssue().componentKey()));
+                        LOGGER.trace(String.format("ISSUE: getLocations: %s ", Objects.requireNonNull(issue.getIssue().getLocations()).toString()));
+                        LOGGER.trace(String.format("ISSUE: getRuleKey: %s ", issue.getIssue().getRuleKey()));
+                        LOGGER.trace(String.format("COMPONENT: getDescription: %s ", issue.getComponent().getDescription()));
+                        LOGGER.trace(String.format("COMPONENT: getFileAttributes: %s ", issue.getComponent().getFileAttributes().toString()));
+                        LOGGER.trace(String.format("COMPONENT: getReportAttributes: %s ", issue.getComponent().getReportAttributes().toString()));
 
-                        CommentThread thread = new CommentThread(filePath, line, issue.getIssue().getMessage());
-                        LOGGER.info(String.format("AZURE: thread: %s ", new ObjectMapper().writeValueAsString(thread)));
+                        boolean isExitsThread = false;
+                        for (CommentThread azureThread : respCommentThreads) {
+                            LOGGER.trace(String.format("azureFilePath: %s", azureThread.getThreadContext().getFilePath()));
+                            LOGGER.trace(String.format("filePath: %s (%s)", filePath, azureThread.getThreadContext().getFilePath().equals(filePath)));
+                            LOGGER.trace(String.format("azureLine: %d", azureThread.getThreadContext().getRightFileStart().getLine()));
+                            LOGGER.trace(String.format("line: %d (%s)", line, azureThread.getThreadContext().getRightFileStart().getLine().equals(line)));
+                            if (azureThread.getThreadContext().getFilePath().equals(filePath)
+                                    && azureThread.getThreadContext().getRightFileStart().getLine().equals(line)) {
+                                isExitsThread = true;
+                                break;
+                            }
+                        }
+                        if (isExitsThread) {
+                            LOGGER.info(String.format("SKIPPED ISSUE: %s"
+                                            + System.lineSeparator()
+                                            + "File: %s"
+                                            + System.lineSeparator()
+                                            + "Line: %d"
+                                            + System.lineSeparator()
+                                            + " . Issue is already exist in azure",
+                                    issue.getIssue().getMessage(),
+                                    filePath,
+                                    line));
+                            continue;
+                        }
+
+                        String message = String.format("%s: %s ([rule](%s))" + System.lineSeparator()
+                                        + System.lineSeparator()
+                                        + "[See in Sonar](%s)",
+                                issue.getIssue().type().toString(),
+                                issue.getIssue().getMessage(),
+                                getRuleUrlWithRuleKey(issue.getIssue().getRuleKey().toString()),
+                                getIssueUrl(
+                                        analysisDetails.getAnalysisProjectKey(),
+                                        issue.getIssue().key(),
+                                        pullRequestId)
+                        );
+
+                        DbIssues.Locations locate = Objects.requireNonNull(issue.getIssue().getLocations());
+                        CommentThread thread = new CommentThread(filePath, locate, message);
+                        LOGGER.trace(String.format("Creating thread: %s ", new ObjectMapper().writeValueAsString(thread)));
+                        sendPost(
+                                getApiUrl(ApiZone.thread, analysisDetails),
+                                new ObjectMapper().writeValueAsString(thread)
+                        );
+                        LOGGER.info("Thread created successfully");
                     } catch (Exception e) {
                         LOGGER.error(e.toString());
                     }
                 }
-
             }
         } catch (IOException ex) {
             throw new IllegalStateException("Could not decorate Pull Request on AzureDevOps Server", ex);
@@ -151,9 +206,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         authorizationHeader = "Basic " + encodeBytes;
     }
 
-    public String getIssueUrl(String projectKey, String issueKey, String pullRequestId) throws IOException
-    {
-        //ISSUE http://sonarqube.shtormtech.ru/project/issues?id=ProjId&issues=AXCuh6CgT2BpyN1RPU03&open=AXCuh6CgT2BpyN1RPU03&pullRequest=8513
+    public String getIssueUrl(String projectKey, String issueKey, String pullRequestId) throws IOException {
+        //ISSUE http://localhost/project/issues?id=ProjId&issues=AXCuh6CgT2BpyN1RPU03&open=AXCuh6CgT2BpyN1RPU03&pullRequest=8513
         return String.format(SONAR_ISSUE_URL_MASK,
                 server.getPublicRootUrl(),
                 URLEncoder.encode(projectKey, StandardCharsets.UTF_8.name()),
@@ -162,22 +216,23 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 URLEncoder.encode(pullRequestId, StandardCharsets.UTF_8.name())
         );
     }
-    public String getRuleUrlWithRuleKey(String ruleKey) throws IOException
-    {
-        //RULE http://sonarqube.shtormtech.ru/coding_rules?open=csharpsquid%3AS1135&rule_key=csharpsquid%3AS1135
+
+    public String getRuleUrlWithRuleKey(String ruleKey) throws IOException {
+        //RULE http://localhost/coding_rules?open=csharpsquid%3AS1135&rule_key=csharpsquid%3AS1135
         return String.format(SONAR_RULE_URL_MASK,
                 server.getPublicRootUrl(),
                 URLEncoder.encode(ruleKey, StandardCharsets.UTF_8.name()),
                 URLEncoder.encode(ruleKey, StandardCharsets.UTF_8.name())
         );
     }
+
     private String getApiUrl(ApiZone apiZone, AnalysisDetails analysisDetails) throws UnsupportedOperationException {
-        StringBuilder postUrl = new StringBuilder(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).get()); //instance
-        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).get());       //project
+        StringBuilder postUrl = new StringBuilder(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElse("fail")); //instance
+        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElse("fail"));       //project
         postUrl.append("/_apis/git/repositories/");
-        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME).get());  // repositoryId
+        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME).orElse("fail"));  // repositoryId
         postUrl.append("/pullRequests/");
-        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID).get());   // pullRequestId
+        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID).orElse("fail"));   // pullRequestId
 
         switch (apiZone) {
             case status: {
@@ -218,8 +273,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     }
 
     private void sendPost(String apiUrl, String body) throws IOException {
-        LOGGER.trace(String.format("AZURE: sendPost-URL: %s ", apiUrl));
-        LOGGER.trace(String.format("AZURE: sendPost-BODY: %s ", body));
+        LOGGER.trace(String.format("sendPost: URL: %s ", apiUrl));
+        LOGGER.trace(String.format("sendPost: BODY: %s ", body));
         HttpPost httpPost = new HttpPost(apiUrl);
         httpPost.addHeader("Accept", "application/json");
         httpPost.addHeader("Content-Type", "application/json; charset=utf-8");
@@ -230,12 +285,43 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpResponse httpResponse = httpClient.execute(httpPost);
             if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
+                LOGGER.error("sendPost: " + httpResponse.toString());
+                LOGGER.error("sendPost: " + EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
+                throw new IllegalStateException("An error was returned in the response from the Azure DevOps server. See the previous log messages for details");
+            } else if (null != httpResponse) {
+                LOGGER.debug("sendPost: " + httpResponse.toString());
+                LOGGER.info("sendPost: Post success!");
+            }
+        }
+    }
+
+    private <T> T sendGet(String apiUrl, Class<T> type) throws IOException {
+        LOGGER.info(String.format("sendGet: URL: %s ", apiUrl));
+        HttpGet httpGet = new HttpGet(apiUrl);
+        httpGet.addHeader("Accept", "application/json");
+        httpGet.addHeader("Content-Type", "application/json; charset=utf-8");
+        httpGet.addHeader("Authorization", authorizationHeader);
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpResponse httpResponse = httpClient.execute(httpGet);
+            if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
                 LOGGER.error(httpResponse.toString());
                 LOGGER.error(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
                 throw new IllegalStateException("An error was returned in the response from the Azure DevOps server. See the previous log messages for details");
             } else if (null != httpResponse) {
-                LOGGER.debug(httpResponse.toString());
-                LOGGER.info("Post success!");
+                //LOGGER.info(httpResponse.toString());
+                HttpEntity entity = httpResponse.getEntity();
+                T obj = new ObjectMapper()
+                        .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
+                        .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), type);
+
+                LOGGER.info(type + " received");
+
+                return obj;
+            } else {
+                throw new IOException("No response reveived");
             }
         }
     }
