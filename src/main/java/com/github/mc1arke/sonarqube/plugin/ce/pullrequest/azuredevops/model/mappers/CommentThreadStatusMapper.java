@@ -1,6 +1,9 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.mappers;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.CommentThreadStatus;
+import org.sonar.api.issue.Issue;
+
+import static org.sonar.api.issue.Issue.*;
 
 
 public class CommentThreadStatusMapper {
@@ -11,10 +14,18 @@ public class CommentThreadStatusMapper {
 
     public static CommentThreadStatus toCommentThreadStatus(String issueStatus) {
         switch (issueStatus) {
-            case "Open":
+            case STATUS_OPEN:
                 return CommentThreadStatus.active;
             default:
                 return CommentThreadStatus.fixed;
+        }
+    }
+    public static String toIssueStatus(CommentThreadStatus commentThreadStatus) {
+        switch (commentThreadStatus) {
+            case active:
+                return STATUS_OPEN;
+            default:
+                return STATUS_CLOSED;
         }
     }
 }

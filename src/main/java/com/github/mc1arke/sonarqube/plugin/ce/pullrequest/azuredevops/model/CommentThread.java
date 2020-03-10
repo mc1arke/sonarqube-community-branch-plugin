@@ -95,5 +95,5 @@ public class CommentThread implements Serializable {
     /**
      * Links to other related objects.
      */
-    private ReferenceLinks links;
+    public ReferenceLinks _links;
 }

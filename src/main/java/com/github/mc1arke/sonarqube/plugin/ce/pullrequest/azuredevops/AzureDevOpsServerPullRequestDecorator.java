@@ -6,11 +6,13 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.*;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.CommentThreadStatus;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.mappers.GitStatusStateMapper;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -45,11 +47,11 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     }
 
     private String authorizationHeader;
-    private static final String AZURE_API_VERSION = "api-version=5.0-preview.1";
+    private static final String AZURE_API_VERSION = "?api-version=5.0-preview.1";
     private static final Logger LOGGER = Loggers.get(AzureDevOpsServerPullRequestDecorator.class);
-    private static final List<String> OPEN_ISSUE_STATUSES =
+    /*private static final List<String> OPEN_ISSUE_STATUSES =
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList());*/
     // SCANNER PROPERTY
     public static final String PULLREQUEST_AZUREDEVOPS_INSTANCE_URL = "sonar.pullrequest.vsts.instanceUrl"; // sonar.pullrequest.vsts.instanceUrl=https://dev.azure.com/fabrikam/
     public static final String PULLREQUEST_AZUREDEVOPS_BASE_BRANCH = "sonar.pullrequest.base";              // sonar.pullrequest.base=master
@@ -108,30 +110,35 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
             LOGGER.trace(String.format("baseBranch is: %s ", baseBranch));
             LOGGER.trace(String.format("branch is: %s ", branch));
             LOGGER.trace(String.format("pullRequestId is: %s ", pullRequestId));
-            LOGGER.trace(String.format("vstsProjectId is: %s ", azureProjectId));
+            LOGGER.trace(String.format("azureProjectId is: %s ", azureProjectId));
             LOGGER.trace(String.format("repositoryName is: %s ", repositoryName));
             LOGGER.trace(String.format("revision Commit/revision is: %s ", revision));
             LOGGER.trace(String.format("sonarBranch is: %s ", sonarBranch));
 
             sendPost(
                     getApiUrl(ApiZone.status, analysisDetails),
-                    getGitPullRequestStatus(analysisDetails)
+                    getGitPullRequestStatus(analysisDetails),
+                    "Status set successfully"
             );
 
-            List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
-            LOGGER.trace(String.format("AZURE: issue count: %s ", openIssues.size()));
+            List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysisDetails.getPostAnalysisIssueVisitor()
+                    .getIssues();
+                    /*.stream()
+                    .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus()))
+                    .collect(Collectors.toList());*/
+            LOGGER.trace(String.format("Analyze issue count: %s ", openIssues.size()));
 
-            ArrayList<CommentThread> respCommentThreads = new ArrayList(Arrays.asList(sendGet(getApiUrl(ApiZone.thread, analysisDetails), CommentThreadResponse.class).getValue()));
-            LOGGER.trace(String.format("AZURE: respCommentThreads count: %s ", respCommentThreads.size()));
-            respCommentThreads.removeIf(x -> x.getThreadContext() == null || x.isDeleted);
-            LOGGER.trace(String.format("AZURE: respCommentThreads AFTER REMOVE count: %s ", respCommentThreads.size()));
+            ArrayList<CommentThread> azureCommentThreads = new ArrayList<CommentThread>(Arrays.asList(sendGet(getApiUrl(ApiZone.thread, analysisDetails), CommentThreadResponse.class).getValue()));
+            LOGGER.trace(String.format("Azure commentThreads count: %s ", azureCommentThreads.size()));
+            azureCommentThreads.removeIf(x -> x.getThreadContext() == null || x.isDeleted);
+            LOGGER.trace(String.format("Azure commentThreads AFTER REMOVE count: %s ", azureCommentThreads.size()));
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
-                String filePath = "/" + analysisDetails.getSCMPathForIssue(issue).orElse(null);
+                String filePath = analysisDetails.getSCMPathForIssue(issue).orElse(null);
                 Integer line = issue.getIssue().getLine();
                 if (filePath != null && line != null) {
                     try {
-
+                        filePath = "/" + filePath;
                         LOGGER.trace(String.format("ISSUE: authorLogin: %s ", issue.getIssue().authorLogin()));
                         LOGGER.trace(String.format("ISSUE: key: %s ", issue.getIssue().key()));
                         LOGGER.trace(String.format("ISSUE: type: %s ", issue.getIssue().type().toString()));
@@ -146,25 +153,47 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                         LOGGER.trace(String.format("COMPONENT: getReportAttributes: %s ", issue.getComponent().getReportAttributes().toString()));
 
                         boolean isExitsThread = false;
-                        for (CommentThread azureThread : respCommentThreads) {
+                        for (CommentThread azureThread : azureCommentThreads) {
                             LOGGER.trace(String.format("azureFilePath: %s", azureThread.getThreadContext().getFilePath()));
                             LOGGER.trace(String.format("filePath: %s (%s)", filePath, azureThread.getThreadContext().getFilePath().equals(filePath)));
                             LOGGER.trace(String.format("azureLine: %d", azureThread.getThreadContext().getRightFileStart().getLine()));
                             LOGGER.trace(String.format("line: %d (%s)", line, azureThread.getThreadContext().getRightFileStart().getLine().equals(line)));
                             if (azureThread.getThreadContext().getFilePath().equals(filePath)
                                     && azureThread.getThreadContext().getRightFileStart().getLine().equals(line)) {
+
+                                if(!issue.getIssue().getStatus().equals(Issue.STATUS_OPEN)
+                                        && azureThread.getStatus().equals(CommentThreadStatus.active)) {
+                                    azureThread.setStatus(CommentThreadStatus.closed);
+                                    Comment comment = new Comment("Closed in SonarQube");
+                                    LOGGER.info("Issue closed in Sonar. try close in Azure");
+                                    sendPost(
+                                            azureThread._links.self.href + "/comments" + AZURE_API_VERSION,
+                                            new ObjectMapper().writeValueAsString(comment),
+                                            "Comment added success"
+                                    );
+                                    sendPatch(
+                                            //getApiUrl(ApiZone.thread, analysisDetails, azureThread.id),
+                                            azureThread._links.self.href + AZURE_API_VERSION,
+                                            "{\"status\":\"closed\"}"
+                                    );
+                                }
                                 isExitsThread = true;
                                 break;
                             }
                         }
-                        if (isExitsThread) {
+                        if (!issue.getIssue().getStatus().equals(Issue.STATUS_OPEN)) {
+                            LOGGER.info(String.format("SKIPPED ISSUE: Issue status is %s", issue.getIssue().getStatus()));
+                            continue;
+                        }
+
+                        if (isExitsThread || !issue.getIssue().getStatus().equals(Issue.STATUS_OPEN)) {
                             LOGGER.info(String.format("SKIPPED ISSUE: %s"
                                             + System.lineSeparator()
                                             + "File: %s"
                                             + System.lineSeparator()
                                             + "Line: %d"
                                             + System.lineSeparator()
-                                            + " . Issue is already exist in azure",
+                                            + "Issue is already exist in azure",
                                     issue.getIssue().getMessage(),
                                     filePath,
                                     line));
@@ -173,8 +202,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
 
                         String message = String.format("%s: %s ([rule](%s))" + System.lineSeparator()
                                         + System.lineSeparator()
-                                        + "[See in Sonar](%s)",
-                                issue.getIssue().type().toString(),
+                                        + "[See in SonarQube](%s)",
+                                issue.getIssue().type().name(),
                                 issue.getIssue().getMessage(),
                                 getRuleUrlWithRuleKey(issue.getIssue().getRuleKey().toString()),
                                 getIssueUrl(
@@ -185,12 +214,12 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
 
                         DbIssues.Locations locate = Objects.requireNonNull(issue.getIssue().getLocations());
                         CommentThread thread = new CommentThread(filePath, locate, message);
-                        LOGGER.trace(String.format("Creating thread: %s ", new ObjectMapper().writeValueAsString(thread)));
+                        LOGGER.info(String.format("Creating thread: %s ", new ObjectMapper().writeValueAsString(thread)));
                         sendPost(
                                 getApiUrl(ApiZone.thread, analysisDetails),
-                                new ObjectMapper().writeValueAsString(thread)
+                                new ObjectMapper().writeValueAsString(thread),
+                                "Thread created successfully"
                         );
-                        LOGGER.info("Thread created successfully");
                     } catch (Exception e) {
                         LOGGER.error(e.toString());
                     }
@@ -227,30 +256,35 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     }
 
     private String getApiUrl(ApiZone apiZone, AnalysisDetails analysisDetails) throws UnsupportedOperationException {
-        StringBuilder postUrl = new StringBuilder(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElse("fail")); //instance
-        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElse("fail"));       //project
-        postUrl.append("/_apis/git/repositories/");
-        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME).orElse("fail"));  // repositoryId
-        postUrl.append("/pullRequests/");
-        postUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID).orElse("fail"));   // pullRequestId
-
+        return getApiUrl(apiZone, analysisDetails, null);
+    };
+    private String getApiUrl(ApiZone apiZone, AnalysisDetails analysisDetails, Integer id) throws UnsupportedOperationException {
+        StringBuilder apiUrl = new StringBuilder(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElse("fail")); //instance
+        apiUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElse("fail"));       //project
+        apiUrl.append("/_apis/git/repositories/");
+        apiUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME).orElse("fail"));  // repositoryId
+        apiUrl.append("/pullRequests/");
+        apiUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID).orElse("fail"));   // pullRequestId
         switch (apiZone) {
             case status: {
                 // POST https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/statuses?api-version=5.0-preview.1
-                postUrl.append("/statuses?");
+                apiUrl.append("/statuses");
                 break;
             }
             case thread: {
                 //POST https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/threads?api-version=5.0
-                postUrl.append("/threads?");
+                apiUrl.append("/threads");
                 break;
             }
             default: {
                 throw new UnsupportedOperationException("Not implemented method");
             }
         }
-        postUrl.append(AZURE_API_VERSION);
-        return postUrl.toString();
+        if (id != null){
+            apiUrl.append("/").append(id);
+        }
+        apiUrl.append(AZURE_API_VERSION);
+        return apiUrl.toString();
     }
 
     private String getGitPullRequestStatus(AnalysisDetails analysisDetails) throws IOException {
@@ -273,6 +307,9 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     }
 
     private void sendPost(String apiUrl, String body) throws IOException {
+        sendPost(apiUrl, body, "POST success!");
+    }
+    private void sendPost(String apiUrl, String body, String successMessage) throws IOException {
         LOGGER.trace(String.format("sendPost: URL: %s ", apiUrl));
         LOGGER.trace(String.format("sendPost: BODY: %s ", body));
         HttpPost httpPost = new HttpPost(apiUrl);
@@ -290,7 +327,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 throw new IllegalStateException("An error was returned in the response from the Azure DevOps server. See the previous log messages for details");
             } else if (null != httpResponse) {
                 LOGGER.debug("sendPost: " + httpResponse.toString());
-                LOGGER.info("sendPost: Post success!");
+                LOGGER.info("sendPost: " + successMessage);
             }
         }
     }
@@ -322,6 +359,29 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 return obj;
             } else {
                 throw new IOException("No response reveived");
+            }
+        }
+    }
+
+    private void sendPatch(String apiUrl, String body) throws IOException {
+        LOGGER.trace(String.format("sendPatch: URL: %s ", apiUrl));
+        LOGGER.trace(String.format("sendPatch: BODY: %s ", body));
+        HttpPatch httpPatch = new HttpPatch(apiUrl);
+        httpPatch.addHeader("Accept", "application/json");
+        httpPatch.addHeader("Content-Type", "application/json; charset=utf-8");
+        httpPatch.addHeader("Authorization", authorizationHeader);
+        StringEntity entity = new StringEntity(body, StandardCharsets.UTF_8);
+        httpPatch.setEntity(entity);
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpResponse httpResponse = httpClient.execute(httpPatch);
+            if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
+                LOGGER.error("sendPatch: " + httpResponse.toString());
+                LOGGER.error("sendPatch: " + EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
+                throw new IllegalStateException("An error was returned in the response from the Azure DevOps server. See the previous log messages for details");
+            } else if (null != httpResponse) {
+                LOGGER.debug("sendPatch: " + httpResponse.toString());
+                LOGGER.info("sendPatch: Patch success!");
             }
         }
     }
