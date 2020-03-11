@@ -235,11 +235,11 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         authorizationHeader = "Basic " + encodeBytes;
     }
 
-    public String getIssueUrl(String projectKey, String issueKey, String pullRequestId) throws IOException {
+    public String getIssueUrl(String sonarProjectKey, String issueKey, String pullRequestId) throws IOException {
         //ISSUE http://localhost/project/issues?id=ProjId&issues=AXCuh6CgT2BpyN1RPU03&open=AXCuh6CgT2BpyN1RPU03&pullRequest=8513
         return String.format(SONAR_ISSUE_URL_MASK,
                 server.getPublicRootUrl(),
-                URLEncoder.encode(projectKey, StandardCharsets.UTF_8.name()),
+                URLEncoder.encode(sonarProjectKey, StandardCharsets.UTF_8.name()),
                 URLEncoder.encode(issueKey, StandardCharsets.UTF_8.name()),
                 URLEncoder.encode(issueKey, StandardCharsets.UTF_8.name()),
                 URLEncoder.encode(pullRequestId, StandardCharsets.UTF_8.name())
@@ -256,9 +256,6 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     }
 
     private String getApiUrl(ApiZone apiZone, AnalysisDetails analysisDetails) throws UnsupportedOperationException {
-        return getApiUrl(apiZone, analysisDetails, null);
-    };
-    private String getApiUrl(ApiZone apiZone, AnalysisDetails analysisDetails, Integer id) throws UnsupportedOperationException {
         StringBuilder apiUrl = new StringBuilder(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElse("fail")); //instance
         apiUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElse("fail"));       //project
         apiUrl.append("/_apis/git/repositories/");
@@ -280,9 +277,6 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 throw new UnsupportedOperationException("Not implemented method");
             }
         }
-        if (id != null){
-            apiUrl.append("/").append(id);
-        }
         apiUrl.append(AZURE_API_VERSION);
         return apiUrl.toString();
     }
@@ -290,7 +284,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     private String getGitPullRequestStatus(AnalysisDetails analysisDetails) throws IOException {
         final String GIT_STATUS_CONTEXT_GENRE = "SonarQube";
         final String GIT_STATUS_CONTEXT_NAME = "PullRequestDecoration";
-        final String GIT_STATUS_DESCRIPTION = "SonarQube Status";
+        final String GIT_STATUS_DESCRIPTION = "SonarQube Gate";
 
         GitPullRequestStatus status = new GitPullRequestStatus();
         status.state = GitStatusStateMapper.toGitStatusState(analysisDetails.getQualityGateStatus());
