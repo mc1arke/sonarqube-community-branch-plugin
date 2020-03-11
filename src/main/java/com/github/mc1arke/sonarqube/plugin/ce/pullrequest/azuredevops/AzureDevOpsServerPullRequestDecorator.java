@@ -5,7 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.*;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.Comment;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.CommentThread;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.GitStatusContext;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.GitPullRequestStatus;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.CommentThreadResponse;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.CommentThreadStatus;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.mappers.GitStatusStateMapper;
 import org.apache.commons.io.IOUtils;
@@ -32,7 +36,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,14 +44,18 @@ import java.util.Objects;
 
 
 public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
-    private enum ApiZone {
-        status,
-        thread
-    }
 
     private String authorizationHeader;
     private static final String AZURE_API_VERSION = "?api-version=5.0-preview.1";
     private static final Logger LOGGER = Loggers.get(AzureDevOpsServerPullRequestDecorator.class);
+
+    private String azureUrl = "";
+    private String baseBranch = "";
+    private String branch = "";
+    private String pullRequestId = "";
+    private String azureRepositoryName = "";
+    private String azureProjectId = "";
+
     /*private static final List<String> OPEN_ISSUE_STATUSES =
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());*/
@@ -75,34 +82,34 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     @Override
     public void decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
         LOGGER.info("starting to analyze with " + analysisDetails.toString());
-        String revision = analysisDetails.getCommitSha();
 
         try {
-            final String azureUrl = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElseThrow(
+            azureUrl = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElseThrow(
                     () -> new IllegalStateException(String.format(
-                            "Could not decorate AzureDevops pullRequest. '%s' has not been set in scanner properties",
+                            "Could not decorate AzureDevOps pullRequest. '%s' has not been set in scanner properties",
                             PULLREQUEST_AZUREDEVOPS_INSTANCE_URL)));
-            final String baseBranch = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_BASE_BRANCH).orElseThrow(
+            baseBranch = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_BASE_BRANCH).orElseThrow(
                     () -> new IllegalStateException(String.format(
-                            "Could not decorate AzureDevops pullRequest. '%s' has not been set in scanner properties",
+                            "Could not decorate AzureDevOps pullRequest. '%s' has not been set in scanner properties",
                             PULLREQUEST_AZUREDEVOPS_BASE_BRANCH)));
-            final String branch = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_BRANCH).orElseThrow(
+            branch = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_BRANCH).orElseThrow(
                     () -> new IllegalStateException(String.format(
-                            "Could not decorate AzureDevops pullRequest. '%s' has not been set in scanner properties",
+                            "Could not decorate AzureDevOps pullRequest. '%s' has not been set in scanner properties",
                             PULLREQUEST_AZUREDEVOPS_BRANCH)));
-            final String pullRequestId = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID).orElseThrow(
+            pullRequestId = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID).orElseThrow(
                     () -> new IllegalStateException(String.format(
-                            "Could not decorate AzureDevops pullRequest. '%s' has not been set in scanner properties",
+                            "Could not decorate AzureDevOps pullRequest. '%s' has not been set in scanner properties",
                             PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID)));
-            final String repositoryName = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME).orElseThrow(
+            azureRepositoryName = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME).orElseThrow(
                     () -> new IllegalStateException(String.format(
-                            "Could not decorate AzureDevops pullRequest. '%s' has not been set in scanner properties",
+                            "Could not decorate AzureDevOps pullRequest. '%s' has not been set in scanner properties",
                             PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME)));
-
-            final String azureProjectId = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElse("Not found: PULLREQUEST_AZUREDEVOPS_PROJECT_ID");
-            final String sonarBranch = analysisDetails.getBranchName();
+            azureProjectId = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElseThrow(
+                    () -> new IllegalStateException(String.format(
+                            "Could not decorate AzureDevOps pullRequest. '%s' has not been set in scanner properties",
+                            PULLREQUEST_AZUREDEVOPS_PROJECT_ID)));
             if (almSettingDto.getPersonalAccessToken() == null) {
-                throw new IllegalStateException("Could not decorate AzureDevops pullRequest. Access token has not been set");
+                throw new IllegalStateException("Could not decorate AzureDevOps pullRequest. Access token has not been set");
             }
             setAuthorizationHeader(almSettingDto.getPersonalAccessToken());
 
@@ -111,12 +118,10 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
             LOGGER.trace(String.format("branch is: %s ", branch));
             LOGGER.trace(String.format("pullRequestId is: %s ", pullRequestId));
             LOGGER.trace(String.format("azureProjectId is: %s ", azureProjectId));
-            LOGGER.trace(String.format("repositoryName is: %s ", repositoryName));
-            LOGGER.trace(String.format("revision Commit/revision is: %s ", revision));
-            LOGGER.trace(String.format("sonarBranch is: %s ", sonarBranch));
+            LOGGER.trace(String.format("azureRepositoryName is: %s ", azureRepositoryName));
 
             sendPost(
-                    getApiUrl(ApiZone.status, analysisDetails),
+                    getStatusApiUrl(),
                     getGitPullRequestStatus(analysisDetails),
                     "Status set successfully"
             );
@@ -128,7 +133,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                     .collect(Collectors.toList());*/
             LOGGER.trace(String.format("Analyze issue count: %s ", openIssues.size()));
 
-            ArrayList<CommentThread> azureCommentThreads = new ArrayList<CommentThread>(Arrays.asList(sendGet(getApiUrl(ApiZone.thread, analysisDetails), CommentThreadResponse.class).getValue()));
+            ArrayList<CommentThread> azureCommentThreads = new ArrayList<CommentThread>(Arrays.asList(sendGet(getThreadApiUrl(), CommentThreadResponse.class).getValue()));
             LOGGER.trace(String.format("Azure commentThreads count: %s ", azureCommentThreads.size()));
             azureCommentThreads.removeIf(x -> x.getThreadContext() == null || x.isDeleted);
             LOGGER.trace(String.format("Azure commentThreads AFTER REMOVE count: %s ", azureCommentThreads.size()));
@@ -172,7 +177,6 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                                             "Comment added success"
                                     );
                                     sendPatch(
-                                            //getApiUrl(ApiZone.thread, analysisDetails, azureThread.id),
                                             azureThread._links.self.href + AZURE_API_VERSION,
                                             "{\"status\":\"closed\"}"
                                     );
@@ -216,7 +220,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                         CommentThread thread = new CommentThread(filePath, locate, message);
                         LOGGER.info(String.format("Creating thread: %s ", new ObjectMapper().writeValueAsString(thread)));
                         sendPost(
-                                getApiUrl(ApiZone.thread, analysisDetails),
+                                getThreadApiUrl(),
                                 new ObjectMapper().writeValueAsString(thread),
                                 "Thread created successfully"
                         );
@@ -255,30 +259,26 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         );
     }
 
-    private String getApiUrl(ApiZone apiZone, AnalysisDetails analysisDetails) throws UnsupportedOperationException {
-        StringBuilder apiUrl = new StringBuilder(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElse("fail")); //instance
-        apiUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PROJECT_ID).orElse("fail"));       //project
-        apiUrl.append("/_apis/git/repositories/");
-        apiUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME).orElse("fail"));  // repositoryId
-        apiUrl.append("/pullRequests/");
-        apiUrl.append(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID).orElse("fail"));   // pullRequestId
-        switch (apiZone) {
-            case status: {
-                // POST https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/statuses?api-version=5.0-preview.1
-                apiUrl.append("/statuses");
-                break;
-            }
-            case thread: {
-                //POST https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/threads?api-version=5.0
-                apiUrl.append("/threads");
-                break;
-            }
-            default: {
-                throw new UnsupportedOperationException("Not implemented method");
-            }
-        }
-        apiUrl.append(AZURE_API_VERSION);
-        return apiUrl.toString();
+    private String getStatusApiUrl() {
+        // POST https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/statuses?api-version=5.0-preview.1
+        return azureUrl + azureProjectId +
+                "/_apis/git/repositories/" +
+                azureRepositoryName +
+                "/pullRequests/" +
+                pullRequestId +
+                "/statuses" +
+                AZURE_API_VERSION;
+    }
+
+    private String getThreadApiUrl(){
+        //POST https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/threads?api-version=5.0
+        return azureUrl + azureProjectId +
+                "/_apis/git/repositories/" +
+                azureRepositoryName +
+                "/pullRequests/" +
+                pullRequestId +
+                "/threads" +
+                AZURE_API_VERSION;
     }
 
     private String getGitPullRequestStatus(AnalysisDetails analysisDetails) throws IOException {
@@ -300,9 +300,6 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         return new ObjectMapper().writeValueAsString(status);
     }
 
-    private void sendPost(String apiUrl, String body) throws IOException {
-        sendPost(apiUrl, body, "POST success!");
-    }
     private void sendPost(String apiUrl, String body, String successMessage) throws IOException {
         LOGGER.trace(String.format("sendPost: URL: %s ", apiUrl));
         LOGGER.trace(String.format("sendPost: BODY: %s ", body));
