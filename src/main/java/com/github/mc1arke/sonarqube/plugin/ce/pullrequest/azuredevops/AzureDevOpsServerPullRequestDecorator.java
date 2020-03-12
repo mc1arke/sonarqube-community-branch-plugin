@@ -148,14 +148,10 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                         LOGGER.trace(String.format("ISSUE: key: %s ", issue.getIssue().key()));
                         LOGGER.trace(String.format("ISSUE: type: %s ", issue.getIssue().type().toString()));
                         LOGGER.trace(String.format("ISSUE: severity: %s ", issue.getIssue().severity()));
-                        LOGGER.trace(String.format("ISSUE: changes size: %s ", issue.getIssue().changes().size()));
-                        LOGGER.trace(String.format("ISSUE: selectedAt: %s ", issue.getIssue().selectedAt()));
                         LOGGER.trace(String.format("ISSUE: componentKey: %s ", issue.getIssue().componentKey()));
                         LOGGER.trace(String.format("ISSUE: getLocations: %s ", Objects.requireNonNull(issue.getIssue().getLocations()).toString()));
                         LOGGER.trace(String.format("ISSUE: getRuleKey: %s ", issue.getIssue().getRuleKey()));
                         LOGGER.trace(String.format("COMPONENT: getDescription: %s ", issue.getComponent().getDescription()));
-                        LOGGER.trace(String.format("COMPONENT: getFileAttributes: %s ", issue.getComponent().getFileAttributes().toString()));
-                        LOGGER.trace(String.format("COMPONENT: getReportAttributes: %s ", issue.getComponent().getReportAttributes().toString()));
 
                         boolean isExitsThread = false;
                         for (CommentThread azureThread : azureCommentThreads) {
@@ -226,6 +222,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                         );
                     } catch (Exception e) {
                         LOGGER.error(e.toString());
+                        //throw new IllegalStateException(e); // Uncomment to run unit tests
                     }
                 }
             }
