@@ -8,23 +8,21 @@ import org.junit.Test;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
+import org.sonar.api.rule.RuleKey;
+import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import org.sonar.db.protobuf.DbIssues;
 
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Optional;
 
 
-import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,7 +47,10 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
         String branchName = "feature/some-feature";
         String azureRepository = "myRepository";
         String sonarRootUrl = "http://sonar:9000/sonar";
-        String filePath = "/path/to/file";
+        String filePath = "path/to/file";
+        String issueMessage = "issueMessage";
+        String issueKeyVal = "issueKeyVal";
+        String ruleKeyVal = "ruleKeyVal";
         int lineNumber = 5;
         String token = "token";
         String authorizationHeader = "Basic " + Base64.getEncoder().encodeToString((":" + token).getBytes());
@@ -59,6 +60,11 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
         when(almSettingDto.getPersonalAccessToken()).thenReturn(token);
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+        PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+        DefaultIssue defaultIssue = mock(DefaultIssue.class);
+        Component component = mock(Component.class);
+
         when(analysisDetails.getScannerProperty(eq(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_INSTANCE_URL)))
                 .thenReturn(Optional.of(wireMockRule.baseUrl()));
         when(analysisDetails.getScannerProperty(eq(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME)))
@@ -71,31 +77,36 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .thenReturn(Optional.of(baseBranchName));
         when(analysisDetails.getScannerProperty(eq(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_BRANCH)))
                 .thenReturn(Optional.of(branchName));
-
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(sonarProject);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
         when(analysisDetails.getBranchName()).thenReturn(pullRequestId);
-
-
-        PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        DefaultIssue defaultIssue = mock(DefaultIssue.class);
-        when(defaultIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
-        when(defaultIssue.getLine()).thenReturn(lineNumber);
-        when(componentIssue.getIssue()).thenReturn(defaultIssue);
-
-        Component component = mock(Component.class);
-        when(componentIssue.getComponent()).thenReturn(component);
-        when(issueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(issueVisitor);
         when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of(filePath));
+        when(issueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
+
+        DbIssues.Locations locate = DbIssues.Locations.newBuilder().build();
+        RuleType rule = RuleType.CODE_SMELL;
+        RuleKey ruleKey = mock(RuleKey.class);
+        when(componentIssue.getIssue()).thenReturn(defaultIssue);
+        when(componentIssue.getComponent()).thenReturn(component);
+        when(defaultIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
+        when(defaultIssue.getLine()).thenReturn(lineNumber);
+        when(defaultIssue.getLocations()).thenReturn(locate);
+        when(defaultIssue.type()).thenReturn(rule);
+        when(defaultIssue.getMessage()).thenReturn(issueMessage);
+        when(defaultIssue.getRuleKey()).thenReturn(ruleKey);
+        when(defaultIssue.key()).thenReturn(issueKeyVal);
+        when(ruleKey.toString()).thenReturn(ruleKeyVal);
 
         ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
         wireMockRule.stubFor(get(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads?api-version=5.0-preview.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
-                .willReturn(okJson("{\n" +
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(
+                        "{\n" +
                         "    \"value\": [\n" +
                         "        {\n" +
                         "            \"pullRequestThreadContext\": {\n" +
@@ -128,7 +139,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                         "                    \"publishedDate\": \"2020-03-10T17:40:09.603Z\",\n" +
                         "                    \"lastUpdatedDate\": \"2020-03-10T18:05:06.99Z\",\n" +
                         "                    \"lastContentUpdatedDate\": \"2020-03-10T18:05:06.99Z\",\n" +
-                        "                    \"isDeleted\": true,\n" +
+                        "                    \"isDeleted\": false,\n" +
                         "                    \"commentType\": \"text\",\n" +
                         "                    \"usersLiked\": [],\n" +
                         "                    \"_links\": {\n" +
@@ -152,7 +163,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                         "            },\n" +
                         "            \"properties\": {},\n" +
                         "            \"identities\": null,\n" +
-                        "            \"isDeleted\": true,\n" +
+                        "            \"isDeleted\": false,\n" +
                         "            \"_links\": {\n" +
                         "                \"self\": {\n" +
                         "                    \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/28afee9d-4e53-46b8-8deb-99ea20202b2b/pullRequests/8513/threads/80450\"\n" +
@@ -202,7 +213,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                         "            ],\n" +
                         "            \"status\": \"active\",\n" +
                         "            \"threadContext\": {\n" +
-                        "                \"filePath\": \"" + filePath + "\",\n" +
+                        "                \"filePath\": \"/azureProject/myReposytory/Helpers/file2.cs\",\n" +
                         "                \"rightFileStart\": {\n" +
                         "                    \"line\": 30,\n" +
                         "                    \"offset\": 57\n" +
@@ -229,42 +240,36 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
-                .withRequestBody(equalTo("{\n" +
-                        "\t\"status\":\"active\",\n" +
-                        "\t\"comments\":[\n" +
-                        "\t\t{\n" +
-                        "\t\t\t\"content\":\"Message\",\n" +
-                        "\t\t\t\"commentType\":\"text\",\n" +
-                        "\t\t\t\"parentCommentId\":0,\n" +
-                        "\t\t\t\"id\":null,\n" +
-                        "\t\t\t\"threadId\":null,\n" +
-                        "\t\t\t\"author\":null,\n" +
-                        "\t\t\t\"publishedDate\":null,\n" +
-                        "\t\t\t\"lastUpdatedDate\":null,\n" +
-                        "\t\t\t\"lastContentUpdatedDate\":null,\n" +
-                        "\t\t\t\"isDeleted\":null,\n" +
-                        "\t\t\t\"usersLiked\":null,\n" +
-                        "\t\t\t\"links\":null\n" +
-                        "\t\t}\n" +
-                        "\t],\n" +
-                        "\t\"threadContext\":{\n" +
-                        "\t\t\"filePath\":\"" + filePath + "\",\n" +
-                        "\t\t\"leftFileStart\":null,\n" +
-                        "\t\t\"leftFileEnd\":null,\n" +
-                        "\t\t\"rightFileStart\":{\n" +
-                        "\t\t\t\"line\":3,\n" +
-                        "\t\t\t\"offset\":6\n" +
-                        "\t\t},\n" +
-                        "\t\t\"rightFileEnd\":{\n" +
-                        "\t\t\t\"line\":3,\n" +
-                        "\t\t\t\"offset\":10}\n" +
-                        "\t\t},\n" +
-                        "\t\"id\":0,\n" +
-                        "\t\"publishedDate\":null,\n" +
-                        "\t\"lastUpdatedDate\":null,\n" +
-                        "\t\"identities\":null,\n" +
-                        "\t\"isDeleted\":null\n" +
-                        "} ")
+                .withRequestBody(equalTo("{" +
+                        "\"status\":\"active\"," +
+                        "\"comments\":[{" +
+                        "\"content\":\"CODE_SMELL: issueMessage ([rule](" + sonarRootUrl + "/coding_rules?open=" + ruleKeyVal + "&rule_key=" + ruleKeyVal + "))\\n\\n[See in SonarQube](" + sonarRootUrl + "/project/issues?id=" + sonarProject + "&issues=" + issueKeyVal + "&open=" + issueKeyVal + "&pullRequest="+ pullRequestId +")\"," +
+                        "\"commentType\":\"text\"," +
+                        "\"parentCommentId\":0," +
+                        "\"id\":null," +
+                        "\"threadId\":null," +
+                        "\"author\":null," +
+                        "\"publishedDate\":null," +
+                        "\"lastUpdatedDate\":null," +
+                        "\"lastContentUpdatedDate\":null," +
+                        "\"isDeleted\":null," +
+                        "\"usersLiked\":null," +
+                        "\"links\":null}]," +
+                        "\"threadContext\":{" +
+                        "\"filePath\":\"/" + filePath + "\"," +
+                        "\"leftFileStart\":null," +
+                        "\"leftFileEnd\":null," +
+                        "\"rightFileStart\":{\"line\":0," +
+                        "\"offset\":1}," +
+                        "\"rightFileEnd\":{\"line\":0," +
+                        "\"offset\":1}}," +
+                        "\"id\":0," +
+                        "\"publishedDate\":null," +
+                        "\"lastUpdatedDate\":null," +
+                        "\"identities\":null," +
+                        "\"isDeleted\":null," +
+                        "\"_links\":null" +
+                        "}")
                 )
                 .willReturn(ok()));
 

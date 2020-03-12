@@ -197,7 +197,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
             } catch (Exception ex)
             {
-                LOGGER.error("AZURE: ***ERROR***:" + ex);
+                LOGGER.error("GetScannerContext: " + ex);
             }
             return scannerContext;
         }
