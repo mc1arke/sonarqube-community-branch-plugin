@@ -107,23 +107,13 @@ public class AnalysisDetails {
 
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
-        BigDecimal newCoverage =
-                findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                    .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
-                    .map(QualityGate.Condition::getValue)
-                    .map(BigDecimal::new)
-                    .orElse(null);
+        BigDecimal newCoverage = getNewCoverage().isPresent() ? getNewCoverage().get() : BigDecimal.ZERO;
+
+        BigDecimal newDuplications = getNewDuplications().isPresent() ? getNewDuplications().get() : BigDecimal.ZERO;
 
         double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
 
-        BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
-            .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
-            .map(QualityGate.Condition::getValue)
-            .map(BigDecimal::new)
-            .orElse(null);
-
-        double duplications =
-                findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
+        double duplications = findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
 
         NumberFormat decimalFormat = new DecimalFormat("#0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 
@@ -317,6 +307,20 @@ public class AnalysisDetails {
                                  condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
                                  "is less than", condition.getErrorThreshold());
         }
+    }
+
+    public Optional<BigDecimal> getNewDuplications() {
+        return findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
+                .map(BigDecimal::new);
+    }
+
+    public Optional<BigDecimal> getNewCoverage(){
+        return findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
+                .map(BigDecimal::new);
     }
 
     public static class BranchDetails {
