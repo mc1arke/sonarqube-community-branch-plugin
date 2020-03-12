@@ -28,7 +28,6 @@ import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.ce.posttask.ScannerContext;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.platform.Server;
-import org.sonar.ce.task.CeTask;
 import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
@@ -40,9 +39,13 @@ import org.sonar.db.alm.setting.AlmSettingDao;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-import org.sonar.db.ce.CeScannerContextDao;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
