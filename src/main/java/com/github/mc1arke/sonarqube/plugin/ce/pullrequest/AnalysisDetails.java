@@ -107,9 +107,9 @@ public class AnalysisDetails {
 
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
-        BigDecimal newCoverage = getNewCoverage().isPresent() ? getNewCoverage().get() : BigDecimal.ZERO;
+        BigDecimal newCoverage = getNewCoverage().orElse(null);
 
-        BigDecimal newDuplications = getNewDuplications().isPresent() ? getNewDuplications().get() : BigDecimal.ZERO;
+        BigDecimal newDuplications = getNewDuplications().orElse(null);
 
         double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
 
