@@ -121,20 +121,11 @@ public class AnalysisDetails {
 
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
-        BigDecimal newCoverage =
-                findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                    .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
-                    .map(QualityGate.Condition::getValue)
-                    .map(BigDecimal::new)
-                    .orElse(null);
+        BigDecimal newCoverage = getNewCoverage().orElse(null);
 
         double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).orElse(0D);
 
-        BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
-            .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
-            .map(QualityGate.Condition::getValue)
-            .map(BigDecimal::new)
-            .orElse(null);
+        BigDecimal newDuplications = getNewDuplications().orElse(null);
 
         double duplications =
                 findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(Measure::getDoubleValue).orElse(0D);
@@ -293,18 +284,19 @@ public class AnalysisDetails {
                                                                            .getByKey(metricKey));
     }
 
-    public Optional<QualityGate.Condition> findQualityGateCondition(String metricKey) {
+    private Optional<QualityGate.Condition> findQualityGateCondition(String metricKey) {
         return qualityGate.getConditions().stream().filter(c -> metricKey.equals(c.getMetricKey())).findFirst();
     }
 
     private Map<RuleType, Long> countRuleByType() {
-        return Arrays.stream(RuleType.values()).collect(Collectors.toMap(k -> k,
-                                                                         k -> postAnalysisIssueVisitor.getIssues()
-                                                                                 .stream()
-                                                                                 .map(PostAnalysisIssueVisitor.ComponentIssue::getIssue)
-                                                                                 .filter(i -> !CLOSED_ISSUE_STATUS
-                                                                                         .contains(i.status()))
-                                                                                 .filter(i -> k == i.type()).count()));
+        return Arrays.stream(RuleType.values())
+                .collect(Collectors.toMap(
+                        k -> k,
+                        k -> getOpenIssues().stream()
+                                .filter(i -> k == i.type())
+                                .count()
+                        )
+                );
     }
 
     private static String pluralOf(long value, String singleLabel, String multiLabel) {
@@ -330,6 +322,28 @@ public class AnalysisDetails {
                                  condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
                                  "is less than", condition.getErrorThreshold());
         }
+    }
+
+    public List<DefaultIssue> getOpenIssues() {
+        return postAnalysisIssueVisitor.getIssues()
+                .stream()
+                .map(PostAnalysisIssueVisitor.ComponentIssue::getIssue)
+                .filter(i -> !CLOSED_ISSUE_STATUS
+                        .contains(i.status())).collect(Collectors.toList());
+    }
+
+    public Optional<BigDecimal> getNewDuplications() {
+        return findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
+                .map(BigDecimal::new);
+    }
+
+    public Optional<BigDecimal> getNewCoverage(){
+        return findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
+                .map(BigDecimal::new);
     }
 
     private static String encode(String original, Charset charset) {

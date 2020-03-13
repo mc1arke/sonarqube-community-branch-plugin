@@ -51,11 +51,13 @@ import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -118,6 +120,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
             final String prCommitsURL = mergeRequestURl + "/commits";
             final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
+            final String mergeRequestNoteURL = mergeRequestURl + "/notes";
+
 
             LOGGER.info(String.format("Status url is: %s ", statusUrl));
             LOGGER.info(String.format("PR commits url is: %s ", prCommitsURL));
@@ -155,10 +159,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 }
             }
 
-            String coverageValue = analysis.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                    .filter(condition -> condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
-                    .map(QualityGate.Condition::getValue)
-                    .orElse("0");
+            String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.valueOf(0)).toString();
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 
@@ -167,7 +168,13 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             postStatus(new StringBuilder(statusUrl), headers, analysis, coverageValue);
 
-            postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams);
+            Optional<BigDecimal> duplications = analysis.getNewDuplications();
+            List<DefaultIssue> analysisOpenIssues = analysis.getOpenIssues();
+            boolean hasDuplications = duplications.isPresent() && duplications.get().compareTo(BigDecimal.ZERO) > 0;
+            boolean hasOpenIssues = analysisOpenIssues != null && analysisOpenIssues.size() > 0;
+
+            String summaryCommentURL = hasDuplications || hasOpenIssues ? mergeRequestDiscussionURL : mergeRequestNoteURL;
+            postCommitComment(summaryCommentURL, headers, summaryContentParams);
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);
