@@ -110,7 +110,6 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
             final String prCommitsURL = mergeRequestURl + "/commits";
             final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
-            final String mergeRequestNoteURL = mergeRequestURl + "/notes";
 
             LOGGER.info(String.format("Status url is: %s ", statusUrl));
             LOGGER.info(String.format("PR commits url is: %s ", prCommitsURL));
@@ -153,8 +152,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
             List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("body", summaryComment));
 
-            boolean isNewCoverage = analysis.getNewCoverage().isPresent();
-            String coverageValue = isNewCoverage ? analysis.getNewCoverage().get().toString() : "0";
+            String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.valueOf(0)).toString();
 
             postStatus(statusUrl, headers, analysis, coverageValue, true);
 

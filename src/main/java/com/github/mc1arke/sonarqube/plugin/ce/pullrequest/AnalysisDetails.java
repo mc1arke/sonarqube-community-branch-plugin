@@ -109,11 +109,17 @@ public class AnalysisDetails {
 
         BigDecimal newCoverage = getNewCoverage().orElse(null);
 
-        BigDecimal newDuplications = getNewDuplications().orElse(null);
 
         double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
 
-        double duplications = findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
+        BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
+                .map(BigDecimal::new)
+                .orElse(null);
+
+        double duplications =
+                findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(MeasureWrapper::getDoubleValue).orElse(0D);
 
         NumberFormat decimalFormat = new DecimalFormat("#0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 
@@ -270,7 +276,7 @@ public class AnalysisDetails {
                 .map(MeasureWrapper::new);
     }
 
-    public Optional<QualityGate.Condition> findQualityGateCondition(String metricKey) {
+    private Optional<QualityGate.Condition> findQualityGateCondition(String metricKey) {
         return qualityGate.getConditions().stream().filter(c -> metricKey.equals(c.getMetricKey())).findFirst();
     }
 
@@ -307,13 +313,6 @@ public class AnalysisDetails {
                                  condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
                                  "is less than", condition.getErrorThreshold());
         }
-    }
-
-    public Optional<BigDecimal> getNewDuplications() {
-        return findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
-                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
-                .map(QualityGate.Condition::getValue)
-                .map(BigDecimal::new);
     }
 
     public Optional<BigDecimal> getNewCoverage(){
