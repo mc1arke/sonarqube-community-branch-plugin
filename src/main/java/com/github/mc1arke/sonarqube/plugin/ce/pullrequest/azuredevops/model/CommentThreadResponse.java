@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CommentThreadResponse {
-    private CommentThread[] value;
+    private final CommentThread[] value;
 
     @JsonCreator
     public CommentThreadResponse(@JsonProperty("value") CommentThread[] value){

@@ -34,27 +34,11 @@ public class CommentThreadContext implements Serializable {
         return this.filePath;
     };
     /**
-     * File path relative to the root of the repository. It's up to the client to
-     */
-    public void setFilePath(String value){
-        this.filePath = value;
-    };
-
-    /**
      * Position of first character of the thread's span in left file. ///
      */
     public CommentPosition getLeftFileStart(){
         return this.leftFileStart;
     };
-
-    /**
-     * Position of first character of the thread's span in left file. ///
-     */
-    public void setLeftFileStart(CommentPosition value)
-    {
-        this.leftFileStart = value;
-    };
-
     /**
      * Position of last character of the thread's span in left file. ///
      */
@@ -62,38 +46,15 @@ public class CommentThreadContext implements Serializable {
         return this.leftFileEnd;
     };
     /**
-     * Position of last character of the thread's span in left file. ///
-     */
-    public void setLeftFileEnd(CommentPosition value)
-    {
-        this.leftFileEnd = value;
-    };
-
-    /**
      * Position of first character of the thread's span in right file. ///
      */
     public CommentPosition getRightFileStart(){
         return this.rightFileStart;
     };
     /**
-     * Position of first character of the thread's span in right file. ///
-     */
-    public void setRightFileStart(CommentPosition value)
-    {
-        this.rightFileStart = value;
-    };
-
-    /**
      * Position of last character of the thread's span in right file. ///
      */
     public CommentPosition getRightFileEnd(){
         return this.rightFileEnd;
-    };
-    /**
-     * Position of last character of the thread's span in right file. ///
-     */
-    public void setRightFileEnd(CommentPosition value)
-    {
-        this.rightFileEnd = value;
     };
 }

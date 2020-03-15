@@ -22,7 +22,12 @@ import java.util.Collections;
 import java.util.Optional;
 
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
@@ -246,15 +251,15 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                         "\"content\":\"CODE_SMELL: issueMessage ([rule](" + sonarRootUrl + "/coding_rules?open=" + ruleKeyVal + "&rule_key=" + ruleKeyVal + "))\\n\\n[See in SonarQube](" + sonarRootUrl + "/project/issues?id=" + sonarProject + "&issues=" + issueKeyVal + "&open=" + issueKeyVal + "&pullRequest="+ pullRequestId +")\"," +
                         "\"commentType\":\"text\"," +
                         "\"parentCommentId\":0," +
-                        "\"id\":null," +
-                        "\"threadId\":null," +
+                        "\"id\":0," +
+                        "\"threadId\":0," +
                         "\"author\":null," +
                         "\"publishedDate\":null," +
                         "\"lastUpdatedDate\":null," +
                         "\"lastContentUpdatedDate\":null," +
-                        "\"isDeleted\":null," +
                         "\"usersLiked\":null," +
-                        "\"links\":null}]," +
+                        "\"isDeleted\":null," +
+                        "\"_links\":null}]," +
                         "\"threadContext\":{" +
                         "\"filePath\":\"/" + filePath + "\"," +
                         "\"leftFileStart\":null," +
@@ -279,10 +284,9 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
                 .withRequestBody(equalTo("{" +
-                        "\"iterationId\":null," +
                         "\"state\":\"Succeeded\"," +
                         "\"description\":\"SonarQube Gate\"," +
-                        "\"context\":{\"name\":\"PullRequestDecoration\",\"genre\":\"SonarQube\"}," +
+                        "\"context\":{\"genre\":\"SonarQube\",\"name\":\"PullRequestDecoration\"}," +
                         "\"targetUrl\":\"" + sonarRootUrl + "/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId + "\"" +
                         "}")
                 )

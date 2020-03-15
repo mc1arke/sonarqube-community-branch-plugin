@@ -1,5 +1,6 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.CommentThreadStatus;
 import org.sonar.db.protobuf.DbIssues;
 
@@ -18,6 +19,14 @@ public class CommentThread implements Serializable {
     private CommentThreadStatus status;
     private List<Comment> comments;
     private CommentThreadContext threadContext;
+    private int id;
+    private Date publishedDate;
+    private Date lastUpdatedDate;
+    private HashMap<String, IdentityRef> identities;
+    @JsonProperty("isDeleted")
+    private Boolean deleted;
+    @JsonProperty("_links")
+    private ReferenceLinks links;
     public CommentThread(){};
 
     public CommentThread(String filePath, DbIssues.Locations locations, String message){
@@ -38,22 +47,10 @@ public class CommentThread implements Serializable {
         return this.comments;
     };
     /**
-     * A list of the comments.
-     */
-    public void setComments(List<Comment> value){
-        this.comments = value;
-    };
-    /**
      * The status of the comment thread.
      */
     public CommentThreadStatus getStatus(){
         return this.status;
-    };
-    /**
-     * The status of the comment thread.
-     */
-    public void setStatus(CommentThreadStatus value){
-        this.status = value;
     };
     /**
      * Specify thread context such as position in left/right file.
@@ -62,38 +59,45 @@ public class CommentThread implements Serializable {
         return this.threadContext;
     };
     /**
-     * Specify thread context such as position in left/right file.
-     */
-    public void setThreadContext(CommentThreadContext value) {
-        this.threadContext = value;
-    };
-
-    /**
      * The comment thread id.
      */
-    public int id;
+    public int getId()
+    {
+        return this.id;
+    };
     /**
      * The time this thread was published.
      */
-    public Date publishedDate;
+    public Date getPublishedDate()
+    {
+        return this.publishedDate;
+    };
     /**
      * The time this thread was last updated.
      */
-    public Date lastUpdatedDate;
-    /**
-     * Optional properties associated with the thread as a collection of key-value
-     */
-    private PropertiesCollection properties;
+    public Date getLastUpdatedDate()
+    {
+        return this.lastUpdatedDate;
+    };
     /**
      * Set of identities related to this thread
      */
-    public HashMap<String, IdentityRef> identities;
+    public HashMap<String, IdentityRef> getIdentities()
+    {
+        return this.identities;
+    };
     /**
      * Specify if the thread is deleted which happens when all comments are deleted.
      */
-    public Boolean isDeleted;
+    public Boolean isDeleted()
+    {
+        return this.deleted;
+    };
     /**
      * Links to other related objects.
      */
-    public ReferenceLinks _links;
+    public ReferenceLinks getLinks()
+    {
+        return this.links;
+    };
 }

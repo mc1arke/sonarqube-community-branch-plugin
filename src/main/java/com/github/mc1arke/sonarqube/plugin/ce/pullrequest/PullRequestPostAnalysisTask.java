@@ -154,7 +154,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
         ScannerContext scannerContext = projectAnalysis.getScannerContext().getProperties().size() > 0
                 ? projectAnalysis.getScannerContext()
-                : GetScannerContext(projectAnalysis.getCeTask().getId());
+                : getScannerContext(projectAnalysis.getCeTask().getId());
 
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(new AnalysisDetails.BranchDetails(optionalBranchName.get(), commitId),
@@ -169,7 +169,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
     }
 
-    public ScannerContext GetScannerContext(String ceTaskId)
+    private ScannerContext getScannerContext(String ceTaskId)
     {
         ScannerContext scannerContext =  new ScannerContext() {
             private final Map<String, String> props = new HashMap<String, String>();

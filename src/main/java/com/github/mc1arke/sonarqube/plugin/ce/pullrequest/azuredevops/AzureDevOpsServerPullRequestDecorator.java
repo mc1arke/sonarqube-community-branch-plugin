@@ -135,7 +135,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
 
             ArrayList<CommentThread> azureCommentThreads = new ArrayList<CommentThread>(Arrays.asList(sendGet(getThreadApiUrl(), CommentThreadResponse.class).getValue()));
             LOGGER.trace(String.format("Azure commentThreads count: %s ", azureCommentThreads.size()));
-            azureCommentThreads.removeIf(x -> x.getThreadContext() == null || x.isDeleted);
+            azureCommentThreads.removeIf(x -> x.getThreadContext() == null || x.isDeleted());
             LOGGER.trace(String.format("Azure commentThreads AFTER REMOVE count: %s ", azureCommentThreads.size()));
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
@@ -152,28 +152,27 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                         LOGGER.trace(String.format("ISSUE: getLocations: %s ", Objects.requireNonNull(issue.getIssue().getLocations()).toString()));
                         LOGGER.trace(String.format("ISSUE: getRuleKey: %s ", issue.getIssue().getRuleKey()));
                         LOGGER.trace(String.format("COMPONENT: getDescription: %s ", issue.getComponent().getDescription()));
-
+                        DbIssues.Locations locate = Objects.requireNonNull(issue.getIssue().getLocations());
                         boolean isExitsThread = false;
                         for (CommentThread azureThread : azureCommentThreads) {
                             LOGGER.trace(String.format("azureFilePath: %s", azureThread.getThreadContext().getFilePath()));
                             LOGGER.trace(String.format("filePath: %s (%s)", filePath, azureThread.getThreadContext().getFilePath().equals(filePath)));
                             LOGGER.trace(String.format("azureLine: %d", azureThread.getThreadContext().getRightFileStart().getLine()));
-                            LOGGER.trace(String.format("line: %d (%s)", line, azureThread.getThreadContext().getRightFileStart().getLine().equals(line)));
+                            LOGGER.trace(String.format("line: %d (%s)", line, azureThread.getThreadContext().getRightFileStart().getLine() == locate.getTextRange().getEndLine()));
                             if (azureThread.getThreadContext().getFilePath().equals(filePath)
-                                    && azureThread.getThreadContext().getRightFileStart().getLine().equals(line)) {
+                                    && azureThread.getThreadContext().getRightFileStart().getLine() == locate.getTextRange().getEndLine()) {
 
                                 if(!issue.getIssue().getStatus().equals(Issue.STATUS_OPEN)
                                         && azureThread.getStatus().equals(CommentThreadStatus.active)) {
-                                    azureThread.setStatus(CommentThreadStatus.closed);
                                     Comment comment = new Comment("Closed in SonarQube");
                                     LOGGER.info("Issue closed in Sonar. try close in Azure");
                                     sendPost(
-                                            azureThread._links.self.href + "/comments" + AZURE_API_VERSION,
+                                            azureThread.getLinks().getSelf().getHref() + "/comments" + AZURE_API_VERSION,
                                             new ObjectMapper().writeValueAsString(comment),
                                             "Comment added success"
                                     );
                                     sendPatch(
-                                            azureThread._links.self.href + AZURE_API_VERSION,
+                                            azureThread.getLinks().getSelf().getHref() + AZURE_API_VERSION,
                                             "{\"status\":\"closed\"}"
                                     );
                                 }
@@ -212,7 +211,6 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                                         pullRequestId)
                         );
 
-                        DbIssues.Locations locate = Objects.requireNonNull(issue.getIssue().getLocations());
                         CommentThread thread = new CommentThread(filePath, locate, message);
                         LOGGER.info(String.format("Creating thread: %s ", new ObjectMapper().writeValueAsString(thread)));
                         sendPost(
@@ -222,7 +220,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                         );
                     } catch (Exception e) {
                         LOGGER.error(e.toString());
-                        //throw new IllegalStateException(e); // Uncomment to run unit tests
+                        throw new IllegalStateException(e); // Uncomment to run unit tests
                     }
                 }
             }
@@ -283,17 +281,17 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         final String GIT_STATUS_CONTEXT_NAME = "PullRequestDecoration";
         final String GIT_STATUS_DESCRIPTION = "SonarQube Gate";
 
-        GitPullRequestStatus status = new GitPullRequestStatus();
-        status.state = GitStatusStateMapper.toGitStatusState(analysisDetails.getQualityGateStatus());
-        status.description = GIT_STATUS_DESCRIPTION;
-        status.context = new GitStatusContext(GIT_STATUS_CONTEXT_GENRE, GIT_STATUS_CONTEXT_NAME); // "SonarQube/PullRequestDecoration"
-        status.targetUrl = String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl(),
-                URLEncoder.encode(analysisDetails.getAnalysisProjectKey(),
-                        StandardCharsets.UTF_8.name()),
-                URLEncoder.encode(analysisDetails.getBranchName(),
-                        StandardCharsets.UTF_8.name())
+        GitPullRequestStatus status = new GitPullRequestStatus(
+                GitStatusStateMapper.toGitStatusState(analysisDetails.getQualityGateStatus()),
+                GIT_STATUS_DESCRIPTION,
+                new GitStatusContext(GIT_STATUS_CONTEXT_GENRE, GIT_STATUS_CONTEXT_NAME), // "SonarQube/PullRequestDecoration",
+                String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl(),
+                        URLEncoder.encode(analysisDetails.getAnalysisProjectKey(),
+                                StandardCharsets.UTF_8.name()),
+                        URLEncoder.encode(analysisDetails.getBranchName(),
+                                StandardCharsets.UTF_8.name())
+                )
         );
-
         return new ObjectMapper().writeValueAsString(status);
     }
 

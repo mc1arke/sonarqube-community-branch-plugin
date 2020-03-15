@@ -1,12 +1,12 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.mappers;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.CommentThreadStatus;
-import org.sonar.api.issue.Issue;
 
-import static org.sonar.api.issue.Issue.*;
+import static org.sonar.api.issue.Issue.STATUS_OPEN;
+import static org.sonar.api.issue.Issue.STATUS_CLOSED;
 
 
-public class CommentThreadStatusMapper {
+public final class CommentThreadStatusMapper {
 
     private CommentThreadStatusMapper() {
         super();
