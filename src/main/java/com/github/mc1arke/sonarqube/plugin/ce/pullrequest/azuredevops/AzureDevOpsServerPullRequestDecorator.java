@@ -1,6 +1,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
@@ -163,7 +164,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                                     && azureThread.getThreadContext().getRightFileStart().getLine() == locate.getTextRange().getEndLine()) {
 
                                 if(!issue.getIssue().getStatus().equals(Issue.STATUS_OPEN)
-                                        && azureThread.getStatus().equals(CommentThreadStatus.active)) {
+                                        && azureThread.getStatus().equals(CommentThreadStatus.ACTIVE)) {
                                     Comment comment = new Comment("Closed in SonarQube");
                                     LOGGER.info("Issue closed in Sonar. try close in Azure");
                                     sendPost(
@@ -335,6 +336,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 //LOGGER.info(httpResponse.toString());
                 HttpEntity entity = httpResponse.getEntity();
                 T obj = new ObjectMapper()
+                        .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+                        .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
                         .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                         .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

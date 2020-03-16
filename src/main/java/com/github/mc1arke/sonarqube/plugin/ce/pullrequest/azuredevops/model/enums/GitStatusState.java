@@ -8,25 +8,25 @@ public enum GitStatusState
     /**
      * Status state not set. Default state.
      */
-    NotSet,
+    NOT_SET,
     /**
      * Status pending.
      */
-    Pending,
+    PENDING,
     /**
      * Status succeeded.
      */
-    Succeeded,
+    SUCCEEDED,
     /**
      * Status failed.
      */
-    Failed,
+    FAILED,
     /**
      * Status with an error.
      */
-    Error,
+    ERROR,
     /**
      * Status is not applicable to the target object.
      */
-    NotApplicable
+    NOT_APPLICABLE
 }

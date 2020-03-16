@@ -246,10 +246,10 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
                 .withRequestBody(equalTo("{" +
-                        "\"status\":\"active\"," +
+                        "\"status\":\"ACTIVE\"," +
                         "\"comments\":[{" +
                         "\"content\":\"CODE_SMELL: issueMessage ([rule](" + sonarRootUrl + "/coding_rules?open=" + ruleKeyVal + "&rule_key=" + ruleKeyVal + "))\\n\\n[See in SonarQube](" + sonarRootUrl + "/project/issues?id=" + sonarProject + "&issues=" + issueKeyVal + "&open=" + issueKeyVal + "&pullRequest="+ pullRequestId +")\"," +
-                        "\"commentType\":\"text\"," +
+                        "\"commentType\":\"TEXT\"," +
                         "\"parentCommentId\":0," +
                         "\"id\":0," +
                         "\"threadId\":0," +
@@ -284,7 +284,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
                 .withRequestBody(equalTo("{" +
-                        "\"state\":\"Succeeded\"," +
+                        "\"state\":\"SUCCEEDED\"," +
                         "\"description\":\"SonarQube Gate\"," +
                         "\"context\":{\"genre\":\"SonarQube\",\"name\":\"PullRequestDecoration\"}," +
                         "\"targetUrl\":\"" + sonarRootUrl + "/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId + "\"" +

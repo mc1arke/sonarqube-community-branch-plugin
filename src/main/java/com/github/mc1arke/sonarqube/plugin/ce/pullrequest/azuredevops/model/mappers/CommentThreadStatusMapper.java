@@ -15,14 +15,14 @@ public final class CommentThreadStatusMapper {
     public static CommentThreadStatus toCommentThreadStatus(String issueStatus) {
         switch (issueStatus) {
             case STATUS_OPEN:
-                return CommentThreadStatus.active;
+                return CommentThreadStatus.ACTIVE;
             default:
-                return CommentThreadStatus.fixed;
+                return CommentThreadStatus.FIXED;
         }
     }
     public static String toIssueStatus(CommentThreadStatus commentThreadStatus) {
         switch (commentThreadStatus) {
-            case active:
+            case ACTIVE:
                 return STATUS_OPEN;
             default:
                 return STATUS_CLOSED;

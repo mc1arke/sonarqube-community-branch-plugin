@@ -12,11 +12,11 @@ public final class GitStatusStateMapper {
     public static GitStatusState toGitStatusState(QualityGate.Status AnnalyzeStatus) {
         switch (AnnalyzeStatus) {
             case OK:
-                return GitStatusState.Succeeded;
+                return GitStatusState.SUCCEEDED;
             case ERROR:
-                return GitStatusState.Error;
+                return GitStatusState.ERROR;
             default:
-                return GitStatusState.NotSet;
+                return GitStatusState.NOT_SET;
         }
     }
 }

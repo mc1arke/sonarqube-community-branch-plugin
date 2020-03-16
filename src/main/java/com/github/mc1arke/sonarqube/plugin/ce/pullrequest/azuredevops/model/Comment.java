@@ -34,7 +34,7 @@ public class Comment implements Serializable {
     public Comment(String content) {
         this.content = content;
         this.parentCommentId = 0;
-        this.commentType = CommentType.text;
+        this.commentType = CommentType.TEXT;
     }
 
     /**

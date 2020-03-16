@@ -4,17 +4,17 @@ public enum CommentType {
     /**
      * The comment type is not known.
      */
-    unknown,
+    UNKNOWN,
     /**
      * This is a regular user comment.
      */
-    text,
+    TEXT,
     /**
      * The comment comes as a result of a code change.
      */
-    codeChange,
+    CODE_CHANGE,
     /**
      * The comment represents a system message.
      */
-    system
+    SYSTEM
 }

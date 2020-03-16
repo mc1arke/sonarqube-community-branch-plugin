@@ -33,7 +33,7 @@ public class CommentThread implements Serializable {
         comments = Arrays.asList(
                 new Comment(message)
         );
-        status = CommentThreadStatus.active; //CommentThreadStatusMapper.toCommentThreadStatus(issue.status());
+        status = CommentThreadStatus.ACTIVE; //CommentThreadStatusMapper.toCommentThreadStatus(issue.status());
         threadContext = new CommentThreadContext(
                 filePath,
                 locations
