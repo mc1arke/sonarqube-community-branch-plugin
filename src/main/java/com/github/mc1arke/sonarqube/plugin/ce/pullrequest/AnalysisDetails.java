@@ -121,12 +121,7 @@ public class AnalysisDetails {
 
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
-        BigDecimal newCoverage =
-                findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                    .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
-                    .map(QualityGate.Condition::getValue)
-                    .map(BigDecimal::new)
-                    .orElse(null);
+        BigDecimal newCoverage = getNewCoverage().orElse(null);
 
         double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).orElse(0D);
 
@@ -330,6 +325,13 @@ public class AnalysisDetails {
                                  condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
                                  "is less than", condition.getErrorThreshold());
         }
+    }
+
+    public Optional<BigDecimal> getNewCoverage(){
+        return findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
+                .map(BigDecimal::new);
     }
 
     private static String encode(String original, Charset charset) {

@@ -56,6 +56,7 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -155,15 +156,13 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 }
             }
 
-            String coverageValue = analysis.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                    .filter(condition -> condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
-                    .map(QualityGate.Condition::getValue)
-                    .orElse("0");
-
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 
             String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
+
             List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("body", summaryComment));
+
+            String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.valueOf(0)).toString();
 
             postStatus(new StringBuilder(statusUrl), headers, analysis, coverageValue);
 
