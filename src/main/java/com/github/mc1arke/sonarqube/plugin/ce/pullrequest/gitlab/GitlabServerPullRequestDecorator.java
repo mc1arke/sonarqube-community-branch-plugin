@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -65,6 +66,7 @@ import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonar.core.issue.DefaultIssue;
 
 public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
@@ -147,19 +149,22 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 }
             }
 
-            QualityGate.Condition newCoverageCondition = analysis.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                    .orElseThrow(() -> new IllegalStateException("Could not find New Coverage Condition in analysis"));
-            String coverageValue = newCoverageCondition.getStatus().equals(QualityGate.EvaluationStatus.NO_VALUE) ? "0" : newCoverageCondition.getValue();
-
-
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 
             String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
             List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("body", summaryComment));
 
+            String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.valueOf(0)).toString();
+
             postStatus(statusUrl, headers, analysis, coverageValue, true);
 
-            postCommitComment(mergeRequestNoteURL, headers, summaryContentParams, summaryCommentEnabled);
+            Optional<BigDecimal> duplications = analysis.getNewDuplications();
+            List<DefaultIssue> analysisOpenIssues = analysis.getOpenIssues();
+            boolean hasDuplications = duplications.isPresent() && duplications.get().compareTo(BigDecimal.ZERO) > 0;
+            boolean hasOpenIssues = analysisOpenIssues != null && analysisOpenIssues.size() > 0;
+
+            String summaryCommentURL = hasDuplications || hasOpenIssues ? mergeRequestDiscussionURL : mergeRequestNoteURL;
+            postCommitComment(summaryCommentURL, headers, summaryContentParams, summaryCommentEnabled);
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);

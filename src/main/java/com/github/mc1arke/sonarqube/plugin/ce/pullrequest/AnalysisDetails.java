@@ -129,7 +129,6 @@ public class AnalysisDetails {
 
         Map<RuleType, Long> issueCounts = countRuleByType();
         long issueTotal = issueCounts.values().stream().mapToLong(l -> l).sum();
-
         List<QualityGate.Condition> failedConditions = findFailedConditions();
 
         String baseImageUrl = getBaseImageUrl();
@@ -180,7 +179,6 @@ public class AnalysisDetails {
                                                          decimalFormat.format(duplications) +
                                                          "% Estimated after merge)"))),
                                          new Link(publicRootURL + "/dashboard?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName(), new Text("View in SonarQube")));
-
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
 
@@ -285,13 +283,14 @@ public class AnalysisDetails {
     }
 
     private Map<RuleType, Long> countRuleByType() {
-        return Arrays.stream(RuleType.values()).collect(Collectors.toMap(k -> k,
-                                                                         k -> postAnalysisIssueVisitor.getIssues()
-                                                                                 .stream()
-                                                                                 .map(PostAnalysisIssueVisitor.ComponentIssue::getIssue)
-                                                                                 .filter(i -> !CLOSED_ISSUE_STATUS
-                                                                                         .contains(i.status()))
-                                                                                 .filter(i -> k == i.type()).count()));
+        return Arrays.stream(RuleType.values())
+                .collect(Collectors.toMap(
+                        k -> k,
+                        k -> getOpenIssues().stream()
+                                .filter(i -> k == i.type())
+                                .count()
+                        )
+                );
     }
 
     private static String pluralOf(long value, String singleLabel, String multiLabel) {
@@ -317,6 +316,28 @@ public class AnalysisDetails {
                                  condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
                                  "is less than", condition.getErrorThreshold());
         }
+    }
+
+    public List<DefaultIssue> getOpenIssues() {
+        return postAnalysisIssueVisitor.getIssues()
+                .stream()
+                .map(PostAnalysisIssueVisitor.ComponentIssue::getIssue)
+                .filter(i -> !CLOSED_ISSUE_STATUS
+                        .contains(i.status())).collect(Collectors.toList());
+    }
+
+    public Optional<BigDecimal> getNewDuplications() {
+        return findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
+                .map(BigDecimal::new);
+    }
+
+    public Optional<BigDecimal> getNewCoverage(){
+        return findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
+                .map(BigDecimal::new);
     }
 
     public static class BranchDetails {

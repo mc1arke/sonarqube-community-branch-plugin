@@ -1,6 +1,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -72,15 +73,13 @@ public class GitlabServerPullRequestDecoratorTest {
 
         UnifyConfiguration unifyConfiguration = new UnifyConfiguration(configuration, scannerContext);
 
-        QualityGate.Condition coverage = mock(QualityGate.Condition.class);
-        when(coverage.getStatus()).thenReturn(QualityGate.EvaluationStatus.OK);
-        when(coverage.getValue()).thenReturn("10");
+        BigDecimal coverage = BigDecimal.TEN;
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
         when(analysisDetails.getBranchName()).thenReturn(branchName);
         when(analysisDetails.getCommitSha()).thenReturn(commitSHA);
-        when(analysisDetails.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)).thenReturn(Optional.of(coverage));
+        when(analysisDetails.getNewCoverage()).thenReturn(Optional.of(coverage));
         PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         DefaultIssue defaultIssue = mock(DefaultIssue.class);
@@ -139,7 +138,7 @@ public class GitlabServerPullRequestDecoratorTest {
                 .withQueryParam("name", equalTo("SonarQube"))
                 .withQueryParam("state", equalTo("failed"))
                 .withQueryParam("target_url", equalTo(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + branchName))
-                .withQueryParam("coverage", equalTo(coverage.getValue()))
+                .withQueryParam("coverage", equalTo(coverage.toString()))
                 .willReturn(created()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/notes"))
