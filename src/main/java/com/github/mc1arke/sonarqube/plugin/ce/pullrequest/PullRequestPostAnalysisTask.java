@@ -145,7 +145,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
         String implementationName = optionalImplementationName.get();
 
         for (PullRequestBuildStatusDecorator pullRequestDecorator : pullRequestDecorators) {
-            if (pullRequestDecorator.name().equals(implementationName)) {
+            if (pullRequestDecorator.name().equalsIgnoreCase(implementationName)) {
                 return Optional.of(pullRequestDecorator);
             }
         }
