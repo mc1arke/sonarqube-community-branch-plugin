@@ -65,6 +65,8 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
     public static final String PULL_REQUEST_GITHUB_APP_ID = "sonar.alm.github.app.id";
     public static final String PULL_REQUEST_GITHUB_APP_NAME = "sonar.alm.github.app.name";
 
+    private static final int GITHUB_CHECKS_ANNOTATIONS_MAX_NUMBER_PER_REQUEST = 50;
+
     private static final Logger LOGGER = Loggers.get(GraphqlCheckRunProvider.class);
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ssXXX";
 
@@ -104,6 +106,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
         List<InputObject<Object>> annotations = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
+                .limit(GITHUB_CHECKS_ANNOTATIONS_MAX_NUMBER_PER_REQUEST)
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE).map(componentIssue -> {
                     InputObject<Object> issueLocation = graphqlProvider.createInputObject()
