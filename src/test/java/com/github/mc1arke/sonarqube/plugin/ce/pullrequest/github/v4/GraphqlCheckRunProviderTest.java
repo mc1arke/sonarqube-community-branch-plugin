@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.GraphqlCheckRunProvider.GITHUB_CHECKS_ANNOTATIONS_MAX_NUMBER_PER_REQUEST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -186,18 +187,179 @@ public class GraphqlCheckRunProviderTest {
 
     @Test
     public void createCheckRunHappyPathOkStatus() throws IOException, GeneralSecurityException {
-        createCheckRunHappyPath(QualityGate.Status.OK);
+        createCheckRunHappyPath(QualityGate.Status.OK, createRegularIssueList(), 1);
     }
 
     @Test
     public void createCheckRunHappyPathErrorStatus() throws IOException, GeneralSecurityException {
-        createCheckRunHappyPath(QualityGate.Status.ERROR);
+        createCheckRunHappyPath(QualityGate.Status.ERROR, createRegularIssueList(), 1);
+    }
+
+    @Test
+    public void createCheckRunHappyPathExceedingRequestSizeLimit() throws IOException, GeneralSecurityException {
+        List<PostAnalysisIssueVisitor.ComponentIssue> issues = createExceedingRequestLimitIssueList();
+        int numberOfrequests = issues.size() / GITHUB_CHECKS_ANNOTATIONS_MAX_NUMBER_PER_REQUEST + 1;
+        createCheckRunHappyPath(QualityGate.Status.OK, issues, numberOfrequests);
     }
 
 
-    private void createCheckRunHappyPath(QualityGate.Status status) throws IOException, GeneralSecurityException {
+    private void createCheckRunHappyPath(QualityGate.Status status, List<PostAnalysisIssueVisitor.ComponentIssue> issueList, int numberOfrequests) throws IOException, GeneralSecurityException {
         when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
 
+        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
+        when(postAnalysisIssueVisitor.getIssues()).thenReturn(issueList);
+
+        when(analysisDetails.getQualityGateStatus()).thenReturn(status);
+        when(analysisDetails.createAnalysisSummary(any())).thenReturn("dummy summary");
+        when(analysisDetails.getCommitSha()).thenReturn("commit SHA");
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
+        when(analysisDetails.getBranchName()).thenReturn("branchName");
+        when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
+        when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
+        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
+
+        when(configuration.get(anyString())).then(i -> Optional.of(i.getArgument(0)));
+        when(configuration.get(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_URL)).thenReturn(Optional.of("http://host.name"));
+
+        ArgumentCaptor<String> authenticationProviderArgumentCaptor = ArgumentCaptor.forClass(String.class);
+        RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
+        when(repositoryAuthenticationToken.getAuthenticationToken()).thenReturn("dummyAuthToken");
+        when(repositoryAuthenticationToken.getRepositoryId()).thenReturn("repository ID");
+        when(githubApplicationAuthenticationProvider
+                     .getInstallationToken(authenticationProviderArgumentCaptor.capture(),
+                                           authenticationProviderArgumentCaptor.capture(),
+                                           authenticationProviderArgumentCaptor.capture(),
+                                           authenticationProviderArgumentCaptor.capture()))
+                .thenReturn(repositoryAuthenticationToken);
+
+        List<InputObject.Builder<Object>> inputObjectBuilders = new ArrayList<>();
+        List<InputObject<Object>> inputObjects = new ArrayList<>();
+        doAnswer(i -> {
+            InputObject.Builder<Object> builder = spy(new InputObject.Builder<>());
+            inputObjectBuilders.add(builder);
+            doAnswer(i2 -> {
+                InputObject<Object> inputObject = (InputObject<Object>) i2.callRealMethod();
+                inputObjects.add(inputObject);
+                return inputObject;
+            }).when(builder).build();
+            return builder;
+        }).when(graphqlProvider).createInputObject();
+
+        List<GraphQLRequestEntity.RequestBuilder> requestBuilders = new ArrayList<>();
+        List<GraphQLRequestEntity> requestEntities = new ArrayList<>();
+        doAnswer(i -> {
+            GraphQLRequestEntity.RequestBuilder requestBuilder = spy(GraphQLRequestEntity.Builder());
+            requestBuilders.add(requestBuilder);
+            doAnswer(i2 -> {
+                GraphQLRequestEntity graphQLRequestEntity = (GraphQLRequestEntity) i2.callRealMethod();
+                requestEntities.add(graphQLRequestEntity);
+                return graphQLRequestEntity;
+            }).when(requestBuilder).build();
+            return requestBuilder;
+        }).when(graphqlProvider).createRequestBuilder();
+
+        GraphQLResponseEntity<CreateCheckRun> graphQLResponseEntity =
+                new ObjectMapper().readerFor(GraphQLResponseEntity.class)
+                        .readValue(status == QualityGate.Status.ERROR ? "{\"errors\": []}" : "{\"response\": {}}}");
+
+        ArgumentCaptor<GraphQLRequestEntity> requestEntityArgumentCaptor =
+                ArgumentCaptor.forClass(GraphQLRequestEntity.class);
+
+        GraphQLTemplate graphQLTemplate = mock(GraphQLTemplate.class);
+        when(graphQLTemplate.mutate(requestEntityArgumentCaptor.capture(), eq(CreateCheckRun.class)))
+                .thenReturn(graphQLResponseEntity);
+        when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
+
+        testCase.createCheckRun(analysisDetails, unifyConfiguration);
+
+        assertEquals(numberOfrequests, requestBuilders.size());
+
+        for (int reqIndex = 0; reqIndex < requestBuilders.size(); reqIndex++) {
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bearer dummyAuthToken");
+            headers.put("Accept", "application/vnd.github.antiope-preview+json");
+
+
+            verify(requestBuilders.get(reqIndex)).url(eq("http://host.name/graphql"));
+            verify(requestBuilders.get(reqIndex)).headers(eq(headers));
+            verify(requestBuilders.get(reqIndex)).requestMethod(eq(GraphQLTemplate.GraphQLMethod.MUTATE));
+            verify(requestBuilders.get(reqIndex)).build();
+            assertEquals(requestEntities.get(reqIndex), requestEntityArgumentCaptor.getValue());
+
+            ArgumentCaptor<Arguments> argumentsArgumentCaptor = ArgumentCaptor.forClass(Arguments.class);
+            verify(requestBuilders.get(reqIndex)).arguments(argumentsArgumentCaptor.capture());
+            assertEquals("createCheckRun", argumentsArgumentCaptor.getValue().getDotPath());
+            assertEquals(1, argumentsArgumentCaptor.getValue().getArguments().size());
+            assertEquals("input", argumentsArgumentCaptor.getValue().getArguments().get(0).getKey());
+
+            assertEquals(
+                    Arrays.asList("http://host.name", "sonar.alm.github.app.id", "sonar.alm.github.app.privateKey.secured",
+                            "sonar.pullrequest.github.repository"),
+                    authenticationProviderArgumentCaptor.getAllValues());
+
+            List<InputObject<Object>> expectedAnnotationObjects = new ArrayList<>();
+            int position = 0;
+            for (int i = 0; i < issueList.size(); i++) {
+                if (issueList.get(i).getComponent().getType() != Component.Type.FILE ||
+                        !issueList.get(i).getComponent().getReportAttributes().getScmPath().isPresent()) {
+                    continue;
+                }
+                int line = (null == issueList.get(i).getIssue().getLine() ? 0 : issueList.get(i).getIssue().getLine());
+                verify(inputObjectBuilders.get(position)).put(eq("startLine"), eq(line));
+                verify(inputObjectBuilders.get(position)).put(eq("endLine"), eq(line + 1));
+                verify(inputObjectBuilders.get(position)).build();
+                position++;
+
+                String path = issueList.get(i).getComponent().getReportAttributes().getScmPath().get();
+                InputObject.Builder<Object> fileBuilder = inputObjectBuilders.get(position);
+                verify(fileBuilder).put(eq("path"), eq(path));
+                verify(fileBuilder).put(eq("location"), eq(inputObjects.get(position - 1)));
+                String sonarQubeSeverity = issueList.get(i).getIssue().severity();
+                verify(fileBuilder).put(eq("annotationLevel"),
+                        eq(sonarQubeSeverity.equals(Severity.INFO) ? CheckAnnotationLevel.NOTICE :
+                                sonarQubeSeverity.equals(Severity.MINOR) ||
+                                        sonarQubeSeverity.equals(Severity.MAJOR) ? CheckAnnotationLevel.WARNING :
+                                        CheckAnnotationLevel.FAILURE));
+                verify(fileBuilder).put(eq("message"), eq("issue " + (i + 1)));
+                verify(inputObjectBuilders.get(position)).build();
+
+                expectedAnnotationObjects.add(inputObjects.get(position));
+
+                position++;
+            }
+
+            assertEquals(2 + position, inputObjectBuilders.size());
+
+            ArgumentCaptor<List<InputObject<Object>>> annotationArgumentCaptor = ArgumentCaptor.forClass(List.class);
+
+            verify(inputObjectBuilders.get(position))
+                    .put(eq("title"), eq("Quality Gate " + (status == QualityGate.Status.OK ? "success" : "failed")));
+            verify(inputObjectBuilders.get(position)).put(eq("summary"), eq("dummy summary"));
+            verify(inputObjectBuilders.get(position)).put(eq("annotations"), annotationArgumentCaptor.capture());
+            verify(inputObjectBuilders.get(position)).build();
+
+            assertThat(annotationArgumentCaptor.getValue()).isEqualTo(expectedAnnotationObjects);
+
+            verify(inputObjectBuilders.get(position + 1)).put(eq("repositoryId"), eq("repository ID"));
+            verify(inputObjectBuilders.get(position + 1)).put(eq("name"), eq("sonar.alm.github.app.name Results"));
+            verify(inputObjectBuilders.get(position + 1)).put(eq("headSha"), eq("commit SHA"));
+            verify(inputObjectBuilders.get(position + 1)).put(eq("status"), eq(RequestableCheckStatusState.COMPLETED));
+            verify(inputObjectBuilders.get(position + 1)).put(eq("conclusion"), eq(status == QualityGate.Status.OK ?
+                    CheckConclusionState.SUCCESS :
+                    CheckConclusionState.FAILURE));
+            verify(inputObjectBuilders.get(position + 1))
+                    .put(eq("detailsUrl"), eq("http://sonar.server/root/dashboard?id=projectKey&pullRequest=branchName"));
+            verify(inputObjectBuilders.get(position + 1)).put(eq("startedAt"), eq("1970-01-15T06:56:07Z"));
+            verify(inputObjectBuilders.get(position + 1)).put(eq("completedAt"), eq("2009-02-13T23:31:30Z"));
+            verify(inputObjectBuilders.get(position + 1)).put(eq("externalId"), eq("analysis ID"));
+            verify(inputObjectBuilders.get(position + 1)).put(eq("output"), eq(inputObjects.get(position)));
+            verify(inputObjectBuilders.get(position + 1)).build();
+        }
+
+
+    }
+
+    private List<PostAnalysisIssueVisitor.ComponentIssue> createRegularIssueList() {
         DefaultIssue issue1 = mock(DefaultIssue.class);
         when(issue1.getLine()).thenReturn(2);
         when(issue1.getMessage()).thenReturn("issue 1");
@@ -270,156 +432,32 @@ public class GraphqlCheckRunProviderTest {
         when(componentIssue6.getComponent()).thenReturn(component2);
         when(componentIssue6.getIssue()).thenReturn(issue6);
 
-        List<PostAnalysisIssueVisitor.ComponentIssue> issueList =
-                Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4, componentIssue5,
-                              componentIssue6);
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(issueList);
+        return Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4, componentIssue5,
+                componentIssue6);
+    }
 
-        when(analysisDetails.getQualityGateStatus()).thenReturn(status);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("dummy summary");
-        when(analysisDetails.getCommitSha()).thenReturn("commit SHA");
-        when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
-        when(analysisDetails.getBranchName()).thenReturn("branchName");
-        when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
-        when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
+    private List<PostAnalysisIssueVisitor.ComponentIssue> createExceedingRequestLimitIssueList() {
+        ReportAttributes reportAttributes = mock(ReportAttributes.class);
+        when(reportAttributes.getScmPath()).thenReturn(Optional.of("path/to.file"));
+        List<PostAnalysisIssueVisitor.ComponentIssue> result = new ArrayList<>();
 
-        when(configuration.get(anyString())).then(i -> Optional.of(i.getArgument(0)));
-        when(configuration.get(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_URL)).thenReturn(Optional.of("http://host.name"));
+        for (int i = 1; i <= GITHUB_CHECKS_ANNOTATIONS_MAX_NUMBER_PER_REQUEST + 1; i++) {
+            DefaultIssue issue = mock(DefaultIssue.class);
+            when(issue.getLine()).thenReturn(i);
+            when(issue.getMessage()).thenReturn("issue " + i);
+            when(issue.severity()).thenReturn(Severity.INFO);
 
-        ArgumentCaptor<String> authenticationProviderArgumentCaptor = ArgumentCaptor.forClass(String.class);
-        RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
-        when(repositoryAuthenticationToken.getAuthenticationToken()).thenReturn("dummyAuthToken");
-        when(repositoryAuthenticationToken.getRepositoryId()).thenReturn("repository ID");
-        when(githubApplicationAuthenticationProvider
-                     .getInstallationToken(authenticationProviderArgumentCaptor.capture(),
-                                           authenticationProviderArgumentCaptor.capture(),
-                                           authenticationProviderArgumentCaptor.capture(),
-                                           authenticationProviderArgumentCaptor.capture()))
-                .thenReturn(repositoryAuthenticationToken);
+            Component component = mock(Component.class);
+            when(component.getReportAttributes()).thenReturn(reportAttributes);
+            when(component.getType()).thenReturn(Component.Type.FILE);
 
-        List<InputObject.Builder<Object>> inputObjectBuilders = new ArrayList<>();
-        List<InputObject<Object>> inputObjects = new ArrayList<>();
-        doAnswer(i -> {
-            InputObject.Builder<Object> builder = spy(new InputObject.Builder<>());
-            inputObjectBuilders.add(builder);
-            doAnswer(i2 -> {
-                InputObject<Object> inputObject = (InputObject<Object>) i2.callRealMethod();
-                inputObjects.add(inputObject);
-                return inputObject;
-            }).when(builder).build();
-            return builder;
-        }).when(graphqlProvider).createInputObject();
+            PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+            when(componentIssue.getComponent()).thenReturn(component);
+            when(componentIssue.getIssue()).thenReturn(issue);
 
-        List<GraphQLRequestEntity.RequestBuilder> requestBuilders = new ArrayList<>();
-        List<GraphQLRequestEntity> requestEntities = new ArrayList<>();
-        doAnswer(i -> {
-            GraphQLRequestEntity.RequestBuilder requestBuilder = spy(GraphQLRequestEntity.Builder());
-            requestBuilders.add(requestBuilder);
-            doAnswer(i2 -> {
-                GraphQLRequestEntity graphQLRequestEntity = (GraphQLRequestEntity) i2.callRealMethod();
-                requestEntities.add(graphQLRequestEntity);
-                return graphQLRequestEntity;
-            }).when(requestBuilder).build();
-            return requestBuilder;
-        }).when(graphqlProvider).createRequestBuilder();
-
-        GraphQLResponseEntity<CreateCheckRun> graphQLResponseEntity =
-                new ObjectMapper().readerFor(GraphQLResponseEntity.class)
-                        .readValue(status == QualityGate.Status.ERROR ? "{\"errors\": []}" : "{\"response\": {}}}");
-
-        ArgumentCaptor<GraphQLRequestEntity> requestEntityArgumentCaptor =
-                ArgumentCaptor.forClass(GraphQLRequestEntity.class);
-
-        GraphQLTemplate graphQLTemplate = mock(GraphQLTemplate.class);
-        when(graphQLTemplate.mutate(requestEntityArgumentCaptor.capture(), eq(CreateCheckRun.class)))
-                .thenReturn(graphQLResponseEntity);
-        when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
-
-        testCase.createCheckRun(analysisDetails, unifyConfiguration);
-
-        assertEquals(1, requestBuilders.size());
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Authorization", "Bearer dummyAuthToken");
-        headers.put("Accept", "application/vnd.github.antiope-preview+json");
-
-
-        verify(requestBuilders.get(0)).url(eq("http://host.name/graphql"));
-        verify(requestBuilders.get(0)).headers(eq(headers));
-        verify(requestBuilders.get(0)).requestMethod(eq(GraphQLTemplate.GraphQLMethod.MUTATE));
-        verify(requestBuilders.get(0)).build();
-        assertEquals(requestEntities.get(0), requestEntityArgumentCaptor.getValue());
-
-        ArgumentCaptor<Arguments> argumentsArgumentCaptor = ArgumentCaptor.forClass(Arguments.class);
-        verify(requestBuilders.get(0)).arguments(argumentsArgumentCaptor.capture());
-        assertEquals("createCheckRun", argumentsArgumentCaptor.getValue().getDotPath());
-        assertEquals(1, argumentsArgumentCaptor.getValue().getArguments().size());
-        assertEquals("input", argumentsArgumentCaptor.getValue().getArguments().get(0).getKey());
-
-        assertEquals(
-                Arrays.asList("http://host.name", "sonar.alm.github.app.id", "sonar.alm.github.app.privateKey.secured",
-                              "sonar.pullrequest.github.repository"),
-                authenticationProviderArgumentCaptor.getAllValues());
-
-        List<InputObject<Object>> expectedAnnotationObjects = new ArrayList<>();
-        int position = 0;
-        for (int i = 0; i < issueList.size(); i++) {
-            if (issueList.get(i).getComponent().getType() != Component.Type.FILE ||
-                !issueList.get(i).getComponent().getReportAttributes().getScmPath().isPresent()) {
-                continue;
-            }
-            int line = (null == issueList.get(i).getIssue().getLine() ? 0 : issueList.get(i).getIssue().getLine());
-            verify(inputObjectBuilders.get(position)).put(eq("startLine"), eq(line));
-            verify(inputObjectBuilders.get(position)).put(eq("endLine"), eq(line + 1));
-            verify(inputObjectBuilders.get(position)).build();
-            position++;
-
-            String path = issueList.get(i).getComponent().getReportAttributes().getScmPath().get();
-            InputObject.Builder<Object> fileBuilder = inputObjectBuilders.get(position);
-            verify(fileBuilder).put(eq("path"), eq(path));
-            verify(fileBuilder).put(eq("location"), eq(inputObjects.get(position - 1)));
-            String sonarQubeSeverity = issueList.get(i).getIssue().severity();
-            verify(fileBuilder).put(eq("annotationLevel"),
-                                    eq(sonarQubeSeverity.equals(Severity.INFO) ? CheckAnnotationLevel.NOTICE :
-                                       sonarQubeSeverity.equals(Severity.MINOR) ||
-                                       sonarQubeSeverity.equals(Severity.MAJOR) ? CheckAnnotationLevel.WARNING :
-                                       CheckAnnotationLevel.FAILURE));
-            verify(fileBuilder).put(eq("message"), eq("issue " + (i + 1)));
-            verify(inputObjectBuilders.get(position)).build();
-
-            expectedAnnotationObjects.add(inputObjects.get(position));
-
-            position++;
+            result.add(componentIssue);
         }
-
-        assertEquals(2 + position, inputObjectBuilders.size());
-
-        ArgumentCaptor<List<InputObject<Object>>> annotationArgumentCaptor = ArgumentCaptor.forClass(List.class);
-
-        verify(inputObjectBuilders.get(position))
-                .put(eq("title"), eq("Quality Gate " + (status == QualityGate.Status.OK ? "success" : "failed")));
-        verify(inputObjectBuilders.get(position)).put(eq("summary"), eq("dummy summary"));
-        verify(inputObjectBuilders.get(position)).put(eq("annotations"), annotationArgumentCaptor.capture());
-        verify(inputObjectBuilders.get(position)).build();
-
-        assertThat(annotationArgumentCaptor.getValue()).isEqualTo(expectedAnnotationObjects);
-
-        verify(inputObjectBuilders.get(position + 1)).put(eq("repositoryId"), eq("repository ID"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("name"), eq("sonar.alm.github.app.name Results"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("headSha"), eq("commit SHA"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("status"), eq(RequestableCheckStatusState.COMPLETED));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("conclusion"), eq(status == QualityGate.Status.OK ?
-                                                                               CheckConclusionState.SUCCESS :
-                                                                               CheckConclusionState.FAILURE));
-        verify(inputObjectBuilders.get(position + 1))
-                .put(eq("detailsUrl"), eq("http://sonar.server/root/dashboard?id=projectKey&pullRequest=branchName"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("startedAt"), eq("1970-01-15T06:56:07Z"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("completedAt"), eq("2009-02-13T23:31:30Z"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("externalId"), eq("analysis ID"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("output"), eq(inputObjects.get(position)));
-        verify(inputObjectBuilders.get(position + 1)).build();
+        return result;
     }
 
     @Test

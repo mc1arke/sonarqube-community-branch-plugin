@@ -68,6 +68,7 @@ dependencies {
     compile('io.aexp.nodes.graphql:nodes:0.5.0') {
         exclude group: 'com.fasterxml.jackson.core'
     }
+    compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
 }
 
 
