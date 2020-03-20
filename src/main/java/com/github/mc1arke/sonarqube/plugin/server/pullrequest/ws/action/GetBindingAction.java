@@ -27,6 +27,7 @@ import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.user.UserSession;
@@ -64,8 +65,8 @@ public class GetBindingAction extends AlmSettingsWsAction {
 
         String projectKey = request.mandatoryParam(PARAM_PROJECT);
         try (DbSession dbSession = dbClient.openSession(false)) {
-            ComponentDto project = componentFinder.getByKey(dbSession, projectKey);
-            userSession.checkComponentPermission(ADMIN, project);
+            ProjectDto project = componentFinder.getProjectByKey(dbSession, projectKey);
+            userSession.checkProjectPermission(ADMIN, project);
             ProjectAlmSettingDto projectAlmSetting = dbClient.projectAlmSettingDao().selectByProject(dbSession, project)
                     .orElseThrow(() -> new NotFoundException(
                             format("Project '%s' is not bound to any ALM", project.getKey())));
