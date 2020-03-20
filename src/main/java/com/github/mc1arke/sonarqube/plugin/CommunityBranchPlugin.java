@@ -54,6 +54,8 @@ import org.sonar.api.config.PropertyDefinition;
 import org.sonar.core.config.PurgeConstants;
 import org.sonar.core.extension.CoreExtension;
 
+import static com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails.IMAGE_URL_BASE;
+
 /**
  * @author Michael Clarke
  */
@@ -95,9 +97,16 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                                   "Short living branches are permanently deleted when there are no analysis for the configured number of days.")
                                           .category(CoreProperties.CATEGORY_HOUSEKEEPING)
                                           .subCategory(CoreProperties.SUBCATEGORY_GENERAL).defaultValue("30")
-                                          .type(PropertyType.INTEGER).build()
+                                          .type(PropertyType.INTEGER).build(),
 
-
+                                  PropertyDefinition
+                                          .builder(IMAGE_URL_BASE)
+                                          .name("Static content URL")
+                                          .defaultValue("https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/pr-decoration-images")
+                                          .description("URL for the static content.")
+                                          .category(CoreProperties.CATEGORY_GENERAL)
+                                          .subCategory(CoreProperties.SUBCATEGORY_BRANCHES_AND_PULL_REQUESTS)
+                                          .type(PropertyType.STRING).build()
                                  );
 
         }

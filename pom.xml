@@ -13,59 +13,69 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<sonar.version>8.2.0.32929</sonar.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-core</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-db-core</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-db-dao</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-ce-task-projectanalysis</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-webserver-auth</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-webserver-api</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-webserver-webapi</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-webserver-ws</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-server-common</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.sonarsource.sonarqube</groupId>
 			<artifactId>sonar-scanner-engine</artifactId>
-			<version>8.2.0.32929</version>
+			<version>${sonar.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<!-- -->
@@ -73,41 +83,49 @@
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
 			<version>0.10.7</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-impl</artifactId>
 			<version>0.10.7</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpcore</artifactId>
 			<version>4.4.12</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<version>4.5.10</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.8.5</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
 			<version>2.10.1</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.10.1</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
 			<version>2.8.2</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
@@ -121,7 +139,11 @@
 			<exclusions>
 				<exclusion>
 					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>*</artifactId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.datatype</groupId>
+					<artifactId>jackson-datatype-jsr310</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -154,6 +176,27 @@
 	
 <build>
     <plugins>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-shade-plugin</artifactId>
+			<version>3.2.2</version>
+			<executions>
+				<execution>
+					<phase>package</phase>
+					<goals>
+						<goal>shade</goal>
+					</goals>
+<!--					<configuration>-->
+<!--						<artifactSet>-->
+<!--							<includes>-->
+<!--								<include>io.aexp.nodes.graphql:nodes</include>-->
+<!--								<include>org.bouncycastle:bcpkix-jdk15on</include>-->
+<!--							</includes>-->
+<!--						</artifactSet>-->
+<!--					</configuration>-->
+				</execution>
+			</executions>
+		</plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -165,9 +208,17 @@
               <addClasspath>true</addClasspath>
             </manifest>
             <manifestEntries>
-              <mode>development</mode>
-              <url>${project.url}</url>
-              <key>value</key>
+              <Plugin-Plugin-Description>Enables branch and pull request analysis in SonarQube Community Edition, without having to upgrade to Developer Edition</Plugin-Plugin-Description>
+              <SonarLint-Supported>false</SonarLint-Supported>
+              <Plugin-Homepage>https://github.com/mc1arke/sonarqube-community-branch-plugin</Plugin-Homepage>
+				<Plugin-Version>GNU LGPL 3</Plugin-Version>
+				<Plugin-Version>${project.version}</Plugin-Version>
+				<Plugin-Organization>Michael Clarke</Plugin-Organization>
+				<Sonar-Version>${sonar.version}</Sonar-Version>
+				<Plugin-IssueTrackerUrl>https://github.com/mc1arke/sonarqube-community-branch-plugin/issues</Plugin-IssueTrackerUrl>
+				<Plugin-Key>communityBranchPlugin</Plugin-Key>
+				<Plugin-Class>com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginBootstrap</Plugin-Class>
+				<Plugin-Name>Community Branch Plugin</Plugin-Name>
             </manifestEntries>
           </archive>
         </configuration>
