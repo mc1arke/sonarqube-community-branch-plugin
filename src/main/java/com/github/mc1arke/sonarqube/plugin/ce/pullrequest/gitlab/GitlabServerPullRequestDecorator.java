@@ -101,6 +101,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final boolean summaryCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED));
             final boolean fileCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_FILE_COMMENT_ENABLED));
             final boolean deleteCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED));
+            final String minSeverity = unifyConfiguration.getRequiredProperty(PULLREQUEST_COMMENTS_MIN_SEVERITY);
 
             final String restURL = String.format("%s/api/v4", hostURL);
             final String userURL = restURL + "/user";
@@ -163,7 +164,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);
-                    if (path != null && issue.getIssue().getLine() != null && isPrinted(issue.getIssue().severity())) {
+                    if (path != null && issue.getIssue().getLine() != null && isPrinted(issue.getIssue().severity(), minSeverity)) {
                     //only if we have a path and line number
                     String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());
 
@@ -343,8 +344,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         return Optional.empty();
     }
     
-    protected boolean isPrinted(String severity) {
-        final String minSeverity = getMandatoryProperty(PULLREQUEST_COMMENTS_MIN_SEVERITY);
+    protected boolean isPrinted(String severity, String minSeverity) {
         if (severity==null) {
             return true;
         }

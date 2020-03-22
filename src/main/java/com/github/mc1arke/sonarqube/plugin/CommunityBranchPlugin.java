@@ -179,7 +179,12 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .name("Repository Slug for the Gitlab (Server or Cloud) instance")
                             .description("The repository slug can be either in the form of user/repo or it can be the Project ID")
                             .type(PropertyType.STRING)
-                            .build()
+                            .build(),
+                            
+                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_COMMENTS_MIN_SEVERITY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT).name("Min Comment Severity")
+                            .type(PropertyType.SINGLE_SELECT_LIST).options("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO").build()
+                            
             );
         }
     }
