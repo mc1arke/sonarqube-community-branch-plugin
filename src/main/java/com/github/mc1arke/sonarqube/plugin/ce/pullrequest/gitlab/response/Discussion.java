@@ -25,20 +25,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Discussion {
     private final String id;
-
+    private final boolean individualNote;
     private final List<Note> notes;
 
     @JsonCreator
-    public Discussion(@JsonProperty("id") String id, @JsonProperty("notes") List<Note> notes) {
+    public Discussion(
+    		@JsonProperty("id") String id, 
+    		@JsonProperty("individual_note") boolean individualNote,
+    		@JsonProperty("notes") List<Note> notes) {
         this.id = id;
+        this.individualNote = individualNote;
         this.notes = notes;
     }
 
     public String getId() {
         return id;
     }
+    
+    public boolean isIndividualNote() {
+		return individualNote;
+	}
 
-    public List<Note> getNotes() {
+	public List<Note> getNotes() {
         return notes;
     }
 }

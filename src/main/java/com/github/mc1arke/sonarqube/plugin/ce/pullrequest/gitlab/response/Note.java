@@ -18,32 +18,60 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response;
 
+import java.util.Calendar;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Note {
     private final long id;
-    
     private final String type;
-
     private final String body;
-
-    private final boolean system;
-
     private final User author;
-
+	private final Calendar createdAt;
+	private final Calendar updatedAt;
+    private final boolean system;
+    private final Long noteableId;
+    private final Long noteableIid;
+    private final String noteableType;
     private final Position position;
+    private final boolean resolvable;
+    private final boolean resolved;
+    private final User resolvedBy;
     
-    private String discussionId;
+    // Reference to the discussion, set during reading notes
+	private String discussionId;
+
 
     @JsonCreator
-    public Note(@JsonProperty("id") long id, @JsonProperty("type") String type,  @JsonProperty("body") String body, @JsonProperty("system") boolean system, @JsonProperty("author") User author, @JsonProperty("position") Position position) {
+    public Note(@JsonProperty("id") long id,
+    		@JsonProperty("type") String type,  
+    		@JsonProperty("body") String body, 
+    		@JsonProperty("author") User author,
+    		@JsonProperty("created_at") Calendar createdAt, 
+    		@JsonProperty("updated_at") Calendar updatedAt,
+    		@JsonProperty("system") boolean system, 
+    		@JsonProperty("noteable_id") Long noteableId,  
+    		@JsonProperty("noteable_iid") Long noteableIid,  
+    		@JsonProperty("noteable_type") String noteableType,  
+    		@JsonProperty("position") Position position, 
+    		@JsonProperty("resolvable") boolean resolvable, 
+    		@JsonProperty("resolved") boolean resolved, 
+    		@JsonProperty("resolved_by") User resolvedBy) {
         this.id = id;
         this.body = body;
         this.type = type;
-        this.system = system;
         this.author = author;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.system = system;
+        this.noteableId = noteableId;
+        this.noteableIid = noteableIid;
+        this.noteableType = noteableType;
         this.position = position;
+        this.resolvable = resolvable;
+        this.resolved = resolved;
+        this.resolvedBy = resolvedBy;
     }
 
     public long getId() {
@@ -58,16 +86,48 @@ public class Note {
 		return body;
 	}
 
+	public User getAuthor() {
+		return author;
+	}
+
+	public Calendar getCreatedAt() {
+		return createdAt;
+	}
+
+	public Calendar getUpdatedAt() {
+		return updatedAt;
+	}
+
 	public boolean isSystem() {
-        return system;
-    }
+		return system;
+	}
 
-    public User getAuthor() {
-        return author;
-    }
+	public Long getNoteableId() {
+		return noteableId;
+	}
 
+	public Long getNoteableIid() {
+		return noteableIid;
+	}
+
+	public String getNoteableType() {
+		return noteableType;
+	}
+	
 	public Position getPosition() {
 		return position;
+	}
+
+	public boolean isResolvable() {
+		return resolvable;
+	}
+
+	public boolean isResolved() {
+		return resolved;
+	}
+
+	public User getResolvedBy() {
+		return resolvedBy;
 	}
 
 	public String getDiscussionId() {
@@ -77,5 +137,5 @@ public class Note {
 	public void setDiscussionId(String discussionId) {
 		this.discussionId = discussionId;
 	}
-    
+	
 }

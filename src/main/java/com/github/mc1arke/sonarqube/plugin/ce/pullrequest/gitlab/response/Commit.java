@@ -18,18 +18,93 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response;
 
+import java.util.Calendar;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Commit {
     private final String id;
+    private final String shortId;
+    private final Calendar createdAt;
+    private final String title;
+    private final String message;
+    private final String authorName;
+    private final String authorEmail;
+    private final Calendar authoredDate;
+    private final String committerName;
+    private final String committerEmail;
+    private final Calendar committedDate;
 
-    @JsonCreator
-    public Commit(@JsonProperty("id") String id) {
-        this.id = id;
-    }
+	@JsonCreator
+    public Commit(
+    		 @JsonProperty("id") String id, 
+    		 @JsonProperty("short_id") String shortId, 
+    		 @JsonProperty("created_at") Calendar createdAt, 
+    		 @JsonProperty("title") String title,  
+    		 @JsonProperty("message") String message, 
+    		 @JsonProperty("author_name") String authorName,
+    		 @JsonProperty("author_email") String authorEmail, 
+    		 @JsonProperty("authored_date") Calendar authoredDate, 
+    		 @JsonProperty("committer_name") String committerName, 
+    		 @JsonProperty("committer_email") String committerEmail,
+    		 @JsonProperty("committed_date") Calendar committedDate) {
+		super();
+		this.id = id;
+		this.shortId = shortId;
+		this.createdAt = createdAt;
+		this.title = title;
+		this.message = message;
+		this.authorName = authorName;
+		this.authorEmail = authorEmail;
+		this.authoredDate = authoredDate;
+		this.committerName = committerName;
+		this.committerEmail = committerEmail;
+		this.committedDate = committedDate;
+	}
 
-    public String getId() {
-        return id;
-    }
+	public String getId() {
+		return id;
+	}
+
+	public String getShortId() {
+		return shortId;
+	}
+
+	public Calendar getCreatedAt() {
+		return createdAt;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public String getAuthorName() {
+		return authorName;
+	}
+
+	public String getAuthorEmail() {
+		return authorEmail;
+	}
+
+	public Calendar getAuthoredDate() {
+		return authoredDate;
+	}
+
+	public String getCommitterName() {
+		return committerName;
+	}
+
+	public String getCommitterEmail() {
+		return committerEmail;
+	}
+
+	public Calendar getCommittedDate() {
+		return committedDate;
+	}
+
 }

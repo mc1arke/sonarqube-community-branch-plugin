@@ -10,17 +10,26 @@ public class Position {
     private final String headSha;
     private final String oldPath;
     private final String newPath;
+    private final String positionType;
     private final String oldLine;
     private final String newLine;
 
     @JsonCreator
-    public Position(@JsonProperty("base_sha") String baseSha, @JsonProperty("start_sha") String startSha, @JsonProperty("head_sha") String headSha, 
-    		@JsonProperty("old_path") String oldPath, @JsonProperty("new_path") String newPath, @JsonProperty("old_line") String oldLine, @JsonProperty("new_line") String newLine) {
+    public Position(
+    		@JsonProperty("base_sha") String baseSha, 
+    		@JsonProperty("start_sha") String startSha, 
+    		@JsonProperty("head_sha") String headSha, 
+    		@JsonProperty("old_path") String oldPath, 
+    		@JsonProperty("new_path") String newPath, 
+    		@JsonProperty("position_type") String positionType, 
+    		@JsonProperty("old_line") String oldLine, 
+    		@JsonProperty("new_line") String newLine) {
 		this.baseSha = baseSha;
 		this.startSha = startSha;
 		this.headSha = headSha;
 		this.oldPath = oldPath;
 		this.newPath = newPath;
+		this.positionType = positionType;
 		this.oldLine = oldLine;
 		this.newLine = newLine;
 	}
@@ -43,6 +52,10 @@ public class Position {
 
 	public String getNewPath() {
 		return newPath;
+	}
+
+	public String getPositionType() {
+		return positionType;
 	}
 
 	public String getOldLine() {
