@@ -179,7 +179,11 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .name("Repository Slug for the Gitlab (Server or Cloud) instance")
                             .description("The repository slug can be either in the form of user/repo or it can be the Project ID")
                             .type(PropertyType.STRING)
-                            .build()
+                            .build(),
+                            
+                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_COMPACT_COMMENTS_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
+                            .onQualifiers(Qualifiers.PROJECT).name("Use compact file comments").description("Uses a compact form of the file comments.").type(PropertyType.BOOLEAN)
+                            .defaultValue("true").build()
             );
         }
     }
