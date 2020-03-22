@@ -108,19 +108,34 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             List<Discussion> discussions = getOwnDiscussions(user, pullRequestId);
             final boolean deleteCommentsEnabled = getMandatoryBooleanProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED);
             
+            Note summaryComment = null;
             Map<String, Note> lineComments = new HashMap<>();
             for (Discussion discussion : discussions) {
                 for (Note note : discussion.getNotes()) {
-                     Position position = note.getPosition();
+                    Position position = note.getPosition();
                     if ("DiffNote".equals(note.getType()) && position!=null && position.getNewLine()!=null && position.getNewLine().trim().length() > 0) {
                     	lineComments.put(position.getNewLine(), note);	
+                    } else if ("DiscussionNote".equals(note.getType())) {
+                    	if (summaryComment==null) {
+                    		summaryComment = note;
+                    	} else if (note.getUpdatedAt()==null || note.getUpdatedAt().before(summaryComment.getUpdatedAt())) {
+                    		if (deleteCommentsEnabled) {
+                            	deleteCommitDiscussionNote(pullRequestId, discussion.getId(), note.getId());
+                            }
+                    	} else {
+                    		summaryComment = note;
+                    		if (deleteCommentsEnabled) {
+                            	deleteCommitDiscussionNote(pullRequestId, discussion.getId(), summaryComment.getId());
+                            }
+                    	}
+                    	
                     } else if (deleteCommentsEnabled) {
                     	deleteCommitDiscussionNote(pullRequestId, discussion.getId(), note.getId());
                     }
 	            }
             }
             doPipeline(analysis);
-            doSummary(analysis);
+            doSummary(analysis, summaryComment);
             doFileComments(analysis, lineComments);
             if (deleteCommentsEnabled) {
 	            for( Note note: lineComments.values()) {
@@ -163,7 +178,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 						Note existingNote = lineNotes.get(lineNr);
 						if (existingNote!=null) {
 			                try {
-		                    updateCommitComment(mergeRequestDiscussionURL,  existingNote.getDiscussionId(), existingNote.getId(), headers, fileComment);							
+			                    updateCommitComment(mergeRequestDiscussionURL,  existingNote.getDiscussionId(), existingNote.getId(), headers, fileComment);							
 			                } catch (IOException ex) {
 			                	LOGGER.error("Can't update issue comment on line '{}' to '{}'.", issue.getIssue().getLine(), mergeRequestDiscussionURL);
 			                }
@@ -194,18 +209,30 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 		}
 	}
 
-	protected void doSummary(AnalysisDetails analysis) throws UnsupportedEncodingException {
+	protected void doSummary(AnalysisDetails analysis, Note summaryComment) throws UnsupportedEncodingException {
         final boolean summaryCommentEnabled = getMandatoryBooleanProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED);
 		if (summaryCommentEnabled) {
 	        final String pullRequestId = analysis.getBranchName();
 			String mergeRequestDiscussionURL = getMergeRequestDiskussionsURL(pullRequestId);
+		    String summaryCommentBody = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
   		    Map<String, String> headers = getHeaders();
-		    String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
-		    List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("body", summaryComment));
-		    try {
-		        postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams);
-		    } catch (IOException ex) {
-		    	LOGGER.error("Can't post summary comment to '{}'.", mergeRequestDiscussionURL);
+		    if (summaryComment!=null) {
+                try {
+                    updateCommitComment(mergeRequestDiscussionURL,  summaryComment.getDiscussionId(), summaryComment.getId(), headers, summaryCommentBody);							
+                } catch (IOException ex) {
+                	LOGGER.error("Can't update summary comment to '{}'.", mergeRequestDiscussionURL);
+                }
+		    } else {
+			    List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("body", summaryCommentBody));
+			    try {
+			        postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams);
+			    } catch (IOException ex) {
+			    	LOGGER.error("Can't post summary comment to '{}'.", mergeRequestDiscussionURL);
+			    }
+		    }
+		    boolean approved = analysis.getQualityGateStatus() == QualityGate.Status.OK;
+		    if (approved) {
+		    	// TODO resolve by post to /merge_requests/1114/discussions/c4bbff952a9d3f5250f432e9cfeaf24bfe9ebb2a/resolve 
 		    }
 		}
 	}
