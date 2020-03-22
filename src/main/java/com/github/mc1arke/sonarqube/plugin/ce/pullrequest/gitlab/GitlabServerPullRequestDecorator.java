@@ -101,7 +101,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final boolean summaryCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED));
             final boolean fileCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_FILE_COMMENT_ENABLED));
             final boolean deleteCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED));
-            final String minSeverity = unifyConfiguration.getRequiredProperty(PULLREQUEST_COMMENTS_MIN_SEVERITY);
+            final String minSeverity = unifyConfiguration.getProperty(PULLREQUEST_COMMENTS_MIN_SEVERITY).orElse(null);
 
             final String restURL = String.format("%s/api/v4", hostURL);
             final String userURL = restURL + "/user";
