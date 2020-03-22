@@ -12,3 +12,7 @@
 
 #Project libs
 /sonarqube-lib/
+*.classpath
+*.project
+.settings/
+bin/
