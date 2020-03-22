@@ -66,7 +66,8 @@ public class GitlabServerPullRequestDecoratorTest {
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_DELETE_COMMENTS_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_FILE_COMMENT_ENABLED)).thenReturn(Optional.of("true"));
-
+        when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_COMPACT_COMMENTS_ENABLED)).thenReturn(Optional.of("true"));
+        
         ScannerContext scannerContext = mock(ScannerContext.class);
         when(scannerContext.getProperties()).thenReturn(new HashMap<>());
 
