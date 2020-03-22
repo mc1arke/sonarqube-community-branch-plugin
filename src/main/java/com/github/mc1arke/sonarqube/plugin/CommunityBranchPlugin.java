@@ -180,7 +180,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .description("The repository slug can be either in the form of user/repo or it can be the Project ID")
                             .type(PropertyType.STRING)
                             .build(),
-                            
+
                     PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.PROJECT).name("Fail pipeline if gate not reached").description("Fail the pipeline if the Qualitiy Gate passed succesfully.").type(PropertyType.BOOLEAN)
                             .defaultValue("true").build()
