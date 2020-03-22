@@ -346,7 +346,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
     
     protected boolean isPrinted(String severity, Severity minSeverity) {
-        if (StringUtils.isBlank(severity)) {
+        if (severity==null || severity.trim().length() == 0) {
             return true;
         }
         return Severity.valueOf(severity).getNumber() >= minSeverity.getNumber();
