@@ -162,7 +162,11 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 						String lineNr = String.valueOf(issue.getIssue().getLine());
 						Note existingNote = lineNotes.get(lineNr);
 						if (existingNote!=null) {
+			                try {
 		                    updateCommitComment(mergeRequestDiscussionURL,  existingNote.getDiscussionId(), existingNote.getId(), headers, fileComment);							
+			                } catch (IOException ex) {
+			                	LOGGER.error("Can't update issue comment on line '{}' to '{}'.", issue.getIssue().getLine(), mergeRequestDiscussionURL);
+			                }
 		                    lineNotes.remove(lineNr);
 						} else {
 							List<NameValuePair> fileContentParams = Arrays.asList(
@@ -259,8 +263,9 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 	private List<String> getCommits(final String pullRequestId) throws IOException {
 		Map<String, String> headers = getHeaders();
         final String prCommitsURL = getMergeRequestCommitsURL(pullRequestId);
-		return getPagedList(prCommitsURL, headers,  new TypeReference<List<Commit>>() {
+		List<String> result = getPagedList(prCommitsURL, headers,  new TypeReference<List<Commit>>() {
 		}).stream().map(Commit::getId).collect(Collectors.toList());
+        return result;
 	}
 	
 	private User getUser() throws IOException {
@@ -273,8 +278,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 		return result;
 	}
 
-    private <X> X getSingle(String userURL, Map<String, String> headers, Class<X> type) throws IOException {
-        HttpGet httpGet = new HttpGet(userURL);
+    private <X> X getSingle(String url, Map<String, String> headers, Class<X> type) throws IOException {
+        HttpGet httpGet = new HttpGet(url);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
         }
@@ -286,27 +291,26 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         } else if (null != httpResponse) {
             LOGGER.debug(httpResponse.toString());
             HttpEntity entity = httpResponse.getEntity();
-            X user = new ObjectMapper()
+            X result = new ObjectMapper()
                     .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                     .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), type);
 
             LOGGER.info(type + " received");
-
-            return user;
+            return result;
         } else {
             throw new IOException("No response reveived");
         }
     }
 
-    private <X> List<X> getPagedList(String commitDiscussionURL, Map<String, String> headers, TypeReference<List<X>> typeRef) throws IOException {
-        HttpGet httpGet = new HttpGet(commitDiscussionURL);
+    private <X> List<X> getPagedList(String url, Map<String, String> headers, TypeReference<List<X>> type) throws IOException {
+        HttpGet httpGet = new HttpGet(url);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
         }
 
-        List<X> discussions = new ArrayList<>();
+        List<X> result = new ArrayList<>();
 
         HttpResponse httpResponse = HttpClients.createDefault().execute(httpGet);
         if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
@@ -316,20 +320,20 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         } else if (null != httpResponse) {
             LOGGER.debug(httpResponse.toString());
             HttpEntity entity = httpResponse.getEntity();
-            List<X> pagedDiscussions = new ObjectMapper()
+            List<X> pagedResults = new ObjectMapper()
                     .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                     .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), typeRef);
-            discussions.addAll(pagedDiscussions);
-            LOGGER.info("MR discussions received");
+                    .readValue(IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8), type);
+            result.addAll(pagedResults);
             Optional<String> nextURL = getNextUrl(httpResponse);
             if (nextURL.isPresent()) {
                 LOGGER.info("Getting next page");
-                discussions.addAll(getPagedList(nextURL.get(), headers, typeRef));
+                result.addAll(getPagedList(nextURL.get(), headers, type));
             }
+            LOGGER.info(type + " received");
         }
-        return discussions;
+        return result;
     }
 
     private void deleteCommitDiscussionNote(String pullRequestId, String discussionId, long noteId)  {
