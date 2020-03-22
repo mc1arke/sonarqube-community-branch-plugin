@@ -76,6 +76,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     public static final String PULLREQUEST_GITLAB_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
     public static final String PULLREQUEST_GITLAB_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.token";
     public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "sonar.pullrequest.gitlab.repositorySlug";
+    public static final String PULLREQUEST_COMMENTS_MIN_SEVERITY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.minSeverityComments";
 
     private final Server server;
     private final ScmInfoRepository scmInfoRepository;
@@ -162,7 +163,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);
-                if (path != null && issue.getIssue().getLine() != null) {
+                    if (path != null && issue.getIssue().getLine() != null && isPrinted(issue.getIssue().severity())) {
                     //only if we have a path and line number
                     String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());
 
@@ -341,7 +342,33 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         }
         return Optional.empty();
     }
-
+    
+    protected boolean isPrinted(String severity) {
+        final String minSeverity = getMandatoryProperty(PULLREQUEST_COMMENTS_MIN_SEVERITY);
+        if (severity==null) {
+            return true;
+        }
+        switch(severity.toUpperCase()) {
+        case "INFO":
+            if ("MINOR".equals(minSeverity)) {
+                return false;
+            }
+        case "MINOR":
+            if ("MAJOR".equals(minSeverity)) {
+                return false;
+            }
+        case "MAJOR":
+            if ("CRITICAL".equals(minSeverity)) {
+                return false;
+            }
+        case "CRITICAL":
+            if ("BLOCKER".equals(minSeverity)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
     @Override
     public String name() {
         return "GitlabServer";
