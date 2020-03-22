@@ -26,6 +26,8 @@ public interface PullRequestBuildStatusDecorator {
 
     String PULL_REQUEST_DELETE_COMMENTS_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.delete.comments.enabled";
 
+	String PULL_REQUEST_COMMENTS_MIN_SEVERITY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.comment.minSeverity";
+
     String name();
 
     void decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration configuration);

@@ -46,6 +46,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Note;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -65,6 +66,7 @@ import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonarqube.ws.Common.Severity;
 
 public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
@@ -76,7 +78,6 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     public static final String PULLREQUEST_GITLAB_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
     public static final String PULLREQUEST_GITLAB_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.token";
     public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "sonar.pullrequest.gitlab.repositorySlug";
-    public static final String PULLREQUEST_COMMENTS_MIN_SEVERITY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.minSeverityComments";
 
     private final Server server;
     private final ScmInfoRepository scmInfoRepository;
@@ -101,7 +102,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final boolean summaryCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED));
             final boolean fileCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_FILE_COMMENT_ENABLED));
             final boolean deleteCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED));
-            final String minSeverity = unifyConfiguration.getProperty(PULLREQUEST_COMMENTS_MIN_SEVERITY).orElse(null);
+            final Severity minSeverity = Severity.valueOf(unifyConfiguration.getProperty(PULL_REQUEST_COMMENTS_MIN_SEVERITY).orElse(Severity.INFO.name()));
 
             final String restURL = String.format("%s/api/v4", hostURL);
             final String userURL = restURL + "/user";
@@ -344,29 +345,11 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         return Optional.empty();
     }
     
-    protected boolean isPrinted(String severity, String minSeverity) {
-        if (severity==null) {
+    protected boolean isPrinted(String severity, Severity minSeverity) {
+        if (StringUtils.isBlank(severity)) {
             return true;
         }
-        switch(severity.toUpperCase()) {
-        case "INFO":
-            if ("MINOR".equals(minSeverity)) {
-                return false;
-            }
-        case "MINOR":
-            if ("MAJOR".equals(minSeverity)) {
-                return false;
-            }
-        case "MAJOR":
-            if ("CRITICAL".equals(minSeverity)) {
-                return false;
-            }
-        case "CRITICAL":
-            if ("BLOCKER".equals(minSeverity)) {
-                return false;
-            }
-        }
-        return true;
+        return Severity.valueOf(severity).getNumber() >= minSeverity.getNumber();
     }
     
     @Override
