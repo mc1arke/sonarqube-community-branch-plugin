@@ -76,8 +76,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     public static final String PULLREQUEST_GITLAB_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
     public static final String PULLREQUEST_GITLAB_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.token";
     public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "sonar.pullrequest.gitlab.repositorySlug";
-    public static final String PULLREQUEST_COMPACT_COMMENTS_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.compactComments";
-    
+
     private final Server server;
     private final ScmInfoRepository scmInfoRepository;
 
@@ -101,7 +100,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final boolean summaryCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED));
             final boolean fileCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_FILE_COMMENT_ENABLED));
             final boolean deleteCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED));
-            final boolean compactCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULLREQUEST_COMPACT_COMMENTS_ENABLED));
+            final boolean compactCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_COMPACT_COMMENTS_ENABLED));
             
             final String restURL = String.format("%s/api/v4", hostURL);
             final String userURL = restURL + "/user";

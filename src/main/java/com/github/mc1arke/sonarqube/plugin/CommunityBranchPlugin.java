@@ -129,6 +129,10 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .onQualifiers(Qualifiers.PROJECT).name("Enable deleting comments").description("This cleans up the comments from previous runs (if implemented).")
                             .type(PropertyType.BOOLEAN).defaultValue("false").build(),
 
+                    PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_COMPACT_COMMENTS_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
+                            .onQualifiers(Qualifiers.PROJECT).name("Use compact file comments").description("Uses a compact form of the file comments.").type(PropertyType.BOOLEAN)
+                            .defaultValue("true").build(),
+
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.PROJECT).name("URL for Bitbucket (Server or Cloud) instance").description("Example: http://bitbucket.local").type(PropertyType.STRING).build(),
 
@@ -179,11 +183,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .name("Repository Slug for the Gitlab (Server or Cloud) instance")
                             .description("The repository slug can be either in the form of user/repo or it can be the Project ID")
                             .type(PropertyType.STRING)
-                            .build(),
-                            
-                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_COMPACT_COMMENTS_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
-                            .onQualifiers(Qualifiers.PROJECT).name("Use compact file comments").description("Uses a compact form of the file comments.").type(PropertyType.BOOLEAN)
-                            .defaultValue("true").build()
+                            .build()
+
             );
         }
     }
