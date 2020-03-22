@@ -76,7 +76,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     public static final String PULLREQUEST_GITLAB_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
     public static final String PULLREQUEST_GITLAB_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.token";
     public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "sonar.pullrequest.gitlab.repositorySlug";
-    public static final String PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.canFailPipeline";
+    public static final String PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.lPipeline";
 
     private final Server server;
     private final ScmInfoRepository scmInfoRepository;
@@ -101,7 +101,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final boolean summaryCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED));
             final boolean fileCommentEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_FILE_COMMENT_ENABLED));
             final boolean deleteCommentsEnabled = Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED));
-            final boolean canFailPipeline =  Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED);
+            final boolean canFailPipeline =  Boolean.parseBoolean(unifyConfiguration.getRequiredServerProperty(PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED));
             
             final String restURL = String.format("%s/api/v4", hostURL);
             final String userURL = restURL + "/user";
@@ -158,7 +158,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
             List<NameValuePair> summaryContentParams = Collections.singletonList(new BasicNameValuePair("body", summaryComment));
 
-            postStatus(statusUrl, headers, analysis, coverageValue, true);
+            postStatus(statusUrl, headers, analysis, coverageValue, true, canFailPipeline);
 
             postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams, summaryCommentEnabled);
 
@@ -290,10 +290,10 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         }
     }
 
-    private void postStatus(String statusPostUrl, Map<String, String> headers, AnalysisDetails analysis, String coverage, boolean sendRequest) throws IOException{
+    private void postStatus(String statusPostUrl, Map<String, String> headers, AnalysisDetails analysis, String coverage, boolean sendRequest, boolean canFailPipeline) throws IOException{
         //See https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
         statusPostUrl += "?name=SonarQube";
-        String status = (analysis.getQualityGateStatus() == QualityGate.Status.OK ? "success" : "failed");
+        String status = (!canFailPipeline || analysis.getQualityGateStatus() == QualityGate.Status.OK ? "success" : "failed");
         statusPostUrl += "&state=" + status;
         statusPostUrl += "&target_url=" + URLEncoder.encode(String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl(),
                 URLEncoder.encode(analysis.getAnalysisProjectKey(),
