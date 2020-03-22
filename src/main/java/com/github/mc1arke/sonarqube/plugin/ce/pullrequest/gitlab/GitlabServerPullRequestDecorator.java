@@ -164,7 +164,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);
                 if (path != null && issue.getIssue().getLine() != null) {
                     //only if we have a path and line number
-                    String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());
+                    String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory(), compactCommentsEnabled);
 
                     if (scmInfoRepository.getScmInfo(issue.getComponent())
                             .filter(i -> i.hasChangesetForLine(issue.getIssue().getLine()))
