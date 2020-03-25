@@ -95,7 +95,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         String apiPrivateKey = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_TOKEN);
         String projectPath = unifyConfiguration.getRequiredProperty(PULL_REQUEST_GITHUB_REPOSITORY);
         String appId = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_APP_ID);
-        String appName = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_APP_NAME);
+        String appName = unifyConfiguration.getRequiredProperty(PULL_REQUEST_GITHUB_APP_NAME);
 
         RepositoryAuthenticationToken repositoryAuthenticationToken =
                 githubApplicationAuthenticationProvider.getInstallationToken(apiUrl, appId, apiPrivateKey, projectPath);

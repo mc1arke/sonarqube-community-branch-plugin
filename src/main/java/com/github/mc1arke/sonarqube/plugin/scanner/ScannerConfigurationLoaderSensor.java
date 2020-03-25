@@ -41,6 +41,7 @@ public class ScannerConfigurationLoaderSensor implements Sensor {
                 BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_SLUG,
                 BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG,
                 GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_REPOSITORY,
+                GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_APP_NAME,
                 GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG
         ));
     }
