@@ -80,6 +80,9 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     public static final String PULLREQUEST_GITLAB_PIPELINE_ID =
             "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId";
 
+    private static final String NO_COVERAGE_VALUE =
+            "-1";
+
     private static final Logger LOGGER = Loggers.get(GitlabServerPullRequestDecorator.class);
     private static final List<String> OPEN_ISSUE_STATUSES =
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
@@ -155,10 +158,10 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 }
             }
 
-            String coverageValue = analysis.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
+            String coverageValue = analysis.findQualityGateCondition(CoreMetrics.COVERAGE_KEY)
                     .filter(condition -> condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
                     .map(QualityGate.Condition::getValue)
-                    .orElse("0");
+                    .orElse(NO_COVERAGE_VALUE);
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 
@@ -318,7 +321,9 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                         .encode(analysis.getBranchName(),
                                 StandardCharsets.UTF_8.name())), StandardCharsets.UTF_8.name()));
         statusPostUrl.append("&description=").append(URLEncoder.encode("SonarQube Status", StandardCharsets.UTF_8.name()));
-        statusPostUrl.append("&coverage=").append(coverage);
+        if (coverage != NO_COVERAGE_VALUE) {
+            statusPostUrl.append("&coverage=").append(coverage);
+        }
         analysis.getScannerProperty(PULLREQUEST_GITLAB_PIPELINE_ID).ifPresent(pipelineId -> statusPostUrl.append("&pipeline_id=").append(pipelineId));
 
         HttpPost httpPost = new HttpPost(statusPostUrl.toString());
