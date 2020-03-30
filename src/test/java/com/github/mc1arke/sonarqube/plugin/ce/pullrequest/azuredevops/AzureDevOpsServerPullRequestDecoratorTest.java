@@ -286,7 +286,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .withRequestBody(equalTo("{" +
                         "\"state\":\"SUCCEEDED\"," +
                         "\"description\":\"SonarQube Gate\"," +
-                        "\"context\":{\"genre\":\"SonarQube\",\"name\":\"PullRequestDecoration\"}," +
+                        "\"context\":{\"genre\":\"SonarQube\",\"name\":\"QualityGate\"}," +
                         "\"targetUrl\":\"" + sonarRootUrl + "/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId + "\"" +
                         "}")
                 )

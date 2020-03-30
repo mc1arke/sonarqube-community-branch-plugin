@@ -142,7 +142,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String filePath = analysisDetails.getSCMPathForIssue(issue).orElse(null);
                 Integer line = issue.getIssue().getLine();
-                if (filePath != null && line != null) {
+                if (filePath != null) {
                     try {
                         filePath = "/" + filePath;
                         LOGGER.trace(String.format("ISSUE: authorLogin: %s ", issue.getIssue().authorLogin()));
@@ -160,8 +160,12 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                             LOGGER.trace(String.format("filePath: %s (%s)", filePath, azureThread.getThreadContext().getFilePath().equals(filePath)));
                             LOGGER.trace(String.format("azureLine: %d", azureThread.getThreadContext().getRightFileStart().getLine()));
                             LOGGER.trace(String.format("line: %d (%s)", line, azureThread.getThreadContext().getRightFileStart().getLine() == locate.getTextRange().getEndLine()));
+
                             if (azureThread.getThreadContext().getFilePath().equals(filePath)
-                                    && azureThread.getThreadContext().getRightFileStart().getLine() == locate.getTextRange().getEndLine()) {
+                                    && azureThread.getComments()
+                                    .stream()
+                                    .filter(c -> c.getContent().contains(issue.getIssue().key()))
+                                    .count() > 0 ) {
 
                                 if(!issue.getIssue().getStatus().equals(Issue.STATUS_OPEN)
                                         && azureThread.getStatus().equals(CommentThreadStatus.ACTIVE)) {
@@ -279,7 +283,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
 
     private String getGitPullRequestStatus(AnalysisDetails analysisDetails) throws IOException {
         final String GIT_STATUS_CONTEXT_GENRE = "SonarQube";
-        final String GIT_STATUS_CONTEXT_NAME = "PullRequestDecoration";
+        final String GIT_STATUS_CONTEXT_NAME = "QualityGate";
         final String GIT_STATUS_DESCRIPTION = "SonarQube Gate";
 
         GitPullRequestStatus status = new GitPullRequestStatus(
