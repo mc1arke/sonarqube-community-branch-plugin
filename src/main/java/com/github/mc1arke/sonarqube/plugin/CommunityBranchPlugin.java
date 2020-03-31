@@ -29,6 +29,10 @@ import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoade
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectPullRequestsLoader;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import org.sonar.api.CoreProperties;
 import org.sonar.api.Plugin;
 import org.sonar.api.PropertyType;
@@ -37,6 +41,7 @@ import org.sonar.api.config.PropertyDefinition;
 import org.sonar.api.resources.Qualifiers;
 import org.sonar.core.config.PurgeConstants;
 import org.sonar.core.extension.CoreExtension;
+import org.sonarqube.ws.Common.Severity;
 
 /**
  * @author Michael Clarke
@@ -121,10 +126,18 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                     PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_FILE_COMMENT_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
                             .onQualifiers(Qualifiers.PROJECT).name("Enable file comment").description("This enables commenting (if implemented).").type(PropertyType.BOOLEAN)
                             .defaultValue("true").build(),
+                            
+                    PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENTS_MIN_SEVERITY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
+                            .onQualifiers(Qualifiers.PROJECT).name("Min Comment Severity").description("Issues below this level are not attached as file comments.")
+                            .type(PropertyType.SINGLE_SELECT_LIST).options(Arrays.stream(Severity.values()).map(Severity::name).collect(Collectors.toList())).build(),
 
                     PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_DELETE_COMMENTS_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
                             .onQualifiers(Qualifiers.PROJECT).name("Enable deleting comments").description("This cleans up the comments from previous runs (if implemented).")
                             .type(PropertyType.BOOLEAN).defaultValue("false").build(),
+ 
+                    PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_COMPACT_COMMENTS_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)
+                            .onQualifiers(Qualifiers.PROJECT).name("Use compact file comments").description("Uses a compact form of the file comments.").type(PropertyType.BOOLEAN)
+                            .defaultValue("true").build(),
 
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.PROJECT).name("URL for Bitbucket (Server or Cloud) instance").description("Example: http://bitbucket.local").type(PropertyType.STRING).build(),
@@ -178,18 +191,10 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             .type(PropertyType.STRING)
                             .build(),
 
-                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_COMPACT_COMMENTS_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
-                            .onQualifiers(Qualifiers.PROJECT).name("Use compact file comments").description("Uses a compact form of the file comments.").type(PropertyType.BOOLEAN)
-                            .defaultValue("true").build(),
-
                     PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.PROJECT).name("Fail pipeline if gate not reached").description("Fail the pipeline if the Qualitiy Gate passed succesfully.").type(PropertyType.BOOLEAN)
-                            .defaultValue("true").build(),
-                            
-                    PropertyDefinition.builder(GitlabServerPullRequestDecorator.PULLREQUEST_COMMENTS_MIN_SEVERITY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITLAB_INTEGRATION_SUBCATEGORY_LABEL)
-                            .onQualifiers(Qualifiers.PROJECT).name("Min Comment Severity")
-                            .type(PropertyType.SINGLE_SELECT_LIST).options("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO").build()
-                            
+                            .defaultValue("true").build()
+
             );
         }
     }

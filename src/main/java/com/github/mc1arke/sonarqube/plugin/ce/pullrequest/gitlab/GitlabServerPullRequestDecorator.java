@@ -72,6 +72,7 @@ import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonarqube.ws.Common.Severity;
 
 public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
@@ -82,10 +83,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     public static final String PULLREQUEST_GITLAB_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.url";
     public static final String PULLREQUEST_GITLAB_TOKEN = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.token";
     public static final String PULLREQUEST_GITLAB_REPOSITORY_SLUG = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.repositorySlug";
-	public static final String PULLREQUEST_COMPACT_COMMENTS_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.compactComments";
 	public static final String PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.canFailPipeline";
-	public static final String PULLREQUEST_COMMENTS_MIN_SEVERITY = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.minSeverityComments";
-
 
     private final ConfigurationRepository configurationRepository;
     private final Server server;
@@ -152,7 +150,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 	protected void doFileComments(AnalysisDetails analysis, Map<String, Note> lineNotes) throws IOException {
 		// Issues
         final boolean fileCommentEnabled = getMandatoryBooleanProperty(PULL_REQUEST_FILE_COMMENT_ENABLED);
-        final boolean compactCommentsEnabled = getMandatoryBooleanProperty(PULLREQUEST_COMPACT_COMMENTS_ENABLED);
+        final boolean compactCommentsEnabled = getMandatoryBooleanProperty(PULL_REQUEST_COMPACT_COMMENTS_ENABLED);
 		if (fileCommentEnabled) {
 			Map<String, String> headers = getHeaders();
 	        final String pullRequestId = analysis.getBranchName();
@@ -486,29 +484,15 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 	}
 	
 	protected boolean isPrinted(String severity) {
-	    final String minSeverity = getMandatoryProperty(PULLREQUEST_COMMENTS_MIN_SEVERITY);
-	    if (severity==null) {
-	    	return true;
+		final String minSeverityString = getMandatoryProperty(PULL_REQUEST_COMMENTS_MIN_SEVERITY);
+		Severity minSeverity = Severity.INFO;
+		if (minSeverityString!=null && minSeverityString.trim().length()>0) {
+			minSeverity = Severity.valueOf(minSeverityString);
+		}
+	    if (severity==null || severity.trim().length() == 0) {
+	        return true;
 	    }
-	    switch(severity.toUpperCase()) {
-	    case "INFO":
-	    	if ("MINOR".equals(minSeverity)) {
-	    		return false;
-	    	}
-	    case "MINOR":
-	    	if ("MAJOR".equals(minSeverity)) {
-	    		return false;
-	    	}
-	    case "MAJOR":
-	    	if ("CRITICAL".equals(minSeverity)) {
-	    		return false;
-	    	}
-	    case "CRITICAL":
-	    	if ("BLOCKER".equals(minSeverity)) {
-	    		return false;
-	    	}
-	    }
-		return true;
+	    return Severity.valueOf(severity).getNumber() >= minSeverity.getNumber();
 	}
 
     

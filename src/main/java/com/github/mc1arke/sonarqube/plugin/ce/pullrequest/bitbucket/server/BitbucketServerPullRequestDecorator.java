@@ -123,6 +123,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             final boolean summaryCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_COMMENT_SUMMARY_ENABLED, configuration));
             final boolean fileCommentEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_FILE_COMMENT_ENABLED, configuration));
             final boolean deleteCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_DELETE_COMMENTS_ENABLED, configuration));
+            final boolean compactCommentsEnabled = Boolean.parseBoolean(getMandatoryProperty(PULL_REQUEST_COMPACT_COMMENTS_ENABLED, configuration));
 
             final String commentUrl;
             final String activityUrl;
@@ -155,7 +156,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status())).collect(Collectors.toList());
             for (PostAnalysisIssueVisitor.ComponentIssue componentIssue : componentIssues) {
                 final DefaultIssue issue = componentIssue.getIssue();
-                String analysisIssueSummary = analysisDetails.createAnalysisIssueSummary(componentIssue, new MarkdownFormatterFactory(), true);
+                String analysisIssueSummary = analysisDetails.createAnalysisIssueSummary(componentIssue, new MarkdownFormatterFactory(), compactCommentsEnabled);
                 String issuePath = analysisDetails.getSCMPathForIssue(componentIssue).orElse(StringUtils.EMPTY);
                 int issueLine = issue.getLine() != null ? issue.getLine() : 0;
                 String issueType = getIssueType(diffPage, issuePath, issueLine);
