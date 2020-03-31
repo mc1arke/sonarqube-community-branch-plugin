@@ -16,33 +16,21 @@ SonarQube Version | Plugin Version
 7.8 - 8.0         | 1.3.0
 7.4 - 7.7         | 1.0.2
 
-# Installation
-Either build the project or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases). Copy the plugin JAR file to the `extensions/plugins/` **and** the `lib/common/` directories of your SonarQube instance and restart SonarQube.
-
 # Features
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
 * __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, Gitlab and Bitbucket Server
 
-# Properties
+# Installation
+Either build the project or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases). Copy the plugin JAR file to the `extensions/plugins/` **and** the `lib/common/` directories of your SonarQube instance and restart SonarQube.
 
-## Bitbucket Server
-To enable setting of several properties in SonarQube on project level is required.
-
-The property "projectKey" or "userSlug" are mandatory in order to decide which API endpoint should be used.
-
-# Contribution
-To generate the jar file to copy to your Sonar Server execute ```./gradlew clean build``` inside of the project dir. This will put the jar under ```libs/sonarqube-community-branch-plugin*.jar```
-
-## SonarQube / Docker
-Add the plugin to the `extensions/plugins/` and also into the `lib/common/` directory of your SonarQube instance and restart the server.
-
-Quick start to your SonarQube docker container:
+## Installation Docker
+Add download the plugin and mount it to the container see the last two volumes in the yaml below.
 ```
 version: 2
 
 services:
   sonarqube:
-    image: sonarqube
+    image: sonarqube:lts
     container_name: sonarqube
     ports:
       - 9000:9000
@@ -57,7 +45,10 @@ services:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
-      - sonarqube_common:/opt/sonarqube/lib/common
+      - /home/user/sonarqube-community-branch-plugin-1.3.0.jar:/opt/sonarqube/extensions/plugins/sonarqube-community
+-branch-plugin.jar
+      - /home/user/sonarqube-community-branch-plugin-1.3.0.jar:/opt/sonarqube/lib/common/sonarqube-community-branch
+-plugin.jar
 
   db:
     image: postgres
@@ -71,3 +62,44 @@ services:
       - postgresql:/var/lib/postgresql
       - postgresql_data:/var/lib/postgresql/data
 ``` 
+
+# Configuration
+## Global configuration
+If you can define the properties globally (e.g. the pull request provider) within your SonarQube instance go to [/admin/settings?category=pull+request](http://localhost:9000/admin/settings?category=pull+request) and set
+the properties as admin.
+
+Set all other properties that you can define globally for all of your projects.
+
+Make sure `sonar.core.serverBaseURL` in SoanrQube [/admin/settings](http://localhost:9000/admin/settings) is properly set in order to for the links in the
+ comment to
+ work.
+
+## Project configuration
+Override global configuration on project level at [/project/settings?category=pull+request&id=PROJECT_KEY](http://localhost:9000/project/settings?category=pull+request&id=PROJECT_KEY) and set project specific
+ settings here.
+
+# Configuration of Bitbucket Server
+Set properties for Bitbucket Server either on Global configuration or Project configuration level as mentioned in the
+ Configuration section.
+
+## How to decorate the PR
+### Run analysis of target branch
+In order to decorate your short living branches (hotfixes, features, ...) you need to analyze your long living
+ branches (master, development, release branches) first. A configuration what long living branches are can be also
+  done in SonarQube.
+  
+The analysis needs the following setting:
+`sonar.branch.name = master`
+
+### Run analysis of the PR branch
+Carefully read the official SonarQube guide for [pull request decoration](https://docs.sonarqube.org/latest/analysis/pull-request/) 
+
+In there you'll find the following properties that need to be set.
+```
+sonar.pullrequest.key = pull_request_id (e.g. 100)
+sonar.pullrequest.branch = source_branch_name (e.g feature/TICKET-123)
+sonar.pullrequest.base = target_branch_name (e.g master)
+```
+
+# Contribution
+To generate the jar file to copy to your Sonar Server execute ```./gradlew clean build``` inside of the project dir. This will put the jar under ```libs/sonarqube-community-branch-plugin*.jar```
