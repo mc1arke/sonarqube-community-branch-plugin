@@ -6,6 +6,170 @@
   "diffs": [
     {
       "source": {
+        "components": ["index.html"],
+        "parent": "",
+        "name": "index.html",
+        "extension": "html",
+        "toString": "index.html"
+      },
+      "destination": {
+        "components": ["index.html"],
+        "parent": "",
+        "name": "index.html",
+        "extension": "html",
+        "toString": "index.html"
+      },
+      "hunks": [{
+        "sourceLine": 4,
+        "sourceSpan": 18,
+        "destinationLine": 4,
+        "destinationSpan": 18,
+        "segments": [{
+          "type": "CONTEXT",
+          "lines": [{
+            "source": 4,
+            "destination": 4,
+            "line": "            <h1 class=\"page-title\">My Todos</h1>",
+            "truncated": false
+          }, {
+            "source": 5,
+            "destination": 5,
+            "line": "            <div class=\"todo-create\">",
+            "truncated": false
+          }, {
+            "source": 6,
+            "destination": 6,
+            "line": "                <form #todoForm=\"ngForm\" (ngSubmit) = \"createTodo(todoForm)\" novalidate>",
+            "truncated": false
+          }, {
+            "source": 7,
+            "destination": 7,
+            "line": "                    <input type=\"text\" id=\"title\" class=\"form-control\" placeholder=\"Type a todo and press enter...\"",
+            "truncated": false
+          }, {
+            "source": 8,
+            "destination": 8,
+            "line": "                           required",
+            "truncated": false
+          }, {
+            "source": 9,
+            "destination": 9,
+            "line": "                           name=\"title\" [(ngModel)]=\"newTodo.title\"",
+            "truncated": false
+          }, {
+            "source": 10,
+            "destination": 10,
+            "line": "                           #title=\"ngModel\" >",
+            "truncated": false
+          }, {
+            "source": 11,
+            "destination": 11,
+            "line": "                    <div *ngIf=\"title.errors && title.dirty\"",
+            "truncated": false
+          }, {
+            "source": 12,
+            "destination": 12,
+            "line": "                         class=\"alert alert-danger\">",
+            "truncated": false
+          }, {
+            "source": 13,
+            "destination": 13,
+            "line": "                        <div [hidden]=\"!title.errors.required\">",
+            "truncated": false
+          }],
+          "truncated": false
+        }, {
+          "type": "REMOVED",
+          "lines": [{
+            "source": 14,
+            "destination": 14,
+            "line": "                            Title is required.",
+            "truncated": false
+          }],
+          "truncated": false
+        }, {
+          "type": "ADDED",
+          "lines": [{
+            "source": 15,
+            "destination": 14,
+            "line": "                            <i>Title is required.</i>",
+            "truncated": false
+          }],
+          "truncated": false
+        }, {
+          "type": "CONTEXT",
+          "lines": [{
+            "source": 15,
+            "destination": 15,
+            "line": "                        </div>",
+            "truncated": false
+          }, {
+            "source": 16,
+            "destination": 16,
+            "line": "                    </div>",
+            "truncated": false
+          }, {
+            "source": 17,
+            "destination": 17,
+            "line": "                </form>",
+            "truncated": false
+          }, {
+            "source": 18,
+            "destination": 18,
+            "line": "            </div>",
+            "truncated": false
+          }, {
+            "source": 19,
+            "destination": 19,
+            "line": "        </div>",
+            "truncated": false
+          }, {
+            "source": 20,
+            "destination": 20,
+            "line": "    </body>",
+            "truncated": false
+          }, {
+            "source": 21,
+            "destination": 21,
+            "line": "</html>",
+            "truncated": false
+          }],
+          "truncated": false
+        }],
+        "truncated": false
+      }],
+      "truncated": false,
+      "lineComments": [{
+        "properties": {
+          "repositoryId": 565
+        },
+        "id": 57020,
+        "version": 0,
+        "text": "test",
+        "author": {
+          "name": "susi.sonar",
+          "emailAddress": "susi.sonar@local",
+          "id": 175,
+          "displayName": "Susi Sonar",
+          "active": true,
+          "slug": "susi.sonar",
+          "type": "NORMAL"
+        },
+        "createdDate": 1569432616900,
+        "updatedDate": 1569432616900,
+        "comments": [],
+        "tasks": [],
+        "severity": "NORMAL",
+        "state": "OPEN",
+        "permittedOperations": {
+          "editable": true,
+          "transitionable": true,
+          "deletable": true
+        }
+      }]
+    },
+    {
+      "source": {
         "components": [
           "src",
           "com",

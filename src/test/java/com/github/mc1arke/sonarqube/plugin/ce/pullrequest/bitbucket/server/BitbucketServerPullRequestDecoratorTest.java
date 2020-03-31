@@ -114,7 +114,7 @@ public class BitbucketServerPullRequestDecoratorTest {
         );
         DiffPage page = bitbucketServerPullRequestDecorator.getPage(DIFFURL, headers, DiffPage.class);
         assertThat(page, notNullValue());
-        assertThat(page.getDiffs().size(), is(1));
+        assertThat(page.getDiffs().size(), is(2));
     }
 
     @Test
@@ -196,6 +196,9 @@ public class BitbucketServerPullRequestDecoratorTest {
         assertThat(issueType, is("CONTEXT"));
 
         issueType = bitbucketServerPullRequestDecorator.getIssueType(diffPage, "src/com/sonar/sample/classes/ClassWithInvalidMethodName.java", 15);
+        assertThat(issueType, is("ADDED"));
+
+        issueType = bitbucketServerPullRequestDecorator.getIssueType(diffPage, "index.html", 14);
         assertThat(issueType, is("ADDED"));
     }
 

@@ -186,7 +186,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         for (Hunk hunk : hunks) {
             List<Segment> segments = hunk.getSegments();
             for (Segment segment : segments) {
-                Optional<DiffLine> optionalLine = segment.getLines().stream().filter(diffLine -> diffLine.getDestination() == issueLine).findFirst();
+                Optional<DiffLine> optionalLine = segment.getLines().stream().filter(diffLine -> diffLine.getDestination() == issueLine && !"REMOVED".equals(segment.getType())).findFirst();
                 if (optionalLine.isPresent()) {
                     issueType = segment.getType();
                     break;
