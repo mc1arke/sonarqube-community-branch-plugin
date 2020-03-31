@@ -85,7 +85,7 @@ public class MergeRequest {
     		@JsonProperty("first_deployed_to_production_at") Calendar firstDeployedToProductionAt, 
     		@JsonProperty("pipeline") Pipeline pipeline, 
     		@JsonProperty("head_pipeline") Pipeline headPipeline, 
-    		@JsonProperty("diffRefs") DiffRefs diffRefs,
+    		@JsonProperty("diff_refs") DiffRefs diffRefs,
     		@JsonProperty("approvals_before_merge") Long approvalsBeforMerge) {
 		this.id = id;
 		this.iid = iid;
