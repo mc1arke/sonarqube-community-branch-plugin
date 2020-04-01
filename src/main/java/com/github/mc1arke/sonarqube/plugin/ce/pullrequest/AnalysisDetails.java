@@ -136,7 +136,7 @@ public class AnalysisDetails {
 
         List<QualityGate.Condition> failedConditions = findFailedConditions();
 
-        String baseImageUrl = configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE).orElse(getBaseImageUrl());
+        String baseImageUrl = getBaseImageUrl();
 
         Document document = new Document(new Paragraph((QualityGate.Status.OK == getQualityGateStatus() ?
                                                         new Image("Passed", baseImageUrl +
@@ -191,7 +191,7 @@ public class AnalysisDetails {
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
         final DefaultIssue issue = componentIssue.getIssue();
 
-        String baseImageUrl = configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE).orElse(getBaseImageUrl());
+        String baseImageUrl = getBaseImageUrl();
 
         Long effort = issue.effortInMinutes();
         Node effortNode = (null == effort ? new Text("") : new Paragraph(new Text(String.format("**Duration (min):** %s", effort))));
@@ -211,7 +211,9 @@ public class AnalysisDetails {
     }
 
     public String getBaseImageUrl() {
-        return publicRootURL + "/static/communityBranchPlugin";
+        return configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE)
+                .orElse(publicRootURL + "/static/communityBranchPlugin")
+                .replaceAll("/*$", "");
     }
 
     public Optional<String> getSCMPathForIssue(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {

@@ -708,6 +708,44 @@ public class AnalysisDetailsTest {
     }
 
     @Test
+    public void testGetBaseImageUrlFromConfig() {
+        Configuration configuration = mock(Configuration.class);
+        doReturn(Optional.of("http://host.name/path")).when(configuration)
+                .get(eq(CommunityBranchPlugin.IMAGE_URL_BASE));
+
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), mock(Project.class), configuration, "http://localhost:9000");
+
+        assertEquals("http://host.name/path", analysisDetails.getBaseImageUrl());
+    }
+
+    @Test
+    public void testGetBaseImageUrlFromConfigWithTrailingSlash() {
+        Configuration configuration = mock(Configuration.class);
+        doReturn(Optional.of("http://host.name/path/")).when(configuration)
+                .get(eq(CommunityBranchPlugin.IMAGE_URL_BASE));
+
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), mock(Project.class), configuration, "http://localhost:9000");
+
+        assertEquals("http://host.name/path", analysisDetails.getBaseImageUrl());
+    }
+
+    @Test
+    public void testGetBaseImageUrlFromRootUrl() {
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), mock(Project.class), mock(Configuration.class), "http://localhost:9000");
+
+        assertEquals("http://localhost:9000/static/communityBranchPlugin", analysisDetails.getBaseImageUrl());
+    }
+
+    @Test
     public void testReflectiveOperationPropagated() {
         AnalysisDetails.MeasuresHolder measuresHolder = mock(AnalysisDetails.MeasuresHolder.class);
         MeasureRepository measureRepository = mock(MeasureRepository.class);
