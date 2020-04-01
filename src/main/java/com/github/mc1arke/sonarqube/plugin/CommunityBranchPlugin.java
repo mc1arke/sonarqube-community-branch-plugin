@@ -46,6 +46,7 @@ import org.sonar.core.extension.CoreExtension;
 public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
     public static final String PULL_REQUEST_PROVIDER = "sonar.pullrequest.provider";
+    public static final String IMAGE_URL_BASE = "com.github.mc1arke.sonarqube.plugin.branch.image-url-base";
     private static final String PULL_REQUEST_CATEGORY_LABEL = "Pull Request";
     private static final String GITHUB_INTEGRATION_SUBCATEGORY_LABEL = "Integration With Github";
     private static final String GENERAL = "General";
@@ -89,8 +90,13 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
         if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide() ||
             SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(
+                    PropertyDefinition.builder(IMAGE_URL_BASE).category(PULL_REQUEST_CATEGORY_LABEL)
+                            .subCategory(GENERAL).onQualifiers(Qualifiers.APP).name("Images base URL")
+                            .description("Base URL used to load the images for the PR comments (please use this only if images are not displayed properly).")
+                            .type(PropertyType.STRING).build(),
+
                     PropertyDefinition.builder(PULL_REQUEST_PROVIDER).category(PULL_REQUEST_CATEGORY_LABEL)
-                            .subCategory("General").onQualifiers(Qualifiers.PROJECT).name("Provider")
+                            .subCategory(GENERAL).onQualifiers(Qualifiers.PROJECT).name("Provider")
                             .type(PropertyType.SINGLE_SELECT_LIST).options("Github", "BitbucketServer", "GitlabServer").build(),
 
                     PropertyDefinition.builder(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_TOKEN)

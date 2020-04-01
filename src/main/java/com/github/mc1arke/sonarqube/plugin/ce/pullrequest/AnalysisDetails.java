@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
 import org.apache.commons.lang.StringUtils;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
@@ -34,6 +35,7 @@ import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.ce.posttask.QualityGate.EvaluationStatus;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Metric;
@@ -79,10 +81,11 @@ public class AnalysisDetails {
     private final QualityGate qualityGate;
     private final Analysis analysis;
     private final Project project;
+    private final Configuration configuration;
 
     AnalysisDetails(BranchDetails branchDetails, PostAnalysisIssueVisitor postAnalysisIssueVisitor,
                     QualityGate qualityGate, MeasuresHolder measuresHolder, Analysis analysis, Project project,
-                    String publicRootURL) {
+                    Configuration configuration, String publicRootURL) {
         super();
         this.publicRootURL = publicRootURL;
         this.branchDetails = branchDetails;
@@ -91,6 +94,7 @@ public class AnalysisDetails {
         this.qualityGate = qualityGate;
         this.analysis = analysis;
         this.project = project;
+        this.configuration = configuration;
     }
 
     public String getBranchName() {
@@ -132,7 +136,7 @@ public class AnalysisDetails {
 
         List<QualityGate.Condition> failedConditions = findFailedConditions();
 
-        String baseImageUrl = getBaseImageUrl();
+        String baseImageUrl = configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE).orElse(getBaseImageUrl());
 
         Document document = new Document(new Paragraph((QualityGate.Status.OK == getQualityGateStatus() ?
                                                         new Image("Passed", baseImageUrl +
@@ -187,7 +191,7 @@ public class AnalysisDetails {
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
         final DefaultIssue issue = componentIssue.getIssue();
 
-        String baseImageUrl = getBaseImageUrl();
+        String baseImageUrl = configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE).orElse(getBaseImageUrl());
 
         Long effort = issue.effortInMinutes();
         Node effortNode = (null == effort ? new Text("") : new Paragraph(new Text(String.format("**Duration (min):** %s", effort))));

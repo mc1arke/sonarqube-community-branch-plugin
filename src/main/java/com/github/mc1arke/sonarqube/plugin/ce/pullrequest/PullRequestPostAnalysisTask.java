@@ -125,7 +125,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
                                     postAnalysisIssueVisitor, qualityGate,
                                     new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
                                                                        treeRootHolder), analysis,
-                                    projectAnalysis.getProject(), server.getPublicRootUrl());
+                                    projectAnalysis.getProject(), configuration, server.getPublicRootUrl());
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
         LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
