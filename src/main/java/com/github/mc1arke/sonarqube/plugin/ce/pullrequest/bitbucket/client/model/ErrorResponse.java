@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Oliver Jedinger
+ * Copyright (C) 2020 Mathias Åhsberg
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,23 +16,36 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
 
-import java.io.Serializable;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SummaryComment implements Serializable {
-    private final String text;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.Set;
 
-    @JsonCreator
-    public SummaryComment(@JsonProperty("text") final String text) {
-        super();
-        this.text = text;
+public class ErrorResponse implements Serializable {
+    private final Set<Error> errors;
+
+    ErrorResponse(@JsonProperty("errors") Set<Error> errors) {
+        this.errors = errors;
     }
 
-    public String getText() {
-        return text;
+    public Set<Error> getErrors() {
+        return Collections.unmodifiableSet(errors);
+    }
+
+    public static class Error implements Serializable {
+
+        private final String message;
+
+        Error(@JsonProperty("message") String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return this.message;
+        }
     }
 }
+
