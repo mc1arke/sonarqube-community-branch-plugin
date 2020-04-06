@@ -105,6 +105,14 @@ public class AnalysisDetails {
         return branchDetails.getCommitId();
     }
 
+    public String getDashboardUrl() {
+        return publicRootURL + "/dashboard?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName();
+    }
+
+    public String getIssueUrl(String issueKey) {
+        return publicRootURL + "/project/issues?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issueKey + "&open=" + issueKey;
+    }
+
     public QualityGate.Status getQualityGateStatus() {
         return qualityGate.getStatus();
     }
@@ -183,7 +191,7 @@ public class AnalysisDetails {
                                                                  .orElse("No duplication information") + " (" +
                                                          decimalFormat.format(duplications) +
                                                          "% Estimated after merge)"))),
-                                         new Link(publicRootURL + "/dashboard?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName(), new Text("View in SonarQube")));
+                                         new Link(getDashboardUrl(), new Text("View in SonarQube")));
 
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
@@ -205,7 +213,7 @@ public class AnalysisDetails {
                 new Paragraph(new Text(String.format("**Message:** %s", issue.getMessage()))),
                 effortNode,
                 resolutionNode,
-                new Link(publicRootURL + "/project/issues?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issue.key() + "&open=" + issue.key(), new Text("View in SonarQube"))
+                new Link(getIssueUrl(issue.key()), new Text("View in SonarQube"))
         );
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
@@ -273,13 +281,12 @@ public class AnalysisDetails {
         return project.getKey();
     }
 
-
-    private List<QualityGate.Condition> findFailedConditions() {
+    public List<QualityGate.Condition> findFailedConditions() {
         return qualityGate.getConditions().stream().filter(c -> c.getStatus() == QualityGate.EvaluationStatus.ERROR)
                 .collect(Collectors.toList());
     }
 
-    private Optional<MeasureWrapper> findMeasure(String metricKey) {
+    public Optional<MeasureWrapper> findMeasure(String metricKey) {
         return measuresHolder.getMeasureRepository().getRawMeasure(measuresHolder.getTreeRootHolder().getRoot(),
                                                                    measuresHolder.getMetricRepository()
                                                                            .getByKey(metricKey))
@@ -290,7 +297,7 @@ public class AnalysisDetails {
         return qualityGate.getConditions().stream().filter(c -> metricKey.equals(c.getMetricKey())).findFirst();
     }
 
-    private Map<RuleType, Long> countRuleByType() {
+    public Map<RuleType, Long> countRuleByType() {
         return Arrays.stream(RuleType.values()).collect(Collectors.toMap(k -> k,
                                                                          k -> postAnalysisIssueVisitor.getIssues()
                                                                                  .stream()
@@ -305,7 +312,7 @@ public class AnalysisDetails {
     }
 
 
-    private static String format(QualityGate.Condition condition) {
+    public static String format(QualityGate.Condition condition) {
         Metric<?> metric = CoreMetrics.getMetric(condition.getMetricKey());
         if (metric.getType() == Metric.ValueType.RATING) {
             return String

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Oliver Jedinger
+ * Copyright (C) 2020 Mathias Åhsberg
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,36 +16,43 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity;
-
-import java.io.Serializable;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Activity implements Serializable {
-    private final int id;
-
-    private final User user;
-
-    private final Comment comment;
+public class ReportData {
+    private final String title;
+    private final DataValue value;
+    @JsonProperty("type")
+    private final String type;
 
     @JsonCreator
-    public Activity(@JsonProperty("id") final int id, @JsonProperty("user") final User user, @JsonProperty("comment") final Comment comment) {
-        this.id = id;
-        this.user = user;
-        this.comment = comment;
+    public ReportData(@JsonProperty("title") String title, @JsonProperty("value") DataValue value) {
+        this.title = title;
+        this.value = value;
+        this.type = typeFrom(value);
     }
 
-    public int getId() {
-        return id;
+    public String getTitle() {
+        return title;
     }
 
-    public User getUser() {
-        return user;
+    public DataValue getValue() {
+        return value;
     }
 
-    public Comment getComment() {
-        return comment;
+    public String getType() {
+        return type;
+    }
+
+    private String typeFrom(DataValue value) {
+        if (value instanceof DataValue.Link) {
+            return "LINK";
+        } else if (value instanceof DataValue.Percentage) {
+            return "PERCENTAGE";
+        } else {
+            return "TEXT";
+        }
     }
 }
