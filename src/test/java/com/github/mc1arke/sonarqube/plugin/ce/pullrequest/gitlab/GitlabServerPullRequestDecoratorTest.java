@@ -63,11 +63,11 @@ public class GitlabServerPullRequestDecoratorTest {
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_URL)).thenReturn(Optional.of(wireMockRule.baseUrl()));
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_TOKEN)).thenReturn(Optional.of("token"));
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG)).thenReturn(Optional.of(repositorySlug));
-        when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_COMPACT_COMMENTS_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(GitlabServerPullRequestDecorator.PULLREQUEST_CAN_FAIL_PIPELINE_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_DELETE_COMMENTS_ENABLED)).thenReturn(Optional.of("true"));
         when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_FILE_COMMENT_ENABLED)).thenReturn(Optional.of("true"));
+        when(configuration.get(PullRequestBuildStatusDecorator.PULL_REQUEST_COMPACT_COMMENTS_ENABLED)).thenReturn(Optional.of("true"));
 
         QualityGate.Condition coverage = mock(QualityGate.Condition.class);
         when(coverage.getStatus()).thenReturn(QualityGate.EvaluationStatus.OK);
