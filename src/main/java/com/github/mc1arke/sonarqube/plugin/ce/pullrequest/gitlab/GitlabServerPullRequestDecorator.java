@@ -201,7 +201,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpGet.addHeader(entry.getKey(), entry.getValue());
         }
-        HttpResponse httpResponse = HttpClients.createDefault().execute(httpGet);
+        HttpResponse httpResponse = HttpClients.createSystem().execute(httpGet);
         if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
             LOGGER.error(httpResponse.toString());
             LOGGER.error(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
@@ -232,7 +232,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         List<X> discussions = new ArrayList<>();
 
         if (sendRequest) {
-            HttpResponse httpResponse = HttpClients.createDefault().execute(httpGet);
+            HttpResponse httpResponse = HttpClients.createSystem().execute(httpGet);
             if (null != httpResponse && httpResponse.getStatusLine().getStatusCode() != 200) {
                 LOGGER.error(httpResponse.toString());
                 LOGGER.error(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8));
@@ -267,7 +267,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         if (sendRequest) {
             LOGGER.info("Deleting {} with headers {}", commitDiscussionNoteURL, headers);
 
-            HttpResponse httpResponse = HttpClients.createDefault().execute(httpDelete);
+            HttpResponse httpResponse = HttpClients.createSystem().execute(httpDelete);
             validateGitlabResponse(httpResponse, 204, "Commit discussions note deleted");
         }
     }
@@ -283,7 +283,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         if (sendRequest) {
             LOGGER.info("Posting {} with headers {} to {}", params, headers, commitCommentUrl);
 
-            HttpResponse httpResponse = HttpClients.createDefault().execute(httpPost);
+            HttpResponse httpResponse = HttpClients.createSystem().execute(httpPost);
             validateGitlabResponse(httpResponse, 201, "Comment posted");
         }
     }
@@ -307,7 +307,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             httpPost.addHeader(entry.getKey(), entry.getValue());
         }
         if (sendRequest) {
-            HttpResponse httpResponse = HttpClients.createDefault().execute(httpPost);
+            HttpResponse httpResponse = HttpClients.createSystem().execute(httpPost);
             if (null != httpResponse && httpResponse.toString().contains("Cannot transition status")) {
                 // Workaround for https://gitlab.com/gitlab-org/gitlab-ce/issues/25807
                 LOGGER.debug("Transition status is already {}", status);
