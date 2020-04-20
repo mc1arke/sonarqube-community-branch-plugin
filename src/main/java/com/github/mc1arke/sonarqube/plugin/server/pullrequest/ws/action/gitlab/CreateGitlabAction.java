@@ -29,6 +29,7 @@ import static org.sonar.db.alm.setting.ALM.GITLAB;
 
 public class CreateGitlabAction extends CreateAction {
 
+    private static final String URL_PARAMETER = "url";
     private static final String PERSONAL_ACCESS_TOKEN_PARAMETER = "personalAccessToken";
 
     public CreateGitlabAction(DbClient dbClient, UserSession userSession) {
@@ -37,6 +38,7 @@ public class CreateGitlabAction extends CreateAction {
 
     @Override
     public void configureAction(WebService.NewAction action) {
+        action.createParam(URL_PARAMETER).setMaximumLength(2000);
         action.createParam(PERSONAL_ACCESS_TOKEN_PARAMETER).setRequired(true).setMaximumLength(2000);
     }
 
@@ -45,6 +47,7 @@ public class CreateGitlabAction extends CreateAction {
         return new AlmSettingDto()
                 .setAlm(GITLAB)
                 .setKey(key)
+                .setUrl(request.param(URL_PARAMETER))
                 .setPersonalAccessToken(request.mandatoryParam(PERSONAL_ACCESS_TOKEN_PARAMETER));
     }
 

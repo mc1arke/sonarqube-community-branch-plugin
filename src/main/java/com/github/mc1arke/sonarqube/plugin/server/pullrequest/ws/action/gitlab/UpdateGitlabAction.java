@@ -27,6 +27,7 @@ import org.sonar.server.user.UserSession;
 
 public class UpdateGitlabAction extends UpdateAction {
 
+    private static final String URL_PARAMETER = "url";
     private static final String PERSONAL_ACCESS_TOKEN_PARAMETER = "personalAccessToken";
 
     public UpdateGitlabAction(DbClient dbClient, UserSession userSession) {
@@ -35,12 +36,14 @@ public class UpdateGitlabAction extends UpdateAction {
 
     @Override
     protected void configureAction(WebService.NewAction action) {
+        action.createParam(URL_PARAMETER).setMaximumLength(2000);
         action.createParam(PERSONAL_ACCESS_TOKEN_PARAMETER).setRequired(true).setMaximumLength(2000);
     }
 
     @Override
     protected AlmSettingDto updateAlmSettingsDto(AlmSettingDto almSettingDto, Request request) {
-        return almSettingDto.setPersonalAccessToken(request.mandatoryParam(PERSONAL_ACCESS_TOKEN_PARAMETER));
+        return almSettingDto.setPersonalAccessToken(request.mandatoryParam(PERSONAL_ACCESS_TOKEN_PARAMETER))
+            .setUrl(request.param(URL_PARAMETER));
     }
 
 }

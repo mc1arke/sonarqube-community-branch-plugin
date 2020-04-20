@@ -29,7 +29,7 @@ import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 import org.sonar.server.ws.WsUtils;
@@ -59,7 +59,7 @@ public class ListAction extends ProjectWsAction {
     }
 
     @Override
-    protected void handleProjectRequest(ComponentDto project, Request request, Response response, DbSession dbSession) {
+    protected void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
         List<AlmSettingDto> settings = dbClient.almSettingDao().selectAll(dbSession);
         List<AlmSetting> wsAlmSettings = settings.stream().map(almSetting -> {
             AlmSetting.Builder almSettingBuilder = AlmSetting.newBuilder().setKey(almSetting.getKey())

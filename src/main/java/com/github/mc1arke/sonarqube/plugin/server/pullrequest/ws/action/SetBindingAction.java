@@ -25,7 +25,7 @@ import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 
@@ -37,15 +37,17 @@ public abstract class SetBindingAction extends ProjectWsAction {
         super(actionName, dbClient, componentFinder, userSession);
     }
 
+    @Override
     protected void configureAction(WebService.NewAction action) {
         action.createParam(ALM_SETTING_PARAMETER).setRequired(true);
     }
 
-    protected void handleProjectRequest(ComponentDto project, Request request, Response response, DbSession dbSession) {
+    @Override
+    protected void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
         String almSetting = request.mandatoryParam(ALM_SETTING_PARAMETER);
 
         AlmSettingDto almSettingDto = getAlmSetting(dbSession, almSetting);
-        getDbClient().projectAlmSettingDao().insertOrUpdate(dbSession, createProjectAlmSettingDto(project.uuid(), almSettingDto.getUuid(), request));
+        getDbClient().projectAlmSettingDao().insertOrUpdate(dbSession, createProjectAlmSettingDto(project.getUuid(), almSettingDto.getUuid(), request));
         dbSession.commit();
 
         response.noContent();
