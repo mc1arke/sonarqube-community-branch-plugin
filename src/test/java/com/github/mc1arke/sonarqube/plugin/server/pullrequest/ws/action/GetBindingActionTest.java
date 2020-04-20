@@ -25,7 +25,7 @@ import org.sonar.db.alm.setting.AlmSettingDao;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.user.UserSession;
@@ -73,18 +73,18 @@ public class GetBindingActionTest {
         when(almSettingDto.getKey()).thenReturn("key");
         when(almSettingDto.getUrl()).thenReturn("url");
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ComponentDto componentDto = mock(ComponentDto.class);
+        ProjectDto projectDto = mock(ProjectDto.class);
         ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
         ComponentFinder componentFinder = mock(ComponentFinder.class);
-        when(componentDto.uuid()).thenReturn("projectUuid");
-        when(componentFinder.getByKey(eq(dbSession), eq("project"))).thenReturn(componentDto);
+        when(projectDto.getKey()).thenReturn("projectUuid");
+        when(componentFinder.getProjectByKey(eq(dbSession), eq("project"))).thenReturn(projectDto);
         UserSession userSession = mock(UserSession.class);
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almSettingUuid");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repository");
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("slug");
-        when(projectAlmSettingDao.selectByProject(eq(dbSession), eq(componentDto))).thenReturn(Optional.of(projectAlmSettingDto));
+        when(projectAlmSettingDao.selectByProject(eq(dbSession), eq(projectDto))).thenReturn(Optional.of(projectAlmSettingDto));
         ProtoBufWriter protoBufWriter = mock(ProtoBufWriter.class);
 
         GetBindingAction testCase = new GetBindingAction(dbClient, componentFinder, userSession, protoBufWriter);
@@ -122,12 +122,12 @@ public class GetBindingActionTest {
         when(projectAlmSettingDao.selectByProject(eq(dbSession), eq("projectUuid"))).thenReturn(Optional.empty());
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        ComponentDto componentDto = mock(ComponentDto.class);
-        when(componentDto.getKey()).thenReturn("projectKey");
+        ProjectDto projectDto = mock(ProjectDto.class);
+        when(projectDto.getKey()).thenReturn("project");
 
         ComponentFinder componentFinder = mock(ComponentFinder.class);
-        when(componentDto.uuid()).thenReturn("projectUuid");
-        when(componentFinder.getByKey(eq(dbSession), eq("project"))).thenReturn(componentDto);
+        when(projectDto.getKey()).thenReturn("project");
+        when(componentFinder.getProjectByKey(eq(dbSession), eq("project"))).thenReturn(projectDto);
         UserSession userSession = mock(UserSession.class);
 
         GetBindingAction testCase = new GetBindingAction(dbClient, componentFinder, userSession);
@@ -139,7 +139,7 @@ public class GetBindingActionTest {
         when(request.mandatoryParam("project")).thenReturn("project");
         when(request.getMediaType()).thenReturn("dummy");
 
-        assertThatThrownBy(() -> testCase.handle(request, response)).isInstanceOf(NotFoundException.class).hasMessage("Project 'projectKey' is not bound to any ALM");
+        assertThatThrownBy(() -> testCase.handle(request, response)).isInstanceOf(NotFoundException.class).hasMessage("Project 'project' is not bound to any ALM");
     }
 
     @Test
@@ -151,10 +151,10 @@ public class GetBindingActionTest {
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("settingUuid");
 
-        ComponentDto componentDto = mock(ComponentDto.class);
-        when(componentDto.getKey()).thenReturn("projectKey");
+        ProjectDto projectDto = mock(ProjectDto.class);
+        when(projectDto.getKey()).thenReturn("project");
 
-        when(projectAlmSettingDao.selectByProject(eq(dbSession), eq(componentDto))).thenReturn(Optional.of(projectAlmSettingDto));
+        when(projectAlmSettingDao.selectByProject(eq(dbSession), eq(projectDto))).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
@@ -162,8 +162,8 @@ public class GetBindingActionTest {
         when(almSettingDao.selectByKey(eq(dbSession), eq("settingUuid"))).thenReturn(Optional.empty());
 
         ComponentFinder componentFinder = mock(ComponentFinder.class);
-        when(componentDto.uuid()).thenReturn("projectUuid");
-        when(componentFinder.getByKey(eq(dbSession), eq("project"))).thenReturn(componentDto);
+        when(projectDto.getKey()).thenReturn("projectUuid");
+        when(componentFinder.getProjectByKey(eq(dbSession), eq("project"))).thenReturn(projectDto);
         UserSession userSession = mock(UserSession.class);
 
         GetBindingAction testCase = new GetBindingAction(dbClient, componentFinder, userSession);

@@ -31,6 +31,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Note;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -101,10 +102,11 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         String revision = analysis.getCommitSha();
 
         try {
-            final String apiURL = analysis.getScannerProperty(PULLREQUEST_GITLAB_INSTANCE_URL).orElseThrow(
-                    () -> new IllegalStateException(String.format(
+            final String apiURL = Optional.ofNullable(StringUtils.stripToNull(almSettingDto.getUrl()))
+                .orElse(analysis.getScannerProperty(PULLREQUEST_GITLAB_INSTANCE_URL)
+                .orElseThrow(() -> new IllegalStateException(String.format(
                             "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
-                            PULLREQUEST_GITLAB_INSTANCE_URL)));
+                            PULLREQUEST_GITLAB_INSTANCE_URL))));
             final String apiToken = almSettingDto.getPersonalAccessToken();
             final String projectId = analysis.getScannerProperty(PULLREQUEST_GITLAB_PROJECT_ID).orElseThrow(
                     () -> new IllegalStateException(String.format(

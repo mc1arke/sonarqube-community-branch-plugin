@@ -22,6 +22,7 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 
@@ -74,9 +75,9 @@ public class SetBindingActionTest {
         ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
         ComponentFinder componentFinder = mock(ComponentFinder.class);
-        ComponentDto componentDto = mock(ComponentDto.class);
-        when(componentDto.uuid()).thenReturn("projectUuid");
-        when(componentFinder.getByKey(eq(dbSession), eq("project"))).thenReturn(componentDto);
+        ProjectDto componentDto = mock(ProjectDto.class);
+        when(componentDto.getUuid()).thenReturn("projectUuid");
+        when(componentFinder.getProjectByKey(eq(dbSession), eq("project"))).thenReturn(componentDto);
         UserSession userSession = mock(UserSession.class);
         ThreadLocal<WebService.NewAction> capturedAction = new ThreadLocal<>();
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
