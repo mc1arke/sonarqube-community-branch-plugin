@@ -32,6 +32,7 @@ import org.sonarqube.ws.AlmSettings.AlmSettingGithub;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -115,8 +116,12 @@ public class ListDefinitionsAction extends AlmSettingsWsAction {
     }
 
     private static AlmSettings.AlmSettingGitlab toGitlab(AlmSettingDto settingDto) {
-        return AlmSettings.AlmSettingGitlab.newBuilder()
+        AlmSettings.AlmSettingGitlab.Builder almSettingBuilder =  AlmSettings.AlmSettingGitlab.newBuilder()
             .setKey(settingDto.getKey())
-            .setPersonalAccessToken(requireNonNull(settingDto.getPersonalAccessToken(), "Personal Access Token cannot be null for Gitlab ALM setting")).build();
+            .setPersonalAccessToken(requireNonNull(settingDto.getPersonalAccessToken(), "Personal Access Token cannot be null for Gitlab ALM setting"));
+
+        Optional.ofNullable(settingDto.getUrl()).ifPresent(almSettingBuilder::setUrl);
+
+        return almSettingBuilder.build();
     }
 }

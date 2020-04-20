@@ -1,16 +1,5 @@
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
 import org.junit.Test;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
@@ -21,9 +10,20 @@ import org.sonar.db.alm.setting.AlmSettingDao;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SetBindingActionTest {
 
@@ -74,9 +74,9 @@ public class SetBindingActionTest {
         ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
         ComponentFinder componentFinder = mock(ComponentFinder.class);
-        ComponentDto componentDto = mock(ComponentDto.class);
-        when(componentDto.uuid()).thenReturn("projectUuid");
-        when(componentFinder.getByKey(eq(dbSession), eq("project"))).thenReturn(componentDto);
+        ProjectDto componentDto = mock(ProjectDto.class);
+        when(componentDto.getUuid()).thenReturn("projectUuid");
+        when(componentFinder.getProjectByKey(eq(dbSession), eq("project"))).thenReturn(componentDto);
         UserSession userSession = mock(UserSession.class);
         ThreadLocal<WebService.NewAction> capturedAction = new ThreadLocal<>();
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -99,7 +99,7 @@ public class SetBindingActionTest {
         Response response = mock(Response.class);
 
         when(request.mandatoryParam("almSetting")).thenReturn("almSetting");
-        when(request.mandatoryParam("project")).thenReturn("project");
+        when(request.param("project")).thenReturn("project");
 
         testCase.handle(request, response);
 

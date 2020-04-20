@@ -23,7 +23,7 @@ import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
-import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 
@@ -32,7 +32,7 @@ public class DeleteBindingAction extends ProjectWsAction {
     private final DbClient dbClient;
 
     public DeleteBindingAction(DbClient dbClient, UserSession userSession, ComponentFinder componentFinder) {
-        super("delete_binding", dbClient, componentFinder, userSession);
+        super("delete_binding", dbClient, componentFinder, userSession, true);
         this.dbClient = dbClient;
     }
 
@@ -43,7 +43,7 @@ public class DeleteBindingAction extends ProjectWsAction {
     }
 
     @Override
-    protected void handleProjectRequest(ComponentDto project, Request request, Response response, DbSession dbSession) {
+    protected void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
         dbClient.projectAlmSettingDao().deleteByProject(dbSession, project);
         dbSession.commit();
 
