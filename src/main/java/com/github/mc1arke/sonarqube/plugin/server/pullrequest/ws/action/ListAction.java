@@ -18,25 +18,24 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
-import static java.util.Optional.ofNullable;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.AlmTypeMapper;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 import org.sonar.server.ws.WsUtils;
 import org.sonarqube.ws.AlmSettings.AlmSetting;
 import org.sonarqube.ws.AlmSettings.ListWsResponse;
 
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.AlmTypeMapper;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.Optional.ofNullable;
 
 public class ListAction extends ProjectWsAction {
 
@@ -48,7 +47,7 @@ public class ListAction extends ProjectWsAction {
     }
 
     public ListAction(DbClient dbClient, UserSession userSession, ComponentFinder componentFinder, ProtoBufWriter protoBufWriter) {
-        super("list", dbClient, componentFinder, userSession);
+        super("list", dbClient, componentFinder, userSession, false);
         this.dbClient = dbClient;
         this.protoBufWriter = protoBufWriter;
     }
@@ -59,7 +58,7 @@ public class ListAction extends ProjectWsAction {
     }
 
     @Override
-    protected void handleProjectRequest(ComponentDto project, Request request, Response response, DbSession dbSession) {
+    protected void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
         List<AlmSettingDto> settings = dbClient.almSettingDao().selectAll(dbSession);
         List<AlmSetting> wsAlmSettings = settings.stream().map(almSetting -> {
             AlmSetting.Builder almSettingBuilder = AlmSetting.newBuilder().setKey(almSetting.getKey())
