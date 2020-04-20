@@ -69,9 +69,9 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());
 
-    private static final String REST_API = "/bitbucket/rest/api/1.0/";
+    private static final String REST_API = "/rest/api/1.0/";
     private static final String PROJECT_PR_API = "projects/%s/repos/%s/pull-requests/%s/";
-    private static final String INSIGHTS_API = "/bitbucket/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/sonar.pullrequest.key";
+    private static final String INSIGHTS_API = "/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/sonar.pullrequest.key";
     private static final String COMMENTS_API = "comments";
     private static final String DIFF_API = "diff";
 

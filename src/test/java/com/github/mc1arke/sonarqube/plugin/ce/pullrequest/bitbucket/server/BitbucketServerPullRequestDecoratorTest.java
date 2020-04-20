@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.Insights;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.SummaryComment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff.DiffPage;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -38,6 +39,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
@@ -64,6 +66,8 @@ public class BitbucketServerPullRequestDecoratorTest {
     private static final String DIFFURL = "http://localhost:8089/diff";
 
     private static final String COMMENTURL = "http://localhost:8089/comments";
+
+    private static final String INSIGHTSURL = "http://localhost:8089/insights";
 
     @Before
     public void setUp() {
@@ -114,5 +118,18 @@ public class BitbucketServerPullRequestDecoratorTest {
         stubFor(post(urlEqualTo("/comments")).withHeader("Accept", equalTo("application/json")).willReturn(
                 aResponse().withStatus(201).withHeader("Content-Type", "application/json").withBody("{}")));
         assertThat(bitbucketServerPullRequestDecorator.postComment(COMMENTURL, headers, summaryComment), is(true));
+    }
+
+    @Test
+    public void putComment() throws Exception{
+        StringEntity summaryInsightEntity = new StringEntity(new ObjectMapper().writeValueAsString(new Insights("SonarQube Quality Report", "PASS")), ContentType.APPLICATION_JSON);
+
+        stubFor(put(urlEqualTo("/insights")).withHeader("Accept", equalTo("application/json")).willReturn(
+                aResponse().withStatus(400).withHeader("Content-Type", "application/json").withBody("{}")));
+        assertThat(bitbucketServerPullRequestDecorator.putComment(INSIGHTSURL, headers, summaryInsightEntity), is(false));
+
+        stubFor(put(urlEqualTo("/insights")).withHeader("Accept", equalTo("application/json")).willReturn(
+                aResponse().withStatus(201).withHeader("Content-Type", "application/json").withBody("{}")));
+        assertThat(bitbucketServerPullRequestDecorator.putComment(INSIGHTSURL, headers, summaryInsightEntity), is(true));
     }
 }
