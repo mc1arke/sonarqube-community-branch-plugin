@@ -114,7 +114,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                     PropertyDefinition.builder(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_URL)
                             .category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GITHUB_INTEGRATION_SUBCATEGORY_LABEL)
                             .onQualifiers(Qualifiers.APP).name("The API URL for a GitHub instance").description(
-                            "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/ when using GitHub Enterprise")
+                            "The API url for a GitHub instance. https://api.github.com/ for github.com, https://github.company.com/api/v3 when using GitHub Enterprise")
                             .type(PropertyType.STRING).defaultValue("https://api.github.com").build(),
 
                     PropertyDefinition.builder(PullRequestBuildStatusDecorator.PULL_REQUEST_COMMENT_SUMMARY_ENABLED).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(GENERAL)

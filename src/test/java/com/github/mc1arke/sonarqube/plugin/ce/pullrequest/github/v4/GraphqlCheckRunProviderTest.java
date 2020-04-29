@@ -186,16 +186,40 @@ public class GraphqlCheckRunProviderTest {
 
     @Test
     public void createCheckRunHappyPathOkStatus() throws IOException, GeneralSecurityException {
-        createCheckRunHappyPath(QualityGate.Status.OK);
+        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain", "http://api.target.domain/graphql");
+    }
+
+    @Test
+    public void createCheckRunHappyPathOkStatusTrailingSlash() throws IOException, GeneralSecurityException {
+        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/", "http://api.target.domain/graphql");
+    }
+
+    @Test
+    public void createCheckRunHappyPathOkStatusApiPath() throws IOException, GeneralSecurityException {
+        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/api", "http://api.target.domain/api/graphql");
+    }
+
+    @Test
+    public void createCheckRunHappyPathOkStatusApiPathTrailingSlash() throws IOException, GeneralSecurityException {
+        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/api/", "http://api.target.domain/api/graphql");
+    }
+
+    @Test
+    public void createCheckRunHappyPathOkStatusV3Path() throws IOException, GeneralSecurityException {
+        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/api/v3", "http://api.target.domain/api/graphql");
+    }
+
+    @Test
+    public void createCheckRunHappyPathOkStatusV3PathTrailingSlash() throws IOException, GeneralSecurityException {
+        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/api/v3/", "http://api.target.domain/api/graphql");
     }
 
     @Test
     public void createCheckRunHappyPathErrorStatus() throws IOException, GeneralSecurityException {
-        createCheckRunHappyPath(QualityGate.Status.ERROR);
+        createCheckRunHappyPath(QualityGate.Status.ERROR, "http://abc.de/", "http://abc.de/graphql");
     }
 
-
-    private void createCheckRunHappyPath(QualityGate.Status status) throws IOException, GeneralSecurityException {
+    private void createCheckRunHappyPath(QualityGate.Status status, String basePath, String fullPath) throws IOException, GeneralSecurityException {
         when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
 
         DefaultIssue issue1 = mock(DefaultIssue.class);
@@ -286,7 +310,7 @@ public class GraphqlCheckRunProviderTest {
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
 
         when(configuration.get(anyString())).then(i -> Optional.of(i.getArgument(0)));
-        when(configuration.get(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_URL)).thenReturn(Optional.of("http://host.name"));
+        when(configuration.get(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_URL)).thenReturn(Optional.of(basePath));
 
         ArgumentCaptor<String> authenticationProviderArgumentCaptor = ArgumentCaptor.forClass(String.class);
         RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
@@ -346,7 +370,7 @@ public class GraphqlCheckRunProviderTest {
         headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
 
-        verify(requestBuilders.get(0)).url(eq("http://host.name/graphql"));
+        verify(requestBuilders.get(0)).url(eq(fullPath));
         verify(requestBuilders.get(0)).headers(eq(headers));
         verify(requestBuilders.get(0)).requestMethod(eq(GraphQLTemplate.GraphQLMethod.MUTATE));
         verify(requestBuilders.get(0)).build();
@@ -359,7 +383,7 @@ public class GraphqlCheckRunProviderTest {
         assertEquals("input", argumentsArgumentCaptor.getValue().getArguments().get(0).getKey());
 
         assertEquals(
-                Arrays.asList("http://host.name", "sonar.alm.github.app.id", "sonar.alm.github.app.privateKey.secured",
+                Arrays.asList(basePath, "sonar.alm.github.app.id", "sonar.alm.github.app.privateKey.secured",
                               "sonar.pullrequest.github.repository"),
                 authenticationProviderArgumentCaptor.getAllValues());
 

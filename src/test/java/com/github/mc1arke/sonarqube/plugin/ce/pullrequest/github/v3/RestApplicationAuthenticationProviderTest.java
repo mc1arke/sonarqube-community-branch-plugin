@@ -49,6 +49,30 @@ public class RestApplicationAuthenticationProviderTest {
 
     @Test
     public void testTokenRetrievedHappyPath() throws IOException {
+        testTokenForUrl("apiUrl", "apiUrl/app/installations");
+    }
+
+    @Test
+    public void testTokenRetrievedHappyPathApiPath() throws IOException {
+        testTokenForUrl("apiUrl/api", "apiUrl/api/v3/app/installations");
+    }
+
+    @Test
+    public void testTokenRetrievedHappyPathApiPathTrailingSlash() throws IOException {
+        testTokenForUrl("apiUrl/api/", "apiUrl/api/v3/app/installations");
+    }
+
+    @Test
+    public void testTokenRetrievedHappyPathV3Path() throws IOException {
+        testTokenForUrl("apiUrl/api/v3", "apiUrl/api/v3/app/installations");
+    }
+
+    @Test
+    public void testTokenRetrievedHappyPathV3PathTrailingSlash() throws IOException {
+        testTokenForUrl("apiUrl/api/v3/", "apiUrl/api/v3/app/installations");
+    }
+
+    private void testTokenForUrl(String apiUrl, String fullUrl) throws IOException {
         UrlConnectionProvider urlProvider = mock(UrlConnectionProvider.class);
         Clock clock = Clock.fixed(Instant.ofEpochMilli(123456789L), ZoneId.of("UTC"));
 
@@ -74,8 +98,7 @@ public class RestApplicationAuthenticationProviderTest {
                  "\"}]}").getBytes(StandardCharsets.UTF_8))).when(repositoriesUrlConnection).getInputStream();
         doReturn(repositoriesUrlConnection).when(urlProvider).createUrlConnection("repositories_url");
 
-        String apiUrl = "apiUrl";
-        doReturn(installationsUrlConnection).when(urlProvider).createUrlConnection(eq(apiUrl + "/app/installations"));
+        doReturn(installationsUrlConnection).when(urlProvider).createUrlConnection(eq(fullUrl));
 
         String appId = "appID";
 

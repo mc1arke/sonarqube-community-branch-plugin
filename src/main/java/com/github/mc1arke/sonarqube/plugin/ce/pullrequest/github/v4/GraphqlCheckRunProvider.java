@@ -149,7 +149,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
 
         GraphQLRequestEntity graphQLRequestEntity =
-                graphqlProvider.createRequestBuilder().url(apiUrl + "/graphql").headers(headers)
+                graphqlProvider.createRequestBuilder().url(getGraphqlUrl(apiUrl)).headers(headers)
                         .request(CreateCheckRun.class)
                         .arguments(new Arguments("createCheckRun", new Argument<>("input", repositoryInputObject)))
                         .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE).build();
@@ -172,6 +172,18 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                     "An error was returned in the response from the Github API:" + System.lineSeparator() +
                     errors.stream().collect(Collectors.joining(System.lineSeparator())));
         }
+    }
+
+    private static String getGraphqlUrl(String apiUrl) {
+        if (apiUrl.endsWith("/")) {
+            apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
+        }
+        if (apiUrl.endsWith("/v3")) {
+            apiUrl = apiUrl.substring(0, apiUrl.length() - 3);
+        }
+        apiUrl = apiUrl + "/graphql";
+
+        return apiUrl;
     }
 
     private static CheckAnnotationLevel mapToGithubAnnotationLevel(String sonarqubeSeverity) {
