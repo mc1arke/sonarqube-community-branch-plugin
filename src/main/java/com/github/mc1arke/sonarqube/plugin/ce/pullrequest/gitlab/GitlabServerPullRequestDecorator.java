@@ -49,6 +49,7 @@ import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.platform.Server;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
+import org.sonar.ce.task.projectanalysis.measure.Measure;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
@@ -56,13 +57,18 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -80,8 +86,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     public static final String PULLREQUEST_GITLAB_PIPELINE_ID =
             "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId";
 
-    private static final String NO_COVERAGE_VALUE =
-            "-1";
+    private static final String NO_COVERAGE_VALUE = "-1";
 
     private static final Logger LOGGER = Loggers.get(GitlabServerPullRequestDecorator.class);
     private static final List<String> OPEN_ISSUE_STATUSES =
@@ -158,9 +163,11 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                 }
             }
 
-            String coverageValue = analysis.findQualityGateCondition(CoreMetrics.COVERAGE_KEY)
-                    .filter(condition -> condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
-                    .map(QualityGate.Condition::getValue)
+            NumberFormat decimalFormat = new DecimalFormat("#0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+            String coverageValue = analysis.findMeasure(CoreMetrics.COVERAGE_KEY)
+                    .map(Measure::getDoubleValue)
+                    .map(BigDecimal::new)
+                    .map(decimalFormat::format)
                     .orElse(NO_COVERAGE_VALUE);
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
@@ -321,7 +328,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                         .encode(analysis.getBranchName(),
                                 StandardCharsets.UTF_8.name())), StandardCharsets.UTF_8.name()));
         statusPostUrl.append("&description=").append(URLEncoder.encode("SonarQube Status", StandardCharsets.UTF_8.name()));
-        if (coverage != NO_COVERAGE_VALUE) {
+        if (!coverage.equals(NO_COVERAGE_VALUE)) {
             statusPostUrl.append("&coverage=").append(coverage);
         }
         analysis.getScannerProperty(PULLREQUEST_GITLAB_PIPELINE_ID).ifPresent(pipelineId -> statusPostUrl.append("&pipeline_id=").append(pipelineId));

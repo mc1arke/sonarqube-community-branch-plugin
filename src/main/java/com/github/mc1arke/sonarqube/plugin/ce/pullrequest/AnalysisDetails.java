@@ -116,20 +116,20 @@ public class AnalysisDetails {
 
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
-        BigDecimal newCoverage =
-                findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                    .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
-                    .map(QualityGate.Condition::getValue)
-                    .map(BigDecimal::new)
-                    .orElse(null);
+        BigDecimal newCoverage = findMeasure(CoreMetrics.NEW_COVERAGE_KEY)
+                .map(Measure::getDoubleValue)
+                .map(BigDecimal::new)
+                .orElse(null);
 
-        double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).orElse(0D);
+        BigDecimal coverage = findMeasure(CoreMetrics.COVERAGE_KEY).
+                map(Measure::getDoubleValue).
+                map(BigDecimal::new)
+                .orElse(null);
 
-        BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
-            .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
-            .map(QualityGate.Condition::getValue)
-            .map(BigDecimal::new)
-            .orElse(null);
+        BigDecimal newDuplications = findMeasure(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
+                .map(Measure::getDoubleValue)
+                .map(BigDecimal::new)
+                .orElse(null);
 
         double duplications =
                 findMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY).map(Measure::getDoubleValue).orElse(0D);
@@ -180,7 +180,9 @@ public class AnalysisDetails {
                                                          Optional.ofNullable(newCoverage).map(decimalFormat::format)
                                                                  .map(i -> i + "% Coverage")
                                                                  .orElse("No coverage information") + " (" +
-                                                         decimalFormat.format(coverage) + "% Estimated after merge)")),
+                                                                 Optional.ofNullable(coverage).map(decimalFormat::format)
+                                                                         .map(i -> i + "% Estimated ")
+                                                                         .orElse("No information ") + "after merge)")),
                                                  new ListItem(createDuplicateImage(newDuplications, baseImageUrl),
                                                               new Text(" "), new Text(
                                                          Optional.ofNullable(newDuplications).map(decimalFormat::format)
@@ -284,7 +286,7 @@ public class AnalysisDetails {
                 .collect(Collectors.toList());
     }
 
-    private Optional<Measure> findMeasure(String metricKey) {
+    public Optional<Measure> findMeasure(String metricKey) {
         return measuresHolder.getMeasureRepository().getRawMeasure(measuresHolder.getTreeRootHolder().getRoot(),
                                                                    measuresHolder.getMetricRepository()
                                                                            .getByKey(metricKey));
