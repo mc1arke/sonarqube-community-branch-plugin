@@ -38,14 +38,15 @@ Add the plugin to the `extensions/plugins/` and also into the `lib/common/` dire
 
 Quick start to your SonarQube docker container:
 ```
-version: 2
+version: "3"
 
 services:
   sonarqube:
     image: sonarqube
-    container_name: sonarqube
+    expose:
+      - 9000
     ports:
-      - 9000:9000
+      - "127.0.0.1:9000:9000"
     networks:
       - sonarnet
     environment:
@@ -57,11 +58,9 @@ services:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
-      - sonarqube_common:/opt/sonarqube/lib/common
 
   db:
     image: postgres
-    container_name: postgres
     networks:
       - sonarnet
     environment:
@@ -70,4 +69,15 @@ services:
     volumes:
       - postgresql:/var/lib/postgresql
       - postgresql_data:/var/lib/postgresql/data
+
+networks:
+  sonarnet:
+
+volumes:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_bundled-plugins:
+  postgresql:
+  postgresql_data:
 ``` 
