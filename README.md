@@ -58,6 +58,7 @@ services:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+      - sonarqube_common:/opt/sonarqube/lib/common
 
   db:
     image: postgres
