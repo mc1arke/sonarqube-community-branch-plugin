@@ -256,7 +256,7 @@ public class PullRequestPostAnalysisTaskTest {
                                     postAnalysisIssueVisitor, qualityGate,
                                     new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
                                                                        treeRootHolder), analysis, project,
-                                    null);
+                                    configuration ,null);
         assertThat(analysisDetailsArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(analysisDetails);
         assertThat(unifyConfigurationArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(new UnifyConfiguration(configuration, scannerContext));
     }

@@ -30,6 +30,13 @@ To enable setting of several properties in SonarQube on project level is require
 
 The property "projectKey" or "userSlug" are mandatory in order to decide which API endpoint should be used.
 
+## Serving images for PR decoration
+By default, images for PR decoration are served as static resources on the SonarQube server as a part of Community Branch Plugin. 
+
+If you use a SonarQube server behind a firewall and/or PR service (Github, Gitlab etc..) hasn't access to SonarQube server, you should change `Images base URL` property in `General > Pull Request` settings.
+
+Anyone needing to set this value can use the URL `https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/static`, or download the files from this location and host them themself.
+
 # Contribution
 To generate the jar file to copy to your Sonar Server execute ```./gradlew clean build``` inside of the project dir. This will put the jar under ```libs/sonarqube-community-branch-plugin*.jar```
 
