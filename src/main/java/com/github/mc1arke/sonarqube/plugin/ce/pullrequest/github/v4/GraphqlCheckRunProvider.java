@@ -148,7 +148,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
         GraphQLRequestEntity.RequestBuilder graphQLRequestEntityBuilder =
                 graphqlProvider.createRequestBuilder()
-                        .url(apiUrl + "/graphql")
+                        .url(getGraphqlUrl(apiUrl))
                         .headers(headers)
                         .request(CreateCheckRun.class)
                         .arguments(new Arguments("createCheckRun", new Argument<>("input", repositoryInputObjectBuilder
@@ -237,6 +237,18 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                     .put("annotationLevel", mapToGithubAnnotationLevel(componentIssue.getIssue().severity()))
                     .put("message", componentIssue.getIssue().getMessage().replaceAll("\\\\","\\\\\\\\").replaceAll("\"", "\\\\\"")).build();
         }).collect(Collectors.toList());
+    }
+
+    private static String getGraphqlUrl(String apiUrl) {
+        if (apiUrl.endsWith("/")) {
+            apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
+        }
+        if (apiUrl.endsWith("/v3")) {
+            apiUrl = apiUrl.substring(0, apiUrl.length() - 3);
+        }
+        apiUrl = apiUrl + "/graphql";
+
+        return apiUrl;
     }
 
     private static CheckAnnotationLevel mapToGithubAnnotationLevel(String sonarqubeSeverity) {

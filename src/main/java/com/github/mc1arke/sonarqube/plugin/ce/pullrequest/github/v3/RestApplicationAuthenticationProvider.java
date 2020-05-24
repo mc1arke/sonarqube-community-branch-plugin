@@ -79,7 +79,7 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
 
         ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-        URLConnection appConnection = urlProvider.createUrlConnection(apiUrl + "/app/installations");
+        URLConnection appConnection = urlProvider.createUrlConnection(getV3Url(apiUrl) + "/app/installations");
         appConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
         appConnection.setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
 
@@ -144,6 +144,15 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
         return findRepositoryAuthenticationToken(appToken, nextLink.get(), projectPath, objectMapper);
     }
 
+    private static String getV3Url(String apiUrl) {
+        if (apiUrl.endsWith("/")) {
+            apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
+        }
+        if (apiUrl.endsWith("/api")) {
+            apiUrl = apiUrl + "/v3";
+        }
+        return apiUrl;
+    }
 
     private static PrivateKey createPrivateKey(String apiPrivateKey) throws IOException {
         try (PEMParser pemParser = new PEMParser(new StringReader(apiPrivateKey))) {
