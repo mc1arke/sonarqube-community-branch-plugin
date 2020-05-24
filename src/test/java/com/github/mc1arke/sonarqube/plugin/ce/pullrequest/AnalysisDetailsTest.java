@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Formatter;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
@@ -33,6 +34,7 @@ import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.rules.RuleType;
@@ -76,10 +78,11 @@ public class AnalysisDetailsTest {
         QualityGate qualityGate = mock(QualityGate.class);
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
+        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, configuration, null);
 
         assertEquals("branchName", testCase.getBranchName());
     }
@@ -94,10 +97,11 @@ public class AnalysisDetailsTest {
         QualityGate qualityGate = mock(QualityGate.class);
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
+        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, configuration, null);
 
         assertEquals("commitId", testCase.getCommitSha());
     }
@@ -111,10 +115,11 @@ public class AnalysisDetailsTest {
         doReturn(QualityGate.Status.ERROR).when(qualityGate).getStatus();
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
+        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, configuration, null);
 
         assertEquals(QualityGate.Status.ERROR, testCase.getQualityGateStatus());
     }
@@ -128,10 +133,11 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         doReturn(new Date()).when(analysis).getDate();
         Project project = mock(Project.class);
+        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, configuration, null);
 
         assertEquals(analysis.getDate(), testCase.getAnalysisDate());
     }
@@ -145,10 +151,11 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         doReturn("Analysis ID").when(analysis).getAnalysisUuid();
         Project project = mock(Project.class);
+        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, configuration, null);
 
         assertEquals("Analysis ID", testCase.getAnalysisId());
     }
@@ -162,10 +169,11 @@ public class AnalysisDetailsTest {
         Analysis analysis = mock(Analysis.class);
         Project project = mock(Project.class);
         doReturn("Project Key").when(project).getKey();
+        Configuration configuration = mock(Configuration.class);
 
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, null);
+                                    project, configuration, null);
 
         assertEquals("Project Key", testCase.getAnalysisProjectKey());
     }
@@ -279,9 +287,11 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
+        Configuration configuration = mock(Configuration.class);
+
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, "http://localhost:9000");
+                                    project, configuration, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -386,9 +396,11 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
+        Configuration configuration = mock(Configuration.class);
+
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, "http://localhost:9000");
+                                    project, configuration, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -487,9 +499,13 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
+        Configuration configuration = mock(Configuration.class);
+        doReturn(Optional.of("http://host.name/path")).when(configuration)
+                .get(eq(CommunityBranchPlugin.IMAGE_URL_BASE));
+
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, "http://localhost:9000");
+                                    project, configuration, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -502,25 +518,25 @@ public class AnalysisDetailsTest {
         verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
 
         Document expectedDocument = new Document(new Paragraph(
-                new Image("Passed", "http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/passed.svg?sanitize=true")),
+                new Image("Passed", "http://host.name/path/checks/QualityGateBadge/passed.svg?sanitize=true")),
                                                  new Text(""), new Heading(1, new Text("Analysis Details")),
                                                  new Heading(2, new Text("1 Issue")), new List(List.Style.BULLET,
                                                                                                new ListItem(
                                                                                                        new Image("Bug",
-                                                                                                                 "http://localhost:9000/static/communityBranchPlugin/common/bug.svg?sanitize=true"),
+                                                                                                                 "http://host.name/path/common/bug.svg?sanitize=true"),
                                                                                                        new Text(" "),
                                                                                                        new Text(
                                                                                                                "1 Bug")),
                                                                                                new ListItem(new Image(
                                                                                                        "Vulnerability",
-                                                                                                       "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
+                                                                                                       "http://host.name/path/common/vulnerability.svg?sanitize=true"),
                                                                                                             new Text(
                                                                                                                     " "),
                                                                                                             new Text(
                                                                                                                     "0 Vulnerabilities")),
                                                                                                new ListItem(new Image(
                                                                                                        "Code Smell",
-                                                                                                       "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
+                                                                                                       "http://host.name/path/common/vulnerability.svg?sanitize=true"),
                                                                                                             new Text(
                                                                                                                     " "),
                                                                                                             new Text(
@@ -528,11 +544,11 @@ public class AnalysisDetailsTest {
                                                  new Heading(2, new Text("Coverage and Duplications")),
                                                  new List(List.Style.BULLET, new ListItem(
                                                          new Image("25 percent coverage",
-                                                                   "http://localhost:9000/static/communityBranchPlugin/checks/CoverageChart/25.svg?sanitize=true"),
+                                                                   "http://host.name/path/checks/CoverageChart/25.svg?sanitize=true"),
                                                          new Text(" "),
                                                          new Text("25.00% Coverage (21.78% Estimated after merge)")),
                                                           new ListItem(new Image("10 percent duplication",
-                                                                                 "http://localhost:9000/static/communityBranchPlugin/checks/Duplications/10.svg?sanitize=true"),
+                                                                                 "http://host.name/path/checks/Duplications/10.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "10.00% Duplicated Code (21.78% Estimated after merge)"))),
                                                  new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
@@ -582,9 +598,11 @@ public class AnalysisDetailsTest {
         doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
         doReturn(metricRepository).when(measuresHolder).getMetricRepository();
 
+        Configuration configuration = mock(Configuration.class);
+
         AnalysisDetails testCase =
                 new AnalysisDetails(branchDetails, postAnalysisIssueVisitor, qualityGate, measuresHolder, analysis,
-                                    project, "http://localhost:9000");
+                                    project, configuration, "http://localhost:9000");
 
         Formatter<Document> formatter = mock(Formatter.class);
         doReturn("formatted content").when(formatter).format(any(), any());
@@ -678,7 +696,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), postAnalysisIssueVisitor,
                                     mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
-                                    mock(Analysis.class), mock(Project.class), null);
+                                    mock(Analysis.class), mock(Project.class), mock(Configuration.class), null);
         assertSame(postAnalysisIssueVisitor, analysisDetails.getPostAnalysisIssueVisitor());
     }
 
@@ -687,6 +705,44 @@ public class AnalysisDetailsTest {
         AnalysisDetails.BranchDetails branchDetails = new AnalysisDetails.BranchDetails("branchName", "commitId");
         assertEquals("branchName", branchDetails.getBranchName());
         assertEquals("commitId", branchDetails.getCommitId());
+    }
+
+    @Test
+    public void testGetBaseImageUrlFromConfig() {
+        Configuration configuration = mock(Configuration.class);
+        doReturn(Optional.of("http://host.name/path")).when(configuration)
+                .get(eq(CommunityBranchPlugin.IMAGE_URL_BASE));
+
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), mock(Project.class), configuration, "http://localhost:9000");
+
+        assertEquals("http://host.name/path", analysisDetails.getBaseImageUrl());
+    }
+
+    @Test
+    public void testGetBaseImageUrlFromConfigWithTrailingSlash() {
+        Configuration configuration = mock(Configuration.class);
+        doReturn(Optional.of("http://host.name/path/")).when(configuration)
+                .get(eq(CommunityBranchPlugin.IMAGE_URL_BASE));
+
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), mock(Project.class), configuration, "http://localhost:9000");
+
+        assertEquals("http://host.name/path", analysisDetails.getBaseImageUrl());
+    }
+
+    @Test
+    public void testGetBaseImageUrlFromRootUrl() {
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), mock(Project.class), mock(Configuration.class), "http://localhost:9000");
+
+        assertEquals("http://localhost:9000/static/communityBranchPlugin", analysisDetails.getBaseImageUrl());
     }
 
     @Test
@@ -705,7 +761,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails testCase =
                 new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                                     qualityGate, measuresHolder, mock(Analysis.class), mock(Project.class),
-                                    null);
+                                    mock(Configuration.class), null);
         assertThatThrownBy(() -> testCase.createAnalysisSummary(mock(FormatterFactory.class)))
                 .hasMessage("Could not invoke getDoubleValue").isExactlyInstanceOf(IllegalStateException.class)
                 .hasCauseExactlyInstanceOf(InvocationTargetException.class);

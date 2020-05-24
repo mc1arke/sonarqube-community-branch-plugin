@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.CheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubApplicationAuthenticationProvider;
@@ -55,7 +56,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang.ArrayUtils.isEmpty;
 
 public class GraphqlCheckRunProvider implements CheckRunProvider {
 
@@ -103,67 +107,76 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         headers.put("Authorization", "Bearer " + repositoryAuthenticationToken.getAuthenticationToken());
         headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
-        List<InputObject<Object>> annotations = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
-                .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
-                .filter(i -> i.getComponent().getType() == Component.Type.FILE).map(componentIssue -> {
-                    InputObject<Object> issueLocation = graphqlProvider.createInputObject()
-                            .put("startLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0))
-                            .put("endLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0) + 1)
-                            .build();
-                    return graphqlProvider.createInputObject()
-                            .put("path", componentIssue.getComponent().getReportAttributes().getScmPath().get())
-                            .put("location", issueLocation)
-                            .put("annotationLevel", mapToGithubAnnotationLevel(componentIssue.getIssue().severity()))
-                            .put("message", componentIssue.getIssue().getMessage().replaceAll("\\\\","\\\\\\\\").replaceAll("\"", "\\\\\"")).build();
-                }).collect(Collectors.toList());
 
-        InputObject<Object> checkRunOutputContent = graphqlProvider.createInputObject().put("title", "Quality Gate " +
+        List<PostAnalysisIssueVisitor.ComponentIssue> issues = analysisDetails.getPostAnalysisIssueVisitor().getIssues();
+
+        List<InputObject<Object>> annotations = createAnnotations(issues);
+
+        InputObject.Builder<Object> checkRunOutputContentBuilder = graphqlProvider.createInputObject().put("title", "Quality Gate " +
                                                                                                      (analysisDetails
                                                                                                               .getQualityGateStatus() ==
                                                                                                       QualityGate.Status.OK ?
                                                                                                       "success" :
                                                                                                       "failed"))
                 .put("summary", analysisDetails.createAnalysisSummary(new MarkdownFormatterFactory()))
-                .put("annotations", annotations).build();
+                .put("annotations", annotations);
 
         SimpleDateFormat startedDateFormat = new SimpleDateFormat(DATE_TIME_PATTERN);
         startedDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        InputObject<Object> repositoryInputObject =
-                graphqlProvider.createInputObject().put("repositoryId", repositoryAuthenticationToken.getRepositoryId())
-                        .put("name", appName + " Results").put("headSha", analysisDetails.getCommitSha())
-                        .put("status", RequestableCheckStatusState.COMPLETED).put("conclusion", QualityGate.Status.OK ==
-                                                                                                analysisDetails
-                                                                                                        .getQualityGateStatus() ?
-                                                                                                CheckConclusionState.SUCCESS :
-                                                                                                CheckConclusionState.FAILURE)
-                        .put("detailsUrl", String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl(),
-                                                         URLEncoder.encode(analysisDetails.getAnalysisProjectKey(),
-                                                                           StandardCharsets.UTF_8.name()), URLEncoder
-                                                                 .encode(analysisDetails.getBranchName(),
-                                                                         StandardCharsets.UTF_8.name())))
-                        .put("startedAt", startedDateFormat.format(analysisDetails.getAnalysisDate()))
-                        .put("completedAt", DateTimeFormatter.ofPattern(DATE_TIME_PATTERN).withZone(ZoneId.of("UTC"))
-                                .format(clock.instant())).put("externalId", analysisDetails.getAnalysisId())
-                        .put("output", checkRunOutputContent).build();
+        Map<String, Object> inputObjectArguments = new HashMap<>();
+        inputObjectArguments.put("repositoryId", repositoryAuthenticationToken.getRepositoryId());
+        inputObjectArguments.put("name", appName + " Results");
+        inputObjectArguments.put("status", RequestableCheckStatusState.COMPLETED);
+        inputObjectArguments.put("conclusion", QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ?
+                                   CheckConclusionState.SUCCESS : CheckConclusionState.FAILURE);
+        inputObjectArguments.put("detailsUrl", String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl(),
+                                                 URLEncoder.encode(analysisDetails.getAnalysisProjectKey(),
+                                                                   StandardCharsets.UTF_8.name()), URLEncoder
+                                                         .encode(analysisDetails.getBranchName(),
+                                                                 StandardCharsets.UTF_8.name())));
+        inputObjectArguments.put("startedAt", startedDateFormat.format(analysisDetails.getAnalysisDate()));
+        inputObjectArguments.put("completedAt", DateTimeFormatter.ofPattern(DATE_TIME_PATTERN).withZone(ZoneId.of("UTC"))
+                        .format(clock.instant()));
+        inputObjectArguments.put("externalId", analysisDetails.getAnalysisId());
+        inputObjectArguments.put("output", checkRunOutputContentBuilder.build());
 
 
-        GraphQLRequestEntity graphQLRequestEntity =
-                graphqlProvider.createRequestBuilder().url(apiUrl + "/graphql").headers(headers)
+        InputObject.Builder<Object> repositoryInputObjectBuilder = graphqlProvider.createInputObject();
+        inputObjectArguments.forEach(repositoryInputObjectBuilder::put);
+
+
+        GraphQLRequestEntity.RequestBuilder graphQLRequestEntityBuilder =
+                graphqlProvider.createRequestBuilder()
+                        .url(apiUrl + "/graphql")
+                        .headers(headers)
                         .request(CreateCheckRun.class)
-                        .arguments(new Arguments("createCheckRun", new Argument<>("input", repositoryInputObject)))
-                        .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE).build();
+                        .arguments(new Arguments("createCheckRun", new Argument<>("input", repositoryInputObjectBuilder
+                                .put("headSha", analysisDetails.getCommitSha())
+                                .build())))
+                        .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE);
 
+        GraphQLRequestEntity graphQLRequestEntity = graphQLRequestEntityBuilder.build();
+
+        GraphQLResponseEntity<CreateCheckRun> graphQLResponseEntity = executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().mutate(r, t),
+                                                                                     graphQLRequestEntity, CreateCheckRun.class);
+
+        reportRemainingIssues(issues, graphQLResponseEntity.getResponse().getCheckRun().getId(),
+                              inputObjectArguments, checkRunOutputContentBuilder, graphQLRequestEntityBuilder);
+
+
+
+    }
+
+    private static <R> GraphQLResponseEntity<R> executeRequest(
+            BiFunction<GraphQLRequestEntity, Class<R>, GraphQLResponseEntity<R>> executor, GraphQLRequestEntity graphQLRequestEntity, Class<R> responseType) {
         LOGGER.debug("Using request: " + graphQLRequestEntity.getRequest());
 
-        GraphQLTemplate graphQLTemplate = graphqlProvider.createGraphQLTemplate();
-
-        GraphQLResponseEntity<CreateCheckRun> response =
-                graphQLTemplate.mutate(graphQLRequestEntity, CreateCheckRun.class);
+        GraphQLResponseEntity<R> response = executor.apply(graphQLRequestEntity, responseType);
 
         LOGGER.debug("Received response: " + response.toString());
 
-        if (null != response.getErrors() && response.getErrors().length > 0) {
+        if (!isEmpty(response.getErrors())) {
             List<String> errors = new ArrayList<>();
             for (Error error : response.getErrors()) {
                 errors.add("- " + error.toString());
@@ -172,6 +185,58 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                     "An error was returned in the response from the Github API:" + System.lineSeparator() +
                     errors.stream().collect(Collectors.joining(System.lineSeparator())));
         }
+
+        return response;
+    }
+
+    private void reportRemainingIssues(List<PostAnalysisIssueVisitor.ComponentIssue> outstandingIssues, String checkRunId,
+                                       Map<String, Object> repositoryInputArguments, InputObject.Builder<Object> outputObjectBuilder,
+                                       GraphQLRequestEntity.RequestBuilder graphQLRequestEntityBuilder) {
+
+        if (outstandingIssues.size() <= 50) {
+            return;
+        }
+
+        List<PostAnalysisIssueVisitor.ComponentIssue> issues = outstandingIssues.subList(50, outstandingIssues.size());
+
+        InputObject<Object> outputObject = outputObjectBuilder
+                .put("annotations", createAnnotations(issues))
+                .build();
+
+        InputObject.Builder<Object> repositoryInputObjectBuilder = graphqlProvider.createInputObject();
+        repositoryInputArguments.forEach(repositoryInputObjectBuilder::put);
+
+        InputObject<Object> repositoryInputObject = repositoryInputObjectBuilder
+                .put("checkRunId", checkRunId)
+                .put("output", outputObject)
+                .build();
+
+       GraphQLRequestEntity graphQLRequestEntity = graphQLRequestEntityBuilder
+               .request(UpdateCheckRun.class)
+               .arguments(new Arguments("updateCheckRun", new Argument<>("input", repositoryInputObject)))
+                        .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE)
+                        .build();
+
+       executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().mutate(r, t), graphQLRequestEntity, CreateCheckRun.class);
+
+       reportRemainingIssues(issues, checkRunId, repositoryInputArguments, outputObjectBuilder, graphQLRequestEntityBuilder);
+    }
+
+    private List<InputObject<Object>> createAnnotations(List<PostAnalysisIssueVisitor.ComponentIssue> issues) {
+        return issues.stream()
+                .limit(50)
+                .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
+                .filter(i -> i.getComponent().getType() == Component.Type.FILE).map(componentIssue -> {
+            InputObject<Object> issueLocation = graphqlProvider.createInputObject()
+                    .put("startLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0))
+                    .put("endLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0) + 1)
+                    .build();
+            return graphqlProvider.createInputObject()
+                    .put("path", componentIssue.getComponent().getReportAttributes().getScmPath().get())
+                    .put("location", issueLocation)
+                    .put("annotationLevel", mapToGithubAnnotationLevel(componentIssue.getIssue().severity()))
+                    .put("message", componentIssue.getIssue().getMessage().replaceAll("\\\\","\\\\\\\\").replaceAll("\"", "\\\\\"")).build();
+        }).collect(Collectors.toList());
     }
 
     private static CheckAnnotationLevel mapToGithubAnnotationLevel(String sonarqubeSeverity) {

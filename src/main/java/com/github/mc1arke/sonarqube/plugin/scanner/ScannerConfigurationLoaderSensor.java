@@ -19,7 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
 import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.server.BitbucketServerPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.GraphqlCheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabServerPullRequestDecorator;
 import com.google.common.collect.Sets;

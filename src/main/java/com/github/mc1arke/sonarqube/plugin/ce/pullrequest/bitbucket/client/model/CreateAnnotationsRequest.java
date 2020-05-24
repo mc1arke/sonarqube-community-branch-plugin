@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Oliver Jedinger
+ * Copyright (C) 2020 Mathias Åhsberg
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,29 +16,20 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class CreateAnnotationsRequest implements Serializable {
+    private final Set<Annotation> annotations;
 
-public class User implements Serializable {
-    private final String name;
-
-    private final String slug;
-
-    @JsonCreator
-    public User(@JsonProperty("name") final String name, @JsonProperty("slug") final String slug) {
-        this.name = name;
-        this.slug = slug;
+    public CreateAnnotationsRequest(Set<Annotation> annotations) {
+        this.annotations = annotations == null ? Collections.emptySet() : annotations;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getSlug() {
-        return slug;
+    public Set<Annotation> getAnnotations() {
+        return annotations;
     }
 }
