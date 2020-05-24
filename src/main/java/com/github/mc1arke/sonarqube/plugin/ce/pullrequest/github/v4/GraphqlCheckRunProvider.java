@@ -107,6 +107,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         headers.put("Authorization", "Bearer " + repositoryAuthenticationToken.getAuthenticationToken());
         headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
+
         List<PostAnalysisIssueVisitor.ComponentIssue> issues = analysisDetails.getPostAnalysisIssueVisitor().getIssues();
 
         List<InputObject<Object>> annotations = createAnnotations(issues);
@@ -234,7 +235,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                     .put("path", componentIssue.getComponent().getReportAttributes().getScmPath().get())
                     .put("location", issueLocation)
                     .put("annotationLevel", mapToGithubAnnotationLevel(componentIssue.getIssue().severity()))
-                    .put("message", componentIssue.getIssue().getMessage().replaceAll("\"", "\\\\\"")).build();
+                    .put("message", componentIssue.getIssue().getMessage().replaceAll("\\\\","\\\\\\\\").replaceAll("\"", "\\\\\"")).build();
         }).collect(Collectors.toList());
     }
 
