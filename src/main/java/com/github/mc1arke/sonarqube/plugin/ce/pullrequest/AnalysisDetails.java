@@ -19,8 +19,8 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.SonarqubeCompatibility;
-import org.apache.commons.lang.StringUtils;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
@@ -30,10 +30,12 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.ListItem;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Node;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
+import org.apache.commons.lang.StringUtils;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.ce.posttask.QualityGate.EvaluationStatus;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Metric;
@@ -46,8 +48,10 @@ import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 import org.sonar.core.issue.DefaultIssue;
 import org.sonar.server.measure.Rating;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -79,10 +83,11 @@ public class AnalysisDetails {
     private final QualityGate qualityGate;
     private final Analysis analysis;
     private final Project project;
+    private final Configuration configuration;
 
     AnalysisDetails(BranchDetails branchDetails, PostAnalysisIssueVisitor postAnalysisIssueVisitor,
                     QualityGate qualityGate, MeasuresHolder measuresHolder, Analysis analysis, Project project,
-                    String publicRootURL) {
+                    Configuration configuration, String publicRootURL) {
         super();
         this.publicRootURL = publicRootURL;
         this.branchDetails = branchDetails;
@@ -91,6 +96,7 @@ public class AnalysisDetails {
         this.qualityGate = qualityGate;
         this.analysis = analysis;
         this.project = project;
+        this.configuration = configuration;
     }
 
     public String getBranchName() {
@@ -99,6 +105,14 @@ public class AnalysisDetails {
 
     public String getCommitSha() {
         return branchDetails.getCommitId();
+    }
+
+    public String getDashboardUrl() {
+        return publicRootURL + "/dashboard?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName();
+    }
+
+    public String getIssueUrl(String issueKey) {
+        return publicRootURL + "/project/issues?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issueKey + "&open=" + issueKey;
     }
 
     public QualityGate.Status getQualityGateStatus() {
@@ -179,7 +193,7 @@ public class AnalysisDetails {
                                                                  .orElse("No duplication information") + " (" +
                                                          decimalFormat.format(duplications) +
                                                          "% Estimated after merge)"))),
-                                         new Link(publicRootURL + "/dashboard?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName(), new Text("View in SonarQube")));
+                                         new Link(getDashboardUrl(), new Text("View in SonarQube")));
 
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
@@ -201,13 +215,15 @@ public class AnalysisDetails {
                 new Paragraph(new Text(String.format("**Message:** %s", issue.getMessage()))),
                 effortNode,
                 resolutionNode,
-                new Link(publicRootURL + "/project/issues?id=" + URLEncoder.encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issue.key() + "&open=" + issue.key(), new Text("View in SonarQube"))
+                new Link(getIssueUrl(issue.key()), new Text("View in SonarQube"))
         );
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
 
     public String getBaseImageUrl() {
-        return publicRootURL + "/static/communityBranchPlugin";
+        return configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE)
+                .orElse(publicRootURL + "/static/communityBranchPlugin")
+                .replaceAll("/*$", "");
     }
 
     public Optional<String> getSCMPathForIssue(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
@@ -220,6 +236,14 @@ public class AnalysisDetails {
 
     public PostAnalysisIssueVisitor getPostAnalysisIssueVisitor() {
         return postAnalysisIssueVisitor;
+    }
+
+    private static String encode(String original) {
+        try {
+            return URLEncoder.encode(original, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("Standard charset not found in JVM", e);
+        }
     }
 
     private static Image createCoverageImage(BigDecimal coverage, String baseImageUrl) {
@@ -267,13 +291,12 @@ public class AnalysisDetails {
         return project.getKey();
     }
 
-
-    private List<QualityGate.Condition> findFailedConditions() {
+    public List<QualityGate.Condition> findFailedConditions() {
         return qualityGate.getConditions().stream().filter(c -> c.getStatus() == QualityGate.EvaluationStatus.ERROR)
                 .collect(Collectors.toList());
     }
 
-    private Optional<MeasureWrapper> findMeasure(String metricKey) {
+    public Optional<MeasureWrapper> findMeasure(String metricKey) {
         return measuresHolder.getMeasureRepository().getRawMeasure(measuresHolder.getTreeRootHolder().getRoot(),
                                                                    measuresHolder.getMetricRepository()
                                                                            .getByKey(metricKey))
@@ -284,7 +307,7 @@ public class AnalysisDetails {
         return qualityGate.getConditions().stream().filter(c -> metricKey.equals(c.getMetricKey())).findFirst();
     }
 
-    private Map<RuleType, Long> countRuleByType() {
+    public Map<RuleType, Long> countRuleByType() {
         return Arrays.stream(RuleType.values()).collect(Collectors.toMap(k -> k,
                                                                          k -> postAnalysisIssueVisitor.getIssues()
                                                                                  .stream()
@@ -299,7 +322,7 @@ public class AnalysisDetails {
     }
 
 
-    private static String format(QualityGate.Condition condition) {
+    public static String format(QualityGate.Condition condition) {
         Metric<?> metric = CoreMetrics.getMetric(condition.getMetricKey());
         if (metric.getType() == Metric.ValueType.RATING) {
             return String

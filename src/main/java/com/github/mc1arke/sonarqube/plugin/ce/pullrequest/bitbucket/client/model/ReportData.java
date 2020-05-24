@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Oliver Jedinger
+ * Copyright (C) 2020 Mathias Åhsberg
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,37 +16,43 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.diff;
-
-import java.io.Serializable;
-import java.util.List;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Segment implements Serializable {
+public class ReportData {
+    private final String title;
+    private final DataValue value;
+    @JsonProperty("type")
     private final String type;
 
-    private final List<DiffLine> lines;
-
-    private final boolean truncated;
-
     @JsonCreator
-    public Segment(@JsonProperty("type") final String type, @JsonProperty("lines") final List<DiffLine> lines, @JsonProperty("truncated") final boolean truncated) {
-        this.type = type;
-        this.lines = lines;
-        this.truncated = truncated;
+    public ReportData(@JsonProperty("title") String title, @JsonProperty("value") DataValue value) {
+        this.title = title;
+        this.value = value;
+        this.type = typeFrom(value);
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public DataValue getValue() {
+        return value;
     }
 
     public String getType() {
         return type;
     }
 
-    public List<DiffLine> getLines() {
-        return lines;
-    }
-
-    public boolean isTruncated() {
-        return truncated;
+    private static String typeFrom(DataValue value) {
+        if (value instanceof DataValue.Link) {
+            return "LINK";
+        } else if (value instanceof DataValue.Percentage) {
+            return "PERCENTAGE";
+        } else {
+            return "TEXT";
+        }
     }
 }

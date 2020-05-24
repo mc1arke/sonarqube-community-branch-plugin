@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Oliver Jedinger
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,36 +16,33 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.response.activity;
-
-import java.io.Serializable;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CheckRun;
+import io.aexp.nodes.graphql.annotations.GraphQLArgument;
+import io.aexp.nodes.graphql.annotations.GraphQLProperty;
 
-public class Activity implements Serializable {
-    private final int id;
+@GraphQLProperty(name = "updateCheckRun", arguments = {@GraphQLArgument(name = "input")})
+public class UpdateCheckRun {
 
-    private final User user;
-
-    private final Comment comment;
+    private final String clientMutationId;
+    private final CheckRun checkRun;
 
     @JsonCreator
-    public Activity(@JsonProperty("id") final int id, @JsonProperty("user") final User user, @JsonProperty("comment") final Comment comment) {
-        this.id = id;
-        this.user = user;
-        this.comment = comment;
+    public UpdateCheckRun(@JsonProperty("clientMutationId") String clientMutationId,
+                          @JsonProperty("checkRun") CheckRun checkRun) {
+        this.clientMutationId = clientMutationId;
+        this.checkRun = checkRun;
     }
 
-    public int getId() {
-        return id;
+    public String getClientMutationId() {
+        return clientMutationId;
     }
 
-    public User getUser() {
-        return user;
+    public CheckRun getCheckRun() {
+        return checkRun;
     }
 
-    public Comment getComment() {
-        return comment;
-    }
 }

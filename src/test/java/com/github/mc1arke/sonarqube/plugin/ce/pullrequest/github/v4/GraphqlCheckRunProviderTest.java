@@ -57,6 +57,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,6 +70,7 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -220,11 +223,31 @@ public class GraphqlCheckRunProviderTest {
     }
 
     private void createCheckRunHappyPath(QualityGate.Status status, String basePath, String fullPath) throws IOException, GeneralSecurityException {
+        String[] messageInput = {
+            "issue 1",
+            "issue 2",
+            "issue 3",
+            "issue 4",
+            "issue 5",
+            "issue 6",
+            "issue \\ \" \\\" \"\\ \\\\ \"\" 7"
+        };
+
+        String[] messageOutput = {
+            "issue 1",
+            "issue 2",
+            "issue 3",
+            "issue 4",
+            "issue 5",
+            "issue 6",
+            "issue \\\\ \\\" \\\\\\\" \\\"\\\\ \\\\\\\\ \\\"\\\" 7"
+        };
+
         when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
 
         DefaultIssue issue1 = mock(DefaultIssue.class);
         when(issue1.getLine()).thenReturn(2);
-        when(issue1.getMessage()).thenReturn("issue 1");
+        when(issue1.getMessage()).thenReturn(messageInput[0]);
         when(issue1.severity()).thenReturn(Severity.INFO);
 
         ReportAttributes reportAttributes = mock(ReportAttributes.class);
@@ -239,7 +262,7 @@ public class GraphqlCheckRunProviderTest {
 
         DefaultIssue issue2 = mock(DefaultIssue.class);
         when(issue2.getLine()).thenReturn(null);
-        when(issue2.getMessage()).thenReturn("issue 2");
+        when(issue2.getMessage()).thenReturn(messageInput[1]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue2 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue2.getComponent()).thenReturn(component1);
@@ -255,7 +278,7 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue3 = mock(DefaultIssue.class);
         when(issue3.getLine()).thenReturn(9);
         when(issue3.severity()).thenReturn(Severity.CRITICAL);
-        when(issue3.getMessage()).thenReturn("issue 3");
+        when(issue3.getMessage()).thenReturn(messageInput[2]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue3 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue3.getComponent()).thenReturn(component2);
@@ -270,7 +293,7 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue4 = mock(DefaultIssue.class);
         when(issue4.getLine()).thenReturn(2);
         when(issue4.severity()).thenReturn(Severity.CRITICAL);
-        when(issue4.getMessage()).thenReturn("issue 4");
+        when(issue4.getMessage()).thenReturn(messageInput[3]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue4 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue4.getComponent()).thenReturn(component3);
@@ -279,7 +302,7 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue5 = mock(DefaultIssue.class);
         when(issue5.getLine()).thenReturn(1999);
         when(issue5.severity()).thenReturn(Severity.MAJOR);
-        when(issue5.getMessage()).thenReturn("issue 5");
+        when(issue5.getMessage()).thenReturn(messageInput[4]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue5 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue5.getComponent()).thenReturn(component2);
@@ -288,15 +311,24 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue6 = mock(DefaultIssue.class);
         when(issue6.getLine()).thenReturn(42);
         when(issue6.severity()).thenReturn(Severity.MINOR);
-        when(issue6.getMessage()).thenReturn("issue 6");
+        when(issue6.getMessage()).thenReturn(messageInput[5]);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue6 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue6.getComponent()).thenReturn(component2);
         when(componentIssue6.getIssue()).thenReturn(issue6);
 
+        DefaultIssue issue7 = mock(DefaultIssue.class);
+        when(issue7.getLine()).thenReturn(42);
+        when(issue7.severity()).thenReturn(Severity.MINOR);
+        when(issue7.getMessage()).thenReturn(messageInput[6]);
+
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue7 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+        when(componentIssue7.getComponent()).thenReturn(component2);
+        when(componentIssue7.getIssue()).thenReturn(issue7);
+
         List<PostAnalysisIssueVisitor.ComponentIssue> issueList =
                 Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4, componentIssue5,
-                              componentIssue6);
+                              componentIssue6, componentIssue7);
         PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
         when(postAnalysisIssueVisitor.getIssues()).thenReturn(issueList);
 
@@ -349,9 +381,9 @@ public class GraphqlCheckRunProviderTest {
             return requestBuilder;
         }).when(graphqlProvider).createRequestBuilder();
 
+        ObjectMapper objectMapper = new ObjectMapper();
         GraphQLResponseEntity<CreateCheckRun> graphQLResponseEntity =
-                new ObjectMapper().readerFor(GraphQLResponseEntity.class)
-                        .readValue(status == QualityGate.Status.ERROR ? "{\"errors\": []}" : "{\"response\": {}}}");
+                new ObjectMapper().readValue("{\"response\": {\"checkRun\": {\"id\": \"ABC\"}}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, CreateCheckRun.class));
 
         ArgumentCaptor<GraphQLRequestEntity> requestEntityArgumentCaptor =
                 ArgumentCaptor.forClass(GraphQLRequestEntity.class);
@@ -410,7 +442,7 @@ public class GraphqlCheckRunProviderTest {
                                        sonarQubeSeverity.equals(Severity.MINOR) ||
                                        sonarQubeSeverity.equals(Severity.MAJOR) ? CheckAnnotationLevel.WARNING :
                                        CheckAnnotationLevel.FAILURE));
-            verify(fileBuilder).put(eq("message"), eq("issue " + (i + 1)));
+            verify(fileBuilder).put(eq("message"), eq(messageOutput[i]));
             verify(inputObjectBuilders.get(position)).build();
 
             expectedAnnotationObjects.add(inputObjects.get(position));
@@ -444,6 +476,85 @@ public class GraphqlCheckRunProviderTest {
         verify(inputObjectBuilders.get(position + 1)).put(eq("externalId"), eq("analysis ID"));
         verify(inputObjectBuilders.get(position + 1)).put(eq("output"), eq(inputObjects.get(position)));
         verify(inputObjectBuilders.get(position + 1)).build();
+    }
+
+    @Test
+    public void checkExcessIssuesCorrectlyReported() throws IOException, GeneralSecurityException {
+        ReportAttributes reportAttributes = mock(ReportAttributes.class);
+        when(reportAttributes.getScmPath()).thenReturn(Optional.of("abc"));
+        Component component = mock(Component.class);
+        when(component.getType()).thenReturn(Component.Type.FILE);
+        when(component.getReportAttributes()).thenReturn(reportAttributes);
+        List<PostAnalysisIssueVisitor.ComponentIssue> issues = IntStream.range(0, 120)
+                .mapToObj(i -> {
+                    DefaultIssue defaultIssue = mock(DefaultIssue.class);
+                    when(defaultIssue.severity()).thenReturn(Severity.INFO);
+                    when(defaultIssue.getMessage()).thenReturn("message");
+                    return defaultIssue;
+                })
+                .map(i -> {
+                    PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(
+                            PostAnalysisIssueVisitor.ComponentIssue.class);
+                    when(componentIssue.getComponent()).thenReturn(component);
+                    when(componentIssue.getIssue()).thenReturn(i);
+                    return componentIssue;
+                }).collect(Collectors.toList());
+
+        PostAnalysisIssueVisitor postAnalysisIssuesVisitor = mock(PostAnalysisIssueVisitor.class);
+        when(postAnalysisIssuesVisitor.getIssues()).thenReturn(issues);
+
+        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssuesVisitor);
+        when(analysisDetails.getBranchName()).thenReturn("branchName");
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
+        when(analysisDetails.getAnalysisDate()).thenReturn(new Date());
+
+        UnifyConfiguration unifyConfiguration = mock(UnifyConfiguration.class);
+        when(unifyConfiguration.getRequiredServerProperty(GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_URL)).thenReturn("http://dummy.url");
+
+        List<InputObject.Builder> builders = new ArrayList<>();
+
+        GraphqlProvider graphqlProvider = mock(GraphqlProvider.class);
+        when(graphqlProvider.createInputObject()).thenAnswer(i -> {
+            InputObject.Builder builder = spy(new InputObject.Builder<>());
+            builders.add(builder);
+            return builder;
+        });
+
+        GraphQLRequestEntity.RequestBuilder requestBuilder = GraphQLRequestEntity.Builder();
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        when(graphqlProvider.createRequestBuilder()).thenReturn(requestBuilder);
+
+        GraphQLTemplate graphQLTemplate = mock(GraphQLTemplate.class);
+        GraphQLResponseEntity<CreateCheckRun> graphQLResponseEntity =
+                new ObjectMapper().readValue("{\"response\": {\"checkRun\": {\"id\": \"ABC\"}}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, CreateCheckRun.class));
+        when(graphQLTemplate.mutate(any(), eq(CreateCheckRun.class))).thenReturn(graphQLResponseEntity);
+        when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
+
+        Clock clock = mock(Clock.class);
+        when(clock.instant()).thenReturn(Instant.now());
+
+        RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
+        when(repositoryAuthenticationToken.getAuthenticationToken()).thenReturn("dummy");
+        GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider = mock(GithubApplicationAuthenticationProvider.class);
+        when(githubApplicationAuthenticationProvider.getInstallationToken(any(), any(), any(), any())).thenReturn(repositoryAuthenticationToken);
+
+        Server server = mock(Server.class);
+
+        GraphqlCheckRunProvider testCase = new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server);
+        testCase.createCheckRun(analysisDetails, unifyConfiguration);
+
+        ArgumentCaptor<Class<?>> classArgumentCaptor = ArgumentCaptor.forClass(Class.class);
+        verify(graphQLTemplate, times(3)).mutate(any(GraphQLRequestEntity.class), classArgumentCaptor.capture());
+
+        assertThat(classArgumentCaptor.getAllValues()).containsExactly(CreateCheckRun.class, CreateCheckRun.class, CreateCheckRun.class);
+
+        ArgumentCaptor<List<InputObject>> annotationsArgumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(builders.get(100), times(3)).put(eq("annotations"), annotationsArgumentCaptor.capture());
+        assertThat(annotationsArgumentCaptor.getAllValues().get(0)).hasSize(50);
+        assertThat(annotationsArgumentCaptor.getAllValues().get(1)).hasSize(50);
+        assertThat(annotationsArgumentCaptor.getAllValues().get(2)).hasSize(20);
     }
 
     @Test
