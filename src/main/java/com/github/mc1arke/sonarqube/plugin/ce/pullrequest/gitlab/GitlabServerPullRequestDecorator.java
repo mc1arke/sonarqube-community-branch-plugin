@@ -276,7 +276,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpPost.addHeader(entry.getKey(), entry.getValue());
         }
-        httpPost.setEntity(new UrlEncodedFormEntity(params));
+        httpPost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
 
         if (sendRequest) {
             LOGGER.info("Posting {} with headers {} to {}", params, headers, commitCommentUrl);
