@@ -79,6 +79,7 @@ public class RestApplicationAuthenticationProviderTest {
         String expectedAuthenticationToken = "expected authentication token";
         String projectPath = "project path";
         String expectedRepositoryId = "expected repository Id";
+        String expectedHtmlUrl = "http://url.for/users/repo";
 
         URLConnection installationsUrlConnection = mock(URLConnection.class);
         doReturn(new ByteArrayInputStream(
@@ -95,7 +96,7 @@ public class RestApplicationAuthenticationProviderTest {
         HttpURLConnection repositoriesUrlConnection = mock(HttpURLConnection.class);
         doReturn(new ByteArrayInputStream(
                 ("{\"repositories\": [{\"node_id\": \"" + expectedRepositoryId + "\", \"full_name\": \"" + projectPath +
-                 "\"}]}").getBytes(StandardCharsets.UTF_8))).when(repositoriesUrlConnection).getInputStream();
+                 "\", \"html_url\": \"" + expectedHtmlUrl + "\"}]}").getBytes(StandardCharsets.UTF_8))).when(repositoriesUrlConnection).getInputStream();
         doReturn(repositoriesUrlConnection).when(urlProvider).createUrlConnection("repositories_url");
 
         doReturn(installationsUrlConnection).when(urlProvider).createUrlConnection(eq(fullUrl));
@@ -112,6 +113,7 @@ public class RestApplicationAuthenticationProviderTest {
 
         assertEquals(expectedAuthenticationToken, result.getAuthenticationToken());
         assertEquals(expectedRepositoryId, result.getRepositoryId());
+        assertEquals(expectedHtmlUrl, result.getRepositoryUrl());
 
         ArgumentCaptor<String> requestPropertyArgumentCaptor = ArgumentCaptor.forClass(String.class);
         verify(installationsUrlConnection, times(2))

@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
@@ -67,6 +68,8 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
     private static final int DEFAULT_MAX_ANNOTATIONS = 1000;
 
+    private static final DecorationResult DEFAULT_DECORATION_RESULT = DecorationResult.builder().build();
+
     private static final List<String> OPEN_ISSUE_STATUSES =
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());
@@ -83,11 +86,11 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     }
 
     @Override
-    public void decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration configuration) {
+    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration configuration) {
         try {
             if(!client.supportsCodeInsights()) {
                 LOGGER.warn("Your Bitbucket instances does not support the Code Insights API.");
-                return;
+                return DEFAULT_DECORATION_RESULT;
             }
             String project = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_PROJECT_KEY);
 
@@ -100,6 +103,8 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }
+
+        return DEFAULT_DECORATION_RESULT;
     }
 
     private CreateReportRequest toReport(AnalysisDetails analysisDetails) {

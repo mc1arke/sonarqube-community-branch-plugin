@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.CheckRunProvider;
@@ -94,7 +95,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
     }
 
     @Override
-    public void createCheckRun(AnalysisDetails analysisDetails, UnifyConfiguration unifyConfiguration) throws IOException, GeneralSecurityException {
+    public DecorationResult createCheckRun(AnalysisDetails analysisDetails, UnifyConfiguration unifyConfiguration) throws IOException, GeneralSecurityException {
         String apiUrl = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_URL);
         String apiPrivateKey = unifyConfiguration.getRequiredServerProperty(PULL_REQUEST_GITHUB_TOKEN);
         String projectPath = unifyConfiguration.getRequiredProperty(PULL_REQUEST_GITHUB_REPOSITORY);
@@ -165,6 +166,9 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                               inputObjectArguments, checkRunOutputContentBuilder, graphQLRequestEntityBuilder);
 
 
+        return DecorationResult.builder()
+                .withPullRequestUrl(repositoryAuthenticationToken.getRepositoryUrl() + "/pull/" + analysisDetails.getBranchName())
+                .build();
 
     }
 

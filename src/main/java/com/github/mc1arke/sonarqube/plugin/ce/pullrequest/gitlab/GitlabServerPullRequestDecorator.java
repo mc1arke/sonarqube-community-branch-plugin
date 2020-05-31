@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
@@ -87,7 +88,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
 
     @Override
-    public void decorateQualityGateStatus(AnalysisDetails analysis, UnifyConfiguration unifyConfiguration) {
+    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysis, UnifyConfiguration unifyConfiguration) {
         LOGGER.info("starting to analyze with " + analysis.toString());
         String revision = analysis.getCommitSha();
 
@@ -109,6 +110,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
             final String prCommitsURL = mergeRequestURl + "/commits";
             final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
+
+            final String prHtmlUrl = String.format("%s/%s/merge_requests/%s", hostURL, repositorySlug, pullRequestId);
 
             LOGGER.info(String.format("Status url is: %s ", statusUrl));
             LOGGER.info(String.format("PR commits url is: %s ", prCommitsURL));
@@ -188,6 +191,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                     }
                 }
             }
+
+            return DecorationResult.builder().withPullRequestUrl(prHtmlUrl).build();
         } catch (IOException ex) {
             throw new IllegalStateException("Could not decorate Pull Request on Gitlab Server", ex);
         }

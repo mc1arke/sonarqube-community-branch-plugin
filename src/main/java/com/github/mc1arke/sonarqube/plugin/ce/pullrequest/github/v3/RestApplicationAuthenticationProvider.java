@@ -129,7 +129,7 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
                     objectMapper.readerFor(InstallationRepositories.class).readValue(installationRepositoriesReader);
             for (Repository repository : installationRepositories.getRepositories()) {
                 if (projectPath.equals(repository.getFullName())) {
-                    return Optional.of(new RepositoryAuthenticationToken(repository.getNodeId(), appToken.getToken()));
+                    return Optional.of(new RepositoryAuthenticationToken(repository.getNodeId(), appToken.getToken(), repository.getHtmlUrl()));
                 }
             }
 
