@@ -530,6 +530,9 @@ public class GraphqlCheckRunProviderTest {
         GraphQLResponseEntity<CreateCheckRun> graphQLResponseEntity =
                 new ObjectMapper().readValue("{\"response\": {\"checkRun\": {\"id\": \"ABC\"}}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, CreateCheckRun.class));
         when(graphQLTemplate.mutate(any(), eq(CreateCheckRun.class))).thenReturn(graphQLResponseEntity);
+        GraphQLResponseEntity<UpdateCheckRun> graphQLResponseEntity2 =
+                new ObjectMapper().readValue("{\"response\": {\"checkRun\": {\"id\": \"ABC\"}}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, UpdateCheckRun.class));
+        when(graphQLTemplate.mutate(any(), eq(UpdateCheckRun.class))).thenReturn(graphQLResponseEntity2);
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
         Clock clock = mock(Clock.class);
@@ -548,7 +551,7 @@ public class GraphqlCheckRunProviderTest {
         ArgumentCaptor<Class<?>> classArgumentCaptor = ArgumentCaptor.forClass(Class.class);
         verify(graphQLTemplate, times(3)).mutate(any(GraphQLRequestEntity.class), classArgumentCaptor.capture());
 
-        assertThat(classArgumentCaptor.getAllValues()).containsExactly(CreateCheckRun.class, CreateCheckRun.class, CreateCheckRun.class);
+        assertThat(classArgumentCaptor.getAllValues()).containsExactly(CreateCheckRun.class, UpdateCheckRun.class, UpdateCheckRun.class);
 
         ArgumentCaptor<List<InputObject>> annotationsArgumentCaptor = ArgumentCaptor.forClass(List.class);
         verify(builders.get(100), times(3)).put(eq("annotations"), annotationsArgumentCaptor.capture());

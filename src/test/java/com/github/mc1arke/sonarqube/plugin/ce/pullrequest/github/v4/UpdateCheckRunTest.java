@@ -30,14 +30,13 @@ public class UpdateCheckRunTest {
 
     @Test
     public void deserialiseReturnsSerialiseInput() throws IOException {
-        UpdateCheckRun testCase = new UpdateCheckRun("mutation ID", new CheckRun("check run ID"));
+        UpdateCheckRun testCase = new UpdateCheckRun(new CheckRun("check run ID"));
 
         ObjectMapper objectMapper = new ObjectMapper();
         String serialised = objectMapper.writeValueAsString(testCase);
 
         UpdateCheckRun deserialised = objectMapper.readerFor(UpdateCheckRun.class).readValue(serialised);
 
-        assertEquals("mutation ID", deserialised.getClientMutationId());
-        assertEquals("check run ID", testCase.getCheckRun().getId());
+        assertEquals("check run ID", deserialised.getCheckRun().getId());
     }
 }

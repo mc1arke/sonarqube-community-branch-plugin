@@ -38,6 +38,6 @@ public class CreateCheckRunTest {
         CreateCheckRun deserialised = objectMapper.readerFor(CreateCheckRun.class).readValue(serialised);
 
         assertEquals("mutation ID", deserialised.getClientMutationId());
-        assertEquals("check run ID", testCase.getCheckRun().getId());
+        assertEquals("check run ID", deserialised.getCheckRun().getId());
     }
 }

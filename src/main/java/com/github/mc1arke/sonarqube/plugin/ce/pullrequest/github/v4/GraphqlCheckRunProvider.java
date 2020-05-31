@@ -217,7 +217,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                         .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE)
                         .build();
 
-       executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().mutate(r, t), graphQLRequestEntity, CreateCheckRun.class);
+       executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().mutate(r, t), graphQLRequestEntity, UpdateCheckRun.class);
 
        reportRemainingIssues(issues, checkRunId, repositoryInputArguments, outputObjectBuilder, graphQLRequestEntityBuilder);
     }
