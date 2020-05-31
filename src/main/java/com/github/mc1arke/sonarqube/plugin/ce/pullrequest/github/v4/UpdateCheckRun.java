@@ -27,18 +27,11 @@ import io.aexp.nodes.graphql.annotations.GraphQLProperty;
 @GraphQLProperty(name = "updateCheckRun", arguments = {@GraphQLArgument(name = "input")})
 public class UpdateCheckRun {
 
-    private final String clientMutationId;
     private final CheckRun checkRun;
 
     @JsonCreator
-    public UpdateCheckRun(@JsonProperty("clientMutationId") String clientMutationId,
-                          @JsonProperty("checkRun") CheckRun checkRun) {
-        this.clientMutationId = clientMutationId;
+    public UpdateCheckRun(@JsonProperty("checkRun") CheckRun checkRun) {
         this.checkRun = checkRun;
-    }
-
-    public String getClientMutationId() {
-        return clientMutationId;
     }
 
     public CheckRun getCheckRun() {
