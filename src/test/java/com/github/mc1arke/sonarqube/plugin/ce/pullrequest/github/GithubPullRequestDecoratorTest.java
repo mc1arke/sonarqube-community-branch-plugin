@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import org.junit.Test;
 
@@ -28,6 +29,7 @@ import java.security.GeneralSecurityException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -56,8 +58,11 @@ public class GithubPullRequestDecoratorTest {
 
     @Test
     public void testDecorateQualityGateReturnValue() throws IOException, GeneralSecurityException {
-        testCase.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
+        DecorationResult expectedResult = DecorationResult.builder().build();
+        doReturn(expectedResult).when(checkRunProvider).createCheckRun(any(), any());
+        DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
 
         verify(checkRunProvider).createCheckRun(analysisDetails, unifyConfiguration);
+        assertThat(decorationResult).isSameAs(expectedResult);
     }
 }

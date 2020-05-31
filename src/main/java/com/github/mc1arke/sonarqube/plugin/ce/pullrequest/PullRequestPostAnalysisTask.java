@@ -31,6 +31,11 @@ import org.sonar.ce.task.projectanalysis.component.ConfigurationRepository;
 import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
+import org.sonar.db.DbClient;
+import org.sonar.db.DbSession;
+import org.sonar.db.component.BranchDao;
+import org.sonar.db.component.BranchDto;
+import org.sonar.db.protobuf.DbProjectBranches;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,13 +52,14 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
     private final MetricRepository metricRepository;
     private final MeasureRepository measureRepository;
     private final TreeRootHolder treeRootHolder;
+    private final DbClient dbClient;
 
     public PullRequestPostAnalysisTask(Server server,
                                        ConfigurationRepository configurationRepository,
                                        List<PullRequestBuildStatusDecorator> pullRequestDecorators,
                                        PostAnalysisIssueVisitor postAnalysisIssueVisitor,
                                        MetricRepository metricRepository, MeasureRepository measureRepository,
-                                       TreeRootHolder treeRootHolder) {
+                                       TreeRootHolder treeRootHolder, DbClient dbClient) {
         super();
         this.server = server;
         this.configurationRepository = configurationRepository;
@@ -62,6 +68,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
         this.metricRepository = metricRepository;
         this.measureRepository = measureRepository;
         this.treeRootHolder = treeRootHolder;
+        this.dbClient = dbClient;
     }
 
     @Override
@@ -129,7 +136,9 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
         LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
-        pullRequestDecorator.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
+        DecorationResult decorationResult = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
+
+        decorationResult.getPullRequestUrl().ifPresent(pullRequestUrl -> persistPullRequestUrl(pullRequestUrl, projectAnalysis, optionalBranchName.get()));
     }
 
     private static Optional<PullRequestBuildStatusDecorator> findCurrentPullRequestStatusDecorator(
@@ -152,5 +161,21 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
 
         LOGGER.warn("No decorator could be found matching " + implementationName);
         return Optional.empty();
+    }
+
+    private void persistPullRequestUrl(String pullRequestUrl, ProjectAnalysis projectAnalysis, String branchName) {
+        try (DbSession dbSession = dbClient.openSession(false)) {
+            BranchDao branchDao = dbClient.branchDao();
+            Optional<BranchDto> optionalBranchDto = branchDao
+                    .selectByPullRequestKey(dbSession, projectAnalysis.getProject().getUuid(), branchName);
+            if (optionalBranchDto.isPresent()) {
+                BranchDto branchDto = optionalBranchDto.get();
+                DbProjectBranches.PullRequestData.Builder pullRequestDataBuilder = DbProjectBranches.PullRequestData.newBuilder(branchDto.getPullRequestData());
+                pullRequestDataBuilder.setUrl(pullRequestUrl);
+                branchDto.setPullRequestData(pullRequestDataBuilder.build());
+                branchDao.upsert(dbSession, branchDto);
+                dbSession.commit();
+            }
+        }
     }
 }

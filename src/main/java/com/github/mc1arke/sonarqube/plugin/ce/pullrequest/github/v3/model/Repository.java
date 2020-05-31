@@ -25,11 +25,13 @@ public class Repository {
 
     private final String nodeId;
     private final String fullName;
+    private final String htmlUrl;
 
     @JsonCreator
-    public Repository(@JsonProperty("node_id") String nodeId, @JsonProperty("full_name") String fullName) {
+    public Repository(@JsonProperty("node_id") String nodeId, @JsonProperty("full_name") String fullName, @JsonProperty("html_url") String htmlUrl) {
         this.nodeId = nodeId;
         this.fullName = fullName;
+        this.htmlUrl = htmlUrl;
     }
 
     public String getFullName() {
@@ -38,5 +40,9 @@ public class Repository {
 
     public String getNodeId() {
         return nodeId;
+    }
+
+    public String getHtmlUrl() {
+        return htmlUrl;
     }
 }

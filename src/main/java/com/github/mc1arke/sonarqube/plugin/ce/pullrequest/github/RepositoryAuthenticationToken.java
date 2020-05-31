@@ -22,11 +22,13 @@ public class RepositoryAuthenticationToken {
 
     private final String repositoryId;
     private final String authenticationToken;
+    private final String repositoryUrl;
 
-    public RepositoryAuthenticationToken(String repositoryId, String authenticationToken) {
+    public RepositoryAuthenticationToken(String repositoryId, String authenticationToken, String repositoryUrl) {
         super();
         this.repositoryId = repositoryId;
         this.authenticationToken = authenticationToken;
+        this.repositoryUrl = repositoryUrl;
     }
 
     public String getRepositoryId() {
@@ -35,5 +37,9 @@ public class RepositoryAuthenticationToken {
 
     public String getAuthenticationToken() {
         return authenticationToken;
+    }
+
+    public String getRepositoryUrl() {
+        return repositoryUrl;
     }
 }
