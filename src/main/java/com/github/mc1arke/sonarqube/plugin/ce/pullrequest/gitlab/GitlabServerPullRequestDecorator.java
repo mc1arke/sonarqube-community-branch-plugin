@@ -80,6 +80,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             "sonar.pullrequest.gitlab.projectUrl";
     public static final String PULLREQUEST_GITLAB_PIPELINE_ID =
             "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId";
+    public static final String PULLREQUEST_GITLAB_SOURCE_PROJECT_ID =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.sourceProjectID";
 
     private static final Logger LOGGER = Loggers.get(GitlabServerPullRequestDecorator.class);
     private static final List<String> OPEN_ISSUE_STATUSES =
@@ -112,11 +114,16 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                     () -> new IllegalStateException(String.format(
                             "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
                             PULLREQUEST_GITLAB_PROJECT_ID)));
+            final String sourceProjectId = analysis.getScannerProperty(PULLREQUEST_GITLAB_SOURCE_PROJECT_ID).orElseThrow(
+                    () -> new IllegalStateException(String.format(
+                            "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
+                            PULLREQUEST_GITLAB_SOURCE_PROJECT_ID)));
             final String pullRequestId = analysis.getBranchName();
 
             final String projectURL = apiURL + String.format("/projects/%s", URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()));
+            final String sourceProjectURL = apiURL + String.format("/projects/%s", URLEncoder.encode(sourceProjectId, StandardCharsets.UTF_8.name()));
             final String userURL = apiURL + "/user";
-            final String statusUrl = projectURL + String.format("/statuses/%s", revision);
+            final String statusUrl = sourceProjectURL + String.format("/statuses/%s", revision);
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
             final String prCommitsURL = mergeRequestURl + "/commits";
             final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
