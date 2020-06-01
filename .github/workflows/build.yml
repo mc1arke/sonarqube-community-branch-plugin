@@ -1,0 +1,176 @@
+name: build
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'sq-*'
+    tags:
+      - '*'
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    branches:
+      - 'master'
+      - 'sq-*'
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - 8
+          - 11
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      -
+        name: Set up Java ${{ matrix.java }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+          java-package: jdk
+      -
+        name: Cache deps
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      -
+        name: Build
+        run: |
+          ./gradlew clean build
+      -
+        name: Archive artifact
+        if: success() && matrix.java == '11'
+        uses: actions/upload-artifact@v2
+        with:
+          name: snapshot
+          path: build/libs/*.jar
+
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - 11
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.base_ref }}
+      -
+        name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      -
+        name: Prepare
+        id: prepare
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo ::set-output name=tag_name::${GITHUB_REF#refs/tags/}
+          fi
+      -
+        name: Set up Java ${{ matrix.java }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+          java-package: jdk
+      -
+        name: Cache deps
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      -
+        name: Set up Git
+        run: |
+          git config user.name GitHub
+          git config user.email noreply@github.com
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+      -
+        name: Release
+        if: success() && github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          ./gradlew clean release \
+            -Prelease.useAutomaticVersion=true \
+            -Prelease.releaseVersion=${{ steps.prepare.outputs.tag_name }} \
+            -x preTagCommit -x createReleaseTag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Archive artifact
+        if: success() && matrix.java == '11'
+        uses: actions/upload-artifact@v2
+        with:
+          name: release
+          path: build/libs/*.jar
+      -
+        name: GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: success() && github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/')
+        with:
+          draft: true
+          files: |
+            build/libs/*.jar
+          name: ${{ steps.prepare.outputs.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sonar:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+          - 11
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      -
+        name: Set up Java ${{ matrix.java }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+          java-package: jdk
+      -
+        name: Cache deps
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      -
+        name: Sonar
+        run: |
+          ./gradlew sonarqube \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.organization=${SONAR_ORG_KEY} \
+            -Dsonar.projectKey=${SONAR_PROJECT_KEY}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORG_KEY: ${{ secrets.SONAR_ORG_KEY }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
