@@ -38,7 +38,6 @@ public class ScannerConfigurationLoaderSensor implements Sensor {
         this(Sets.newHashSet(
                 CommunityBranchPlugin.PULL_REQUEST_PROVIDER,
                 BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY,
-                BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_SLUG,
                 BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG,
                 GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_REPOSITORY,
                 GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG

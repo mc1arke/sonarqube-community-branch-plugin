@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Mathias Åhsberg
+ * Copyright (C) 2020 Marvin Wichmann
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,34 +18,8 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.Set;
-
-public class ErrorResponse implements Serializable {
-    private final Set<Error> errors;
-
-    ErrorResponse(@JsonProperty("errors") Set<Error> errors) {
-        this.errors = errors;
-    }
-
-    public Set<Error> getErrors() {
-        return Collections.unmodifiableSet(errors);
-    }
-
-    public static class Error implements Serializable {
-
-        private final String message;
-
-        Error(@JsonProperty("message") String message) {
-            this.message = message;
-        }
-
-        public String getMessage() {
-            return this.message;
-        }
-    }
+/**
+ * Interface for reusing models between the cloud and the server version
+ */
+public interface IAnnotation {
 }
-

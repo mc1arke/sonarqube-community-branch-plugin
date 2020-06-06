@@ -22,11 +22,9 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClientFacade;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketException;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.Annotation;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateAnnotationsRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateReportRequest;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.IAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -62,8 +60,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
     public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "sonar.pullrequest.bitbucket.repositorySlug";
 
-    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "sonar.pullrequest.bitbucket.userSlug";
-
     private static final Logger LOGGER = Loggers.get(BitbucketServerPullRequestDecorator.class);
 
     private static final int DEFAULT_MAX_ANNOTATIONS = 1000;
@@ -74,10 +70,10 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());
 
-    private final BitbucketClient client;
+    private final BitbucketClientFacade facade;
 
-    public BitbucketServerPullRequestDecorator(BitbucketClient client) {
-        this.client = client;
+    public BitbucketServerPullRequestDecorator(BitbucketClientFacade facade) {
+        this.facade = facade;
     }
 
     @Override
@@ -88,17 +84,25 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration configuration) {
         try {
-            if(!client.supportsCodeInsights()) {
-                LOGGER.warn("Your Bitbucket instances does not support the Code Insights API.");
+            facade.withConfiguration(configuration);
+            if (!facade.supportsCodeInsights()) {
+                LOGGER.warn("Your Bitbucket instance does not support the Code Insights API.");
                 return DEFAULT_DECORATION_RESULT;
             }
             String project = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_PROJECT_KEY);
 
             String repo = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG);
-            client.createReport(project, repo,
+
+            facade.createReport(project, repo,
                     analysisDetails.getCommitSha(),
-                    toReport(analysisDetails)
+                    toReport(analysisDetails),
+                    reportDescription(analysisDetails),
+                    analysisDetails.getAnalysisDate().toInstant(),
+                    analysisDetails.getDashboardUrl(),
+                    format("%s/common/icon.png", analysisDetails.getBaseImageUrl()),
+                    analysisDetails.getQualityGateStatus()
             );
+
             updateAnnotations(project, repo, analysisDetails);
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
@@ -107,7 +111,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         return DEFAULT_DECORATION_RESULT;
     }
 
-    private CreateReportRequest toReport(AnalysisDetails analysisDetails) {
+    private List<ReportData> toReport(AnalysisDetails analysisDetails) {
         Map<RuleType, Long> rules = analysisDetails.countRuleByType();
 
         List<ReportData> reportData = new ArrayList<>();
@@ -116,31 +120,24 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         reportData.add(securityReport(rules.get(RuleType.VULNERABILITY), rules.get(RuleType.SECURITY_HOTSPOT)));
         reportData.add(new ReportData("Duplication", new DataValue.Percentage(newDuplication(analysisDetails))));
         reportData.add(maintainabilityReport(rules.get(RuleType.CODE_SMELL)));
-        reportData.add(new ReportData("Analysis details", new DataValue.Link("Go to SonarQube", analysisDetails.getDashboardUrl())));
+        reportData.add(new ReportData("Analysis details", facade.createLinkDataValue(analysisDetails.getDashboardUrl())));
 
-        return new CreateReportRequest(reportData,
-                reportDescription(analysisDetails),
-                "SonarQube",
-                "SonarQube",
-                analysisDetails.getAnalysisDate().toInstant(),
-                analysisDetails.getDashboardUrl(),
-                format("%s/common/icon.png", analysisDetails.getBaseImageUrl()),
-                asInsightStatus(analysisDetails.getQualityGateStatus()));
+        return reportData;
     }
 
     private void updateAnnotations(String project, String repo, AnalysisDetails analysisDetails) throws IOException {
         final AtomicInteger chunkCounter = new AtomicInteger(0);
 
-        client.deleteAnnotations(project, repo, analysisDetails.getCommitSha());
+        facade.deleteAnnotations(project, repo, analysisDetails.getCommitSha());
 
-        Map<Object, Set<Annotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
+        Map<Object, Set<IAnnotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status()))
                 .sorted(Comparator.comparing(a -> Severity.ALL.indexOf(a.getIssue().severity())))
                 .map(componentIssue -> {
                     String path = componentIssue.getComponent().getReportAttributes().getScmPath().get();
-                    return new Annotation(componentIssue.getIssue().key(),
+                    return facade.createAnnotation(componentIssue.getIssue().key(),
                             Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0),
                             analysisDetails.getIssueUrl(componentIssue.getIssue().key()),
                             componentIssue.getIssue().getMessage(),
@@ -149,9 +146,9 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                             toBitbucketType(componentIssue.getIssue().type()));
                 }).collect(Collectors.groupingBy(s -> chunkCounter.getAndIncrement() / DEFAULT_MAX_ANNOTATIONS, toSet()));
 
-        for (Set<Annotation> annotations : annotationChunks.values()) {
+        for (Set<IAnnotation> annotations : annotationChunks.values()) {
             try {
-                client.createAnnotations(project, repo, analysisDetails.getCommitSha(), new CreateAnnotationsRequest(annotations));
+                facade.createAnnotations(project, repo, analysisDetails.getCommitSha(), annotations);
             } catch (BitbucketException e) {
                 if (e.isError(BitbucketException.PAYLOAD_TOO_LARGE)) {
                     LOGGER.warn("The annotations will be truncated since the maximum number of annotations for this report has been reached.");
@@ -161,10 +158,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
             }
         }
-    }
-
-    private String asInsightStatus(QualityGate.Status status) {
-        return QualityGate.Status.ERROR.equals(status) ? "FAIL" : "PASS";
     }
 
     private String toBitbucketSeverity(String severity) {

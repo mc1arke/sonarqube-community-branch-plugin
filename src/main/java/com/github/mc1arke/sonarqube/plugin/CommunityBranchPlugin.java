@@ -147,10 +147,6 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                             "Repository Slug see for example https://docs.atlassian.com/bitbucket-server/rest/latest/bitbucket-rest.html")
                             .type(PropertyType.STRING).build(),
 
-                    PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_SLUG).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
-                            .onlyOnQualifiers(Qualifiers.PROJECT).name("User Slug").description("This is used for '/users' repos. Only set one User Slug or ProjectKey!")
-                            .type(PropertyType.STRING).index(2).build(),
-
                     PropertyDefinition.builder(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY).category(PULL_REQUEST_CATEGORY_LABEL).subCategory(BITBUCKET_INTEGRATION_SUBCATEGORY_LABEL)
                             .onlyOnQualifiers(Qualifiers.PROJECT).name("ProjectKey").description("This is used for '/projects' repos. Only set one User Slug or ProjectKey!")
                             .type(PropertyType.STRING).index(1).build(),

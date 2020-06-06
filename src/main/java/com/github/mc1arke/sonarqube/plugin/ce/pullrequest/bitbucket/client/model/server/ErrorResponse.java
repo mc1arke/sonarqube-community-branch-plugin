@@ -16,20 +16,36 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Set;
 
-public class CreateAnnotationsRequest implements Serializable {
-    private final Set<Annotation> annotations;
+public class ErrorResponse implements Serializable {
+    private final Set<Error> errors;
 
-    public CreateAnnotationsRequest(Set<Annotation> annotations) {
-        this.annotations = annotations == null ? Collections.emptySet() : annotations;
+    ErrorResponse(@JsonProperty("errors") Set<Error> errors) {
+        this.errors = errors;
     }
 
-    public Set<Annotation> getAnnotations() {
-        return annotations;
+    public Set<Error> getErrors() {
+        return Collections.unmodifiableSet(errors);
+    }
+
+    public static class Error implements Serializable {
+
+        private final String message;
+
+        Error(@JsonProperty("message") String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return this.message;
+        }
     }
 }
+

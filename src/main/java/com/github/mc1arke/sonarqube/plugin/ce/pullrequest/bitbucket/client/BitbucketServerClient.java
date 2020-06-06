@@ -18,21 +18,15 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketServerPullRequestDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateAnnotationsRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateReportRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ErrorResponse;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ServerProperties;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.CreateAnnotationsRequest;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.CreateReportRequest;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.ServerProperties;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.sonar.api.ce.ComputeEngineSide;
-import org.sonar.api.config.Configuration;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 
@@ -42,18 +36,10 @@ import java.util.Optional;
 import static java.lang.String.format;
 
 @ComputeEngineSide
-public class BitbucketClient {
-    private static final Logger LOGGER = Loggers.get(BitbucketClient.class);
+public class BitbucketServerClient extends AbstractBitbucketClient {
+    private static final Logger LOGGER = Loggers.get(BitbucketServerClient.class);
     private static final String REPORT_KEY = "com.github.mc1arke.sonarqube";
     private static final MediaType APPLICATION_JSON_MEDIA_TYPE = MediaType.get("application/json");
-    private final Configuration configuration;
-
-    private OkHttpClient client;
-    private ObjectMapper objectMapper;
-
-    public BitbucketClient(Configuration configuration) {
-        this.configuration = configuration;
-    }
 
     public ServerProperties getServerProperties() throws IOException {
         Request req = new Request.Builder()
@@ -65,8 +51,8 @@ public class BitbucketClient {
 
             return getObjectMapper().reader().forType(ServerProperties.class)
                     .readValue(Optional.ofNullable(response.body())
-                                       .orElseThrow(() -> new IllegalStateException("No response body from BitBucket"))
-                                       .string());
+                            .orElseThrow(() -> new IllegalStateException("No response body from BitBucket"))
+                            .string());
         }
     }
 
@@ -122,49 +108,15 @@ public class BitbucketClient {
         return false;
     }
 
-    private void validate(Response response) throws IOException {
-        if (!response.isSuccessful()) {
-            ErrorResponse errors = null;
-            if (response.body() != null) {
-                errors = getObjectMapper().reader().forType(ErrorResponse.class)
-                        .readValue(response.body().string());
-            }
-            throw new BitbucketException(response.code(), errors);
-        }
-    }
-
     private OkHttpClient getClient() {
-        client = Optional.ofNullable(client).orElseGet(() ->
-                new OkHttpClient.Builder()
-                        .authenticator(((route, response) ->
-                                response.request()
-                                        .newBuilder()
-                                        .header("Authorization", format("Bearer %s", getToken()))
-                                        .header("Accept", APPLICATION_JSON_MEDIA_TYPE.toString())
-                                        .build()
-                        ))
-                        .build()
-        );
-        return client;
-    }
-
-    private ObjectMapper getObjectMapper() {
-        objectMapper = Optional.ofNullable(objectMapper).orElseGet(() -> new ObjectMapper()
-                .setSerializationInclusion(Include.NON_NULL)
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        );
-        return objectMapper;
-    }
-
-    private String baseUrl() {
-        return configuration.get(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(format("Missing required property %s", BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_URL))
-                );
-    }
-
-    private String getToken() {
-        return configuration.get(BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_TOKEN)
-                .orElseThrow(() -> new IllegalArgumentException("Personal Access Token for Bitbucket Server is missing"));
+        return new OkHttpClient.Builder()
+                .addInterceptor(chain -> {
+                    Request newRequest  = chain.request().newBuilder()
+                            .addHeader("Authorization", format("Bearer %s", getToken()))
+                            .addHeader("Accept", APPLICATION_JSON_MEDIA_TYPE.toString())
+                            .build();
+                    return chain.proceed(newRequest);
+                })
+                .build();
     }
 }

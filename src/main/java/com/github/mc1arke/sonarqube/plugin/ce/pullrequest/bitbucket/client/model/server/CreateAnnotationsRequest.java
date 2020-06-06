@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Mathias Åhsberg
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,23 +16,20 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server;
 
-import org.junit.Test;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.Set;
 
-import java.util.List;
+public class CreateAnnotationsRequest implements Serializable {
+    private final Set<Annotation> annotations;
 
-import static org.junit.Assert.assertEquals;
+    public CreateAnnotationsRequest(Set<Annotation> annotations) {
+        this.annotations = annotations == null ? Collections.emptySet() : annotations;
+    }
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
-
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(12, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    public Set<Annotation> getAnnotations() {
+        return annotations;
     }
 }
