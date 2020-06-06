@@ -3,16 +3,14 @@ name: build
 on:
   push:
     branches:
-      - 'master'
-      - 'sq-*'
+      - '**'
     tags:
       - '*'
     paths-ignore:
       - '**.md'
   pull_request:
     branches:
-      - 'master'
-      - 'sq-*'
+      - '**'
     paths-ignore:
       - '**.md'
 
