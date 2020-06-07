@@ -203,7 +203,7 @@ jobs:
               -Dsonar.organization=${SONAR_ORG_KEY} \
               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
               -Dsonar.pullrequest.key=${{ github.event.number }}
-              -Dsonar.pullrequest.base=${{ github.event.base_ref }}
+              -Dsonar.pullrequest.base=${{ github.base_ref }}
           else
             ./gradlew sonarqube \
               -Dsonar.pullrequest.provider=github \
