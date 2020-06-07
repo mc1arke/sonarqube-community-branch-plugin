@@ -187,6 +187,8 @@ jobs:
         run: |
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             ./gradlew sonarqube \
+              -Dsonar.pullrequest.provider=github \
+              -Dsonar.pullrequest.github.repository=${{ github.repository }} \
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.organization=${SONAR_ORG_KEY} \
               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
@@ -195,13 +197,16 @@ jobs:
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
             PR_BRANCH=${{ github.head_ref }}
             ./gradlew sonarqube \
+              -Dsonar.pullrequest.provider=github \
+              -Dsonar.pullrequest.github.repository=${{ github.repository }} \
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.organization=${SONAR_ORG_KEY} \
               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-              -Dsonar.pullrequest.key=${{ github.event.number }} \
-              -Dsonar.pullrequest.branch=${PR_BRANCH##*/}
+              -Dsonar.pullrequest.key=${{ github.event.number }}
           else
             ./gradlew sonarqube \
+              -Dsonar.pullrequest.provider=github \
+              -Dsonar.pullrequest.github.repository=${{ github.repository }} \
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.organization=${SONAR_ORG_KEY} \
               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
