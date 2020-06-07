@@ -71,7 +71,7 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.base_ref }}
+          ref: ${{ github.event.repository.master_branch }}
       -
         name: Dump GitHub context
         env:
