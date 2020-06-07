@@ -71,7 +71,19 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.repository.master_branch }}
+          fetch-depth: 0
+      -
+        name: Prepare
+        id: prepare
+        run: |
+          echo ::set-output name=tag_name::${GITHUB_REF#refs/tags/}
+          echo ::set-output name=branch_name::$(git --no-pager branch -a --contains "$GITHUB_SHA" | grep 'remotes/origin/' | cut -d '/' -f3)
+      -
+        name: Checkout ${{ steps.prepare.outputs.branch_name }}
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.prepare.outputs.branch_name }}
       -
         name: Dump GitHub context
         env:
@@ -81,13 +93,7 @@ jobs:
         name: Env vars
         run: |
           env|sort
-      -
-        name: Prepare
-        id: prepare
-        run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo ::set-output name=tag_name::${GITHUB_REF#refs/tags/}
-          fi
+
       -
         name: Set up Java ${{ matrix.java }}
         uses: actions/setup-java@v1
@@ -112,7 +118,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Release
-        if: success() && github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/')
+        if: success()
         run: |
           ./gradlew clean release \
             -Prelease.useAutomaticVersion=true \
@@ -130,7 +136,7 @@ jobs:
       -
         name: GitHub Release
         uses: softprops/action-gh-release@v1
-        if: success() && github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/')
+        if: success()
         with:
           draft: true
           files: |
