@@ -149,6 +149,26 @@ jobs:
         with:
           fetch-depth: 0
       -
+        name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      -
+        name: Dump job context
+        env:
+          JOB_CONTEXT: ${{ toJson(job) }}
+        run: echo "$JOB_CONTEXT"
+      -
+        name: Dump steps context
+        env:
+          STEPS_CONTEXT: ${{ toJson(steps) }}
+        run: echo "$STEPS_CONTEXT"
+     -
+        name: Dump runner context
+        env:
+          RUNNER_CONTEXT: ${{ toJson(runner) }}
+        run: echo "$RUNNER_CONTEXT"
+      -
         name: Set up Java ${{ matrix.java }}
         uses: actions/setup-java@v1
         with:
@@ -165,10 +185,28 @@ jobs:
       -
         name: Sonar
         run: |
-          ./gradlew sonarqube \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.organization=${SONAR_ORG_KEY} \
-            -Dsonar.projectKey=${SONAR_PROJECT_KEY}
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            ./gradlew sonarqube \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.organization=${SONAR_ORG_KEY} \
+              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+              -Dsonar.projectVersion=${GITHUB_REF#refs/tags/} \
+              -Dsonar.branch.name=master
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_BRANCH=${{ github.head_ref }}
+            ./gradlew sonarqube \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.organization=${SONAR_ORG_KEY} \
+              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+              -Dsonar.pullrequest.key=${{ github.event.number }} \
+              -Dsonar.pullrequest.branch=${PR_BRANCH##*/}
+          else
+            ./gradlew sonarqube \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.organization=${SONAR_ORG_KEY} \
+              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+              -Dsonar.branch.name=${GITHUB_REF##*/}
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
