@@ -78,6 +78,10 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
       -
+        name: Env vars
+        run: |
+          env|sort
+      -
         name: Prepare
         id: prepare
         run: |
