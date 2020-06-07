@@ -184,6 +184,7 @@ jobs:
             ${{ runner.os }}-gradle-
       -
         name: Sonar
+        if: ${{ env.SONAR_TOKEN != null }}
         run: |
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             ./gradlew sonarqube \
@@ -202,8 +203,8 @@ jobs:
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.organization=${SONAR_ORG_KEY} \
               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-              -Dsonar.pullrequest.key=${{ github.event.number }}
-              -Dsonar.pullrequest.base=${{ github.event.base_ref }}
+              -Dsonar.pullrequest.key=${{ github.event.number }} \
+              -Dsonar.pullrequest.base=${{ github.base_ref }}
           else
             ./gradlew sonarqube \
               -Dsonar.pullrequest.provider=github \
