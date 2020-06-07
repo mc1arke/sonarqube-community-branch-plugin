@@ -102,7 +102,8 @@ jar {
 
 release {
     git {
-        requireBranch = '(master|release-\\d+\\.\\d+|\\d+\\.\\d+)'
+        requireBranch = ''
+        commitVersionFileOnly = true
     }
 }
 
