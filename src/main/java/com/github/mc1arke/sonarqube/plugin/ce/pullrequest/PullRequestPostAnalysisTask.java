@@ -135,7 +135,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask,
                                     projectAnalysis.getProject(), configuration, server.getPublicRootUrl());
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
-        LOGGER.info("using pull request decorator" + pullRequestDecorator.name());
+        LOGGER.info("using pull request decorator " + pullRequestDecorator.name());
         DecorationResult decorationResult = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
 
         decorationResult.getPullRequestUrl().ifPresent(pullRequestUrl -> persistPullRequestUrl(pullRequestUrl, projectAnalysis, optionalBranchName.get()));

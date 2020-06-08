@@ -62,7 +62,7 @@ public class CommunityBranchPluginTest {
     public void testScannerSideDefine() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
-        final Plugin.Context context = spy(mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS));
+        final Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
         when(context.getRuntime().getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
         testCase.define(context);
@@ -81,7 +81,7 @@ public class CommunityBranchPluginTest {
     public void testNonScannerSideDefine() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
-        final Plugin.Context context = spy(mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS));
+        final Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
         when(context.getRuntime().getSonarQubeSide()).thenReturn(SonarQubeSide.SERVER);
 
         testCase.define(context);
@@ -93,7 +93,7 @@ public class CommunityBranchPluginTest {
     public void testComputeEngineSideLoad() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
-        final CoreExtension.Context context = spy(mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS));
+        final CoreExtension.Context context = mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS);
         when(context.getRuntime().getSonarQubeSide()).thenReturn(SonarQubeSide.COMPUTE_ENGINE);
 
         testCase.load(context);
@@ -119,7 +119,7 @@ public class CommunityBranchPluginTest {
         final ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
-        assertEquals(22, argumentCaptor.getAllValues().size());
+        assertEquals(21, argumentCaptor.getAllValues().size());
 
         assertEquals(Arrays.asList(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class),
                      argumentCaptor.getAllValues().subList(0, 2));
