@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Mathias Åhsberg
+ * Copyright (C) 2020 Marvin Wichmann
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,20 +16,23 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.Set;
+public class BitbucketCloudException extends RuntimeException {
+    private final int code;
+    private final String error;
 
-public class CreateAnnotationsRequest implements Serializable {
-    private final Set<Annotation> annotations;
-
-    public CreateAnnotationsRequest(Set<Annotation> annotations) {
-        this.annotations = annotations == null ? Collections.emptySet() : annotations;
+    BitbucketCloudException(int code, String error) {
+        this.code = code;
+        this.error = error;
     }
 
-    public Set<Annotation> getAnnotations() {
-        return annotations;
+    public boolean isError(int code) {
+        return this.code == code;
+    }
+
+    @Override
+    public String getMessage() {
+        return "HTTP Status Code: " + code + "; Message:" + error;
     }
 }

@@ -16,36 +16,30 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 
-import java.io.Serializable;
-
-public class Annotation implements Serializable {
+public class Annotation extends CodeInsightsAnnotation {
     private final String externalId;
-    private final int line;
+
     private final String link;
-    private final String message;
-    private final String path;
-    private final String severity;
+
     private final String type;
 
     @JsonCreator
     public Annotation(@JsonProperty("externalId") String externalId,
                       @JsonProperty("line") int line,
-                      @JsonProperty("link") String link,
-                      @JsonProperty("message") String message,
-                      @JsonProperty("path") String path,
-                      @JsonProperty("severity") String severity,
+                      String link,
+                      String message,
+                      String path,
+                      String severity,
                       @JsonProperty("type") String type) {
+        super(line, message, path, severity);
         this.externalId = externalId;
-        this.line = line;
         this.link = link;
-        this.message = message;
-        this.path = path;
-        this.severity = severity;
         this.type = type;
     }
 
@@ -53,24 +47,8 @@ public class Annotation implements Serializable {
         return externalId;
     }
 
-    public int getLine() {
-        return line;
-    }
-
     public String getLink() {
         return link;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public String getSeverity() {
-        return severity;
     }
 
     public String getType() {

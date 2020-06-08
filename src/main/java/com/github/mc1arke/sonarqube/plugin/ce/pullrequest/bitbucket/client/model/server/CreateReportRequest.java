@@ -16,23 +16,20 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
 
 import java.time.Instant;
 import java.util.List;
 
-public class CreateReportRequest {
-    private final List<ReportData> data;
-    private final String details;
-    private final String title;
-    private final String reporter;
+public class CreateReportRequest extends CodeInsightsReport {
+
     private final Instant createdDate;
-    private final String link;
     private final String logoUrl;
-    private final String result;
 
     @JsonCreator
     public CreateReportRequest(
@@ -44,45 +41,16 @@ public class CreateReportRequest {
             @JsonProperty("link") String link,
             @JsonProperty("logoUrl") String logoUrl,
             @JsonProperty("result") String result) {
-        this.data = data;
-        this.details = details;
-        this.title = title;
-        this.reporter = reporter;
+        super(data, details, title, reporter, link, result);
         this.createdDate = createdDate;
-        this.link = link;
         this.logoUrl = logoUrl;
-        this.result = result;
-    }
-
-    public List<ReportData> getData() {
-        return data;
-    }
-
-    public String getDetails() {
-        return details;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getReporter() {
-        return reporter;
     }
 
     public Instant getCreatedDate() {
         return createdDate;
     }
 
-    public String getLink() {
-        return link;
-    }
-
     public String getLogoUrl() {
         return logoUrl;
-    }
-
-    public String getResult() {
-        return result;
     }
 }
