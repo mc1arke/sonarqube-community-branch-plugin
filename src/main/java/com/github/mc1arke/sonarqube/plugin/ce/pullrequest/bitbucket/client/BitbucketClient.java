@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Mathias Åhsberg
+ * Copyright (C) 2020 Marvin Wichmann
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,137 +18,75 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateAnnotationsRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateReportRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ErrorResponse;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ServerProperties;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import org.sonar.api.ce.ComputeEngineSide;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
-import org.sonar.db.alm.setting.AlmSettingDto;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
+import org.sonar.api.ce.posttask.QualityGate;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
 
-import static java.lang.String.format;
+public interface BitbucketClient {
 
-@ComputeEngineSide
-public class BitbucketClient {
-    private static final Logger LOGGER = Loggers.get(BitbucketClient.class);
-    private static final String REPORT_KEY = "com.github.mc1arke.sonarqube";
-    private static final MediaType APPLICATION_JSON_MEDIA_TYPE = MediaType.get("application/json");
+    /**
+     * <p>
+     * Creates an annotation for the given parameters based on the fact if the cloud
+     * or the on prem bitbucket solution is used.
+     * </p>
+     *
+     * @return The newly created {@link CodeInsightsAnnotation}
+     */
+    CodeInsightsAnnotation createCodeInsightsAnnotation(String issueKey, int line, String issueUrl, String message, String path, String severity, String type);
 
-    private OkHttpClient client;
-    private ObjectMapper objectMapper;
+    /**
+     * <p>
+     * Creates a report for the given parameters based on the fact if the cloud
+     * or the on prem bitbucket solution is used.
+     * </p>
+     *
+     * @return The newly created {@link CodeInsightsReport}
+     */
+    CodeInsightsReport createCodeInsightsReport(List<ReportData> reportData,
+                                                String reportDescription, Instant creationDate, String dashboardUrl,
+                                                String logoUrl, QualityGate.Status status);
 
+    /**
+     * Deletes all code insights annotations for the given parameters.
+     *
+     * @throws IOException if the annotations cannot be deleted
+     */
+    void deleteAnnotations(String project, String repo, String commitSha) throws IOException;
 
-    public ServerProperties getServerProperties(AlmSettingDto almSettingDto) throws IOException {
-        Request req = new Request.Builder()
-                .get()
-                .url(format("%s/rest/api/1.0/application-properties", almSettingDto.getUrl()))
-                .build();
-        try (Response response = getClient(almSettingDto).newCall(req).execute()) {
-            validate(response);
+    /**
+     * Uploads CodeInsights Annotations for the given commit.
+     *
+     * @throws IOException if the annotations cannot be uploaded
+     */
+    void uploadAnnotations(String project, String repo, String commitSha, Set<CodeInsightsAnnotation> annotations) throws IOException;
 
-            return getObjectMapper().reader().forType(ServerProperties.class)
-                    .readValue(Optional.ofNullable(response.body())
-                                       .orElseThrow(() -> new IllegalStateException("No response body from BitBucket"))
-                                       .string());
-        }
-    }
+    /**
+     * Creates a DataValue of type DataValue.Link or DataValue.CloudLink depending on the implementation
+     */
+    DataValue createLinkDataValue(String dashboardUrl);
 
-    public void createReport(String project, String repository, String commit, CreateReportRequest request, AlmSettingDto almSettingDto) throws IOException {
-        String body = getObjectMapper().writeValueAsString(request);
-        Request req = new Request.Builder()
-                .put(RequestBody.create(APPLICATION_JSON_MEDIA_TYPE, body))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", almSettingDto.getUrl(), project, repository, commit, REPORT_KEY))
-                .build();
+    /**
+     * Uploads the code insights report for the given commit
+     */
+    void uploadReport(String project, String repo, String commitSha, CodeInsightsReport codeInsightReport) throws IOException;
 
-        try (Response response = getClient(almSettingDto).newCall(req).execute()) {
-            validate(response);
-        }
-    }
+    /**
+     * <p>
+     * Determines if the used bitbucket endpoint supports the code insights feature.
+     * <p>
+     * For the cloud version we simply return true and for the server version a version
+     * check is implemented that tests if the given server version is higher than 5.15
+     * </p>
+     *
+     * @return boolean
+     */
+    boolean supportsCodeInsights();
 
-    public void createAnnotations(String project, String repository, String commit, CreateAnnotationsRequest request, AlmSettingDto almSettingDto) throws IOException {
-        if (request.getAnnotations().isEmpty()) {
-            return;
-        }
-        Request req = new Request.Builder()
-                .post(RequestBody.create(APPLICATION_JSON_MEDIA_TYPE, getObjectMapper().writeValueAsString(request)))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", almSettingDto.getUrl(), project, repository, commit, REPORT_KEY))
-                .build();
-        try (Response response = getClient(almSettingDto).newCall(req).execute()) {
-            validate(response);
-        }
-    }
-
-    public void deleteAnnotations(String project, String repository, String commit, AlmSettingDto almSettingDto) throws IOException {
-        Request req = new Request.Builder()
-                .delete()
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", almSettingDto.getUrl(), project, repository, commit, REPORT_KEY))
-                .build();
-        try (Response response = getClient(almSettingDto).newCall(req).execute()) {
-            validate(response);
-        }
-    }
-
-    public boolean supportsCodeInsights(AlmSettingDto almSettingDto) {
-        try {
-            ServerProperties server = getServerProperties(almSettingDto);
-            LOGGER.debug(format("Your Bitbucket Server installation is version %s", server.getVersion()));
-            if (server.hasCodeInsightsApi()) {
-                return true;
-            } else {
-                LOGGER.info("Bitbucket Server version is to old. %s is the minimum version that supports Code Insights",
-                        ServerProperties.CODE_INSIGHT_VERSION);
-            }
-        } catch (IOException e) {
-            LOGGER.error("Could not determine Bitbucket Server version", e);
-            return false;
-        }
-        return false;
-    }
-
-    private void validate(Response response) throws IOException {
-        LOGGER.debug(format("Validate response %s", response));
-        if (!response.isSuccessful()) {
-            ErrorResponse errors = null;
-            if (response.body() != null) {
-                errors = getObjectMapper().reader().forType(ErrorResponse.class)
-                        .readValue(response.body().string());
-            }
-            throw new BitbucketException(response.code(), errors);
-        }
-    }
-
-    private OkHttpClient getClient(AlmSettingDto almSettingDto) {
-        client = Optional.ofNullable(client).orElseGet(() ->
-                new OkHttpClient.Builder()
-                        .authenticator(((route, response) ->
-                                response.request()
-                                        .newBuilder()
-                                        .header("Authorization", format("Bearer %s", almSettingDto.getPersonalAccessToken()))
-                                        .header("Accept", APPLICATION_JSON_MEDIA_TYPE.toString())
-                                        .build()
-                        ))
-                        .build()
-        );
-        return client;
-    }
-
-    private ObjectMapper getObjectMapper() {
-        objectMapper = Optional.ofNullable(objectMapper).orElseGet(() -> new ObjectMapper()
-                .setSerializationInclusion(Include.NON_NULL)
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        );
-        return objectMapper;
-    }
 }

@@ -65,7 +65,7 @@ public class CommunityBranchPluginBootstrapTest {
 
     @Test
     public void testDefineInvokedOnSuccessLoad() throws ClassNotFoundException {
-        Plugin.Context context = spy(mock(Plugin.Context.class));
+        Plugin.Context context = mock(Plugin.Context.class);
         Configuration configuration = mock(Configuration.class);
         when(context.getBootConfiguration()).thenReturn(configuration);
         when(configuration.get(any())).thenReturn(Optional.empty());
@@ -92,7 +92,7 @@ public class CommunityBranchPluginBootstrapTest {
 
     @Test
     public void testDefineNotInvokedForNonScanner() throws ClassNotFoundException {
-        Plugin.Context context = spy(mock(Plugin.Context.class));
+        Plugin.Context context = mock(Plugin.Context.class);
         Configuration configuration = mock(Configuration.class);
         when(context.getBootConfiguration()).thenReturn(configuration);
         when(configuration.get(any())).thenReturn(Optional.empty());

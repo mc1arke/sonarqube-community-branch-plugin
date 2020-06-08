@@ -46,6 +46,25 @@ public interface DataValue extends Serializable {
         }
     }
 
+    class CloudLink implements DataValue {
+        private final String text;
+        private final String href;
+
+        @JsonCreator
+        public CloudLink(@JsonProperty("text") String text, @JsonProperty("href") String href) {
+            this.text = text;
+            this.href = href;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public String getHref() {
+            return href;
+        }
+    }
+
     class Text implements DataValue {
         private final String value;
 
