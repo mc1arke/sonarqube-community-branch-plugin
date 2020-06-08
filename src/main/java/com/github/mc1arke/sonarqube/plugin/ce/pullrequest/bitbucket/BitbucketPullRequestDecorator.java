@@ -23,12 +23,14 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketException;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.Annotation;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateAnnotationsRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateReportRequest;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
+import com.google.common.annotations.VisibleForTesting;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
@@ -52,7 +54,7 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toSet;
 
-public class BitbucketServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
+public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
     public static final String PULL_REQUEST_BITBUCKET_URL = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.bitbucket.url";
 
@@ -62,9 +64,7 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
     public static final String PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG = "sonar.pullrequest.bitbucket.repositorySlug";
 
-    public static final String PULL_REQUEST_BITBUCKET_USER_SLUG = "sonar.pullrequest.bitbucket.userSlug";
-
-    private static final Logger LOGGER = Loggers.get(BitbucketServerPullRequestDecorator.class);
+    private static final Logger LOGGER = Loggers.get(BitbucketPullRequestDecorator.class);
 
     private static final int DEFAULT_MAX_ANNOTATIONS = 1000;
 
@@ -74,12 +74,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());
 
-    private final BitbucketClient client;
-
-    public BitbucketServerPullRequestDecorator(BitbucketClient client) {
-        this.client = client;
-    }
-
     @Override
     public String name() {
         return "BitbucketServer";
@@ -87,19 +81,33 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, UnifyConfiguration configuration) {
+        String project = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_PROJECT_KEY);
+        String repo = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG);
+        String url = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_URL);
+        String token = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_TOKEN);
+        BitbucketConfiguration bitbucketConfiguration = new BitbucketConfiguration(url, token, repo, project);
+
+        BitbucketClient client = createClient(bitbucketConfiguration);
+
         try {
-            if(!client.supportsCodeInsights()) {
-                LOGGER.warn("Your Bitbucket instances does not support the Code Insights API.");
+            if (!client.supportsCodeInsights()) {
+                LOGGER.warn("Your Bitbucket instance does not support the Code Insights API.");
                 return DEFAULT_DECORATION_RESULT;
             }
-            String project = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_PROJECT_KEY);
 
-            String repo = configuration.getRequiredProperty(PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG);
-            client.createReport(project, repo,
-                    analysisDetails.getCommitSha(),
-                    toReport(analysisDetails)
+            CodeInsightsReport codeInsightsReport = client.createCodeInsightsReport(
+                    toReport(client, analysisDetails),
+                    reportDescription(analysisDetails),
+                    analysisDetails.getAnalysisDate().toInstant(),
+                    analysisDetails.getDashboardUrl(),
+                    format("%s/common/icon.png", analysisDetails.getBaseImageUrl()),
+                    analysisDetails.getQualityGateStatus()
             );
-            updateAnnotations(project, repo, analysisDetails);
+
+            client.uploadReport(project, repo,
+                    analysisDetails.getCommitSha(), codeInsightsReport);
+
+            updateAnnotations(client, project, repo, analysisDetails);
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }
@@ -107,7 +115,12 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         return DEFAULT_DECORATION_RESULT;
     }
 
-    private CreateReportRequest toReport(AnalysisDetails analysisDetails) {
+    @VisibleForTesting
+    BitbucketClient createClient(BitbucketConfiguration bitbucketConfiguration) {
+        return BitbucketClientFactory.createClient(bitbucketConfiguration);
+    }
+
+    private List<ReportData> toReport(BitbucketClient client, AnalysisDetails analysisDetails) {
         Map<RuleType, Long> rules = analysisDetails.countRuleByType();
 
         List<ReportData> reportData = new ArrayList<>();
@@ -116,31 +129,24 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
         reportData.add(securityReport(rules.get(RuleType.VULNERABILITY), rules.get(RuleType.SECURITY_HOTSPOT)));
         reportData.add(new ReportData("Duplication", new DataValue.Percentage(newDuplication(analysisDetails))));
         reportData.add(maintainabilityReport(rules.get(RuleType.CODE_SMELL)));
-        reportData.add(new ReportData("Analysis details", new DataValue.Link("Go to SonarQube", analysisDetails.getDashboardUrl())));
+        reportData.add(new ReportData("Analysis details", client.createLinkDataValue(analysisDetails.getDashboardUrl())));
 
-        return new CreateReportRequest(reportData,
-                reportDescription(analysisDetails),
-                "SonarQube",
-                "SonarQube",
-                analysisDetails.getAnalysisDate().toInstant(),
-                analysisDetails.getDashboardUrl(),
-                format("%s/common/icon.png", analysisDetails.getBaseImageUrl()),
-                asInsightStatus(analysisDetails.getQualityGateStatus()));
+        return reportData;
     }
 
-    private void updateAnnotations(String project, String repo, AnalysisDetails analysisDetails) throws IOException {
+    private void updateAnnotations(BitbucketClient client, String project, String repo, AnalysisDetails analysisDetails) throws IOException {
         final AtomicInteger chunkCounter = new AtomicInteger(0);
 
         client.deleteAnnotations(project, repo, analysisDetails.getCommitSha());
 
-        Map<Object, Set<Annotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
+        Map<Object, Set<CodeInsightsAnnotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status()))
                 .sorted(Comparator.comparing(a -> Severity.ALL.indexOf(a.getIssue().severity())))
                 .map(componentIssue -> {
                     String path = componentIssue.getComponent().getReportAttributes().getScmPath().get();
-                    return new Annotation(componentIssue.getIssue().key(),
+                    return client.createCodeInsightsAnnotation(componentIssue.getIssue().key(),
                             Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0),
                             analysisDetails.getIssueUrl(componentIssue.getIssue().key()),
                             componentIssue.getIssue().getMessage(),
@@ -149,9 +155,9 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                             toBitbucketType(componentIssue.getIssue().type()));
                 }).collect(Collectors.groupingBy(s -> chunkCounter.getAndIncrement() / DEFAULT_MAX_ANNOTATIONS, toSet()));
 
-        for (Set<Annotation> annotations : annotationChunks.values()) {
+        for (Set<CodeInsightsAnnotation> annotations : annotationChunks.values()) {
             try {
-                client.createAnnotations(project, repo, analysisDetails.getCommitSha(), new CreateAnnotationsRequest(annotations));
+                client.uploadAnnotations(project, repo, analysisDetails.getCommitSha(), annotations);
             } catch (BitbucketException e) {
                 if (e.isError(BitbucketException.PAYLOAD_TOO_LARGE)) {
                     LOGGER.warn("The annotations will be truncated since the maximum number of annotations for this report has been reached.");
@@ -161,10 +167,6 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
 
             }
         }
-    }
-
-    private String asInsightStatus(QualityGate.Status status) {
-        return QualityGate.Status.ERROR.equals(status) ? "FAIL" : "PASS";
     }
 
     private String toBitbucketSeverity(String severity) {

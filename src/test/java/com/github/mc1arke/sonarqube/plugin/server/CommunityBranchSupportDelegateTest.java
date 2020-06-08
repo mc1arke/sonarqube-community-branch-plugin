@@ -225,7 +225,7 @@ public class CommunityBranchSupportDelegateTest {
         when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.LONG)));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
-        ComponentDao componentDao = spy(mock(ComponentDao.class));
+        ComponentDao componentDao = mock(ComponentDao.class);
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.componentDao()).thenReturn(componentDao);
@@ -307,7 +307,7 @@ public class CommunityBranchSupportDelegateTest {
         when(componentDto.getKey()).thenReturn("componentKey");
         when(componentDto.uuid()).thenReturn("componentUuid");
 
-        ComponentDto copyComponentDto = spy(ComponentDto.class);
+        ComponentDto copyComponentDto = mock(ComponentDto.class);
         when(componentDto.copy()).thenReturn(copyComponentDto);
 
         BranchDto branchDto = mock(BranchDto.class);
@@ -324,7 +324,7 @@ public class CommunityBranchSupportDelegateTest {
         when(componentKey.getBranch()).thenReturn(Optional.empty());
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
-        ComponentDao componentDao = spy(mock(ComponentDao.class));
+        ComponentDao componentDao = mock(ComponentDao.class);
 
         DbClient dbClient = mock(DbClient.class);
         when(dbClient.componentDao()).thenReturn(componentDao);

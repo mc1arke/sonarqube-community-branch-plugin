@@ -19,7 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
 import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketServerPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.GraphqlCheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabServerPullRequestDecorator;
 import com.google.common.collect.Sets;
@@ -37,9 +37,8 @@ public class ScannerConfigurationLoaderSensor implements Sensor {
     public ScannerConfigurationLoaderSensor() {
         this(Sets.newHashSet(
                 CommunityBranchPlugin.PULL_REQUEST_PROVIDER,
-                BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY,
-                BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_USER_SLUG,
-                BitbucketServerPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG,
+                BitbucketPullRequestDecorator.PULL_REQUEST_BITBUCKET_PROJECT_KEY,
+                BitbucketPullRequestDecorator.PULL_REQUEST_BITBUCKET_REPOSITORY_SLUG,
                 GraphqlCheckRunProvider.PULL_REQUEST_GITHUB_REPOSITORY,
                 GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_REPOSITORY_SLUG
         ));
