@@ -227,7 +227,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE).map(componentIssue -> {
             InputObject<Object> issueLocation = graphqlProvider.createInputObject()
                     .put("startLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0))
-                    .put("endLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0) + 1)
+                    .put("endLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0))
                     .build();
             return graphqlProvider.createInputObject()
                     .put("path", componentIssue.getComponent().getReportAttributes().getScmPath().get())
