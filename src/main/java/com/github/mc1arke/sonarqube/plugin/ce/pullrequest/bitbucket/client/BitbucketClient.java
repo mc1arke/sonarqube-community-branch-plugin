@@ -93,7 +93,7 @@ public class BitbucketClient {
     public void deleteAnnotations(String project, String repository, String commit, AlmSettingDto almSettingDto) throws IOException {
         Request req = new Request.Builder()
                 .delete()
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", almSettingDto, project, repository, commit, REPORT_KEY))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", almSettingDto.getUrl(), project, repository, commit, REPORT_KEY))
                 .build();
         try (Response response = getClient(almSettingDto).newCall(req).execute()) {
             validate(response);
@@ -118,6 +118,7 @@ public class BitbucketClient {
     }
 
     private void validate(Response response) throws IOException {
+        LOGGER.debug(format("Validate response %s", response));
         if (!response.isSuccessful()) {
             ErrorResponse errors = null;
             if (response.body() != null) {
