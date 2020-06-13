@@ -38,6 +38,7 @@ import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.ce.posttask.ScannerContext;
 import org.sonar.api.config.Configuration;
+import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.api.rule.Severity;
 import org.sonar.ce.task.projectanalysis.component.Component;
@@ -163,6 +164,8 @@ public class GraphqlCheckRunProviderTest {
 
         DefaultIssue defaultIssue = mock(DefaultIssue.class);
         when(defaultIssue.severity()).thenReturn("dummy");
+        when(defaultIssue.status()).thenReturn(Issue.STATUS_OPEN);
+        when(defaultIssue.resolution()).thenReturn(null);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
@@ -249,6 +252,8 @@ public class GraphqlCheckRunProviderTest {
         when(issue1.getLine()).thenReturn(2);
         when(issue1.getMessage()).thenReturn(messageInput[0]);
         when(issue1.severity()).thenReturn(Severity.INFO);
+        when(issue1.status()).thenReturn(Issue.STATUS_OPEN);
+        when(issue1.resolution()).thenReturn(null);
 
         ReportAttributes reportAttributes = mock(ReportAttributes.class);
         when(reportAttributes.getScmPath()).thenReturn(Optional.of("path/to.file"));
@@ -263,6 +268,8 @@ public class GraphqlCheckRunProviderTest {
         DefaultIssue issue2 = mock(DefaultIssue.class);
         when(issue2.getLine()).thenReturn(null);
         when(issue2.getMessage()).thenReturn(messageInput[1]);
+        when(issue2.status()).thenReturn(Issue.STATUS_OPEN);
+        when(issue2.resolution()).thenReturn(null);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue2 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue2.getComponent()).thenReturn(component1);
@@ -279,6 +286,8 @@ public class GraphqlCheckRunProviderTest {
         when(issue3.getLine()).thenReturn(9);
         when(issue3.severity()).thenReturn(Severity.CRITICAL);
         when(issue3.getMessage()).thenReturn(messageInput[2]);
+        when(issue3.status()).thenReturn(Issue.STATUS_OPEN);
+        when(issue3.resolution()).thenReturn(null);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue3 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue3.getComponent()).thenReturn(component2);
@@ -294,6 +303,8 @@ public class GraphqlCheckRunProviderTest {
         when(issue4.getLine()).thenReturn(2);
         when(issue4.severity()).thenReturn(Severity.CRITICAL);
         when(issue4.getMessage()).thenReturn(messageInput[3]);
+        when(issue4.status()).thenReturn(Issue.STATUS_OPEN);
+        when(issue4.resolution()).thenReturn(null);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue4 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue4.getComponent()).thenReturn(component3);
@@ -303,6 +314,8 @@ public class GraphqlCheckRunProviderTest {
         when(issue5.getLine()).thenReturn(1999);
         when(issue5.severity()).thenReturn(Severity.MAJOR);
         when(issue5.getMessage()).thenReturn(messageInput[4]);
+        when(issue5.status()).thenReturn(Issue.STATUS_OPEN);
+        when(issue5.resolution()).thenReturn(null);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue5 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue5.getComponent()).thenReturn(component2);
@@ -312,6 +325,8 @@ public class GraphqlCheckRunProviderTest {
         when(issue6.getLine()).thenReturn(42);
         when(issue6.severity()).thenReturn(Severity.MINOR);
         when(issue6.getMessage()).thenReturn(messageInput[5]);
+        when(issue6.status()).thenReturn(Issue.STATUS_OPEN);
+        when(issue6.resolution()).thenReturn(null);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue6 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue6.getComponent()).thenReturn(component2);
@@ -321,14 +336,26 @@ public class GraphqlCheckRunProviderTest {
         when(issue7.getLine()).thenReturn(42);
         when(issue7.severity()).thenReturn(Severity.MINOR);
         when(issue7.getMessage()).thenReturn(messageInput[6]);
+        when(issue7.status()).thenReturn(Issue.STATUS_OPEN);
+        when(issue7.resolution()).thenReturn(null);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue7 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue7.getComponent()).thenReturn(component2);
         when(componentIssue7.getIssue()).thenReturn(issue7);
 
+        DefaultIssue issue8 = mock(DefaultIssue.class);
+        when(issue8.getLine()).thenReturn(42);
+        when(issue8.severity()).thenReturn(Severity.MINOR);
+        when(issue8.status()).thenReturn(Issue.STATUS_RESOLVED);
+        when(issue8.resolution()).thenReturn(Issue.RESOLUTION_FIXED);
+
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue8 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+        when(componentIssue8.getComponent()).thenReturn(component2);
+        when(componentIssue8.getIssue()).thenReturn(issue8);
+
         List<PostAnalysisIssueVisitor.ComponentIssue> issueList =
                 Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4, componentIssue5,
-                              componentIssue6, componentIssue7);
+                              componentIssue6, componentIssue7, componentIssue8);
         PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
         when(postAnalysisIssueVisitor.getIssues()).thenReturn(issueList);
 
@@ -423,7 +450,8 @@ public class GraphqlCheckRunProviderTest {
         int position = 0;
         for (int i = 0; i < issueList.size(); i++) {
             if (issueList.get(i).getComponent().getType() != Component.Type.FILE ||
-                !issueList.get(i).getComponent().getReportAttributes().getScmPath().isPresent()) {
+                !issueList.get(i).getComponent().getReportAttributes().getScmPath().isPresent() ||
+                issueList.get(i).getIssue().resolution() != null) {
                 continue;
             }
             int line = (null == issueList.get(i).getIssue().getLine() ? 0 : issueList.get(i).getIssue().getLine());
@@ -490,6 +518,8 @@ public class GraphqlCheckRunProviderTest {
                     DefaultIssue defaultIssue = mock(DefaultIssue.class);
                     when(defaultIssue.severity()).thenReturn(Severity.INFO);
                     when(defaultIssue.getMessage()).thenReturn("message");
+                    when(defaultIssue.status()).thenReturn(Issue.STATUS_OPEN);
+                    when(defaultIssue.resolution()).thenReturn(null);
                     return defaultIssue;
                 })
                 .map(i -> {
