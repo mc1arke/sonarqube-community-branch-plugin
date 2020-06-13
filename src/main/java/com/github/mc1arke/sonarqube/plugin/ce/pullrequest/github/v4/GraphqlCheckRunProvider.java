@@ -37,6 +37,7 @@ import io.aexp.nodes.graphql.GraphQLTemplate;
 import io.aexp.nodes.graphql.InputObject;
 import io.aexp.nodes.graphql.internal.Error;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.utils.log.Logger;
@@ -77,6 +78,10 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
     private final Clock clock;
     private final GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider;
     private final Server server;
+
+    private static final List<String> OPEN_ISSUE_STATUSES =
+            Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
+                    .collect(Collectors.toList());
 
     public GraphqlCheckRunProvider(Clock clock,
                                    GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider,
@@ -230,7 +235,9 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         return issues.stream()
                 .limit(50)
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
-                .filter(i -> i.getComponent().getType() == Component.Type.FILE).map(componentIssue -> {
+                .filter(i -> i.getComponent().getType() == Component.Type.FILE)
+                .filter(i -> i.getIssue().resolution() == null)
+                .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status())).map(componentIssue -> {
             InputObject<Object> issueLocation = graphqlProvider.createInputObject()
                     .put("startLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0))
                     .put("endLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0) + 1)
