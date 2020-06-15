@@ -79,9 +79,9 @@ public class BitbucketServerPullRequestDecorator implements PullRequestBuildStat
                 LOGGER.warn("Your Bitbucket instances does not support the Code Insights API.");
                 return DEFAULT_DECORATION_RESULT;
             }
-            String project = projectAlmSettingDto.getAlmSlug();
+            String project = projectAlmSettingDto.getAlmRepo();
 
-            String repo = projectAlmSettingDto.getAlmRepo();
+            String repo = projectAlmSettingDto.getAlmSlug();
             client.createReport(project, repo,
                     analysisDetails.getCommitSha(),
                     toReport(analysisDetails),
