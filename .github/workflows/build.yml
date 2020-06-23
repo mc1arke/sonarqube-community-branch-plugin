@@ -45,11 +45,6 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
       -
-        name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      -
         name: Set up Java ${{ matrix.java }}
         uses: actions/setup-java@v1
         with:
