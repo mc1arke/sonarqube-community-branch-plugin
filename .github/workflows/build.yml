@@ -20,6 +20,9 @@ jobs:
       release: ${{ steps.init.outputs.release }}
     steps:
       -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
         name: Init
         id: init
         run: |
