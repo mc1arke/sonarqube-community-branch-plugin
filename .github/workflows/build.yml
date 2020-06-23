@@ -75,7 +75,7 @@ jobs:
 
   release:
     needs: prep
-    if: needs.prep.outputs.release == 'true'
+    if: github.event_name != 'pull_request' && needs.prep.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       -
@@ -161,16 +161,7 @@ jobs:
         name: Sonar
         if: ${{ env.SONAR_TOKEN != null }}
         run: |
-          if [ "${{ needs.prep.outputs.release }}" = 'true' ]; then
-            ./gradlew sonarqube \
-              -Dsonar.pullrequest.provider=github \
-              -Dsonar.pullrequest.github.repository=${{ github.repository }} \
-              -Dsonar.host.url=https://sonarcloud.io \
-              -Dsonar.organization=${SONAR_ORG_KEY} \
-              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-              -Dsonar.projectVersion=${{ needs.prep.outputs.version }}
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_BRANCH=${{ github.head_ref }}
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
             ./gradlew sonarqube \
               -Dsonar.pullrequest.provider=github \
               -Dsonar.pullrequest.github.repository=${{ github.repository }} \
@@ -179,6 +170,14 @@ jobs:
               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
               -Dsonar.pullrequest.key=${{ github.event.number }} \
               -Dsonar.pullrequest.base=${{ github.base_ref }}
+          elif [ "${{ needs.prep.outputs.release }}" = 'true' ]; then
+            ./gradlew sonarqube \
+              -Dsonar.pullrequest.provider=github \
+              -Dsonar.pullrequest.github.repository=${{ github.repository }} \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.organization=${SONAR_ORG_KEY} \
+              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+              -Dsonar.projectVersion=${{ needs.prep.outputs.version }}
           else
             ./gradlew sonarqube \
               -Dsonar.pullrequest.provider=github \
