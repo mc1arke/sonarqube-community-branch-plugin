@@ -111,8 +111,7 @@ jobs:
         run: |
           ./gradlew clean release \
             -Prelease.useAutomaticVersion=true \
-            -Prelease.releaseVersion=${{ needs.prep.outputs.version }} \
-            -x preTagCommit
+            -Prelease.releaseVersion=${{ needs.prep.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
@@ -127,10 +126,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: success()
         with:
+          name: ${{ needs.prep.outputs.version }}
+          tag_name: ${{ needs.prep.outputs.version }}
           draft: true
           files: |
             build/libs/*.jar
-          name: ${{ needs.prep.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
