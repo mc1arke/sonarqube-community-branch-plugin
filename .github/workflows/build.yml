@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - '**'
-    tags:
-      - '*'
     paths-ignore:
       - '**.md'
   pull_request:
@@ -15,7 +13,26 @@ on:
       - '**.md'
 
 jobs:
+  prep:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.init.outputs.version }}
+      release: ${{ steps.init.outputs.release }}
+    steps:
+      -
+        name: Init
+        id: init
+        run: |
+          VERSION=$(grep "version" gradle.properties | cut -d'=' -f2)
+          echo ::set-output name=version::${VERSION}
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} ]]; then
+            echo ::set-output name=release::true
+          else
+            echo ::set-output name=release::false
+          fi
+
   snapshot:
+    needs: prep
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -59,13 +76,9 @@ jobs:
           path: build/libs/*.jar
 
   release:
+    needs: prep
+    if: needs.prep.outputs.release == 'true'
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    strategy:
-      fail-fast: false
-      matrix:
-        java:
-          - 11
     steps:
       -
         name: Checkout
@@ -76,33 +89,18 @@ jobs:
         name: Prepare
         id: prepare
         run: |
-          echo ::set-output name=tag_name::${GITHUB_REF#refs/tags/}
           VERSION=$(grep "version" gradle.properties | cut -d'=' -f2)
+          echo ::set-output name=version::${VERSION}
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} ]]; then
-            echo ::set-output name=branch_name::${{ github.event.repository.master_branch }}
+            echo ::set-output name=release::true
           else
-            echo ::set-output name=branch_name::${VERSION}
+            echo ::set-output name=release::false
           fi
       -
-        name: Checkout ${{ steps.prepare.outputs.branch_name }}
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          ref: ${{ steps.prepare.outputs.branch_name }}
-      -
-        name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      -
-        name: Env vars
-        run: |
-          env|sort
-      -
-        name: Set up Java ${{ matrix.java }}
+        name: Set up Java
         uses: actions/setup-java@v1
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 11
           java-package: jdk
       -
         name: Cache deps
@@ -126,13 +124,13 @@ jobs:
         run: |
           ./gradlew clean release \
             -Prelease.useAutomaticVersion=true \
-            -Prelease.releaseVersion=${{ steps.prepare.outputs.tag_name }} \
+            -Prelease.releaseVersion=${{ steps.prepare.outputs.version }} \
             -x preTagCommit -x createReleaseTag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Archive artifact
-        if: success() && matrix.java == '11'
+        if: success()
         uses: actions/upload-artifact@v2
         with:
           name: release
@@ -150,12 +148,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   sonar:
+    needs: prep
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        java:
-          - 11
     steps:
       -
         name: Checkout
@@ -163,30 +157,10 @@ jobs:
         with:
           fetch-depth: 0
       -
-        name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      -
-        name: Dump job context
-        env:
-          JOB_CONTEXT: ${{ toJson(job) }}
-        run: echo "$JOB_CONTEXT"
-      -
-        name: Dump steps context
-        env:
-          STEPS_CONTEXT: ${{ toJson(steps) }}
-        run: echo "$STEPS_CONTEXT"
-      -
-        name: Dump runner context
-        env:
-          RUNNER_CONTEXT: ${{ toJson(runner) }}
-        run: echo "$RUNNER_CONTEXT"
-      -
-        name: Set up Java ${{ matrix.java }}
+        name: Set up Java
         uses: actions/setup-java@v1
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 11
           java-package: jdk
       -
         name: Cache deps
@@ -200,15 +174,14 @@ jobs:
         name: Sonar
         if: ${{ env.SONAR_TOKEN != null }}
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
+          if [ "${{ needs.prep.outputs.release }}" = 'true' ]; then
             ./gradlew sonarqube \
               -Dsonar.pullrequest.provider=github \
               -Dsonar.pullrequest.github.repository=${{ github.repository }} \
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.organization=${SONAR_ORG_KEY} \
               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-              -Dsonar.projectVersion=${GITHUB_REF#refs/tags/} \
-              -Dsonar.branch.name=master
+              -Dsonar.projectVersion=${{ needs.prep.outputs.version }}
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
             PR_BRANCH=${{ github.head_ref }}
             ./gradlew sonarqube \
