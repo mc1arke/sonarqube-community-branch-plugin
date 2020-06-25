@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestPostAnalysisTask;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.AzureDevOpsServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketServerPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubPullRequestDecorator;
@@ -43,7 +44,8 @@ public class CommunityReportAnalysisComponentProvider implements ReportAnalysisC
                              PostAnalysisIssueVisitor.class, GithubPullRequestDecorator.class,
                              GraphqlCheckRunProvider.class, DefaultLinkHeaderReader.class, RestApplicationAuthenticationProvider.class,
                              BitbucketServerPullRequestDecorator.class, BitbucketClient.class,
-                             GitlabServerPullRequestDecorator.class);
+                             GitlabServerPullRequestDecorator.class,
+                             AzureDevOpsServerPullRequestDecorator.class);
     }
 
 }
