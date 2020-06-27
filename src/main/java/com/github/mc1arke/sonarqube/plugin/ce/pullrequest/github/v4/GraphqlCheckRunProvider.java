@@ -240,7 +240,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status())).map(componentIssue -> {
             InputObject<Object> issueLocation = graphqlProvider.createInputObject()
                     .put("startLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0))
-                    .put("endLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0) + 1)
+                    .put("endLine", Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0))
                     .build();
             return graphqlProvider.createInputObject()
                     .put("path", componentIssue.getComponent().getReportAttributes().getScmPath().get())

@@ -456,7 +456,7 @@ public class GraphqlCheckRunProviderTest {
             }
             int line = (null == issueList.get(i).getIssue().getLine() ? 0 : issueList.get(i).getIssue().getLine());
             verify(inputObjectBuilders.get(position)).put(eq("startLine"), eq(line));
-            verify(inputObjectBuilders.get(position)).put(eq("endLine"), eq(line + 1));
+            verify(inputObjectBuilders.get(position)).put(eq("endLine"), eq(line));
             verify(inputObjectBuilders.get(position)).build();
             position++;
 
