@@ -63,8 +63,8 @@ public class BitbucketPullRequestDecoratorTest {
 
     @Before
     public void setUp() {
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn(PROJECT);
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn(REPO);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(REPO);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(PROJECT);
     }
 
     @Test
