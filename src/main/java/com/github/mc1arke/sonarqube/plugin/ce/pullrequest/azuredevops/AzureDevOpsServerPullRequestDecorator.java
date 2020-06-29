@@ -42,13 +42,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
 
 
 
 public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
     private String authorizationHeader;
-    private static final String AZURE_API_VERSION = "?api-version=5.0-preview.1";
+    public static final String AZURE_API_VERSION = "?api-version=6.0-preview.1";
     private static final Logger LOGGER = Loggers.get(AzureDevOpsServerPullRequestDecorator.class);
 
     private String azureUrl = "";
@@ -84,6 +85,13 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
         LOGGER.info("starting to analyze with " + analysisDetails.toString());
+        
+        Map<String,String> properties = analysisDetails.getScannerProperties();
+        
+        LOGGER.info("Found " + properties.size() + " scanner properties...");
+
+        for (Map.Entry<String,String> entry : properties.entrySet())  
+            LOGGER.debug("Key = " + entry.getKey() + ", Value = " + entry.getValue()); 
 
         try {
             azureUrl = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElseThrow(
@@ -271,7 +279,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     }
 
     private String getStatusApiUrl() {
-        // POST https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/statuses?api-version=5.0-preview.1
+        // POST https://{instance}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/statuses?api-version=6.0-preview.1
         return azureUrl + azureProjectId +
                 "/_apis/git/repositories/" +
                 azureRepositoryName +
@@ -282,7 +290,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
     }
 
     private String getThreadApiUrl(){
-        //POST https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/threads?api-version=5.0
+        //POST https://{instance}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/threads?api-version=6.0-preview.1
         return azureUrl + azureProjectId +
                 "/_apis/git/repositories/" +
                 azureRepositoryName +

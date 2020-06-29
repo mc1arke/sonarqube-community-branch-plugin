@@ -104,7 +104,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
         when(ruleKey.toString()).thenReturn(ruleKeyVal);
 
         ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
-        wireMockRule.stubFor(get(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads?api-version=5.0-preview.1"))
+        wireMockRule.stubFor(get(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads"+ AzureDevOpsServerPullRequestDecorator.AZURE_API_VERSION))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
@@ -241,7 +241,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                         "    \"count\": 2\n" +
                         "}")));
 
-        wireMockRule.stubFor(post(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads?api-version=5.0-preview.1"))
+        wireMockRule.stubFor(post(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads"+ AzureDevOpsServerPullRequestDecorator.AZURE_API_VERSION))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
@@ -279,7 +279,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .willReturn(ok()));
 
 
-        wireMockRule.stubFor(post(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/statuses?api-version=5.0-preview.1"))
+        wireMockRule.stubFor(post(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/statuses"+ AzureDevOpsServerPullRequestDecorator.AZURE_API_VERSION))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))

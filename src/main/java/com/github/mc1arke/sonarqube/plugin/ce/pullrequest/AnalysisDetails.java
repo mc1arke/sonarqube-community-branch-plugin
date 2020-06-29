@@ -62,6 +62,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 public class AnalysisDetails {
 
@@ -119,6 +120,10 @@ public class AnalysisDetails {
 
     public QualityGate.Status getQualityGateStatus() {
         return qualityGate.getStatus();
+    }
+
+    public Map<String,String> getScannerProperties() {
+        return scannerContext.getProperties();
     }
 
     public Optional<String> getScannerProperty(String propertyName) {
