@@ -248,7 +248,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .withRequestBody(equalTo("{" +
                         "\"status\":\"ACTIVE\"," +
                         "\"comments\":[{" +
-                        "\"content\":\"CODE_SMELL: issueMessage ([rule](" + sonarRootUrl + "/coding_rules?open=" + ruleKeyVal + "&rule_key=" + ruleKeyVal + "))\\r\\n\\r\\n[See in SonarQube](" + sonarRootUrl + "/project/issues?id=" + sonarProject + "&issues=" + issueKeyVal + "&open=" + issueKeyVal + "&pullRequest="+ pullRequestId +")\"," +
+                        "\"content\":\"CODE_SMELL: issueMessage ([rule](" + sonarRootUrl + "/coding_rules?open=" + ruleKeyVal + "&rule_key=" + ruleKeyVal + "))\\n\\n[See in SonarQube](" + sonarRootUrl + "/project/issues?id=" + sonarProject + "&issues=" + issueKeyVal + "&open=" + issueKeyVal + "&pullRequest="+ pullRequestId +")\"," +
                         "\"commentType\":\"TEXT\"," +
                         "\"parentCommentId\":0," +
                         "\"id\":0," +
