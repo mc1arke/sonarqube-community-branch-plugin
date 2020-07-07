@@ -89,20 +89,24 @@ public class ScannerPullRequestPropertySensor implements Sensor {
                 .addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_BRANCH, v));
         projectConfiguration.get(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID).ifPresent(v -> sensorContext
                 .addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID, v));
+        projectConfiguration.get(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_API_VERSION).ifPresent(v -> sensorContext
+                .addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_API_VERSION, v));
         
         
         Optional.ofNullable(system2.property(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_INSTANCE_URL)).ifPresent(
-                        v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_INSTANCE_URL, v));
+                v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_INSTANCE_URL, v));
         Optional.ofNullable(system2.property(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_PROJECT_ID)).ifPresent(
                 v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_PROJECT_ID, v));        
         Optional.ofNullable(system2.property(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME)).ifPresent(
                 v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_REPOSITORY_NAME, v));
         Optional.ofNullable(system2.property(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_BASE_BRANCH)).ifPresent(
-                        v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_BASE_BRANCH, v));
+                v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_BASE_BRANCH, v));
         Optional.ofNullable(system2.property(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_BRANCH)).ifPresent(
                 v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_BRANCH, v));        
         Optional.ofNullable(system2.property(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID)).ifPresent(
                 v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_PULLREQUEST_ID, v));
+        Optional.ofNullable(system2.property(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_API_VERSION)).ifPresent(
+                v -> sensorContext.addContextProperty(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_API_VERSION, v));
     }
 
 }

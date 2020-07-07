@@ -45,6 +45,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
 
     @Test
     public void decorateQualityGateStatus() {
+        String apiVersion = "5.1-preview.1";
         String azureProject = "azureProject";
         String sonarProject = "sonarProject";
         String pullRequestId = "8513";
@@ -82,6 +83,8 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .thenReturn(Optional.of(baseBranchName));
         when(analysisDetails.getScannerProperty(eq(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_BRANCH)))
                 .thenReturn(Optional.of(branchName));
+        when(analysisDetails.getScannerProperty(eq(AzureDevOpsServerPullRequestDecorator.PULLREQUEST_AZUREDEVOPS_API_VERSION)))
+                .thenReturn(Optional.of(apiVersion));
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(sonarProject);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
         when(analysisDetails.getBranchName()).thenReturn(pullRequestId);
@@ -104,7 +107,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
         when(ruleKey.toString()).thenReturn(ruleKeyVal);
 
         ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
-        wireMockRule.stubFor(get(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads"+ AzureDevOpsServerPullRequestDecorator.AZURE_API_VERSION))
+        wireMockRule.stubFor(get(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads"+ AzureDevOpsServerPullRequestDecorator.API_VERSION_PREFIX + apiVersion))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
@@ -241,7 +244,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                         "    \"count\": 2\n" +
                         "}")));
 
-        wireMockRule.stubFor(post(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads"+ AzureDevOpsServerPullRequestDecorator.AZURE_API_VERSION))
+        wireMockRule.stubFor(post(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/threads"+ AzureDevOpsServerPullRequestDecorator.API_VERSION_PREFIX + apiVersion))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))
@@ -279,7 +282,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
                 .willReturn(ok()));
 
 
-        wireMockRule.stubFor(post(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/statuses"+ AzureDevOpsServerPullRequestDecorator.AZURE_API_VERSION))
+        wireMockRule.stubFor(post(urlEqualTo("/_apis/git/repositories/"+ azureRepository +"/pullRequests/"+ pullRequestId +"/statuses"+ AzureDevOpsServerPullRequestDecorator.API_VERSION_PREFIX + apiVersion))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authorizationHeader))

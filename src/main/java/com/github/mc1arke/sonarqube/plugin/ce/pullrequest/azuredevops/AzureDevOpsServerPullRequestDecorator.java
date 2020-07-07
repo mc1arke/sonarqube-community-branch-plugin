@@ -48,10 +48,11 @@ import java.util.Map;
 
 public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
-    private String authorizationHeader;
-    public static final String AZURE_API_VERSION = "?api-version=6.0-preview.1";
+    private String authorizationHeader;    
     private static final Logger LOGGER = Loggers.get(AzureDevOpsServerPullRequestDecorator.class);
+    public static final String API_VERSION_PREFIX = "?api-version=";
 
+    private String apiVersion = "6.0-preview.1";
     private String azureUrl = "";
     private String baseBranch = "";
     private String branch = "";
@@ -63,6 +64,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());*/
     // SCANNER PROPERTY
+    public static final String PULLREQUEST_AZUREDEVOPS_API_VERSION = "sonar.pullrequest.vsts.apiVersion";   // sonar.pullrequest.vsts.apiVersion=5.1-preview.1
     public static final String PULLREQUEST_AZUREDEVOPS_INSTANCE_URL = "sonar.pullrequest.vsts.instanceUrl"; // sonar.pullrequest.vsts.instanceUrl=https://dev.azure.com/fabrikam/
     public static final String PULLREQUEST_AZUREDEVOPS_BASE_BRANCH = "sonar.pullrequest.base";              // sonar.pullrequest.base=master
     public static final String PULLREQUEST_AZUREDEVOPS_BRANCH = "sonar.pullrequest.branch";                 // sonar.pullrequest.branch=feature/some-feature
@@ -118,6 +120,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                     () -> new IllegalStateException(String.format(
                             "Could not decorate AzureDevOps pullRequest. '%s' has not been set in scanner properties",
                             PULLREQUEST_AZUREDEVOPS_PROJECT_ID)));
+            apiVersion = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_API_VERSION).orElseGet(
+                    () -> apiVersion);
             if (almSettingDto.getPersonalAccessToken() == null) {
                 throw new IllegalStateException("Could not decorate AzureDevOps pullRequest. Access token has not been set");
             }
@@ -129,6 +133,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
             LOGGER.trace(String.format("pullRequestId is: %s ", pullRequestId));
             LOGGER.trace(String.format("azureProjectId is: %s ", azureProjectId));
             LOGGER.trace(String.format("azureRepositoryName is: %s ", azureRepositoryName));
+            LOGGER.trace(String.format("apiVersion is: %s ", apiVersion));
 
             sendPost(
                     getStatusApiUrl(),
@@ -181,12 +186,12 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                                     Comment comment = new Comment("Closed in SonarQube");
                                     LOGGER.info("Issue closed in Sonar. try close in Azure");
                                     sendPost(
-                                            azureThread.getLinks().getSelf().getHref() + "/comments" + AZURE_API_VERSION,
+                                            azureThread.getLinks().getSelf().getHref() + "/comments" + getApiVersion(),
                                             new ObjectMapper().writeValueAsString(comment),
                                             "Comment added success"
                                     );
                                     sendPatch(
-                                            azureThread.getLinks().getSelf().getHref() + AZURE_API_VERSION,
+                                            azureThread.getLinks().getSelf().getHref() + getApiVersion(),
                                             "{\"status\":\"closed\"}"
                                     );
                                 }
@@ -269,6 +274,10 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         );
     }
 
+    private String getApiVersion() { 
+        return API_VERSION_PREFIX + apiVersion; 
+    }
+
     private String getPullRequestUrl() {
         // GET https://{instance}/{collection}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}
         return azureUrl + azureProjectId +
@@ -286,7 +295,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 "/pullRequests/" +
                 pullRequestId +
                 "/statuses" +
-                AZURE_API_VERSION;
+                getApiVersion();
     }
 
     private String getThreadApiUrl(){
@@ -297,7 +306,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 "/pullRequests/" +
                 pullRequestId +
                 "/threads" +
-                AZURE_API_VERSION;
+                getApiVersion();
     }
 
     private String getGitPullRequestStatus(AnalysisDetails analysisDetails) throws IOException {
