@@ -28,41 +28,47 @@ Either build the project or [download a compatible release version of the plugin
 ## Installation Docker
 Add download the plugin and mount it to the container see the last two volumes in the yaml below.
 ```
-version: 2
+version: '3.5'
 
-services:
-  sonarqube:
-    image: sonarqube:lts
-    container_name: sonarqube
-    ports:
-      - 9000:9000
-    networks:
-      - sonarnet
-    environment:
-      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonar
-      - SONARQUBE_JDBC_USERNAME=sonar
-      - SONARQUBE_JDBC_PASSWORD=sonar
-    volumes:
-      - sonarqube_conf:/opt/sonarqube/conf
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
-      - /home/user/sonarqube-community-branch-plugin-X.X.X.jar:/opt/sonarqube/extensions/plugins/sonarqube-community
--branch-plugin.jar
-      - /home/user/sonarqube-community-branch-plugin-X.X.X.jar:/opt/sonarqube/lib/common/sonarqube-community-branch
--plugin.jar
-
-  db:
-    image: postgres
-    container_name: postgres
-    networks:
-      - sonarnet
-    environment:
-      - POSTGRES_USER=sonar
-      - POSTGRES_PASSWORD=sonar
-    volumes:
-      - postgresql:/var/lib/postgresql
-      - postgresql_data:/var/lib/postgresql/data
+  services:
+    sonarqube:
+      image: sonarqube:8.3-community
+      container_name: sonarqube
+      hostname: sonarqube
+      ports:
+        - 9000:9000
+        # - 8000:8000 #for debugging web
+        # - 8001:8001 #for debugging ce
+      networks:
+        - sonarnet
+      environment:
+        - sonar.jdbc.username=sonar
+        - sonar.jdbc.password=sonar
+        - sonar.jdbc.url=jdbc:postgresql://db/sonar
+        # - sonar.search.javaAdditionalOpts=-Dbootstrap.system_call_filter=false #only needed if you need to disable seccomp, because your system kernel is not compliant.
+        # - SONAR_WEB_JAVAADDITIONALOPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000 #for debugging web *: is needed for remote debugging, not needed for local
+        # - SONAR_CE_JAVAADDITIONALOPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8001 #for debugging ce *: is needed for remote debugging, not needed for local
+      volumes:
+        - /opt/sonarqube/data/sonarqube/logs:/opt/sonarqube/logs
+        - /opt/sonarqube/data/sonarqube/data:/opt/sonarqube/data
+        - /opt/sonarqube/data/sonarqube/extensions:/opt/sonarqube/extensions
+        - /opt/sonarqube/data/sonarqube/bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+        - /opt/sonarqube/sonarqube-community-branch-plugin-1.3.2-SNAPSHOT.jar:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar
+        - /opt/sonarqube/sonarqube-community-branch-plugin-1.3.2-SNAPSHOT.jar:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin.jar
+    db:
+      image: postgres:12.0
+      container_name: sonarqube-pg
+      hostname: sonarqube-pg
+      networks:
+        - sonarnet
+      environment:
+        - POSTGRES_USER=sonar
+        - POSTGRES_PASSWORD=sonar
+      volumes:
+        - /opt/sonarqube/data/postgresql/root:/var/lib/postgresql
+        - /opt/sonarqube/data/postgresql/data:/var/lib/postgresql/data
+networks:
+  sonarnet:
 ``` 
 
 # Configuration
@@ -104,3 +110,8 @@ Anyone needing to set this value can use the URL `https://raw.githubusercontent.
 # Building the plugin from source
 In case you want to try and test the current branch or build it for your development execute `./gradlew clean build
 ` inside of the project directory. This will put the built jar under `libs/sonarqube-community-branch-plugin*.jar`
+
+## How to debug the plugin from source
+When you want to debug the code, you should load the build jar onto the server as shown in the docker file.  
+Uncomment the line in for the section of the source you want to debug.  
+Connect with your favourite IDE to the specified port and start debugging.
