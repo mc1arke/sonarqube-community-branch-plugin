@@ -35,6 +35,10 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.protobuf.DbIssues;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -42,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Map;
 
 
@@ -96,7 +101,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
             LOGGER.debug("Key = " + entry.getKey() + ", Value = " + entry.getValue()); 
 
         try {
-            azureUrl = analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL).orElseThrow(
+            azureUrl = ensureTrailingSlash(analysisDetails.getScannerProperty(PULLREQUEST_AZUREDEVOPS_INSTANCE_URL)).orElseThrow(
                     () -> new IllegalStateException(String.format(
                             "Could not decorate AzureDevOps pullRequest. '%s' has not been set in scanner properties",
                             PULLREQUEST_AZUREDEVOPS_INSTANCE_URL)));
@@ -244,7 +249,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 }
             }
             return DecorationResult.builder().withPullRequestUrl(getPullRequestUrl()).build();
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new IllegalStateException("Could not decorate Pull Request on AzureDevOps Server", ex);
         }
     }
@@ -298,7 +303,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 getApiVersion();
     }
 
-    private String getThreadApiUrl(){
+    private String getThreadApiUrl() {
         //POST https://{instance}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/threads?api-version=6.0-preview.1
         return azureUrl + azureProjectId +
                 "/_apis/git/repositories/" +
@@ -328,7 +333,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         return new ObjectMapper().writeValueAsString(status);
     }
 
-    private void sendPost(String apiUrl, String body, String successMessage) throws IOException {
+    private void sendPost(String apiUrl, String body, String successMessage) throws IOException, MalformedURLException, URISyntaxException {
+        apiUrl = encodeURI(apiUrl);
         LOGGER.trace(String.format("sendPost: URL: %s ", apiUrl));
         LOGGER.trace(String.format("sendPost: BODY: %s ", body));
         HttpPost httpPost = new HttpPost(apiUrl);
@@ -351,7 +357,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         }
     }
 
-    private <T> T sendGet(String apiUrl, Class<T> type) throws IOException {
+    private <T> T sendGet(String apiUrl, Class<T> type) throws IOException, MalformedURLException, URISyntaxException {
+        apiUrl = encodeURI(apiUrl);
         LOGGER.info(String.format("sendGet: URL: %s ", apiUrl));
         HttpGet httpGet = new HttpGet(apiUrl);
         httpGet.addHeader("Accept", "application/json");
@@ -384,7 +391,8 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
         }
     }
 
-    private void sendPatch(String apiUrl, String body) throws IOException {
+    private void sendPatch(String apiUrl, String body) throws IOException, MalformedURLException, URISyntaxException {
+        apiUrl = encodeURI(apiUrl);
         LOGGER.trace(String.format("sendPatch: URL: %s ", apiUrl));
         LOGGER.trace(String.format("sendPatch: BODY: %s ", body));
         HttpPatch httpPatch = new HttpPatch(apiUrl);
@@ -405,6 +413,18 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 LOGGER.info("sendPatch: Patch success!");
             }
         }
+    }
+
+    private Optional<String> ensureTrailingSlash(Optional<String> uri) {
+        if (uri != null && uri.isPresent()) {
+            return Optional.of(uri.get().endsWith("/") ? uri.get() : uri.get() + "/");
+        }
+        return Optional.empty();
+    }
+
+    private String encodeURI(String uri) throws MalformedURLException, URISyntaxException {
+        URL url = new URL(uri);
+        return (new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef())).toString();
     }
     
     public String name() {
