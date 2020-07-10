@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.IssueFilterRunner;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
@@ -28,5 +29,5 @@ import java.security.GeneralSecurityException;
 
 public interface CheckRunProvider {
     DecorationResult createCheckRun(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
-                        ProjectAlmSettingDto projectAlmSettingDto) throws IOException, GeneralSecurityException;
+                                    ProjectAlmSettingDto projectAlmSettingDto, IssueFilterRunner issueFilterRunner) throws IOException, GeneralSecurityException;
 }

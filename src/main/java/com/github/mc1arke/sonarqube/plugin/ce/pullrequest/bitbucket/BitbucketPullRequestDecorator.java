@@ -30,6 +30,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
 import com.google.common.annotations.VisibleForTesting;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.IssueFilterRunner;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
@@ -70,6 +71,11 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
+        return decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto, null);
+    }
+
+    @Override
+    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto, IssueFilterRunner issueFilterRunner) {
         String project = projectAlmSettingDto.getAlmRepo();
         String repo = projectAlmSettingDto.getAlmSlug();
         String url = almSettingDto.getUrl();

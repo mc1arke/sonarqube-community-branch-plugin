@@ -18,10 +18,11 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import org.sonar.api.ce.posttask.Analysis;
-import org.sonar.api.ce.posttask.Branch;
-import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
-import org.sonar.api.ce.posttask.QualityGate;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.IssueFilterRunner;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.SeverityExclusionFilter;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.TypeExclusionFilter;
+import org.checkerframework.checker.nullness.Opt;
+import org.sonar.api.ce.posttask.*;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.platform.Server;
 import org.sonar.api.utils.log.Logger;
@@ -36,14 +37,20 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.component.BranchDao;
 import org.sonar.db.component.BranchDto;
+import org.sonar.db.property.PropertyDto;
 import org.sonar.db.protobuf.DbProjectBranches;
+import org.sonar.server.setting.ws.Setting;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
     private static final Logger LOGGER = Loggers.get(PullRequestPostAnalysisTask.class);
+    public static final String PULLREQUEST_FILTER_SEVERITY_EXCLUSION = "sonar.pullrequest.comment.filter.severity.exclusions";
+    public static final String PULLREQUEST_FILTER_TYPE_EXCLUSION = "sonar.pullrequest.comment.filter.type.exclusions";
+    public static final String PULLREQUEST_FILTER_MAXAMOUNT = "sonar.pullrequest.comment.filter.maxamount";
 
     private final List<PullRequestBuildStatusDecorator> pullRequestDecorators;
     private final Server server;
@@ -78,6 +85,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
     @Override
     public void finished(Context context) {
         ProjectAnalysis projectAnalysis = context.getProjectAnalysis();
+
         LOGGER.debug("found " + pullRequestDecorators.size() + " pull request decorators");
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
@@ -94,10 +102,13 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
         ProjectAlmSettingDto projectAlmSettingDto;
         Optional<AlmSettingDto> optionalAlmSettingDto;
+        List<PropertyDto> projectProperties;
         try (DbSession dbSession = dbClient.openSession(false)) {
 
             Optional<ProjectAlmSettingDto> optionalProjectAlmSettingDto =
                     dbClient.projectAlmSettingDao().selectByProject(dbSession, projectAnalysis.getProject().getUuid());
+
+            projectProperties = dbClient.propertiesDao().selectProjectProperties(dbSession, projectAnalysis.getProject().getKey());
 
             if (!optionalProjectAlmSettingDto.isPresent()) {
                 LOGGER.debug("No ALM has been set on the current project");
@@ -145,21 +156,61 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             return;
         }
 
+
         String commitId = revision.get();
 
         AnalysisDetails analysisDetails =
                 new AnalysisDetails(new AnalysisDetails.BranchDetails(optionalBranchName.get(), commitId),
-                                    postAnalysisIssueVisitor, qualityGate,
-                                    new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
-                                                                       treeRootHolder), analysis,
-                                    projectAnalysis.getProject(), configuration, server.getPublicRootUrl(),
-                                    projectAnalysis.getScannerContext());
+                        postAnalysisIssueVisitor, qualityGate,
+                        new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
+                                treeRootHolder), analysis,
+                        projectAnalysis.getProject(), configuration, server.getPublicRootUrl(),
+                        projectAnalysis.getScannerContext());
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
         LOGGER.info("using pull request decorator " + pullRequestDecorator.alm().getId());
-        DecorationResult decorationResult = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        Optional<IssueFilterRunner> optionalIssueFilterRunner = getIssueFilterList(projectProperties);
+
+        DecorationResult decorationResult;
+        if (optionalIssueFilterRunner.isPresent())
+            decorationResult = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto, optionalIssueFilterRunner.get());
+        else
+            decorationResult = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         decorationResult.getPullRequestUrl().ifPresent(pullRequestUrl -> persistPullRequestUrl(pullRequestUrl, projectAnalysis, optionalBranchName.get()));
+    }
+
+    private Optional<IssueFilterRunner> getIssueFilterList(List<PropertyDto> projectProperties) {
+        List<Predicate<PostAnalysisIssueVisitor.ComponentIssue>> filterList = new ArrayList<>();
+
+
+        Optional<String> optionalSeverityExclusion = projectProperties.stream().filter(propertyDto -> propertyDto.getKey().equals(PULLREQUEST_FILTER_SEVERITY_EXCLUSION))
+                .map(PropertyDto::getValue)
+                .filter(Objects::nonNull)
+                .findAny();
+        Optional<String> optionalTypeExclusion = projectProperties.stream().filter(propertyDto -> propertyDto.getKey().equals(PULLREQUEST_FILTER_TYPE_EXCLUSION))
+                .map(PropertyDto::getValue)
+                .filter(Objects::nonNull)
+                .findAny();
+        Optional<Integer> optionalMaxAmount = projectProperties.stream().filter(propertyDto -> propertyDto.getKey().equals(PULLREQUEST_FILTER_MAXAMOUNT))
+                .map(PropertyDto::getValue)
+                .filter(Objects::nonNull)
+                .map(Integer::parseInt)
+                .findAny();
+
+        optionalSeverityExclusion = Optional.ofNullable(optionalSeverityExclusion.orElseGet(() -> configuration.get(PULLREQUEST_FILTER_SEVERITY_EXCLUSION).orElse(null)));
+        optionalTypeExclusion = Optional.ofNullable(optionalTypeExclusion.orElseGet(() -> configuration.get(PULLREQUEST_FILTER_TYPE_EXCLUSION).orElse(null)));
+        optionalMaxAmount = Optional.ofNullable(optionalMaxAmount.orElseGet(() -> configuration.getInt(PULLREQUEST_FILTER_MAXAMOUNT).orElse(null)));
+
+        optionalSeverityExclusion.ifPresent(severityString -> filterList.add(new SeverityExclusionFilter(severityString)));
+        optionalTypeExclusion.ifPresent(typeString -> filterList.add(new TypeExclusionFilter(typeString)));
+
+        if (filterList.isEmpty() && !optionalMaxAmount.isPresent()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new IssueFilterRunner(filterList, optionalMaxAmount.orElse(null)));
+        }
     }
 
 

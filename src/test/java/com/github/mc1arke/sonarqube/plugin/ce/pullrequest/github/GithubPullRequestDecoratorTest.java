@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.IssueFilterRunner;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.db.alm.setting.ALM;
@@ -46,6 +47,7 @@ public class GithubPullRequestDecoratorTest {
     private GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(checkRunProvider);
     private ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
     private AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+    private IssueFilterRunner issueFilterRunner = mock(IssueFilterRunner.class);
 
 
     @Test
@@ -56,9 +58,9 @@ public class GithubPullRequestDecoratorTest {
     @Test
     public void testDecorateQualityGatePropagateException() throws IOException, GeneralSecurityException {
         Exception dummyException = new IOException("Dummy Exception");
-        doThrow(dummyException).when(checkRunProvider).createCheckRun(any(), any(), any());
+        doThrow(dummyException).when(checkRunProvider).createCheckRun(any(), any(), any(),any());
 
-        assertThatThrownBy(() -> testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
+        assertThatThrownBy(() -> testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto, null))
                 .hasMessage("Could not decorate Pull Request on Github")
                 .isExactlyInstanceOf(IllegalStateException.class).hasCause(dummyException);
     }
@@ -66,11 +68,11 @@ public class GithubPullRequestDecoratorTest {
     @Test
     public void testDecorateQualityGateReturnValue() throws IOException, GeneralSecurityException {
         DecorationResult expectedResult = DecorationResult.builder().build();
-        doReturn(expectedResult).when(checkRunProvider).createCheckRun(any(), any(), any());
-        DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+        doReturn(expectedResult).when(checkRunProvider).createCheckRun(any(), any(), any(), any());
+        DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto, issueFilterRunner);
 
         ArgumentCaptor<AnalysisDetails> argumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
-        verify(checkRunProvider).createCheckRun(argumentCaptor.capture(), eq(almSettingDto), eq(projectAlmSettingDto));
+        verify(checkRunProvider).createCheckRun(argumentCaptor.capture(), eq(almSettingDto), eq(projectAlmSettingDto), eq(issueFilterRunner));
         assertEquals(analysisDetails, argumentCaptor.getValue());
         assertThat(decorationResult).isSameAs(expectedResult);
     }

@@ -25,6 +25,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.IssueFilterRunner;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Commit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Discussion;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.MergeRequest;
@@ -97,8 +98,13 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
 
     @Override
+    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
+        return decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto, null);
+    }
+
+    @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysis, AlmSettingDto almSettingDto,
-                                          ProjectAlmSettingDto projectAlmSettingDto) {
+                                                      ProjectAlmSettingDto projectAlmSettingDto, IssueFilterRunner issueFilterRunner) {
         LOGGER.info("starting to analyze with " + analysis.toString());
         String revision = analysis.getCommitSha();
 
@@ -163,6 +169,10 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             }
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
+
+            if(issueFilterRunner != null)
+                openIssues = issueFilterRunner.filterIssues(openIssues);
+
 
             String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
             List<NameValuePair> summaryContentParams = Collections

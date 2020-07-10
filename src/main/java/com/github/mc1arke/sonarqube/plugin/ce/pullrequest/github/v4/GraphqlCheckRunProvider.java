@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.IssueFilterRunner;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.CheckRunProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.RepositoryAuthenticationToken;
@@ -96,7 +97,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
     @Override
     public DecorationResult createCheckRun(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
-                               ProjectAlmSettingDto projectAlmSettingDto) throws IOException, GeneralSecurityException {
+                                           ProjectAlmSettingDto projectAlmSettingDto, IssueFilterRunner issueFilterRunner) throws IOException, GeneralSecurityException {
         String apiUrl = Optional.ofNullable(almSettingDto.getUrl()).orElseThrow(() -> new IllegalArgumentException("No URL has been set for Github connections"));
         String apiPrivateKey = Optional.ofNullable(almSettingDto.getPrivateKey()).orElseThrow(() -> new IllegalArgumentException("No private key has been set for Github connections"));
         String projectPath = Optional.ofNullable(projectAlmSettingDto.getAlmRepo()).orElseThrow(() -> new IllegalArgumentException("No repository name has been set for Github connections"));
@@ -108,8 +109,9 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         headers.put("Authorization", "Bearer " + repositoryAuthenticationToken.getAuthenticationToken());
         headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
-
         List<PostAnalysisIssueVisitor.ComponentIssue> issues = analysisDetails.getPostAnalysisIssueVisitor().getIssues();
+        if(issueFilterRunner != null)
+            issues = issueFilterRunner.filterIssues(issues);
 
         List<InputObject<Object>> annotations = createAnnotations(issues);
 

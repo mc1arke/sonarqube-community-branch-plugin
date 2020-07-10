@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.IssueFilterRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,6 +42,8 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.component.BranchDao;
 import org.sonar.db.component.BranchDto;
+import org.sonar.db.property.PropertiesDao;
+import org.sonar.db.property.PropertyDto;
 import org.sonar.db.protobuf.DbProjectBranches;
 
 import java.util.ArrayList;
@@ -91,8 +94,7 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(projectAnalysis).when(context).getProjectAnalysis();
         doReturn(project).when(projectAnalysis).getProject();
         doReturn("uuid").when(project).getUuid();
-
-
+        doReturn("PRJ").when(project).getKey();
     }
 
     @Test
@@ -138,6 +140,11 @@ public class PullRequestPostAnalysisTaskTest {
 
         doReturn(scannerContext).when(projectAnalysis).getScannerContext();
 
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
+
         testCase.finished(context);
 
         verify(projectAnalysis, never()).getAnalysis();
@@ -171,6 +178,11 @@ public class PullRequestPostAnalysisTaskTest {
         ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
+
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
 
         testCase.finished(context);
 
@@ -209,11 +221,15 @@ public class PullRequestPostAnalysisTaskTest {
         ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
 
         testCase.finished(context);
 
         verify(projectAnalysis).getAnalysis();
-        verify(decorator2, never()).decorateQualityGateStatus(any(), any(), any());
+        verify(decorator2, never()).decorateQualityGateStatus(any(), any(), any(), any());
     }
 
 
@@ -250,11 +266,16 @@ public class PullRequestPostAnalysisTaskTest {
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
+
         testCase.finished(context);
 
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis, never()).getQualityGate();
-        verify(decorator2, never()).decorateQualityGateStatus(any(), any(), any());
+        verify(decorator2, never()).decorateQualityGateStatus(any(), any(), any(), any());
     }
 
     @Test
@@ -293,11 +314,16 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(ALM.GITHUB).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
+
         testCase.finished(context);
 
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis).getQualityGate();
-        verify(decorator2, never()).decorateQualityGateStatus(any(), any(), any());
+        verify(decorator2, never()).decorateQualityGateStatus(any(), any(), any(), any());
     }
 
     @Test
@@ -336,6 +362,11 @@ public class PullRequestPostAnalysisTaskTest {
         ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
+
 
         DbSession dbSession = mock(DbSession.class);
         doReturn(dbSession).when(dbClient).openSession(anyBoolean());
@@ -410,6 +441,11 @@ public class PullRequestPostAnalysisTaskTest {
 
         doReturn(projectAlmSettingDao).when(dbClient).projectAlmSettingDao();
         doReturn(almSettingDao).when(dbClient).almSettingDao();
+
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
 
         testCase.finished(context);
 
@@ -487,6 +523,11 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(Optional.empty()).when(branchDao).selectByPullRequestKey(any(), any(), any());
         doReturn(DbProjectBranches.PullRequestData.newBuilder().build()).when(branchDto).getPullRequestData();
 
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
+
         testCase.finished(context);
 
         ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
@@ -521,5 +562,138 @@ public class PullRequestPostAnalysisTaskTest {
     @Test
     public void testCorrectDescriptionReturnedForTask() {
         assertThat(testCase.getDescription()).isEqualTo("Pull Request Decoration");
+    }
+
+    @Test
+    public void testIssueFilterRunnerIsFilledFromConfiguration(){
+        doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
+        doReturn(Optional.of("pull-request")).when(branch).getName();
+
+        Analysis analysis = mock(Analysis.class);
+        doReturn(Optional.of("revision")).when(analysis).getRevision();
+        doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
+
+        QualityGate qualityGate = mock(QualityGate.class);
+        doReturn(qualityGate).when(projectAnalysis).getQualityGate();
+
+        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almUuid");
+        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        when(almSettingDto.getUrl()).thenReturn("http://host.name");
+        when(almSettingDto.getAppId()).thenReturn("app id");
+        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getAlm()).thenReturn(ALM.GITLAB);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
+        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
+        when(dbClient.almSettingDao()).thenReturn(almSettingDao);
+        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
+        when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
+
+        ScannerContext scannerContext = mock(ScannerContext.class);
+        doReturn(scannerContext).when(projectAnalysis).getScannerContext();
+
+        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        doReturn(ALM.GITLAB).when(decorator1).alm();
+        doReturn(DecorationResult.builder().build()).when(decorator1).decorateQualityGateStatus(any(), any(), any(),any());
+        pullRequestBuildStatusDecorators.add(decorator1);
+
+        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        doReturn(ALM.GITHUB).when(decorator2).alm();
+        pullRequestBuildStatusDecorators.add(decorator2);
+
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertyDto severityExclusionProperty = mock(PropertyDto.class);
+        when(severityExclusionProperty.getKey()).thenReturn(PullRequestPostAnalysisTask.PULLREQUEST_FILTER_SEVERITY_EXCLUSION);
+        when(severityExclusionProperty.getValue()).thenReturn("INFO,MAJOR");
+        PropertyDto typeExclusionProperty = mock(PropertyDto.class);
+        when(typeExclusionProperty.getKey()).thenReturn(PullRequestPostAnalysisTask.PULLREQUEST_FILTER_TYPE_EXCLUSION);
+        when(typeExclusionProperty.getValue()).thenReturn("CODE_SMELL");
+        PropertyDto maxAmountOfIssuesProperty = mock(PropertyDto.class);
+        when(maxAmountOfIssuesProperty.getKey()).thenReturn(PullRequestPostAnalysisTask.PULLREQUEST_FILTER_MAXAMOUNT);
+        when(maxAmountOfIssuesProperty.getValue()).thenReturn("10");
+        projectProperties.add(severityExclusionProperty);
+        projectProperties.add(typeExclusionProperty);
+        projectProperties.add(maxAmountOfIssuesProperty);
+
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
+
+        testCase.finished(context);
+
+        ArgumentCaptor<IssueFilterRunner> filterRunnerArgumentCaptor = ArgumentCaptor.forClass(IssueFilterRunner.class);
+
+        verify(decorator1).decorateQualityGateStatus(any(), any(), any(), filterRunnerArgumentCaptor.capture());
+        IssueFilterRunner generatedIssueFilterRunner = filterRunnerArgumentCaptor.getValue();
+        assertThat(generatedIssueFilterRunner.getFilters().size()).isEqualTo(2);
+        assertThat(generatedIssueFilterRunner.getMaxAmountOfIssues()).isEqualTo(10);
+    }
+    @Test
+    public void testIssueFilterRunnerIsFilledFromProjectSettings(){
+        doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
+        doReturn(Optional.of("pull-request")).when(branch).getName();
+
+        Analysis analysis = mock(Analysis.class);
+        doReturn(Optional.of("revision")).when(analysis).getRevision();
+        doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
+
+        QualityGate qualityGate = mock(QualityGate.class);
+        doReturn(qualityGate).when(projectAnalysis).getQualityGate();
+
+        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
+        when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almUuid");
+        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        when(almSettingDto.getUrl()).thenReturn("http://host.name");
+        when(almSettingDto.getAppId()).thenReturn("app id");
+        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getAlm()).thenReturn(ALM.GITLAB);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
+        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
+        when(dbClient.almSettingDao()).thenReturn(almSettingDao);
+        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
+        when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
+
+        ScannerContext scannerContext = mock(ScannerContext.class);
+        doReturn(scannerContext).when(projectAnalysis).getScannerContext();
+
+        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        doReturn(ALM.GITLAB).when(decorator1).alm();
+        doReturn(DecorationResult.builder().build()).when(decorator1).decorateQualityGateStatus(any(), any(), any(),any());
+        pullRequestBuildStatusDecorators.add(decorator1);
+
+        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        doReturn(ALM.GITHUB).when(decorator2).alm();
+        pullRequestBuildStatusDecorators.add(decorator2);
+
+        when(configuration.getInt(PullRequestPostAnalysisTask.PULLREQUEST_FILTER_MAXAMOUNT)).thenReturn(Optional.of(5));
+
+        List<PropertyDto> projectProperties = new ArrayList<>();
+        PropertyDto severityExclusionProperty = mock(PropertyDto.class);
+        when(severityExclusionProperty.getKey()).thenReturn(PullRequestPostAnalysisTask.PULLREQUEST_FILTER_SEVERITY_EXCLUSION);
+        when(severityExclusionProperty.getValue()).thenReturn("INFO,MAJOR");
+        PropertyDto typeExclusionProperty = mock(PropertyDto.class);
+        when(typeExclusionProperty.getKey()).thenReturn(PullRequestPostAnalysisTask.PULLREQUEST_FILTER_TYPE_EXCLUSION);
+        when(typeExclusionProperty.getValue()).thenReturn("CODE_SMELL");
+        projectProperties.add(severityExclusionProperty);
+        projectProperties.add(typeExclusionProperty);
+
+        PropertiesDao propertiesDao = mock(PropertiesDao.class);
+        when(dbClient.propertiesDao()).thenReturn(propertiesDao);
+        when(propertiesDao.selectProjectProperties(any(), any())).thenReturn(projectProperties);
+
+        testCase.finished(context);
+
+        ArgumentCaptor<IssueFilterRunner> filterRunnerArgumentCaptor = ArgumentCaptor.forClass(IssueFilterRunner.class);
+
+        verify(decorator1).decorateQualityGateStatus(any(), any(), any(), filterRunnerArgumentCaptor.capture());
+        IssueFilterRunner generatedIssueFilterRunner = filterRunnerArgumentCaptor.getValue();
+        assertThat(generatedIssueFilterRunner.getFilters().size()).isEqualTo(2);
+        assertThat(generatedIssueFilterRunner.getMaxAmountOfIssues()).isEqualTo(5);
     }
 }

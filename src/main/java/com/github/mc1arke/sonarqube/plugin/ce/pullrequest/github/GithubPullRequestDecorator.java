@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.commentfilter.IssueFilterRunner;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -34,10 +35,15 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
     }
 
     @Override
+    public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
+        return decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto, null);
+    }
+
+    @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
-                                          ProjectAlmSettingDto projectAlmSettingDto) {
+                                                      ProjectAlmSettingDto projectAlmSettingDto, IssueFilterRunner issueFilterRunner) {
         try {
-            return checkRunProvider.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
+            return checkRunProvider.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto, issueFilterRunner);
         } catch (Exception ex) {
             throw new IllegalStateException("Could not decorate Pull Request on Github", ex);
         }
