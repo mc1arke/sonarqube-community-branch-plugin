@@ -127,7 +127,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
         Map<String, Object> inputObjectArguments = new HashMap<>();
         inputObjectArguments.put("repositoryId", repositoryAuthenticationToken.getRepositoryId());
-        inputObjectArguments.put("name", "Sonarqube Results");
+        inputObjectArguments.put("name", String.format("%s Sonarqube Results", analysisDetails.getAnalysisProjectName()));
         inputObjectArguments.put("status", RequestableCheckStatusState.COMPLETED);
         inputObjectArguments.put("conclusion", QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ?
                                    CheckConclusionState.SUCCESS : CheckConclusionState.FAILURE);
