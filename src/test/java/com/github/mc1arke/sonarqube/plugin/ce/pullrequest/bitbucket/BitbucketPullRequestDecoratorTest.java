@@ -4,6 +4,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.UnifyConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -69,6 +71,8 @@ public class BitbucketPullRequestDecoratorTest {
     @Test
     public void testValidAnalysis() throws IOException {
         when(client.supportsCodeInsights()).thenReturn(true);
+        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(1000, 1000);
+        when(client.getAnnotationUploadLimit()).thenReturn(uploadLimit);
 
         mockValidAnalysis();
         underTest.decorateQualityGateStatus(analysisDetails, unifyConfiguration);
@@ -77,6 +81,45 @@ public class BitbucketPullRequestDecoratorTest {
         verify(client).createLinkDataValue(DASHBOARD_URL);
         verify(client).createCodeInsightsReport(any(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(QualityGate.Status.OK));
         verify(client).deleteAnnotations(PROJECT, REPO, COMMIT);
+    }
+
+    @Test
+    public void testExceedsMaximumNumberOfAnnotations() {
+        // given
+        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(100, 1000);
+        int counter = 2;
+
+        // when
+        boolean result = BitbucketPullRequestDecorator.exceedsMaximumNumberOfAnnotations(counter, uploadLimit);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void testExceedsMaximumNumberOfAnnotationsEdgeCase() {
+        // given
+        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(1000, 1000);
+        int counter = 1;
+
+        // when
+        boolean result = BitbucketPullRequestDecorator.exceedsMaximumNumberOfAnnotations(counter, uploadLimit);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    public void testExceedsMaximumNumberOfAnnotationsEdgeBatchCase() {
+        // given
+        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(100, 1000);
+        int counter = 10;
+
+        // when
+        boolean result = BitbucketPullRequestDecorator.exceedsMaximumNumberOfAnnotations(counter, uploadLimit);
+
+        // then
+        assertFalse(result);
     }
 
     private void mockValidAnalysis() {
