@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
@@ -142,6 +143,11 @@ public class BitbucketCloudClient implements BitbucketClient {
     @Override
     public boolean supportsCodeInsights() {
         return true;
+    }
+
+    @Override
+    public AnnotationUploadLimit getAnnotationUploadLimit() {
+        return new AnnotationUploadLimit(100, 1000);
     }
 
     void deleteExistingReport(String project, String repository, String commit) throws IOException {

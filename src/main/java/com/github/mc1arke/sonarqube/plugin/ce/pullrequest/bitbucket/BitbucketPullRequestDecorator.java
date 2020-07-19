@@ -24,6 +24,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatus
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketException;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
@@ -59,8 +60,6 @@ import static java.util.stream.Collectors.toSet;
 public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
     private static final Logger LOGGER = Loggers.get(BitbucketPullRequestDecorator.class);
-
-    private static final int DEFAULT_MAX_ANNOTATIONS = 1000;
 
     private static final DecorationResult DEFAULT_DECORATION_RESULT = DecorationResult.builder().build();
 
@@ -132,7 +131,9 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
         client.deleteAnnotations(project, repo, analysisDetails.getCommitSha());
 
-        Map<Object, Set<CodeInsightsAnnotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
+        AnnotationUploadLimit uploadLimit = client.getAnnotationUploadLimit();
+
+        Map<Integer, Set<CodeInsightsAnnotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status()))
@@ -146,10 +147,17 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                             path,
                             toBitbucketSeverity(componentIssue.getIssue().severity()),
                             toBitbucketType(componentIssue.getIssue().type()));
-                }).collect(Collectors.groupingBy(s -> chunkCounter.getAndIncrement() / DEFAULT_MAX_ANNOTATIONS, toSet()));
+                }).collect(Collectors.groupingBy(s -> chunkCounter.getAndIncrement() / uploadLimit.getAnnotationBatchSize(), toSet()));
 
+        int totalAnnotationsCounter = 1;
         for (Set<CodeInsightsAnnotation> annotations : annotationChunks.values()) {
             try {
+                if (exceedsMaximumNumberOfAnnotations(totalAnnotationsCounter++, uploadLimit)) {
+                    LOGGER.warn("This project has too many issues. The provider only supports {}." +
+                            " The remaining annotations will be truncated.", uploadLimit.getTotalAllowedAnnotations());
+                    break;
+                }
+
                 client.uploadAnnotations(project, repo, analysisDetails.getCommitSha(), annotations);
             } catch (BitbucketException e) {
                 if (e.isError(BitbucketException.PAYLOAD_TOO_LARGE)) {
@@ -157,9 +165,13 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                 } else {
                     throw e;
                 }
-
             }
         }
+    }
+
+    @VisibleForTesting
+    static boolean exceedsMaximumNumberOfAnnotations(int chunkCounter, AnnotationUploadLimit uploadLimit) {
+        return (chunkCounter * uploadLimit.getAnnotationBatchSize()) > uploadLimit.getTotalAllowedAnnotations();
     }
 
     private String toBitbucketSeverity(String severity) {
