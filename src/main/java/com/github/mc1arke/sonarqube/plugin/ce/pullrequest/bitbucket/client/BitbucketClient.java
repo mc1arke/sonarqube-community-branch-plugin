@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
@@ -88,5 +89,16 @@ public interface BitbucketClient {
      * @return boolean
      */
     boolean supportsCodeInsights();
+
+    /**
+     * <p>
+     *     Returns the annotation upload limit consisting of two different objects:
+     *     1. the batch size for each incremental annotation upload
+     *     2. the total allowed annotations for the given provider
+     * </p>
+     *
+     * @return the configured limit
+     */
+    AnnotationUploadLimit getAnnotationUploadLimit();
 
 }
