@@ -1,7 +1,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
@@ -125,6 +125,17 @@ public class BitbucketCloudClientUnitTest {
         Request request = captor.getValue();
         assertEquals("POST", request.method());
         assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository/commit/commit/reports/com.github.mc1arke.sonarqube/annotations", request.url().toString());
+    }
+
+    @Test
+    public void testUploadLimit() {
+        // given
+        // when
+        AnnotationUploadLimit annotationUploadLimit = underTest.getAnnotationUploadLimit();
+
+        // then
+        assertEquals(100, annotationUploadLimit.getAnnotationBatchSize());
+        assertEquals(1000, annotationUploadLimit.getTotalAllowedAnnotations());
     }
 
     @Test

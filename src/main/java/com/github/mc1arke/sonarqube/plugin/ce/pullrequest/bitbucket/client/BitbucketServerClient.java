@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
@@ -149,6 +150,11 @@ public class BitbucketServerClient implements BitbucketClient {
             return false;
         }
         return false;
+    }
+
+    @Override
+    public AnnotationUploadLimit getAnnotationUploadLimit() {
+        return new AnnotationUploadLimit(1000, 1000);
     }
 
     public ServerProperties getServerProperties() throws IOException {
