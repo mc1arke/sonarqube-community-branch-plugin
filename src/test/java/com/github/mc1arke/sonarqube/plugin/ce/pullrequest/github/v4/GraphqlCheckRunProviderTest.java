@@ -354,6 +354,7 @@ public class GraphqlCheckRunProviderTest {
         when(analysisDetails.createAnalysisSummary(any())).thenReturn("dummy summary");
         when(analysisDetails.getCommitSha()).thenReturn("commit SHA");
         when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
+        when(analysisDetails.getAnalysisProjectName()).thenReturn("projectName");
         when(analysisDetails.getBranchName()).thenReturn("branchName");
         when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
         when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
@@ -486,7 +487,7 @@ public class GraphqlCheckRunProviderTest {
         assertThat(annotationArgumentCaptor.getValue()).isEqualTo(expectedAnnotationObjects);
 
         verify(inputObjectBuilders.get(position + 1)).put(eq("repositoryId"), eq("repository ID"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("name"), eq("Sonarqube Results"));
+        verify(inputObjectBuilders.get(position + 1)).put(eq("name"), eq("projectName Sonarqube Results"));
         verify(inputObjectBuilders.get(position + 1)).put(eq("headSha"), eq("commit SHA"));
         verify(inputObjectBuilders.get(position + 1)).put(eq("status"), eq(RequestableCheckStatusState.COMPLETED));
         verify(inputObjectBuilders.get(position + 1)).put(eq("conclusion"), eq(status == QualityGate.Status.OK ?
