@@ -34,6 +34,16 @@ public class ReportData {
         this.type = typeFrom(value);
     }
 
+    private static String typeFrom(DataValue value) {
+        if (value instanceof DataValue.Link || value instanceof DataValue.CloudLink) {
+            return "LINK";
+        } else if (value instanceof DataValue.Percentage) {
+            return "PERCENTAGE";
+        } else {
+            return "TEXT";
+        }
+    }
+
     public String getTitle() {
         return title;
     }
@@ -44,15 +54,5 @@ public class ReportData {
 
     public String getType() {
         return type;
-    }
-
-    private static String typeFrom(DataValue value) {
-        if (value instanceof DataValue.Link) {
-            return "LINK";
-        } else if (value instanceof DataValue.Percentage) {
-            return "PERCENTAGE";
-        } else {
-            return "TEXT";
-        }
     }
 }

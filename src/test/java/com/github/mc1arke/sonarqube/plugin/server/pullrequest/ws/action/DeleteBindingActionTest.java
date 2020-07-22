@@ -1,10 +1,5 @@
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.sonar.api.server.ws.Request;
@@ -14,9 +9,14 @@ import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.AlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDao;
-import org.sonar.db.component.ComponentDto;
+import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
+
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DeleteBindingActionTest {
 
@@ -58,14 +58,14 @@ public class DeleteBindingActionTest {
 
         UserSession userSession = mock(UserSession.class);
 
-        ComponentDto componentDto = mock(ComponentDto.class);
+        ProjectDto componentDto = mock(ProjectDto.class);
         ComponentFinder componentFinder = mock(ComponentFinder.class);
-        when(componentFinder.getByKey(eq(dbSession), eq("projectKey"))).thenReturn(componentDto);
+        when(componentFinder.getProjectByKey(eq(dbSession), eq("projectKey"))).thenReturn(componentDto);
 
         DeleteBindingAction testCase = new DeleteBindingAction(dbClient, userSession, componentFinder);
 
         Request request = mock(Request.class, Mockito.RETURNS_DEEP_STUBS);
-        when(request.mandatoryParam("project")).thenReturn("projectKey");
+        when(request.param("project")).thenReturn("projectKey");
         Response response = mock(Response.class, Mockito.RETURNS_DEEP_STUBS);
 
         testCase.handle(request, response);
@@ -73,7 +73,7 @@ public class DeleteBindingActionTest {
         verify(dbSession).commit();
         verify(projectAlmSettingDao).deleteByProject(eq(dbSession), eq(componentDto));
         verify(response).noContent();
-        verify(userSession).checkComponentPermission("admin", componentDto);
+        verify(userSession).checkProjectPermission("admin", componentDto);
 
     }
 

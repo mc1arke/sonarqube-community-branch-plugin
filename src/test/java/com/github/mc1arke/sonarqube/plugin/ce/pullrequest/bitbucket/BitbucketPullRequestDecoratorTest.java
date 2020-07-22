@@ -3,13 +3,10 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.Annotation;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateAnnotationsRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CreateReportRequest;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
@@ -24,14 +21,13 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -56,36 +52,33 @@ public class BitbucketPullRequestDecoratorTest {
 
     private BitbucketClient client = mock(BitbucketClient.class);
 
-    private BitbucketServerPullRequestDecorator underTest = new BitbucketServerPullRequestDecorator(client);
+    private BitbucketPullRequestDecorator underTest = new BitbucketPullRequestDecorator() {
+        @Override
+        BitbucketClient createClient(BitbucketConfiguration bitbucketConfiguration) {
+            return client;
+        }
+    };
 
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
 
     @Before
     public void setUp() {
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn(PROJECT);
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn(REPO);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(REPO);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(PROJECT);
     }
 
     @Test
     public void testValidAnalysis() throws IOException {
-        when(client.supportsCodeInsights(eq(almSettingDto))).thenReturn(true);
+        when(client.supportsCodeInsights()).thenReturn(true);
 
         mockValidAnalysis();
-        final ArgumentCaptor<CreateReportRequest> reportCaptor = ArgumentCaptor.forClass(CreateReportRequest.class);
-        final ArgumentCaptor<CreateAnnotationsRequest> annotationsCaptor = ArgumentCaptor.forClass(CreateAnnotationsRequest.class);
-
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        verify(client).createReport(eq(PROJECT), eq(REPO), eq(COMMIT), reportCaptor.capture(), eq(almSettingDto));
-        verifyExpectedReport(reportCaptor.getValue());
-
-        verify(client).deleteAnnotations(PROJECT, REPO, COMMIT, almSettingDto);
-        verify(client).createAnnotations(eq(PROJECT), eq(REPO), eq(COMMIT), annotationsCaptor.capture(), eq(almSettingDto));
-
-        CreateAnnotationsRequest actualAnnotations = annotationsCaptor.getValue();
-        assertThat(actualAnnotations.getAnnotations()).size().isEqualTo(1);
-        verifyExpectedAnnotation(actualAnnotations.getAnnotations().iterator().next());
+        verify(client).createCodeInsightsAnnotation(eq(ISSUE_KEY), eq(ISSUE_LINE), eq(ISSUE_LINK), eq(ISSUE_MESSAGE), eq(ISSUE_PATH), eq("HIGH"), eq("BUG"));
+        verify(client).createLinkDataValue(DASHBOARD_URL);
+        verify(client).createCodeInsightsReport(any(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(QualityGate.Status.OK));
+        verify(client).deleteAnnotations(PROJECT, REPO, COMMIT);
     }
 
     private void mockValidAnalysis() {
@@ -131,25 +124,4 @@ public class BitbucketPullRequestDecoratorTest {
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
     }
 
-    private void verifyExpectedReport(CreateReportRequest actual) {
-        assertThat(actual.getTitle()).isEqualTo("SonarQube");
-        assertThat(actual.getResult()).isEqualTo("PASS");
-        assertThat(actual.getReporter()).isEqualTo("SonarQube");
-        assertThat(actual.getCreatedDate()).isBetween(Instant.now().minus(1, ChronoUnit.MINUTES), Instant.now());
-        assertThat(actual.getDetails()).isEqualTo("Quality Gate passed" + System.lineSeparator());
-        assertThat(actual.getLink()).isEqualTo(DASHBOARD_URL);
-        assertThat(actual.getLogoUrl()).isEqualTo(String.format("%s/common/icon.png", IMAGE_URL));
-
-        assertThat(actual.getData()).size().isEqualTo(6);
-    }
-
-    private void verifyExpectedAnnotation(Annotation actual) {
-        assertThat(actual.getExternalId()).isEqualTo(ISSUE_KEY);
-        assertThat(actual.getLine()).isEqualTo(ISSUE_LINE);
-        assertThat(actual.getLink()).isEqualTo(ISSUE_LINK);
-        assertThat(actual.getMessage()).isEqualTo(ISSUE_MESSAGE);
-        assertThat(actual.getPath()).isEqualTo(ISSUE_PATH);
-        assertThat(actual.getSeverity()).isEqualTo("HIGH");
-        assertThat(actual.getType()).isEqualTo("BUG");
-    }
 }

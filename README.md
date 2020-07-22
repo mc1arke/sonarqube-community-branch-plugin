@@ -14,12 +14,13 @@ Use the following table to find the correct plugin version for each SonarQube ve
 
 SonarQube Version | Plugin Version
 ------------------|---------------
-7.8 - 8.0         | 1.3.1
+8.1               | 1.4.0
+7.8 - 8.0         | 1.3.2
 7.4 - 7.7         | 1.0.2
 
 # Features
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/), with the following caveats
-* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, Gitlab and Bitbucket Server
+* __Pull Requests:__ Analysis of Pull Requests is fully supported, but the decoration of pull requests is only currently available for Github, Gitlab, Bitbucket Server and Bitbucket Cloud.
 
 # Installation
 Either build the project or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases). Copy the plugin JAR file to the `extensions/plugins/` **and** the `lib/common/` directories of your SonarQube instance and restart SonarQube.
@@ -66,30 +67,15 @@ services:
 
 # Configuration
 ## Global configuration
-If you can define the properties globally (e.g. the pull request provider) within your SonarQube instance go to
-  [/admin/settings?category=pull+request](http://localhost:9000/admin/settings?category=pull+request) and set the
-   properties as admin.
-
-Set all other properties that you can define globally for all of your projects.
-
 Make sure `sonar.core.serverBaseURL` in SonarQube [/admin/settings](http://localhost:9000/admin/settings) is properly
  set in order to for the links in the comment to work.
 
-## Project configuration
-Override the global configuration on project level at [/project/settings?category=pull+request&id=PROJECT_KEY](http://localhost:9000/project/settings?category=pull+request&id=PROJECT_KEY) and set project specific
- settings here.
-
-# Configuration of Bitbucket Server
-Set properties for Bitbucket Server either on Global configuration or Project configuration level as mentioned in the
- Configuration section.
+Set all other properties that you can define globally for all of your projects.
 
 ## How to decorate the PR
-In order to decorate your short living branch (hotfixes, features, ...) pull-requests you need to analyze your long
- living branches (master, development, release branches) first.
- 
-You can configure patterns for long living branches in SonarQube.
+In order to decorate your Pull Request's source branch, you need to analyze your target branch first.
 
-### Run analysis of long living branches
+### Run analysis of branches
   
 The analysis needs the following setting:
 `sonar.branch.name = branch_name (e.g master)`

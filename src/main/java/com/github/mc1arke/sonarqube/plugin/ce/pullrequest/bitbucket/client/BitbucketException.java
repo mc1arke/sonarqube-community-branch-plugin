@@ -18,7 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ErrorResponse;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.ErrorResponse;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
