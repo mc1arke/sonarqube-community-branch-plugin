@@ -64,6 +64,10 @@ import java.util.stream.Collectors;
 
 public class AnalysisDetails {
 
+    public static final String SCANNERROPERTY_PULLREQUEST_BRANCH = "sonar.pullrequest.branch";
+    public static final String SCANNERROPERTY_PULLREQUEST_BASE = "sonar.pullrequest.base";
+    public static final String SCANNERROPERTY_PULLREQUEST_KEY = "sonar.pullrequest.key";
+
     private static final List<String> CLOSED_ISSUE_STATUS = Arrays.asList(Issue.STATUS_CLOSED, Issue.STATUS_RESOLVED);
 
     private static final List<BigDecimal> COVERAGE_LEVELS =
@@ -115,9 +119,25 @@ public class AnalysisDetails {
     public String getIssueUrl(String issueKey) {
         return publicRootURL + "/project/issues?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issueKey + "&open=" + issueKey;
     }
+    
+    public Optional<String> getPullRequestBase() {
+        return Optional.ofNullable(scannerContext.getProperties().get(SCANNERROPERTY_PULLREQUEST_BASE));
+    }
+
+    public Optional<String> getPullRequestBranch() {
+        return Optional.ofNullable(scannerContext.getProperties().get(SCANNERROPERTY_PULLREQUEST_BRANCH));
+    }
+
+    public Optional<String> getPullRequestKey() {
+        return Optional.ofNullable(scannerContext.getProperties().get(SCANNERROPERTY_PULLREQUEST_KEY));
+    }
 
     public QualityGate.Status getQualityGateStatus() {
         return qualityGate.getStatus();
+    }
+
+    public String getRuleUrlWithRuleKey(String ruleKey) {
+        return publicRootURL + "/coding_rules?open=" + encode(ruleKey) + "&rule_key=" + encode(ruleKey);
     }
 
     public Optional<String> getScannerProperty(String propertyName) {

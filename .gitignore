@@ -19,3 +19,6 @@
 
 #Project libs
 /sonarqube-lib/
+
+#VSCode
+.project

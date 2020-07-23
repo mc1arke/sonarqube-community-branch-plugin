@@ -18,10 +18,12 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.issue.IssueVisitor;
 import org.sonar.core.issue.DefaultIssue;
+import org.sonar.db.protobuf.DbIssues;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,16 +82,21 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
         private final String severity;
         private final String status;
         private final RuleType type;
+        private final DbIssues.Locations locations;
+        private final RuleKey ruleKey;
 
         private LightIssue(DefaultIssue issue) {
             this.effortInMinutes = issue.effortInMinutes();
             this.key = issue.key();
             this.line = issue.getLine();
             this.message = issue.getMessage();
+
             this.resolution = issue.resolution();
             this.severity = issue.severity();
             this.status = issue.status();
             this.type = issue.type();
+            this.locations = issue.getLocations();
+            this.ruleKey = issue.getRuleKey();
         }
 
         @CheckForNull
@@ -130,6 +137,14 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
         public RuleType type() {
             return type;
+        }
+
+        public DbIssues.Locations getLocations() {
+            return locations;
+        }
+
+        public RuleKey getRuleKey() {
+            return ruleKey; 
         }
 
         @Override

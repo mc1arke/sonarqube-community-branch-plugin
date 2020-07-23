@@ -756,4 +756,29 @@ public class AnalysisDetailsTest {
         assertEquals("http://localhost:9000/static/communityBranchPlugin", analysisDetails.getBaseImageUrl());
     }
 
+    @Test
+    public void testGetIssueUrl() {
+        Project project = mock(Project.class);
+        doReturn("projectKey").when(project).getKey();
+
+        AnalysisDetails.BranchDetails branchDetails = mock(AnalysisDetails.BranchDetails.class);
+        doReturn("123").when(branchDetails).getBranchName();
+
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(branchDetails, mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), project, mock(Configuration.class), "http://localhost:9000", mock(ScannerContext.class));
+
+        assertEquals("http://localhost:9000/project/issues?id=projectKey&pullRequest=123&issues=issueKey&open=issueKey", analysisDetails.getIssueUrl("issueKey"));
+    }
+
+    @Test
+    public void testGetRuleUrlWithRuleKey() {
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), mock(Project.class), mock(Configuration.class), "http://localhost:9000", mock(ScannerContext.class));
+
+        assertEquals("http://localhost:9000/coding_rules?open=ruleKey&rule_key=ruleKey", analysisDetails.getRuleUrlWithRuleKey("ruleKey"));
+    }
 }
