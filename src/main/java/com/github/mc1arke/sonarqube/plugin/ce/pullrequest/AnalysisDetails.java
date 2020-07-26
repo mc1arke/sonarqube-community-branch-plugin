@@ -287,6 +287,10 @@ public class AnalysisDetails {
         return project.getKey();
     }
 
+    public String getAnalysisProjectName() {
+        return project.getName();
+    }
+
     public List<QualityGate.Condition> findFailedConditions() {
         return qualityGate.getConditions().stream().filter(c -> c.getStatus() == QualityGate.EvaluationStatus.ERROR)
                 .collect(Collectors.toList());
