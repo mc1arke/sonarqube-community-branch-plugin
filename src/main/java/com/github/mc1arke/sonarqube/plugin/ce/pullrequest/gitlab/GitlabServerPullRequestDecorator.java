@@ -104,15 +104,16 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
         try {
             final String apiURL = Optional.ofNullable(StringUtils.stripToNull(almSettingDto.getUrl()))
-                .orElse(analysis.getScannerProperty(PULLREQUEST_GITLAB_INSTANCE_URL)
-                .orElseThrow(() -> new IllegalStateException(String.format(
-                            "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
-                            PULLREQUEST_GITLAB_INSTANCE_URL))));
+                    .orElseGet(() -> analysis.getScannerProperty(PULLREQUEST_GITLAB_INSTANCE_URL)
+                            .orElseThrow(() -> new IllegalStateException(String.format(
+                                    "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
+                                    PULLREQUEST_GITLAB_INSTANCE_URL))));
             final String apiToken = almSettingDto.getPersonalAccessToken();
-            final String projectId = analysis.getScannerProperty(PULLREQUEST_GITLAB_PROJECT_ID).orElseThrow(
-                    () -> new IllegalStateException(String.format(
-                            "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
-                            PULLREQUEST_GITLAB_PROJECT_ID)));
+            final String projectId = Optional.ofNullable(StringUtils.stripToNull(projectAlmSettingDto.getAlmRepo()))
+                    .orElseGet(() -> analysis.getScannerProperty(PULLREQUEST_GITLAB_PROJECT_ID)
+                            .orElseThrow(() -> new IllegalStateException(String.format(
+                                    "Could not decorate Gitlab merge request. '%s' has not been set in scanner properties",
+                                    PULLREQUEST_GITLAB_PROJECT_ID))));
             final String pullRequestId = analysis.getBranchName();
 
             final String projectURL = apiURL + String.format("/projects/%s", URLEncoder
