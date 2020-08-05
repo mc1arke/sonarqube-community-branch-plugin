@@ -175,7 +175,7 @@ public class AnalysisDetails {
                                                          issueCounts.get(RuleType.SECURITY_HOTSPOT), "Vulnerability",
                                                          "Vulnerabilities"))), new ListItem(new Image("Code Smell",
                                                                                                       baseImageUrl +
-                                                                                                      "/common/vulnerability.svg?sanitize=true"),
+                                                                                                      "/common/code_smell.svg?sanitize=true"),
                                                                                             new Text(" "), new Text(
                                                  pluralOf(issueCounts.get(RuleType.CODE_SMELL), "Code Smell",
                                                           "Code Smells")))),

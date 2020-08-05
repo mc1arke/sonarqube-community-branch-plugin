@@ -339,7 +339,7 @@ public class AnalysisDetailsTest {
                                                                                                                      "2 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/code_smell.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
@@ -439,7 +439,7 @@ public class AnalysisDetailsTest {
                                                                                                                      "0 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/code_smell.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
@@ -546,7 +546,7 @@ public class AnalysisDetailsTest {
                                                                                                                     "0 Vulnerabilities")),
                                                                                                new ListItem(new Image(
                                                                                                        "Code Smell",
-                                                                                                       "http://host.name/path/common/vulnerability.svg?sanitize=true"),
+                                                                                                       "http://host.name/path/common/code_smell.svg?sanitize=true"),
                                                                                                             new Text(
                                                                                                                     " "),
                                                                                                             new Text(
@@ -644,7 +644,7 @@ public class AnalysisDetailsTest {
                                                                                                                      "0 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/code_smell.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
