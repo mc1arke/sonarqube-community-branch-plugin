@@ -169,7 +169,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             List<NameValuePair> summaryContentParams = Collections
                     .singletonList(new BasicNameValuePair("body", summaryComment));
 
-            String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.ZERO).toString();
+            BigDecimal coverageValue = analysis.getCoverage().orElse(null);
 
             postStatus(new StringBuilder(statusUrl), headers, analysis, coverageValue);
 
@@ -315,7 +315,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
 
     private void postStatus(StringBuilder statusPostUrl, Map<String, String> headers, AnalysisDetails analysis,
-                            String coverage) throws IOException {
+                            BigDecimal coverage) throws IOException {
         //See https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
         statusPostUrl.append("?name=SonarQube");
         String status = (analysis.getQualityGateStatus() == QualityGate.Status.OK ? "success" : "failed");
@@ -326,7 +326,9 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                         .encode(analysis.getBranchName(),
                                 StandardCharsets.UTF_8.name())), StandardCharsets.UTF_8.name()));
         statusPostUrl.append("&description=").append(URLEncoder.encode("SonarQube Status", StandardCharsets.UTF_8.name()));
-        statusPostUrl.append("&coverage=").append(coverage);
+        if (coverage != null) {
+            statusPostUrl.append("&coverage=").append(coverage.toString());
+        }
         analysis.getScannerProperty(PULLREQUEST_GITLAB_PIPELINE_ID).ifPresent(pipelineId -> statusPostUrl.append("&pipeline_id=").append(pipelineId));
 
         HttpPost httpPost = new HttpPost(statusPostUrl.toString());
