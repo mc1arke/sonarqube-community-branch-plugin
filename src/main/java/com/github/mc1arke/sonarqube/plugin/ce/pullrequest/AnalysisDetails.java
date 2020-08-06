@@ -128,9 +128,7 @@ public class AnalysisDetails {
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
         BigDecimal newCoverage = getNewCoverage().orElse(null);
-
-
-        double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).orElse(0D);
+        BigDecimal coverage = getCoverage().orElse(null);
 
         BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
                 .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
@@ -352,6 +350,10 @@ public class AnalysisDetails {
                 .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
                 .map(QualityGate.Condition::getValue)
                 .map(BigDecimal::new);
+    }
+
+    public Optional<BigDecimal> getCoverage(){
+        return findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).map(BigDecimal::new);
     }
 
     public static class BranchDetails {

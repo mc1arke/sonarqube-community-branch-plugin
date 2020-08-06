@@ -86,7 +86,7 @@ public class GitlabServerPullRequestDecoratorTest {
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
         when(analysisDetails.getBranchName()).thenReturn(branchName);
         when(analysisDetails.getCommitSha()).thenReturn(commitSHA);
-        when(analysisDetails.getNewCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
+        when(analysisDetails.getCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
         PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         DefaultIssue defaultIssue = mock(DefaultIssue.class);
