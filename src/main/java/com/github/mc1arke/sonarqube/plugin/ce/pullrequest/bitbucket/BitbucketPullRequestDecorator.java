@@ -31,6 +31,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
 import com.google.common.annotations.VisibleForTesting;
+
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
@@ -137,6 +138,8 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status()))
+                .filter(i -> !(i.getIssue().type() == RuleType.SECURITY_HOTSPOT && Issue.SECURITY_HOTSPOT_RESOLUTIONS
+                    .contains(i.getIssue().resolution())))
                 .sorted(Comparator.comparing(a -> Severity.ALL.indexOf(a.getIssue().severity())))
                 .map(componentIssue -> {
                     String path = componentIssue.getComponent().getReportAttributes().getScmPath().get();
