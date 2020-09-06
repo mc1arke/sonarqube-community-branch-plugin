@@ -25,7 +25,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model
 public class CloudAnnotation extends CodeInsightsAnnotation {
     @JsonProperty("external_id")
     private final String externalId;
-    @JsonProperty("summary")
+    @JsonProperty("link")
     private final String link;
     @JsonProperty("annotation_type")
     private final String annotationType;
