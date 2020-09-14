@@ -102,6 +102,21 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
                 Optional.ofNullable(system2.envVariable("CI_COMMIT_REF_NAME")).ifPresent(
                         v -> mutableLocalSettings.putIfAbsent(ScannerProperties.BRANCH_NAME, v));
             }
+        } else if (Boolean.parseBoolean(system2.envVariable("DRONE"))) {
+            //Drone CI auto configuration
+            if (system2.envVariable("DRONE_PULL_REQUEST") != null) {
+                // we are inside a pull request
+                Optional.ofNullable(system2.envVariable("DRONE_PULL_REQUEST")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_KEY, v));
+                Optional.ofNullable(system2.envVariable("DRONE_SOURCE_BRANCH")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BRANCH, v));
+                Optional.ofNullable(system2.envVariable("DRONE_TARGET_BRANCH")).ifPresent(
+                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BASE, v));
+            } else {
+                // branch or tag
+                Optional.ofNullable(system2.envVariable("DRONE_COMMIT_REF")).ifPresent(
+                    v -> mutableLocalSettings.putIfAbsent(ScannerProperties.BRANCH_NAME, v));
+            }
         }
         return Collections.unmodifiableMap(mutableLocalSettings);
     }
