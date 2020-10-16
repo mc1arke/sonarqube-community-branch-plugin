@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server;
 
+import org.sonar.db.component.BranchType;
 import org.sonar.server.ce.queue.BranchSupport;
 
 import java.util.Optional;
@@ -29,13 +30,15 @@ import java.util.Optional;
 
     private final String key;
     private final String dbKey;
-    private final BranchSupport.Branch branch;
+    private final String branchName;
+    private final BranchType branchType;
     private final String pullRequestKey;
 
-    /*package*/ CommunityComponentKey(String key, String dbKey, BranchSupport.Branch branch, String pullRequestKey) {
+    /*package*/ CommunityComponentKey(String key, String dbKey, String branchName, BranchType branchType, String pullRequestKey) {
         this.key = key;
         this.dbKey = dbKey;
-        this.branch = branch;
+        this.branchName = branchName;
+        this.branchType = branchType;
         this.pullRequestKey = pullRequestKey;
     }
 
@@ -50,8 +53,12 @@ import java.util.Optional;
     }
 
     @Override
-    public Optional<BranchSupport.Branch> getBranch() {
-        return Optional.ofNullable(branch);
+    public Optional<String> getBranchName() {
+        return Optional.ofNullable(branchName);
+    }
+
+    public Optional<BranchType> getBranchType() {
+        return Optional.ofNullable(branchType);
     }
 
     @Override
@@ -64,6 +71,6 @@ import java.util.Optional;
         if (key.equals(dbKey)) {
             return this;
         }
-        return new CommunityComponentKey(key, key, null, null);
+        return new CommunityComponentKey(key, key, null, null, null);
     }
 }

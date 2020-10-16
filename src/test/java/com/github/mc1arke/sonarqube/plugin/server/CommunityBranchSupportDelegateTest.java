@@ -33,7 +33,6 @@ import org.sonar.db.component.BranchType;
 import org.sonar.db.component.ComponentDao;
 import org.sonar.db.component.ComponentDto;
 import org.sonar.db.organization.OrganizationDto;
-import org.sonar.server.ce.queue.BranchSupport;
 
 import java.time.Clock;
 import java.util.Date;
@@ -68,7 +67,7 @@ public class CommunityBranchSupportDelegateTest {
         params.put("branch", "release-1.1");
         params.put("branchType", "BRANCH");
 
-        BranchSupport.ComponentKey componentKey =
+        CommunityComponentKey componentKey =
                 new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
                         .createComponentKey("yyy", params);
 
@@ -76,10 +75,11 @@ public class CommunityBranchSupportDelegateTest {
         assertEquals("yyy", componentKey.getKey());
         assertFalse(componentKey.getPullRequestKey().isPresent());
         assertFalse(componentKey.isMainBranch());
-        assertTrue(componentKey.getBranch().isPresent());
-        assertEquals("release-1.1", componentKey.getBranch().get().getName());
+        assertTrue(componentKey.getBranchName().isPresent());
+        assertTrue(componentKey.getBranchType().isPresent());
+        assertEquals("release-1.1", componentKey.getBranchName().get());
+        assertEquals(BranchType.BRANCH, componentKey.getBranchType().get());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
-        assertEquals(BranchType.BRANCH, componentKey.getBranch().get().getType());
     }
 
     @Test
@@ -95,7 +95,8 @@ public class CommunityBranchSupportDelegateTest {
         assertTrue(componentKey.getPullRequestKey().isPresent());
         assertEquals("pullrequestkey", componentKey.getPullRequestKey().get());
         assertFalse(componentKey.isMainBranch());
-        assertFalse(componentKey.getBranch().isPresent());
+        assertFalse(componentKey.getBranchName().isPresent());
+        assertFalse(componentKey.getBranchType().isPresent());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
         CommunityComponentKey mainBranchComponentKey = componentKey.getMainBranchComponentKey();
         assertSame(mainBranchComponentKey, mainBranchComponentKey.getMainBranchComponentKey());
@@ -145,10 +146,11 @@ public class CommunityBranchSupportDelegateTest {
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(12345678901234L);
 
-        BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
+        CommunityComponentKey componentKey = mock(CommunityComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
+        when(componentKey.getBranchType()).thenReturn(Optional.of(BranchType.BRANCH));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -185,10 +187,11 @@ public class CommunityBranchSupportDelegateTest {
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(12345678901234L);
 
-        BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
+        CommunityComponentKey componentKey = mock(CommunityComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
+        when(componentKey.getBranchType()).thenReturn(Optional.of(BranchType.BRANCH));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = mock(ComponentDao.class);
@@ -244,10 +247,11 @@ public class CommunityBranchSupportDelegateTest {
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(1234567890123L);
 
-        BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
+        CommunityComponentKey componentKey = mock(CommunityComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
+        when(componentKey.getBranchType()).thenReturn(Optional.of(BranchType.BRANCH));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -284,10 +288,11 @@ public class CommunityBranchSupportDelegateTest {
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(1234567890123L);
 
-        BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
+        CommunityComponentKey componentKey = mock(CommunityComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.empty());
+        when(componentKey.getBranchName()).thenReturn(Optional.empty());
+        when(componentKey.getBranchType()).thenReturn(Optional.empty());
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = mock(ComponentDao.class);

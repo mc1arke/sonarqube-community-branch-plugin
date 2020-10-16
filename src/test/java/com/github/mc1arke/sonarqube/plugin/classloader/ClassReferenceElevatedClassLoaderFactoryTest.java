@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.classloader;
 
 import org.hamcrest.core.IsEqual;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -45,6 +46,8 @@ import static org.mockito.Mockito.verify;
 /**
  * @author Michael Clarke
  */
+@Ignore("SonarQube has removed bundled plugins from extensions/plugins.\n" +
+    "See https://jira.sonarsource.com/browse/SONAR-13792")
 public class ClassReferenceElevatedClassLoaderFactoryTest {
 
     private static final String SVN_PLUGIN_CLASS = "org.sonar.plugins.scm.svn.SvnPlugin";

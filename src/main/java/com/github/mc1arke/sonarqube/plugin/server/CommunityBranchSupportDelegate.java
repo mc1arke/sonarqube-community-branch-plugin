@@ -63,17 +63,17 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
                                                                  CeTaskCharacteristicDto.PULL_REQUEST));
             } else {
                 return new CommunityComponentKey(projectKey,
-                                                 ComponentDto.generatePullRequestKey(projectKey, pullRequest), null,
+                                                 ComponentDto.generatePullRequestKey(projectKey, pullRequest), null, null,
                                                  pullRequest);
             }
         }
 
-        String branch = StringUtils.trimToNull(characteristics.get(CeTaskCharacteristicDto.BRANCH_KEY));
+        String branchName = StringUtils.trimToNull(characteristics.get(CeTaskCharacteristicDto.BRANCH_KEY));
 
         try {
             BranchType branchType = BranchType.valueOf(branchTypeParam);
-            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch),
-                                             new BranchSupport.Branch(branch, branchType), null);
+            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branchName),
+                                             branchName, branchType, null);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(String.format("Unsupported branch type '%s'", branchTypeParam), ex);
         }
@@ -84,13 +84,17 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
     public ComponentDto createBranchComponent(DbSession dbSession, BranchSupport.ComponentKey componentKey,
                                               OrganizationDto organization, ComponentDto mainComponentDto,
                                               BranchDto mainComponentBranchDto) {
+        if(!(componentKey instanceof CommunityComponentKey))
+            throw new IllegalStateException("Component Key is not of type CommunityComponentKey");
+
         if (!componentKey.getKey().equals(mainComponentDto.getKey())) {
             throw new IllegalStateException("Component Key and Main Component Key do not match");
         }
 
-        Optional<BranchSupport.Branch> branchOptional = componentKey.getBranch();
-        if (branchOptional.isPresent() && branchOptional.get().getName().equals(mainComponentBranchDto.getKey()) &&
-            mainComponentBranchDto.getBranchType() == branchOptional.get().getType()) {
+        Optional<String> branchOptional = componentKey.getBranchName();
+        if (branchOptional.isPresent() && branchOptional.get().equals(mainComponentBranchDto.getKey()) &&
+            ((CommunityComponentKey)componentKey).getBranchType().isPresent() &&
+            mainComponentBranchDto.getBranchType() == ((CommunityComponentKey)componentKey).getBranchType().get()) {
             return mainComponentDto;
         }
 
