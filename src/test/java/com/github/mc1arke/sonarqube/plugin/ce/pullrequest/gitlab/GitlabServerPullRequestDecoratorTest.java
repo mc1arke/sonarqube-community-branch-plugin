@@ -30,7 +30,6 @@ import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
-import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
@@ -89,7 +88,7 @@ public class GitlabServerPullRequestDecoratorTest {
         when(analysisDetails.getNewCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
         PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        DefaultIssue defaultIssue = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(defaultIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
         when(defaultIssue.getLine()).thenReturn(lineNumber);
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
