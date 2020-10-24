@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
 import java.util.stream.IntStream;
+import static com.google.common.html.HtmlEscapers.htmlEscaper;
 
 public final class MarkdownFormatterFactory implements FormatterFactory {
 
@@ -110,7 +111,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
         return new BaseFormatter<Text>() {
             @Override
             public String format(Text node, FormatterFactory formatterFactory) {
-                return node.getContent();
+                return htmlEscaper().escape(node.getContent()).trim();
             }
         };
     }
