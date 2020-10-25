@@ -29,13 +29,13 @@ import java.util.Optional;
 
     private final String key;
     private final String dbKey;
-    private final BranchSupport.Branch branch;
+    private final String branchName;
     private final String pullRequestKey;
 
-    /*package*/ CommunityComponentKey(String key, String dbKey, BranchSupport.Branch branch, String pullRequestKey) {
+    /*package*/ CommunityComponentKey(String key, String dbKey, String branchName, String pullRequestKey) {
         this.key = key;
         this.dbKey = dbKey;
-        this.branch = branch;
+        this.branchName = branchName;
         this.pullRequestKey = pullRequestKey;
     }
 
@@ -50,10 +50,9 @@ import java.util.Optional;
     }
 
     @Override
-    public Optional<BranchSupport.Branch> getBranch() {
-        return Optional.ofNullable(branch);
+    public Optional<String> getBranchName() {
+        return Optional.ofNullable(branchName);
     }
-
     @Override
     public Optional<String> getPullRequestKey() {
         return Optional.ofNullable(pullRequestKey);

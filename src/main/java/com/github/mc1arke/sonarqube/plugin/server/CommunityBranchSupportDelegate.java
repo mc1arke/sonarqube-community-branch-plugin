@@ -71,9 +71,8 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
         String branch = StringUtils.trimToNull(characteristics.get(CeTaskCharacteristicDto.BRANCH_KEY));
 
         try {
-            BranchType branchType = BranchType.valueOf(branchTypeParam);
-            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch),
-                                             new BranchSupport.Branch(branch, branchType), null);
+            BranchType.valueOf(branchTypeParam);
+            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch), branch, null);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(String.format("Unsupported branch type '%s'", branchTypeParam), ex);
         }
@@ -88,9 +87,8 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
             throw new IllegalStateException("Component Key and Main Component Key do not match");
         }
 
-        Optional<BranchSupport.Branch> branchOptional = componentKey.getBranch();
-        if (branchOptional.isPresent() && branchOptional.get().getName().equals(mainComponentBranchDto.getKey()) &&
-            mainComponentBranchDto.getBranchType() == branchOptional.get().getType()) {
+        Optional<String> branchOptional = componentKey.getBranchName();
+        if (branchOptional.isPresent() && branchOptional.get().equals(mainComponentBranchDto.getKey())) {
             return mainComponentDto;
         }
 

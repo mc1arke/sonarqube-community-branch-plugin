@@ -1,5 +1,12 @@
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.github;
 
+import org.junit.Test;
+import org.sonar.api.server.ws.Request;
+import org.sonar.api.server.ws.WebService;
+import org.sonar.db.DbClient;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.server.user.UserSession;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -7,13 +14,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import org.junit.Test;
-import org.sonar.api.server.ws.Request;
-import org.sonar.api.server.ws.WebService;
-import org.sonar.db.DbClient;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.server.user.UserSession;
 
 public class UpdateGithubActionTest {
 
@@ -39,6 +39,16 @@ public class UpdateGithubActionTest {
         when(privateKeyParameter.setRequired(anyBoolean())).thenReturn(privateKeyParameter);
         when(newAction.createParam(eq("privateKey"))).thenReturn(privateKeyParameter);
 
+        WebService.NewParam clientIdParameter = mock(WebService.NewParam.class);
+        when(clientIdParameter.setMaximumLength(any(Integer.class))).thenReturn(clientIdParameter);
+        when(clientIdParameter.setRequired(anyBoolean())).thenReturn(clientIdParameter);
+        when(newAction.createParam(eq("clientId"))).thenReturn(clientIdParameter);
+
+        WebService.NewParam clientSecretParameter = mock(WebService.NewParam.class);
+        when(clientSecretParameter.setMaximumLength(any(Integer.class))).thenReturn(clientSecretParameter);
+        when(clientSecretParameter.setRequired(anyBoolean())).thenReturn(clientSecretParameter);
+        when(newAction.createParam(eq("clientSecret"))).thenReturn(clientSecretParameter);
+
         UpdateGithubAction testCase = new UpdateGithubAction(dbClient, userSession);
         testCase.configureAction(newAction);
 
@@ -50,6 +60,12 @@ public class UpdateGithubActionTest {
 
         verify(privateKeyParameter).setRequired(eq(true));
         verify(privateKeyParameter).setMaximumLength(2000);
+
+        verify(clientIdParameter).setRequired(eq(true));
+        verify(clientIdParameter).setMaximumLength(80);
+
+        verify(clientSecretParameter).setRequired(eq(true));
+        verify(clientSecretParameter).setMaximumLength(80);
     }
 
     @Test

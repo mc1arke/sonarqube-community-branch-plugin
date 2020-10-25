@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.verify;
  */
 public class ClassReferenceElevatedClassLoaderFactoryTest {
 
-    private static final String SVN_PLUGIN_CLASS = "org.sonar.plugins.scm.svn.SvnPlugin";
+    private static final String TARGET_PLUGIN_CLASS = "org.sonar.plugins.java.JavaPlugin";
     private final ExpectedException expectedException = ExpectedException.none();
 
     @Rule
@@ -70,7 +70,7 @@ public class ClassReferenceElevatedClassLoaderFactoryTest {
     public void testClassloaderReturnedOnHappyPath() throws ReflectiveOperationException, MalformedURLException {
         URLClassLoader mockClassLoader = new URLClassLoader(findSonarqubePluginJars());
         ElevatedClassLoaderFactory testCase = spy(new ClassReferenceElevatedClassLoaderFactory(getClass().getName()));
-        testCase.createClassLoader((Class<? extends Plugin>) mockClassLoader.loadClass(SVN_PLUGIN_CLASS));
+        testCase.createClassLoader((Class<? extends Plugin>) mockClassLoader.loadClass(TARGET_PLUGIN_CLASS));
 
         ArgumentCaptor<ClassLoader> argumentCaptor = ArgumentCaptor.forClass(ClassLoader.class);
         verify(testCase).createClassLoader(argumentCaptor.capture(), argumentCaptor.capture());
@@ -95,7 +95,7 @@ public class ClassReferenceElevatedClassLoaderFactoryTest {
         Map<String, ClassLoader> loaders = builder.build();
         ClassLoader classLoader = loaders.get("_customPlugin");
 
-        Class<? extends Plugin> loadedClass = (Class<? extends Plugin>) classLoader.loadClass(SVN_PLUGIN_CLASS);
+        Class<? extends Plugin> loadedClass = (Class<? extends Plugin>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
 
         ClassReferenceElevatedClassLoaderFactory testCase =
                 new ClassReferenceElevatedClassLoaderFactory(ActiveRule.class.getName());
@@ -109,7 +109,7 @@ public class ClassReferenceElevatedClassLoaderFactoryTest {
         List<URL> pluginUrls = new ArrayList<>();
         File[] sonarQubeDistributions = new File("sonarqube-lib/").listFiles();
 
-        for (File pluginJar : new File(sonarQubeDistributions[0], "extensions/plugins/").listFiles()) {
+        for (File pluginJar : new File(sonarQubeDistributions[0], "lib/extensions/").listFiles()) {
             pluginUrls.add(pluginJar.toURI().toURL());
         }
         return pluginUrls.toArray(new URL[0]);

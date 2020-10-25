@@ -1,14 +1,6 @@
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-import java.util.Collections;
-
+import com.google.protobuf.Message;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -23,7 +15,14 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.server.user.UserSession;
 import org.sonarqube.ws.AlmSettings;
 
-import com.google.protobuf.Message;
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ListDefinitionsActionTest {
 
@@ -55,6 +54,8 @@ public class ListDefinitionsActionTest {
         when(githubAlmSettingDto.getKey()).thenReturn("githubKey");
         when(githubAlmSettingDto.getUrl()).thenReturn("githubUrl");
         when(githubAlmSettingDto.getAppId()).thenReturn("githubAppId");
+        when(githubAlmSettingDto.getClientId()).thenReturn("githubClientId");
+        when(githubAlmSettingDto.getClientSecret()).thenReturn("githubClientSecret");
         when(githubAlmSettingDto.getPrivateKey()).thenReturn("githubPrivateKey");
 
         AlmSettingDto gitlabAlmSettingDto = mock(AlmSettingDto.class);
@@ -99,6 +100,8 @@ public class ListDefinitionsActionTest {
                 .setUrl("githubUrl")
                 .setAppId("githubAppId")
                 .setPrivateKey("githubPrivateKey")
+                .setClientId("githubClientId")
+                .setClientSecret("githubClientSecret")
                 .build())
             .addAzure(AlmSettings.AlmSettingAzure.newBuilder()
                 .setKey("azureDevopsKey")
