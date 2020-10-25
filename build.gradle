@@ -40,7 +40,7 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '8.2.0.32929'
+def sonarqubeVersion = '8.5.0.37579'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
@@ -57,8 +57,8 @@ compileJava {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar')
-    testCompile fileTree(dir: sonarLibraries, include: '**/*.jar')
+    compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
+    testCompile fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.13.2'

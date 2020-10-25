@@ -29,19 +29,13 @@ import static org.sonar.db.alm.setting.ALM.GITHUB;
 
 public class CreateGithubAction extends CreateAction {
 
-    private static final String URL_PARAMETER = "url";
-    private static final String APP_ID_PARAMETER = "appId";
-    private static final String PRIVATE_KEY_PARAMETER = "privateKey";
-
     public CreateGithubAction(DbClient dbClient, UserSession userSession) {
         super(dbClient, userSession, "create_github");
     }
 
     @Override
     public void configureAction(WebService.NewAction action) {
-        action.createParam(URL_PARAMETER).setRequired(true).setMaximumLength(2000);
-        action.createParam(APP_ID_PARAMETER).setRequired(true).setMaximumLength(80);
-        action.createParam(PRIVATE_KEY_PARAMETER).setRequired(true).setMaximumLength(2000);
+        GithubRequestParameterManager.createRequestParameters(action);
     }
 
     @Override
@@ -49,9 +43,11 @@ public class CreateGithubAction extends CreateAction {
         return new AlmSettingDto()
                 .setAlm(GITHUB)
                 .setKey(key)
-                .setUrl(request.mandatoryParam(URL_PARAMETER))
-                .setAppId(request.mandatoryParam(APP_ID_PARAMETER))
-                .setPrivateKey(request.mandatoryParam(PRIVATE_KEY_PARAMETER));
+                .setUrl(request.mandatoryParam(GithubRequestParameterManager.URL_PARAMETER))
+                .setAppId(request.mandatoryParam(GithubRequestParameterManager.APP_ID_PARAMETER))
+                .setPrivateKey(request.mandatoryParam(GithubRequestParameterManager.PRIVATE_KEY_PARAMETER))
+                .setClientId(request.mandatoryParam(GithubRequestParameterManager.CLIENT_ID))
+                .setClientSecret(request.mandatoryParam(GithubRequestParameterManager.CLIENT_SECRET));
     }
 
 }

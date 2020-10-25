@@ -97,6 +97,8 @@ public class ListDefinitionsAction extends AlmSettingsWsAction {
             .setUrl(requireNonNull(settingDto.getUrl(), "URL cannot be null for GitHub ALM setting"))
             .setAppId(requireNonNull(settingDto.getAppId(), "App ID cannot be null for GitHub ALM setting"))
             .setPrivateKey(requireNonNull(settingDto.getPrivateKey(), "Private Key cannot be null for GitHub ALM setting"))
+            .setClientId(Optional.ofNullable(settingDto.getClientId()).orElse(""))
+            .setClientSecret(Optional.ofNullable(settingDto.getClientSecret()).orElse(""))
             .build();
     }
 

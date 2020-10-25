@@ -76,10 +76,9 @@ public class CommunityBranchSupportDelegateTest {
         assertEquals("yyy", componentKey.getKey());
         assertFalse(componentKey.getPullRequestKey().isPresent());
         assertFalse(componentKey.isMainBranch());
-        assertTrue(componentKey.getBranch().isPresent());
-        assertEquals("release-1.1", componentKey.getBranch().get().getName());
+        assertTrue(componentKey.getBranchName().isPresent());
+        assertEquals("release-1.1", componentKey.getBranchName().get());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
-        assertEquals(BranchType.BRANCH, componentKey.getBranch().get().getType());
     }
 
     @Test
@@ -95,7 +94,7 @@ public class CommunityBranchSupportDelegateTest {
         assertTrue(componentKey.getPullRequestKey().isPresent());
         assertEquals("pullrequestkey", componentKey.getPullRequestKey().get());
         assertFalse(componentKey.isMainBranch());
-        assertFalse(componentKey.getBranch().isPresent());
+        assertFalse(componentKey.getBranchName().isPresent());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
         CommunityComponentKey mainBranchComponentKey = componentKey.getMainBranchComponentKey();
         assertSame(mainBranchComponentKey, mainBranchComponentKey.getMainBranchComponentKey());
@@ -148,7 +147,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -180,7 +179,7 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getUuid()).thenReturn("componentUuid");
-        when(branchDto.getKey()).thenReturn("dummy");
+        when(branchDto.getKey()).thenReturn("nonDummy");
 
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(12345678901234L);
@@ -188,7 +187,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = mock(ComponentDao.class);
@@ -247,7 +246,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -287,7 +286,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.empty());
+        when(componentKey.getBranchName()).thenReturn(Optional.empty());
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = mock(ComponentDao.class);
