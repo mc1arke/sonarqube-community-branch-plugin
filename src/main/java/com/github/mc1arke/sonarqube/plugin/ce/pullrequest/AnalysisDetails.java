@@ -20,7 +20,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
 import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
