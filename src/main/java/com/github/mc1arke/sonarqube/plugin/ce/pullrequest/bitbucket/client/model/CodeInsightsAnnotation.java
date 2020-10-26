@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class CodeInsightsAnnotation {
     @JsonProperty("line")
     private final int line;
-    @JsonProperty("message")
+    @JsonProperty("summary")
     private final String message;
     @JsonProperty("path")
     private final String path;

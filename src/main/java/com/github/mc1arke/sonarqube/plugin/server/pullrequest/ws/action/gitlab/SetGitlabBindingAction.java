@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.gitlab;
 
 import org.sonar.api.server.ws.Request;
+import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.server.component.ComponentFinder;
@@ -27,15 +28,25 @@ import org.sonar.server.user.UserSession;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBindingAction;
 
 public class SetGitlabBindingAction extends SetBindingAction {
+    private static final String REPOSITORY_PARAMETER = "repository";
 
     public SetGitlabBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
         super(dbClient, componentFinder, userSession, "set_gitlab_binding");
     }
 
     @Override
+    protected void configureAction(WebService.NewAction action) {
+        super.configureAction(action);
+        action.createParam(REPOSITORY_PARAMETER);
+    }
+
+    @Override
     protected ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid,
                                                               Request request) {
-        return new ProjectAlmSettingDto().setProjectUuid(projectUuid).setAlmSettingUuid(settingsUuid);
+        return new ProjectAlmSettingDto()
+                .setProjectUuid(projectUuid)
+                .setAlmSettingUuid(settingsUuid)
+                .setAlmRepo(request.param(REPOSITORY_PARAMETER));
     }
 
 }

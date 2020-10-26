@@ -45,7 +45,6 @@ import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.Measure;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
-import org.sonar.core.issue.DefaultIssue;
 import org.sonar.server.measure.Rating;
 
 import java.io.UnsupportedEncodingException;
@@ -175,7 +174,7 @@ public class AnalysisDetails {
                                                          issueCounts.get(RuleType.SECURITY_HOTSPOT), "Vulnerability",
                                                          "Vulnerabilities"))), new ListItem(new Image("Code Smell",
                                                                                                       baseImageUrl +
-                                                                                                      "/common/vulnerability.svg?sanitize=true"),
+                                                                                                      "/common/code_smell.svg?sanitize=true"),
                                                                                             new Text(" "), new Text(
                                                  pluralOf(issueCounts.get(RuleType.CODE_SMELL), "Code Smell",
                                                           "Code Smells")))),
@@ -201,7 +200,7 @@ public class AnalysisDetails {
     }
 
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
-        final DefaultIssue issue = componentIssue.getIssue();
+        final PostAnalysisIssueVisitor.LightIssue issue = componentIssue.getIssue();
 
         String baseImageUrl = getBaseImageUrl();
 
@@ -291,6 +290,10 @@ public class AnalysisDetails {
 
     public String getAnalysisProjectKey() {
         return project.getKey();
+    }
+
+    public String getAnalysisProjectName() {
+        return project.getName();
     }
 
     public List<QualityGate.Condition> findFailedConditions() {

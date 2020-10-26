@@ -15,7 +15,6 @@ import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
-import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
@@ -104,7 +103,7 @@ public class BitbucketPullRequestDecoratorTest {
         when(component.getType()).thenReturn(Component.Type.FILE);
         when(component.getReportAttributes()).thenReturn(reportAttributes);
 
-        DefaultIssue defaultIssue = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(defaultIssue.status()).thenReturn(Issue.STATUS_OPEN);
         when(defaultIssue.severity()).thenReturn(Severity.CRITICAL);
         when(defaultIssue.getLine()).thenReturn(ISSUE_LINE);

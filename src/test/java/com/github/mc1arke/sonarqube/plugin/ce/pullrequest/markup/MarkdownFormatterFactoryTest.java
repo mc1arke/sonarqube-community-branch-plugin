@@ -84,4 +84,18 @@ public class MarkdownFormatterFactoryTest {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
         assertEquals("Text", testCase.textFormatter().format(new Text("Text"), testCase));
     }
+
+    @Test
+    public void testContentTextFormatterEscapedHtml(){
+        MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
+        assertEquals("&lt;p&gt; no html allowed", testCase.textFormatter().format(new Text("<p> no html allowed"), testCase));
+        assertEquals("no html &lt;p&gt; allowed", testCase.textFormatter().format(new Text("no html <p> allowed"), testCase));
+        assertEquals("&lt;/i&gt;no html &lt;p&gt; allowed&lt;i&gt;", testCase.textFormatter().format(new Text("</i>no html <p> allowed<i>"), testCase));
+    }
+
+    @Test
+    public void testContentTextFormatterTrimWhitespaceAtBeginAndEnd(){
+        MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
+        assertEquals("", testCase.textFormatter().format(new Text("             "), testCase));
+    }
 }

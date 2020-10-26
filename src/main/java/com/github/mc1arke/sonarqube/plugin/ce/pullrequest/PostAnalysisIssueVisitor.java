@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.issue.IssueVisitor;
 import org.sonar.core.issue.DefaultIssue;
@@ -25,6 +26,9 @@ import org.sonar.core.issue.DefaultIssue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
+import javax.annotation.CheckForNull;
 
 public class PostAnalysisIssueVisitor extends IssueVisitor {
 
@@ -42,20 +46,115 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
     public static class ComponentIssue {
 
         private final Component component;
-        private final DefaultIssue issue;
+        private final LightIssue issue;
 
         ComponentIssue(Component component, DefaultIssue issue) {
             super();
             this.component = component;
-            this.issue = issue;
+            this.issue = (issue != null) ? new LightIssue(issue) : null;
+            // the null test is to please PostAnalysisIssueVisitorTest.checkAllIssuesCollected()
         }
 
         public Component getComponent() {
             return component;
         }
 
-        public DefaultIssue getIssue() {
+        public LightIssue getIssue() {
             return issue;
         }
+    }
+
+    /**
+     * A simple bean for holding the useful bits of a #{@link DefaultIssue}.
+     * <br>
+     * It presents a subset of the #{@link DefaultIssue} interface, hence the inconsistent getters names,
+     * and CheckForNull annotations.
+     */
+    public static class LightIssue {
+
+        private final Long effortInMinutes;
+        private final String key;
+        private final Integer line;
+        private final String message;
+        private final String resolution;
+        private final String severity;
+        private final String status;
+        private final RuleType type;
+
+        private LightIssue(DefaultIssue issue) {
+            this.effortInMinutes = issue.effortInMinutes();
+            this.key = issue.key();
+            this.line = issue.getLine();
+            this.message = issue.getMessage();
+            this.resolution = issue.resolution();
+            this.severity = issue.severity();
+            this.status = issue.status();
+            this.type = issue.type();
+        }
+
+        @CheckForNull
+        public Long effortInMinutes() {
+            return effortInMinutes;
+        }
+
+        public String key() {
+            return key;
+        }
+
+        @CheckForNull
+        public Integer getLine() {
+            return line;
+        }
+
+        @CheckForNull
+        public String getMessage() {
+            return message;
+        }
+
+        @CheckForNull
+        public String resolution() {
+            return resolution;
+        }
+
+        public String severity() {
+            return severity;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public String status() {
+            return status;
+        }
+
+        public RuleType type() {
+            return type;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(effortInMinutes, key, line, message, resolution, severity, status, type);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            LightIssue other = (LightIssue) obj;
+            return Objects.equals(effortInMinutes, other.effortInMinutes)
+                    && Objects.equals(key, other.key)
+                    && Objects.equals(line, other.line)
+                    && Objects.equals(message, other.message)
+                    && Objects.equals(resolution, other.resolution)
+                    && Objects.equals(severity, other.severity)
+                    && Objects.equals(status, other.status)
+                    && type == other.type;
+        }
+
     }
 }
