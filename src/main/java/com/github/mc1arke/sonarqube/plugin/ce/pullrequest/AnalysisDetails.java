@@ -45,7 +45,6 @@ import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.Measure;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
-import org.sonar.core.issue.DefaultIssue;
 import org.sonar.server.measure.Rating;
 
 import java.io.UnsupportedEncodingException;
@@ -201,7 +200,7 @@ public class AnalysisDetails {
     }
 
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
-        final DefaultIssue issue = componentIssue.getIssue();
+        final PostAnalysisIssueVisitor.LightIssue issue = componentIssue.getIssue();
 
         String baseImageUrl = getBaseImageUrl();
 

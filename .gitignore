@@ -11,5 +11,11 @@
 /.idea/
 *.iml
 
+# Eclipse
+/.classpath
+/.project
+/.settings/
+/bin/
+
 #Project libs
 /sonarqube-lib/
