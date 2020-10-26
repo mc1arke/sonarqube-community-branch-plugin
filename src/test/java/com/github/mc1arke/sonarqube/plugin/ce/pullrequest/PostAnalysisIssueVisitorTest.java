@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 import org.junit.Test;
+import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.core.issue.DefaultIssue;
 
@@ -26,9 +27,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class PostAnalysisIssueVisitorTest {
+
+    private static final long EXAMPLE_ISSUE_EFFORT_IN_MINUTES = 15L;
+    private static final String EXAMPLE_ISSUE_KEY = "key";
+    private static final int EXAMPLE_ISSUE_LINE = 1000;
+    private static final String EXAMPLE_ISSUE_MESSAGE = "message";
+    private static final String EXAMPLE_ISSUE_RESOLUTION = "resolution";
+    private static final String EXAMPLE_ISSUE_SEVERITY = "severity";
+    private static final String EXAMPLE_ISSUE_STATUS = "status";
+    private static final RuleType EXAMPLE_ISSUE_TYPE = RuleType.BUG;
 
     @Test
     public void checkAllIssuesCollected() {
@@ -50,4 +65,97 @@ public class PostAnalysisIssueVisitorTest {
             assertThat(testCase.getIssues().get(i).getComponent()).isEqualTo(expected.get(i).getComponent());
         }
     }
+
+    private DefaultIssue exampleDefaultIssue() {
+        DefaultIssue defaultIssue = mock(DefaultIssue.class);
+        doReturn(EXAMPLE_ISSUE_EFFORT_IN_MINUTES).when(defaultIssue).effortInMinutes();
+        doReturn(EXAMPLE_ISSUE_KEY).when(defaultIssue).key();
+        doReturn(EXAMPLE_ISSUE_LINE).when(defaultIssue).getLine();
+        doReturn(EXAMPLE_ISSUE_MESSAGE).when(defaultIssue).getMessage();
+        doReturn(EXAMPLE_ISSUE_RESOLUTION).when(defaultIssue).resolution();
+        doReturn(EXAMPLE_ISSUE_SEVERITY).when(defaultIssue).severity();
+        doReturn(EXAMPLE_ISSUE_STATUS).when(defaultIssue).status();
+        doReturn(EXAMPLE_ISSUE_TYPE).when(defaultIssue).type();
+        return defaultIssue;
+    }
+
+    @Test
+    public void testLightIssueMapping() {
+        // mock a DefaultIssue
+        DefaultIssue defaultIssue = exampleDefaultIssue();
+
+        // map the DefaultIssue into a LightIssue (using PostAnalysisIssueVisitor to workaround private constructor)
+        PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
+        visitor.onIssue(null, defaultIssue);
+        PostAnalysisIssueVisitor.LightIssue lightIssue = visitor.getIssues().get(0).getIssue();
+
+        // check values equality, twice (see below)
+        for (int i = 0; i < 2; i++) {
+            assertThat(lightIssue.effortInMinutes()).isEqualTo(EXAMPLE_ISSUE_EFFORT_IN_MINUTES);
+            assertThat(lightIssue.key()).isEqualTo(EXAMPLE_ISSUE_KEY);
+            assertThat(lightIssue.getLine()).isEqualTo(EXAMPLE_ISSUE_LINE);
+            assertThat(lightIssue.getMessage()).isEqualTo(EXAMPLE_ISSUE_MESSAGE);
+            assertThat(lightIssue.resolution()).isEqualTo(EXAMPLE_ISSUE_RESOLUTION);
+            assertThat(lightIssue.severity()).isEqualTo(EXAMPLE_ISSUE_SEVERITY);
+            assertThat(lightIssue.status()).isEqualTo(EXAMPLE_ISSUE_STATUS);
+            assertThat(lightIssue.getStatus()).isEqualTo(EXAMPLE_ISSUE_STATUS); // alias getter
+            assertThat(lightIssue.type()).isEqualTo(EXAMPLE_ISSUE_TYPE);
+        }
+
+        // check DefaultIssue getters have been called _exactly once_
+        verify(defaultIssue).effortInMinutes();
+        verify(defaultIssue).key();
+        verify(defaultIssue).getLine();
+        verify(defaultIssue).getMessage();
+        verify(defaultIssue).resolution();
+        verify(defaultIssue).severity();
+        verify(defaultIssue).status();
+        verify(defaultIssue).type();
+        verifyNoMoreInteractions(defaultIssue);
+    }
+
+    @Test
+    public void testEqualLightIssues() {
+        DefaultIssue defaultIssue = exampleDefaultIssue();
+
+        // map the DefaultIssue into two equal LightIssues
+        PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
+        visitor.onIssue(null, defaultIssue);
+        visitor.onIssue(null, defaultIssue);
+        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().get(0).getIssue();
+        PostAnalysisIssueVisitor.LightIssue lightIssue2 = visitor.getIssues().get(1).getIssue();
+
+        // assert equality
+        assertEquals(lightIssue1, lightIssue2);
+        assertEquals(lightIssue1.hashCode(), lightIssue2.hashCode());
+
+        // also assert equality on identity
+        assertEquals(lightIssue1, lightIssue1);
+        assertEquals(lightIssue1.hashCode(), lightIssue1.hashCode());
+    }
+
+    @Test
+    public void testDifferentLightIssues() {
+        DefaultIssue defaultIssue = exampleDefaultIssue();
+
+        // map the DefaultIssue into a first LightIssue
+        PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
+        visitor.onIssue(null, defaultIssue);
+        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().get(0).getIssue();
+
+        // map a slightly different DefaultIssue into an other LightIssue
+        doReturn("another message").when(defaultIssue).getMessage();
+        visitor.onIssue(null, defaultIssue);
+        PostAnalysisIssueVisitor.LightIssue lightIssue2 = visitor.getIssues().get(1).getIssue();
+
+        // assert difference
+        assertNotEquals(lightIssue1, lightIssue2);
+        assertNotEquals(lightIssue1.hashCode(), lightIssue2.hashCode());
+
+        // also assert difference with unrelated objects, and null
+        assertNotEquals(lightIssue1, new Object());
+        assertNotEquals(lightIssue1, null);
+        
+    }
+
 }
