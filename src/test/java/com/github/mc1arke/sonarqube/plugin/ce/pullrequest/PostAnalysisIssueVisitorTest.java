@@ -19,9 +19,11 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 import org.junit.Test;
+import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.core.issue.DefaultIssue;
+import org.sonar.db.protobuf.DbIssues;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +46,8 @@ public class PostAnalysisIssueVisitorTest {
     private static final String EXAMPLE_ISSUE_SEVERITY = "severity";
     private static final String EXAMPLE_ISSUE_STATUS = "status";
     private static final RuleType EXAMPLE_ISSUE_TYPE = RuleType.BUG;
+    private static final RuleKey EXAMPLE_ISSUE_RULEKEY = RuleKey.of("repo", "rule");
+    private static final DbIssues.Locations EXAMPLE_ISSUE_LOCATIONS = DbIssues.Locations.getDefaultInstance();
 
     @Test
     public void checkAllIssuesCollected() {
@@ -76,6 +80,8 @@ public class PostAnalysisIssueVisitorTest {
         doReturn(EXAMPLE_ISSUE_SEVERITY).when(defaultIssue).severity();
         doReturn(EXAMPLE_ISSUE_STATUS).when(defaultIssue).status();
         doReturn(EXAMPLE_ISSUE_TYPE).when(defaultIssue).type();
+        doReturn(EXAMPLE_ISSUE_RULEKEY).when(defaultIssue).getRuleKey();
+        doReturn(EXAMPLE_ISSUE_LOCATIONS).when(defaultIssue).getLocations();
         return defaultIssue;
     }
 
@@ -100,6 +106,8 @@ public class PostAnalysisIssueVisitorTest {
             assertThat(lightIssue.status()).isEqualTo(EXAMPLE_ISSUE_STATUS);
             assertThat(lightIssue.getStatus()).isEqualTo(EXAMPLE_ISSUE_STATUS); // alias getter
             assertThat(lightIssue.type()).isEqualTo(EXAMPLE_ISSUE_TYPE);
+            assertThat(lightIssue.getRuleKey()).isEqualTo(EXAMPLE_ISSUE_RULEKEY);
+            assertThat(lightIssue.getLocations()).isEqualTo(EXAMPLE_ISSUE_LOCATIONS);
         }
 
         // check DefaultIssue getters have been called _exactly once_
@@ -111,6 +119,8 @@ public class PostAnalysisIssueVisitorTest {
         verify(defaultIssue).severity();
         verify(defaultIssue).status();
         verify(defaultIssue).type();
+        verify(defaultIssue).getRuleKey();
+        verify(defaultIssue).getLocations();
         verifyNoMoreInteractions(defaultIssue);
     }
 
