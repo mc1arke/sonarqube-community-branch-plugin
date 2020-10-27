@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 public class ErrorResponse implements Serializable {
@@ -32,7 +33,7 @@ public class ErrorResponse implements Serializable {
     }
 
     public Set<Error> getErrors() {
-        return Collections.unmodifiableSet(errors);
+        return Optional.ofNullable(errors).map(Collections::unmodifiableSet).orElse(null);
     }
 
     public static class Error implements Serializable {
