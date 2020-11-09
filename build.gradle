@@ -56,7 +56,6 @@ compileJava {
 
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
     compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
     testCompile fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
     testCompile group: 'junit', name: 'junit', version: '4.12'
