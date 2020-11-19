@@ -123,20 +123,8 @@ public class GitlabServerPullRequestDecoratorTest {
                 "    \"id\": \"" + commitSHA + "\"\n" +
                 "  }]")));
 
-        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions")).willReturn(okJson("[\n" +
-                "  {\n" +
-                "    \"id\": \"" + discussionId + "\",\n" +
-                "    \"individual_note\": false,\n" +
-                "    \"notes\": [\n" +
-                "      {\n" +
-                "        \"id\": " + noteId + ",\n" +
-                "        \"type\": \"DiscussionNote\",\n" +
-                "        \"body\": \"discussion text\",\n" +
-                "        \"attachment\": null,\n" +
-                "        \"author\": {\n" +
-                "          \"id\": 1,\n" +
-                "          \"username\": \"" + user + "\"\n" +
-                "        }}]}]")));
+        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions")).willReturn(okJson(
+                "[\n" + discussionPostResponseBody(discussionId, noteId, user) + "]")));
 
         wireMockRule.stubFor(delete(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions/" + discussionId + "/notes/" + noteId)).willReturn(noContent()));
 
@@ -149,7 +137,7 @@ public class GitlabServerPullRequestDecoratorTest {
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
                 .withRequestBody(equalTo("body=summary"))
-                .willReturn(created()));
+                .willReturn(created().withBody(discussionPostResponseBody(discussionId, noteId, user))));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
                 .withRequestBody(equalTo("body=issue&" +
@@ -160,7 +148,7 @@ public class GitlabServerPullRequestDecoratorTest {
                         urlEncode("position[new_path]") + "=" + urlEncode(filePath) + "&" +
                         urlEncode("position[new_line]") + "=" + lineNumber + "&" +
                         urlEncode("position[position_type]") + "=text"))
-                .willReturn(created()));
+                .willReturn(created().withBody(discussionPostResponseBody(discussionId, noteId, user))));
 
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
@@ -169,6 +157,23 @@ public class GitlabServerPullRequestDecoratorTest {
 
 
         pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+    }
+
+    private String discussionPostResponseBody(String discussionId, String noteId, String username) {
+        return "{\n" +
+                "    \"id\": \"" + discussionId + "\",\n" +
+                "    \"individual_note\": false,\n" +
+                "    \"notes\": [\n" +
+                "      {\n" +
+                "        \"id\": " + noteId + ",\n" +
+                "        \"type\": \"DiscussionNote\",\n" +
+                "        \"body\": \"discussion text\",\n" +
+                "        \"attachment\": null,\n" +
+                "        \"author\": {\n" +
+                "          \"id\": 1,\n" +
+                "          \"username\": \"" + username + "\"\n" +
+                "        }}]" +
+                "}";
     }
 
     private static String urlEncode(String value) {

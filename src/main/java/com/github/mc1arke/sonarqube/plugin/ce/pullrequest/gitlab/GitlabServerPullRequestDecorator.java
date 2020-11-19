@@ -41,6 +41,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
@@ -165,15 +166,19 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 
-            String summaryComment = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
+            String summaryCommentBody = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
             List<NameValuePair> summaryContentParams = Collections
-                    .singletonList(new BasicNameValuePair("body", summaryComment));
+                    .singletonList(new BasicNameValuePair("body", summaryCommentBody));
 
             String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.ZERO).toString();
 
             postStatus(new StringBuilder(statusUrl), headers, analysis, coverageValue);
 
-            postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams);
+            Discussion summaryComment = postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams);
+            if (null != summaryComment && analysis.getQualityGateStatus() == QualityGate.Status.OK) {
+                resolveCommitComment(mergeRequestDiscussionURL, headers, summaryComment);
+            }
+
 
             for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
                 String path = analysis.getSCMPathForIssue(issue).orElse(null);
@@ -298,7 +303,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
         }
     }
 
-    private void postCommitComment(String commitCommentUrl, Map<String, String> headers, List<NameValuePair> params) throws IOException {
+    private Discussion postCommitComment(String commitCommentUrl, Map<String, String> headers, List<NameValuePair> params) throws IOException {
         //https://docs.gitlab.com/ee/api/commits.html#post-comment-to-commit
         HttpPost httpPost = new HttpPost(commitCommentUrl);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -308,9 +313,35 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
         LOGGER.info("Posting {} with headers {} to {}", params, headers, commitCommentUrl);
 
+        Discussion newComment = null;
+
         try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
             HttpResponse httpResponse = httpClient.execute(httpPost);
             validateGitlabResponse(httpResponse, 201, "Comment posted");
+            HttpEntity httpEntity = httpResponse.getEntity();
+            if (null != httpEntity) {
+                String json = IOUtils.toString(httpEntity.getContent(), StandardCharsets.UTF_8);
+                newComment = new ObjectMapper()
+                        .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
+                        .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .readValue(json, Discussion.class);
+            }
+        }
+
+        return newComment;
+    }
+
+    private void resolveCommitComment(String commitCommentUrl, Map<String, String> headers, Discussion comment) throws IOException {
+        String statusPutUrl = commitCommentUrl + "/" + comment.getId() + "?resolved=true";
+        HttpPut httpPut = new HttpPut(statusPutUrl);
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            httpPut.addHeader(entry.getKey(), entry.getValue());
+        }
+        LOGGER.info("Resolving discussion {} with headers {} via {}", comment.getId(), headers, commitCommentUrl);
+        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+            HttpResponse httpResponse = httpClient.execute(httpPut);
+            validateGitlabResponse(httpResponse, 200, "Comment resolved");
         }
     }
 
