@@ -2,6 +2,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
@@ -368,6 +369,17 @@ public class BitbucketServerClientUnitTest {
         // then
         assertTrue(data instanceof DataValue.Link);
         assertEquals("https://localhost:9000/any/project", ((DataValue.Link) data).getHref());
+    }
+
+    @Test
+    public void testUploadLimit() {
+        // given
+        // when
+        AnnotationUploadLimit annotationUploadLimit = underTest.getAnnotationUploadLimit();
+
+        // then
+        assertEquals(1000, annotationUploadLimit.getAnnotationBatchSize());
+        assertEquals(1000, annotationUploadLimit.getTotalAllowedAnnotations());
     }
 
     @Test
