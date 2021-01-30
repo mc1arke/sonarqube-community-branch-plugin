@@ -14,7 +14,7 @@ Use the following table to find the correct plugin version for each SonarQube ve
 
 SonarQube Version | Plugin Version
 ------------------|---------------
-8.5               | 1.6.0
+8.5 - 8.6         | 1.6.0
 8.2 - 8.4         | 1.5.0
 8.1               | 1.4.0
 7.8 - 8.0         | 1.3.2
