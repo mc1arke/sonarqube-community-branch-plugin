@@ -31,6 +31,7 @@ import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.AlmSettingsWs;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.CountBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.DeleteAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.DeleteBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.ValidateAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.GetBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.ListAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.ListDefinitionsAction;
@@ -74,7 +75,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
         } else if (SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class,
 
-                                  AlmSettingsWs.class, CountBindingAction.class, DeleteAction.class,
+                                  AlmSettingsWs.class, CountBindingAction.class, DeleteAction.class, ValidateAction.class,
                                   DeleteBindingAction.class, ListAction.class, ListDefinitionsAction.class,
                                   GetBindingAction.class,
 
