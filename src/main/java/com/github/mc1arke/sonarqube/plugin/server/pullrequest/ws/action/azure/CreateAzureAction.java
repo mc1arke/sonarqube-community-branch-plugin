@@ -29,6 +29,7 @@ import static org.sonar.db.alm.setting.ALM.AZURE_DEVOPS;
 
 public class CreateAzureAction extends CreateAction {
 
+    private static final String URL_PARAMETER = "url";
     private static final String PERSONAL_ACCESS_TOKEN_PARAMETER = "personalAccessToken";
 
 
@@ -39,6 +40,7 @@ public class CreateAzureAction extends CreateAction {
     @Override
     public void configureAction(WebService.NewAction action) {
         action.createParam(PERSONAL_ACCESS_TOKEN_PARAMETER).setRequired(true).setMaximumLength(2000);
+        action.createParam(URL_PARAMETER).setRequired(true).setMaximumLength(2000);
     }
 
     @Override
@@ -46,6 +48,7 @@ public class CreateAzureAction extends CreateAction {
         return new AlmSettingDto()
             .setAlm(AZURE_DEVOPS)
             .setKey(key)
+            .setUrl(request.mandatoryParam(URL_PARAMETER))
             .setPersonalAccessToken(request.mandatoryParam(PERSONAL_ACCESS_TOKEN_PARAMETER));
     }
 

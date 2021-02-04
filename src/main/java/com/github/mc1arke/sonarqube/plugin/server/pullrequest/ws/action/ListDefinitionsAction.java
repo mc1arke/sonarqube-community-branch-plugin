@@ -69,22 +69,19 @@ public class ListDefinitionsAction extends AlmSettingsWsAction {
 
         try (DbSession dbSession = dbClient.openSession(false)) {
             List<AlmSettingDto> settings = dbClient.almSettingDao().selectAll(dbSession);
-            Map<ALM, List<AlmSettingDto>> settingsByAlm =
-                    settings.stream().collect(Collectors.groupingBy(AlmSettingDto::getAlm));
-            List<AlmSettingGithub> githubSettings =
-                    settingsByAlm.getOrDefault(ALM.GITHUB, emptyList()).stream().map(ListDefinitionsAction::toGitHub)
-                            .collect(Collectors.toList());
+            Map<ALM, List<AlmSettingDto>> settingsByAlm = settings.stream()
+                    .collect(Collectors.groupingBy(AlmSettingDto::getAlm));
+            List<AlmSettingGithub> githubSettings = settingsByAlm.getOrDefault(ALM.GITHUB, emptyList()).stream()
+                    .map(ListDefinitionsAction::toGitHub).collect(Collectors.toList());
             List<AlmSettingAzure> azureSettings = settingsByAlm.getOrDefault(ALM.AZURE_DEVOPS, emptyList()).stream()
                     .map(ListDefinitionsAction::toAzure).collect(Collectors.toList());
-            List<AlmSettingBitbucket> bitbucketSettings =
-                    settingsByAlm.getOrDefault(ALM.BITBUCKET, emptyList()).stream()
-                            .map(ListDefinitionsAction::toBitbucket).collect(Collectors.toList());
-            List<AlmSettings.AlmSettingGitlab> gitlabSettings =
-                    settingsByAlm.getOrDefault(ALM.GITLAB, emptyList()).stream().map(ListDefinitionsAction::toGitlab)
-                            .collect(Collectors.toList());
-            ListDefinitionsWsResponse.Builder builder =
-                    ListDefinitionsWsResponse.newBuilder().addAllGithub(githubSettings).addAllAzure(azureSettings)
-                            .addAllBitbucket(bitbucketSettings).addAllGitlab(gitlabSettings);
+            List<AlmSettingBitbucket> bitbucketSettings = settingsByAlm.getOrDefault(ALM.BITBUCKET, emptyList())
+                    .stream().map(ListDefinitionsAction::toBitbucket).collect(Collectors.toList());
+            List<AlmSettings.AlmSettingGitlab> gitlabSettings = settingsByAlm.getOrDefault(ALM.GITLAB, emptyList())
+                    .stream().map(ListDefinitionsAction::toGitlab).collect(Collectors.toList());
+            ListDefinitionsWsResponse.Builder builder = ListDefinitionsWsResponse.newBuilder()
+                    .addAllGithub(githubSettings).addAllAzure(azureSettings).addAllBitbucket(bitbucketSettings)
+                    .addAllGitlab(gitlabSettings);
 
             protoBufWriter.write(builder.build(), request, response);
         }
@@ -92,35 +89,35 @@ public class ListDefinitionsAction extends AlmSettingsWsAction {
     }
 
     private static AlmSettingGithub toGitHub(AlmSettingDto settingDto) {
-        return AlmSettingGithub.newBuilder()
-            .setKey(settingDto.getKey())
-            .setUrl(requireNonNull(settingDto.getUrl(), "URL cannot be null for GitHub ALM setting"))
-            .setAppId(requireNonNull(settingDto.getAppId(), "App ID cannot be null for GitHub ALM setting"))
-            .setPrivateKey(requireNonNull(settingDto.getPrivateKey(), "Private Key cannot be null for GitHub ALM setting"))
-            .setClientId(Optional.ofNullable(settingDto.getClientId()).orElse(""))
-            .setClientSecret(Optional.ofNullable(settingDto.getClientSecret()).orElse(""))
-            .build();
+        return AlmSettingGithub.newBuilder().setKey(settingDto.getKey())
+                .setUrl(requireNonNull(settingDto.getUrl(), "URL cannot be null for GitHub ALM setting"))
+                .setAppId(requireNonNull(settingDto.getAppId(), "App ID cannot be null for GitHub ALM setting"))
+                .setPrivateKey(
+                        requireNonNull(settingDto.getPrivateKey(), "Private Key cannot be null for GitHub ALM setting"))
+                .setClientId(Optional.ofNullable(settingDto.getClientId()).orElse(""))
+                .setClientSecret(Optional.ofNullable(settingDto.getClientSecret()).orElse("")).build();
     }
 
     private static AlmSettingAzure toAzure(AlmSettingDto settingDto) {
-        return AlmSettingAzure.newBuilder()
-            .setKey(settingDto.getKey())
-            .setPersonalAccessToken(requireNonNull(settingDto.getPersonalAccessToken(), "Personal Access Token cannot be null for Azure ALM setting"))
-            .build();
+        return AlmSettingAzure.newBuilder().setKey(settingDto.getKey())
+                .setUrl(requireNonNull(settingDto.getUrl(), "URL cannot be null for Azure ALM setting"))
+                .setPersonalAccessToken(requireNonNull(settingDto.getPersonalAccessToken(),
+                        "Personal Access Token cannot be null for Azure ALM setting"))
+                .build();
     }
 
     private static AlmSettingBitbucket toBitbucket(AlmSettingDto settingDto) {
-        return AlmSettingBitbucket.newBuilder()
-            .setKey(settingDto.getKey())
-            .setUrl(requireNonNull(settingDto.getUrl(), "URL cannot be null for Bitbucket ALM setting"))
-            .setPersonalAccessToken(requireNonNull(settingDto.getPersonalAccessToken(), "Personal Access Token cannot be null for Bitbucket ALM setting"))
-            .build();
+        return AlmSettingBitbucket.newBuilder().setKey(settingDto.getKey())
+                .setUrl(requireNonNull(settingDto.getUrl(), "URL cannot be null for Bitbucket ALM setting"))
+                .setPersonalAccessToken(requireNonNull(settingDto.getPersonalAccessToken(),
+                        "Personal Access Token cannot be null for Bitbucket ALM setting"))
+                .build();
     }
 
     private static AlmSettings.AlmSettingGitlab toGitlab(AlmSettingDto settingDto) {
-        AlmSettings.AlmSettingGitlab.Builder almSettingBuilder =  AlmSettings.AlmSettingGitlab.newBuilder()
-            .setKey(settingDto.getKey())
-            .setPersonalAccessToken(requireNonNull(settingDto.getPersonalAccessToken(), "Personal Access Token cannot be null for Gitlab ALM setting"));
+        AlmSettings.AlmSettingGitlab.Builder almSettingBuilder = AlmSettings.AlmSettingGitlab.newBuilder()
+                .setKey(settingDto.getKey()).setPersonalAccessToken(requireNonNull(settingDto.getPersonalAccessToken(),
+                        "Personal Access Token cannot be null for Gitlab ALM setting"));
 
         Optional.ofNullable(settingDto.getUrl()).ifPresent(almSettingBuilder::setUrl);
 
