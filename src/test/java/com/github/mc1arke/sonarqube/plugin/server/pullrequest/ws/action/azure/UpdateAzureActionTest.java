@@ -29,11 +29,19 @@ public class UpdateAzureActionTest {
         when(personalAccessTokenParameter.setRequired(anyBoolean())).thenReturn(personalAccessTokenParameter);
         when(newAction.createParam(eq("personalAccessToken"))).thenReturn(personalAccessTokenParameter);
 
+        WebService.NewParam urlParameter = mock(WebService.NewParam.class);
+        when(urlParameter.setMaximumLength(any(Integer.class))).thenReturn(urlParameter);
+        when(urlParameter.setRequired(anyBoolean())).thenReturn(urlParameter);
+        when(newAction.createParam(eq("url"))).thenReturn(urlParameter);
+
         UpdateAzureAction testCase = new UpdateAzureAction(dbClient, userSession);
         testCase.configureAction(newAction);
 
         verify(personalAccessTokenParameter).setRequired(eq(true));
         verify(personalAccessTokenParameter).setMaximumLength(2000);
+
+        verify(urlParameter).setRequired(eq(true));
+        verify(urlParameter).setMaximumLength(2000);
     }
 
     @Test

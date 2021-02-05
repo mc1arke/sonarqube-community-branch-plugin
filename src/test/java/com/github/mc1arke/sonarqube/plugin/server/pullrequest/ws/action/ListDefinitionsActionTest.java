@@ -72,6 +72,7 @@ public class ListDefinitionsActionTest {
         AlmSettingDto azureDevOpsAlmSettingDto = mock(AlmSettingDto.class);
         when(azureDevOpsAlmSettingDto.getAlm()).thenReturn(ALM.AZURE_DEVOPS);
         when(azureDevOpsAlmSettingDto.getKey()).thenReturn("azureDevopsKey");
+        when(azureDevOpsAlmSettingDto.getUrl()).thenReturn("azureDevopsUrl");
         when(azureDevOpsAlmSettingDto.getPersonalAccessToken()).thenReturn("azureDevOpsPersonalAccessToken");
 
         when(almSettingDao.selectAll(eq(dbSession))).thenReturn(Arrays.asList(
@@ -106,6 +107,7 @@ public class ListDefinitionsActionTest {
             .addAzure(AlmSettings.AlmSettingAzure.newBuilder()
                 .setKey("azureDevopsKey")
                 .setPersonalAccessToken("azureDevOpsPersonalAccessToken")
+                .setUrl("azureDevopsUrl")
                 .build())
             .addBitbucket(AlmSettings.AlmSettingBitbucket.newBuilder()
                 .setKey("bitbucketKey")
