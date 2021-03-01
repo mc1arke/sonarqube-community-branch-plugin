@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,29 +16,26 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.cloud;
 
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.AlmSettingsWsAction;
-import org.sonar.api.server.ws.WebService;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 
-import java.util.List;
+public class BitbucketCloudConfiguration extends BitbucketConfiguration {
 
-public class AlmSettingsWs implements WebService {
-    private final List<AlmSettingsWsAction> actions;
+    private final String clientId;
+    private final String secret;
 
-    public AlmSettingsWs(List<AlmSettingsWsAction> actions) {
-        super();
-        this.actions = actions;
+    public BitbucketCloudConfiguration(String repository, String project, String clientId, String secret) {
+        super(repository, project);
+        this.clientId = clientId;
+        this.secret = secret;
     }
 
-    @Override
-    public void define(Context context) {
-        NewController controller = context.createController("api/alm_settings");
+    public String getClientId() {
+        return clientId;
+    }
 
-        for (AlmSettingsWsAction action : actions) {
-            action.define(controller);
-        }
-
-        controller.done();
+    public String getSecret() {
+        return secret;
     }
 }

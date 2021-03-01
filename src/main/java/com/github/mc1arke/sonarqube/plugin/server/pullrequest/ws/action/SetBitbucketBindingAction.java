@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,9 +16,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.bitbucket;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBindingAction;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
@@ -49,7 +48,8 @@ public class SetBitbucketBindingAction extends SetBindingAction {
                 .setProjectUuid(projectUuid)
                 .setAlmSettingUuid(settingsUuid)
                 .setAlmRepo(request.mandatoryParam(REPOSITORY_PARAMETER))
-                .setAlmSlug(request.mandatoryParam(SLUG_PARAMETER));
+                .setAlmSlug(request.mandatoryParam(SLUG_PARAMETER))
+                .setMonorepo(false);
     }
 
 }

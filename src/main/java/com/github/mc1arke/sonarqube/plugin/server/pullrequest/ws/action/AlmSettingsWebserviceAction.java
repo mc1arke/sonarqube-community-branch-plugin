@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,16 +21,16 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.server.almsettings.ws.AlmSettingsWsAction;
 import org.sonar.server.exceptions.NotFoundException;
-import org.sonar.server.ws.WsAction;
 
 import static java.lang.String.format;
 
-public abstract class AlmSettingsWsAction implements WsAction {
+public abstract class AlmSettingsWebserviceAction implements AlmSettingsWsAction {
 
     private final DbClient dbClient;
 
-    protected AlmSettingsWsAction(DbClient dbClient) {
+    protected AlmSettingsWebserviceAction(DbClient dbClient) {
         super();
         this.dbClient = dbClient;
     }

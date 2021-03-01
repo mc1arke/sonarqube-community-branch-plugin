@@ -4,7 +4,6 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,7 +54,7 @@ public class BitbucketPullRequestDecoratorTest {
 
     private BitbucketPullRequestDecorator underTest = new BitbucketPullRequestDecorator() {
         @Override
-        BitbucketClient createClient(BitbucketConfiguration bitbucketConfiguration) {
+        BitbucketClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
             return client;
         }
     };
@@ -66,8 +64,8 @@ public class BitbucketPullRequestDecoratorTest {
 
     @Before
     public void setUp() {
-        when(projectAlmSettingDto.getAlmSlug()).thenReturn(REPO);
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn(PROJECT);
+        when(client.resolveProject(any(), any())).thenReturn(PROJECT);
+        when(client.resolveRepository(any(), any())).thenReturn(REPO);
     }
 
     @Test
