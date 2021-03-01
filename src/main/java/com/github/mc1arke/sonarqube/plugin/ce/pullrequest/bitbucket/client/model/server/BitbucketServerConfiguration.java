@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,18 +16,26 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server;
 
-import org.sonar.db.alm.setting.ALM;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 
-import java.util.List;
+public class BitbucketServerConfiguration extends BitbucketConfiguration {
 
-public interface PullRequestBuildStatusDecorator {
+    private final String url;
+    private final String personalAccessToken;
 
-    DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
-                                   ProjectAlmSettingDto projectAlmSettingDto);
+    public BitbucketServerConfiguration(String almRepo, String almSlug, String url, String personalAccessToken) {
+        super(almRepo, almSlug);
+        this.url = url;
+        this.personalAccessToken = personalAccessToken;
+    }
 
-    List<ALM> alm();
+    public String getUrl() {
+        return url;
+    }
+
+    public String getPersonalAccessToken() {
+        return personalAccessToken;
+    }
 }

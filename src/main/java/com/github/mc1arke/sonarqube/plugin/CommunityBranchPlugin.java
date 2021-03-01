@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,25 +27,15 @@ import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectPullRequestsL
 import com.github.mc1arke.sonarqube.plugin.scanner.ScannerPullRequestPropertySensor;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.AlmSettingsWs;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.CountBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.DeleteAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.DeleteBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.GetBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.ListAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.ListDefinitionsAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.azure.CreateAzureAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.azure.SetAzureBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.azure.UpdateAzureAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.bitbucket.CreateBitbucketAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.bitbucket.SetBitbucketBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.bitbucket.UpdateBitbucketAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.github.CreateGithubAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.github.SetGithubBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.github.UpdateGithubAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.gitlab.CreateGitlabAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.gitlab.SetGitlabBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.gitlab.UpdateGitlabAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetAzureBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBitbucketBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBitbucketCloudBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetGithubBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetGitlabBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.CreateBitbucketCloudAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.UpdateBitbucketCloudAction;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.Plugin;
 import org.sonar.api.PropertyType;
@@ -74,18 +64,14 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
         } else if (SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class,
 
-                                  AlmSettingsWs.class, CountBindingAction.class, DeleteAction.class,
-                                  DeleteBindingAction.class, ListAction.class, ListDefinitionsAction.class,
-                                  GetBindingAction.class,
+                                  CountBindingAction.class,
+                                  DeleteBindingAction.class,
+                                  SetGithubBindingAction.class,
+                                  SetAzureBindingAction.class,
+                                  SetBitbucketBindingAction.class,
+                                  SetBitbucketCloudBindingAction.class,
+                                  SetGitlabBindingAction.class, CreateBitbucketCloudAction.class, UpdateBitbucketCloudAction.class,
 
-                                  CreateGithubAction.class, SetGithubBindingAction.class, UpdateGithubAction.class,
-
-                                  CreateAzureAction.class, SetAzureBindingAction.class, UpdateAzureAction.class,
-
-                                  CreateBitbucketAction.class, SetBitbucketBindingAction.class,
-                                  UpdateBitbucketAction.class,
-
-                                  CreateGitlabAction.class, SetGitlabBindingAction.class, UpdateGitlabAction.class,
 
                 /* org.sonar.db.purge.PurgeConfiguration uses the value for the this property if it's configured, so it only
                 needs to be specified here, but doesn't need any additional classes to perform the relevant purge/cleanup

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Mathias Åhsberg
+ * Copyright (C) 2020-2021 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,12 +20,12 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.Annotation;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.BitbucketServerConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.CreateAnnotationsRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.CreateReportRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.ErrorResponse;
@@ -39,6 +39,8 @@ import okhttp3.Response;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -57,10 +59,10 @@ public class BitbucketServerClient implements BitbucketClient {
     private static final String REPORTER = "SonarQube";
     private static final String LINK_TEXT = "Go to SonarQube";
 
-    private final BitbucketConfiguration config;
+    private final BitbucketServerConfiguration config;
     private final ObjectMapper objectMapper;
 
-    public BitbucketServerClient(BitbucketConfiguration config, ObjectMapper objectMapper) {
+    public BitbucketServerClient(BitbucketServerConfiguration config, ObjectMapper objectMapper) {
         this.config = config;
         this.objectMapper = objectMapper;
     }
@@ -108,7 +110,7 @@ public class BitbucketServerClient implements BitbucketClient {
             return;
         }
         Request req = new Request.Builder()
-                .post(RequestBody.create(APPLICATION_JSON_MEDIA_TYPE, objectMapper.writeValueAsString(request)))
+                .post(RequestBody.create(objectMapper.writeValueAsString(request), APPLICATION_JSON_MEDIA_TYPE))
                 .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), project, repository, commit, REPORT_KEY))
                 .build();
         try (Response response = getClient().newCall(req).execute()) {
@@ -125,7 +127,7 @@ public class BitbucketServerClient implements BitbucketClient {
     public void uploadReport(String project, String repository, String commit, CodeInsightsReport codeInsightReport) throws IOException {
         String body = objectMapper.writeValueAsString(codeInsightReport);
         Request req = new Request.Builder()
-                .put(RequestBody.create(APPLICATION_JSON_MEDIA_TYPE, body))
+                .put(RequestBody.create(body, APPLICATION_JSON_MEDIA_TYPE))
                 .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", config.getUrl(), project, repository, commit, REPORT_KEY))
                 .build();
 
@@ -157,6 +159,16 @@ public class BitbucketServerClient implements BitbucketClient {
         return new AnnotationUploadLimit(1000, 1000);
     }
 
+    @Override
+    public String resolveProject(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
+        return projectAlmSettingDto.getAlmRepo();
+    }
+
+    @Override
+    public String resolveRepository(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
+        return projectAlmSettingDto.getAlmSlug();
+    }
+
     public ServerProperties getServerProperties() throws IOException {
         Request req = new Request.Builder()
                 .get()
@@ -177,7 +189,7 @@ public class BitbucketServerClient implements BitbucketClient {
         return new OkHttpClient.Builder()
                 .addInterceptor(chain -> {
                     Request newRequest = chain.request().newBuilder()
-                            .addHeader("Authorization", format("Bearer %s", config.getToken()))
+                            .addHeader("Authorization", format("Bearer %s", config.getPersonalAccessToken()))
                             .addHeader("Accept", APPLICATION_JSON_MEDIA_TYPE.toString())
                             .build();
                     return chain.proceed(newRequest);

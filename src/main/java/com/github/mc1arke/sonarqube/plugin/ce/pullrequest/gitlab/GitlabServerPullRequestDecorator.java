@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2021 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -214,8 +214,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
 
     @Override
-    public ALM alm() {
-        return ALM.GITLAB;
+    public List<ALM> alm() {
+        return Collections.singletonList(ALM.GITLAB);
     }
 
     private <X> X getSingle(String userURL, Map<String, String> headers, Class<X> type) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Marvin Wichmann
+ * Copyright (C) 2020-2021 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,17 +21,21 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.cloud.BitbucketCloudConfiguration;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.BitbucketServerConfiguration;
+import org.sonar.db.alm.setting.ALM;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 public final class BitbucketClientFactory {
     private BitbucketClientFactory() {
     }
 
-    public static BitbucketClient createClient(BitbucketConfiguration bitbucketConfiguration) {
-        if (bitbucketConfiguration.isCloud()) {
-            return new BitbucketCloudClient(bitbucketConfiguration, createObjectMapper());
+    public static BitbucketClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
+        if (almSettingDto.getAlm() == ALM.BITBUCKET_CLOUD) {
+            return new BitbucketCloudClient(new BitbucketCloudConfiguration(almSettingDto.getAppId(), projectAlmSettingDto.getAlmRepo(), almSettingDto.getClientId(), almSettingDto.getClientSecret()), createObjectMapper());
         } else {
-            return new BitbucketServerClient(bitbucketConfiguration, createObjectMapper());
+            return new BitbucketServerClient(new BitbucketServerConfiguration(projectAlmSettingDto.getAlmRepo(), projectAlmSettingDto.getAlmSlug(), almSettingDto.getUrl(), almSettingDto.getPersonalAccessToken()), createObjectMapper());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Marvin Wichmann
+ * Copyright (C) 2020-2021 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,17 +18,12 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model;
 
-import java.util.Locale;
-
 public class BitbucketConfiguration {
-    private final String url;
-    private final String token;
+
     private final String repository;
     private final String project;
 
-    public BitbucketConfiguration(String url, String token, String repository, String project) {
-        this.url = url;
-        this.token = token;
+    public BitbucketConfiguration(String repository, String project) {
         this.repository = repository;
         this.project = project;
     }
@@ -37,19 +32,8 @@ public class BitbucketConfiguration {
         return repository;
     }
 
-    public String getToken() {
-        return token;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
     public String getProject() {
         return project;
     }
 
-    public boolean isCloud() {
-        return url.toLowerCase(Locale.ENGLISH).startsWith("https://api.bitbucket.org");
-    }
 }

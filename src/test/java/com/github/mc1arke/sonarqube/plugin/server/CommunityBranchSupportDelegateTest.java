@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,6 @@ import org.sonar.db.component.BranchDto;
 import org.sonar.db.component.BranchType;
 import org.sonar.db.component.ComponentDao;
 import org.sonar.db.component.ComponentDto;
-import org.sonar.db.organization.OrganizationDto;
 import org.sonar.server.ce.queue.BranchSupport;
 
 import java.time.Clock;
@@ -128,7 +127,6 @@ public class CommunityBranchSupportDelegateTest {
     @Test
     public void testCreateBranchComponentComponentKeyComponentDtoKeyMismatch() {
         DbSession dbSession = mock(DbSession.class);
-        OrganizationDto organizationDto = mock(OrganizationDto.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
         when(componentDto.getKey()).thenReturn("otherComponentKey");
@@ -161,14 +159,13 @@ public class CommunityBranchSupportDelegateTest {
         expectedException.expectMessage(IsEqual.equalTo("Component Key and Main Component Key do not match"));
 
         new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, organizationDto, componentDto, branchDto);
+                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
     }
 
     @Test
     public void testCreateBranchComponent() {
         DbSession dbSession = mock(DbSession.class);
-        OrganizationDto organizationDto = mock(OrganizationDto.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
         when(componentDto.getKey()).thenReturn("componentKey");
@@ -206,7 +203,7 @@ public class CommunityBranchSupportDelegateTest {
         });
 
         ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, organizationDto, componentDto, branchDto);
+                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
         verify(componentDao).insert(dbSession, copyComponentDto);
         verify(copyComponentDto).setUuid("uuid0");
@@ -226,7 +223,6 @@ public class CommunityBranchSupportDelegateTest {
     @Test
     public void testCreateBranchComponentUseExistingDto() {
         DbSession dbSession = mock(DbSession.class);
-        OrganizationDto organizationDto = mock(OrganizationDto.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
         when(componentDto.getKey()).thenReturn("componentKey");
@@ -257,7 +253,7 @@ public class CommunityBranchSupportDelegateTest {
         UuidFactory uuidFactory = new SequenceUuidFactory();
 
         ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, organizationDto, componentDto, branchDto);
+                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
         assertSame(componentDto, result);
 
@@ -266,7 +262,6 @@ public class CommunityBranchSupportDelegateTest {
     @Test
     public void testCreateBranchComponentUseExistingDto2() {
         DbSession dbSession = mock(DbSession.class);
-        OrganizationDto organizationDto = mock(OrganizationDto.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
         when(componentDto.getKey()).thenReturn("componentKey");
@@ -297,7 +292,7 @@ public class CommunityBranchSupportDelegateTest {
         UuidFactory uuidFactory = new SequenceUuidFactory();
 
         ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, organizationDto, componentDto, branchDto);
+                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
         verify(componentDao).insert(dbSession, copyComponentDto);
         verify(copyComponentDto).setUuid("1");

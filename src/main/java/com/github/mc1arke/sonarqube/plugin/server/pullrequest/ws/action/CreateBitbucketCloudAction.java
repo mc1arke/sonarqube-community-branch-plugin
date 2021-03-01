@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,39 +16,42 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.gitlab;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.CreateAction;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.server.user.UserSession;
 
-import static org.sonar.db.alm.setting.ALM.GITLAB;
+import static org.sonar.db.alm.setting.ALM.BITBUCKET_CLOUD;
 
-public class CreateGitlabAction extends CreateAction {
+public class CreateBitbucketCloudAction extends CreateAction {
 
-    private static final String URL_PARAMETER = "url";
-    private static final String PERSONAL_ACCESS_TOKEN_PARAMETER = "personalAccessToken";
+    private static final String CLIENT_ID_PARAMETER = "clientId";
+    private static final String CLIENT_SECRET_PARAMETER = "clientSecret";
+    private static final String WORKSPACE_PARAMETER = "workspace";
 
-    public CreateGitlabAction(DbClient dbClient, UserSession userSession) {
-        super(dbClient, userSession, "create_gitlab");
+    public CreateBitbucketCloudAction(DbClient dbClient, UserSession userSession) {
+        super(dbClient, userSession, "create_bitbucketcloud");
     }
 
     @Override
     public void configureAction(WebService.NewAction action) {
-        action.createParam(URL_PARAMETER).setMaximumLength(2000);
-        action.createParam(PERSONAL_ACCESS_TOKEN_PARAMETER).setRequired(true).setMaximumLength(2000);
+        action.createParam(CLIENT_ID_PARAMETER).setRequired(true).setMaximumLength(2000);
+        action.createParam(CLIENT_SECRET_PARAMETER).setRequired(true).setMaximumLength(2000);
+        action.createParam(WORKSPACE_PARAMETER).setRequired(true);
     }
 
     @Override
     public AlmSettingDto createAlmSettingDto(String key, Request request) {
         return new AlmSettingDto()
-                .setAlm(GITLAB)
-                .setKey(key)
-                .setUrl(request.param(URL_PARAMETER))
-                .setPersonalAccessToken(request.mandatoryParam(PERSONAL_ACCESS_TOKEN_PARAMETER));
+            .setAlm(BITBUCKET_CLOUD)
+            .setKey(key)
+            .setClientId(request.mandatoryParam(CLIENT_ID_PARAMETER))
+            .setClientSecret(request.mandatoryParam(CLIENT_SECRET_PARAMETER))
+            .setAppId(request.mandatoryParam(WORKSPACE_PARAMETER));
     }
+
 
 }

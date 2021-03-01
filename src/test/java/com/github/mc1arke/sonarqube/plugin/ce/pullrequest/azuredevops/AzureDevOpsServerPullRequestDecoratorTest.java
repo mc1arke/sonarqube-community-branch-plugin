@@ -1,9 +1,10 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
 
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.AzurePullRequestDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.AzurePullRequestDetails;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -12,7 +13,6 @@ import org.sonar.api.platform.Server;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -21,20 +21,19 @@ import org.sonar.db.protobuf.DbIssues;
 import java.util.Collections;
 import java.util.Optional;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.patch;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.patch;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 
 public class AzureDevOpsServerPullRequestDecoratorTest {
@@ -245,7 +244,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
 
     @Test
     public void testName() {
-        assertThat(new AzureDevOpsServerPullRequestDecorator(mock(Server.class)).alm()).isEqualTo(ALM.AZURE_DEVOPS);
+        assertThat(new AzureDevOpsServerPullRequestDecorator(mock(Server.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
     }
 
     @Test
