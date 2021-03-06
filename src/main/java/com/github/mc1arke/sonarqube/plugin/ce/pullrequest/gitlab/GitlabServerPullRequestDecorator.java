@@ -119,8 +119,17 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final String projectURL = apiURL + String.format("/projects/%s", URLEncoder
                     .encode(projectId, StandardCharsets.UTF_8.name()));
             final String userURL = apiURL + "/user";
-            final String statusUrl = projectURL + String.format("/statuses/%s", revision);
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("PRIVATE-TOKEN", apiToken);
+            headers.put("Accept", "application/json");
+
+            MergeRequest mergeRequest = getSingle(mergeRequestURl, headers, MergeRequest.class);
+
+            final String sourceProjectURL = apiURL + String.format("/projects/%s", URLEncoder.encode(mergeRequest.getSourceProjectId(), StandardCharsets.UTF_8.name()));
+            final String statusUrl = sourceProjectURL + String.format("/statuses/%s", revision);
+
             final String prCommitsURL = mergeRequestURl + "/commits";
             final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
 
@@ -131,17 +140,11 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             LOGGER.info(String.format("MR discussion url is: %s ", mergeRequestDiscussionURL));
             LOGGER.info(String.format("User url is: %s ", userURL));
 
-            Map<String, String> headers = new HashMap<>();
-            headers.put("PRIVATE-TOKEN", apiToken);
-            headers.put("Accept", "application/json");
-
             User user = getSingle(userURL, headers, User.class);
             LOGGER.info(String.format("Using user: %s ", user.getUsername()));
 
             List<String> commits = getPagedList(prCommitsURL, headers, new TypeReference<List<Commit>>() {
             }).stream().map(Commit::getId).collect(Collectors.toList());
-            MergeRequest mergeRequest = getSingle(mergeRequestURl, headers, MergeRequest.class);
-
 
             List<Discussion> discussions = getPagedList(mergeRequestDiscussionURL, headers, new TypeReference<List<Discussion>>() {
             });
