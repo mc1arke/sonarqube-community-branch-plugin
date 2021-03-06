@@ -70,8 +70,13 @@ public class CommunityProjectPullRequestsLoader implements ProjectPullRequestsLo
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             long parsedDate = 0;
             try {
-                parsedDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-                        .parse(jsonObject.get("analysisDate").getAsString()).getTime();
+                String analysisDate = Optional.ofNullable(jsonObject.get("analysisDate")).map(JsonElement::getAsString).orElse(null);
+                if(analysisDate == null) {
+                    LOGGER.warn("Analysis Date not provided in Pull Requests API response. Will use '0' date");
+                } else {
+                    parsedDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+                            .parse(analysisDate).getTime();
+                }
             } catch (ParseException e) {
                 LOGGER.warn("Could not parse date from Pull Requests API response. Will use '0' date", e);
             }
