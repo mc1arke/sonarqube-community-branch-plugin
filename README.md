@@ -26,46 +26,6 @@ The plugin is intended to support the [features and parameters specified in the 
 # Installation
 Either build the project or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases). Copy the plugin JAR file to the `extensions/plugins/` **and** the `lib/common/` directories of your SonarQube instance and restart SonarQube.
 
-## Installation Docker
-Add download the plugin and mount it to the container see the last two volumes in the yaml below.
-```
-version: 2
-
-services:
-  sonarqube:
-    image: sonarqube:lts
-    container_name: sonarqube
-    ports:
-      - 9000:9000
-    networks:
-      - sonarnet
-    environment:
-      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonar
-      - SONARQUBE_JDBC_USERNAME=sonar
-      - SONARQUBE_JDBC_PASSWORD=sonar
-    volumes:
-      - sonarqube_conf:/opt/sonarqube/conf
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
-      - /home/user/sonarqube-community-branch-plugin-X.X.X.jar:/opt/sonarqube/extensions/plugins/sonarqube-community
--branch-plugin.jar
-      - /home/user/sonarqube-community-branch-plugin-X.X.X.jar:/opt/sonarqube/lib/common/sonarqube-community-branch
--plugin.jar
-
-  db:
-    image: postgres
-    container_name: postgres
-    networks:
-      - sonarnet
-    environment:
-      - POSTGRES_USER=sonar
-      - POSTGRES_PASSWORD=sonar
-    volumes:
-      - postgresql:/var/lib/postgresql
-      - postgresql_data:/var/lib/postgresql/data
-``` 
-
 # Configuration
 ## Global configuration
 Make sure `sonar.core.serverBaseURL` in SonarQube [/admin/settings](http://localhost:9000/admin/settings) is properly

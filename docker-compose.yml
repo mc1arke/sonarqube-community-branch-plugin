@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  sonarqube:
+    depends_on:
+      - db
+    image: mc1arke/sonarqube-with-community-branch-plugin:${SONARQUBE_VERSION}
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE}
+      args:
+        SONARQUBE_VERSION: ${SONARQUBE_VERSION}
+        PLUGIN_VERSION: ${PLUGIN_VERSION}
+    container_name: sonarqube
+    ports:
+      - 9000:9000
+    networks:
+      - sonarnet
+    environment:
+      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonar
+      - SONARQUBE_JDBC_USERNAME=sonar
+      - SONARQUBE_JDBC_PASSWORD=sonar
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+  db:
+    image: postgres:11
+    container_name: postgres
+    networks:
+      - sonarnet
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
+
+volumes:
+  sonarqube_conf:
+  sonarqube_data:
+  postgresql:
+  postgresql_data:
+
+networks:
+  sonarnet:
