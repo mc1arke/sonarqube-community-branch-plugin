@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,6 @@ import org.sonar.db.component.BranchDto;
 import org.sonar.db.component.BranchType;
 import org.sonar.db.component.ComponentDao;
 import org.sonar.db.component.ComponentDto;
-import org.sonar.db.organization.OrganizationDto;
 import org.sonar.server.ce.queue.BranchSupport;
 
 import java.time.Clock;
@@ -76,10 +75,9 @@ public class CommunityBranchSupportDelegateTest {
         assertEquals("yyy", componentKey.getKey());
         assertFalse(componentKey.getPullRequestKey().isPresent());
         assertFalse(componentKey.isMainBranch());
-        assertTrue(componentKey.getBranch().isPresent());
-        assertEquals("release-1.1", componentKey.getBranch().get().getName());
+        assertTrue(componentKey.getBranchName().isPresent());
+        assertEquals("release-1.1", componentKey.getBranchName().get());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
-        assertEquals(BranchType.BRANCH, componentKey.getBranch().get().getType());
     }
 
     @Test
@@ -95,7 +93,7 @@ public class CommunityBranchSupportDelegateTest {
         assertTrue(componentKey.getPullRequestKey().isPresent());
         assertEquals("pullrequestkey", componentKey.getPullRequestKey().get());
         assertFalse(componentKey.isMainBranch());
-        assertFalse(componentKey.getBranch().isPresent());
+        assertFalse(componentKey.getBranchName().isPresent());
         assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
         CommunityComponentKey mainBranchComponentKey = componentKey.getMainBranchComponentKey();
         assertSame(mainBranchComponentKey, mainBranchComponentKey.getMainBranchComponentKey());
@@ -129,7 +127,6 @@ public class CommunityBranchSupportDelegateTest {
     @Test
     public void testCreateBranchComponentComponentKeyComponentDtoKeyMismatch() {
         DbSession dbSession = mock(DbSession.class);
-        OrganizationDto organizationDto = mock(OrganizationDto.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
         when(componentDto.getKey()).thenReturn("otherComponentKey");
@@ -148,7 +145,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -162,14 +159,13 @@ public class CommunityBranchSupportDelegateTest {
         expectedException.expectMessage(IsEqual.equalTo("Component Key and Main Component Key do not match"));
 
         new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, organizationDto, componentDto, branchDto);
+                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
     }
 
     @Test
     public void testCreateBranchComponent() {
         DbSession dbSession = mock(DbSession.class);
-        OrganizationDto organizationDto = mock(OrganizationDto.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
         when(componentDto.getKey()).thenReturn("componentKey");
@@ -180,7 +176,7 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getUuid()).thenReturn("componentUuid");
-        when(branchDto.getKey()).thenReturn("dummy");
+        when(branchDto.getKey()).thenReturn("nonDummy");
 
         Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(12345678901234L);
@@ -188,7 +184,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = mock(ComponentDao.class);
@@ -207,7 +203,7 @@ public class CommunityBranchSupportDelegateTest {
         });
 
         ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, organizationDto, componentDto, branchDto);
+                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
         verify(componentDao).insert(dbSession, copyComponentDto);
         verify(copyComponentDto).setUuid("uuid0");
@@ -227,7 +223,6 @@ public class CommunityBranchSupportDelegateTest {
     @Test
     public void testCreateBranchComponentUseExistingDto() {
         DbSession dbSession = mock(DbSession.class);
-        OrganizationDto organizationDto = mock(OrganizationDto.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
         when(componentDto.getKey()).thenReturn("componentKey");
@@ -247,7 +242,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.of(new BranchSupport.Branch("dummy", BranchType.BRANCH)));
+        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = spy(mock(ComponentDao.class));
@@ -258,7 +253,7 @@ public class CommunityBranchSupportDelegateTest {
         UuidFactory uuidFactory = new SequenceUuidFactory();
 
         ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, organizationDto, componentDto, branchDto);
+                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
         assertSame(componentDto, result);
 
@@ -267,7 +262,6 @@ public class CommunityBranchSupportDelegateTest {
     @Test
     public void testCreateBranchComponentUseExistingDto2() {
         DbSession dbSession = mock(DbSession.class);
-        OrganizationDto organizationDto = mock(OrganizationDto.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
         when(componentDto.getKey()).thenReturn("componentKey");
@@ -287,7 +281,7 @@ public class CommunityBranchSupportDelegateTest {
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
         when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranch()).thenReturn(Optional.empty());
+        when(componentKey.getBranchName()).thenReturn(Optional.empty());
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = mock(ComponentDao.class);
@@ -298,7 +292,7 @@ public class CommunityBranchSupportDelegateTest {
         UuidFactory uuidFactory = new SequenceUuidFactory();
 
         ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, organizationDto, componentDto, branchDto);
+                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
         verify(componentDao).insert(dbSession, copyComponentDto);
         verify(copyComponentDto).setUuid("1");

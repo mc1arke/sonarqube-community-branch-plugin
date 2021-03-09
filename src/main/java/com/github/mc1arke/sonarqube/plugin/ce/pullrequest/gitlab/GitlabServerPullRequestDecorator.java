@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2021 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -120,8 +120,17 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             final String projectURL = apiURL + String.format("/projects/%s", URLEncoder
                     .encode(projectId, StandardCharsets.UTF_8.name()));
             final String userURL = apiURL + "/user";
-            final String statusUrl = projectURL + String.format("/statuses/%s", revision);
             final String mergeRequestURl = projectURL + String.format("/merge_requests/%s", pullRequestId);
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("PRIVATE-TOKEN", apiToken);
+            headers.put("Accept", "application/json");
+
+            MergeRequest mergeRequest = getSingle(mergeRequestURl, headers, MergeRequest.class);
+
+            final String sourceProjectURL = apiURL + String.format("/projects/%s", URLEncoder.encode(mergeRequest.getSourceProjectId(), StandardCharsets.UTF_8.name()));
+            final String statusUrl = sourceProjectURL + String.format("/statuses/%s", revision);
+
             final String prCommitsURL = mergeRequestURl + "/commits";
             final String mergeRequestDiscussionURL = mergeRequestURl + "/discussions";
 
@@ -132,17 +141,11 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             LOGGER.info(String.format("MR discussion url is: %s ", mergeRequestDiscussionURL));
             LOGGER.info(String.format("User url is: %s ", userURL));
 
-            Map<String, String> headers = new HashMap<>();
-            headers.put("PRIVATE-TOKEN", apiToken);
-            headers.put("Accept", "application/json");
-
             User user = getSingle(userURL, headers, User.class);
             LOGGER.info(String.format("Using user: %s ", user.getUsername()));
 
             List<String> commits = getPagedList(prCommitsURL, headers, new TypeReference<List<Commit>>() {
             }).stream().map(Commit::getId).collect(Collectors.toList());
-            MergeRequest mergeRequest = getSingle(mergeRequestURl, headers, MergeRequest.class);
-
 
             List<Discussion> discussions = getPagedList(mergeRequestDiscussionURL, headers, new TypeReference<List<Discussion>>() {
             });
@@ -170,7 +173,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
             List<NameValuePair> summaryContentParams = Collections
                     .singletonList(new BasicNameValuePair("body", summaryCommentBody));
 
-            String coverageValue = analysis.getNewCoverage().orElse(BigDecimal.ZERO).toString();
+            BigDecimal coverageValue = analysis.getCoverage().orElse(null);
 
             postStatus(new StringBuilder(statusUrl), headers, analysis, coverageValue);
 
@@ -219,8 +222,8 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
 
     @Override
-    public ALM alm() {
-        return ALM.GITLAB;
+    public List<ALM> alm() {
+        return Collections.singletonList(ALM.GITLAB);
     }
 
     private <X> X getSingle(String userURL, Map<String, String> headers, Class<X> type) throws IOException {
@@ -346,7 +349,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
     }
 
     private void postStatus(StringBuilder statusPostUrl, Map<String, String> headers, AnalysisDetails analysis,
-                            String coverage) throws IOException {
+                            BigDecimal coverage) throws IOException {
         //See https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
         statusPostUrl.append("?name=SonarQube");
         String status = (analysis.getQualityGateStatus() == QualityGate.Status.OK ? "success" : "failed");
@@ -357,7 +360,9 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                         .encode(analysis.getBranchName(),
                                 StandardCharsets.UTF_8.name())), StandardCharsets.UTF_8.name()));
         statusPostUrl.append("&description=").append(URLEncoder.encode("SonarQube Status", StandardCharsets.UTF_8.name()));
-        statusPostUrl.append("&coverage=").append(coverage);
+        if (coverage != null) {
+            statusPostUrl.append("&coverage=").append(coverage.toString());
+        }
         analysis.getScannerProperty(PULLREQUEST_GITLAB_PIPELINE_ID).ifPresent(pipelineId -> statusPostUrl.append("&pipeline_id=").append(pipelineId));
 
         HttpPost httpPost = new HttpPost(statusPostUrl.toString());

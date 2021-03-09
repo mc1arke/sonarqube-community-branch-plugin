@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,7 @@ import org.sonar.server.ws.WsUtils;
 import org.sonarqube.ws.AlmSettings.CountBindingWsResponse;
 
 
-public class CountBindingAction extends AlmSettingsWsAction {
+public class CountBindingAction extends AlmSettingsWebserviceAction {
 
     private static final String ALM_SETTING_PARAMETER = "almSetting";
 

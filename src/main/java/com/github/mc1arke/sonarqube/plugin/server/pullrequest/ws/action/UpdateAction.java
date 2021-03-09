@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,7 @@ import org.sonar.server.user.UserSession;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
-public abstract class UpdateAction extends AlmSettingsWsAction {
+public abstract class UpdateAction extends AlmSettingsWebserviceAction {
 
     private static final String KEY_PARAMETER = "key";
     private static final String NEW_KEY_PARAMETER = "newKey";

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2020 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,10 @@ import static org.junit.Assert.assertNotSame;
  * @author Michael Clarke
  */
 public class ReflectiveElevatedClassLoaderFactoryTest {
+    
+    private static final String TARGET_PLUGIN_CLASS = "org.sonar.plugins.java.JavaPlugin";
+    private static final String BUNDLED_PLUGINS_DIRECTORY = "lib/extensions";
+    private static final String SONARQUBE_LIB_DIRECTORY = "sonarqube-lib/";
 
     private final ExpectedException expectedException = ExpectedException.none();
 
@@ -57,9 +61,9 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
         builder.setParent("_customPlugin", "_api_", new Mask());
         builder.setLoadingOrder("_customPlugin", ClassloaderBuilder.LoadingOrder.SELF_FIRST);
 
-        File[] sonarQubeDistributions = new File("sonarqube-lib/").listFiles();
+        File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
 
-        for (File pluginJar : new File(sonarQubeDistributions[0], "extensions/plugins/").listFiles()) {
+        for (File pluginJar : new File(sonarQubeDistributions[0], BUNDLED_PLUGINS_DIRECTORY).listFiles()) {
             builder.addURL("_customPlugin", pluginJar.toURI().toURL());
         }
 
@@ -67,7 +71,7 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
         ClassLoader classLoader = loaders.get("_customPlugin");
 
         Class<? extends Plugin> loadedClass =
-                (Class<? extends Plugin>) classLoader.loadClass("org.sonar.plugins.scm.svn.SvnPlugin");
+                (Class<? extends Plugin>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
 
         ReflectiveElevatedClassLoaderFactory testCase = new ReflectiveElevatedClassLoaderFactory();
         ClassLoader elevatedLoader = testCase.createClassLoader(loadedClass);
@@ -78,8 +82,7 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
 
 
     @Test
-    public void testLoadClassInvalidClassRealmKey()
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException, MalformedURLException {
+    public void testLoadClassInvalidClassRealmKey() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_xxx_", getClass().getClassLoader());
         builder.setMask("_xxx_", new Mask().addInclusion("java/").addInclusion("org/sonar/api/"));
@@ -88,9 +91,9 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
         builder.setParent("_customPlugin", "_xxx_", new Mask());
         builder.setLoadingOrder("_customPlugin", ClassloaderBuilder.LoadingOrder.SELF_FIRST);
 
-        File[] sonarQubeDistributions = new File("sonarqube-lib/").listFiles();
+        File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
 
-        for (File pluginJar : new File(sonarQubeDistributions[0], "extensions/plugins/").listFiles()) {
+        for (File pluginJar : new File(sonarQubeDistributions[0], BUNDLED_PLUGINS_DIRECTORY).listFiles()) {
             builder.addURL("_customPlugin", pluginJar.toURI().toURL());
         }
 
@@ -98,7 +101,7 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
         ClassLoader classLoader = loaders.get("_customPlugin");
 
         Class<? extends Plugin> loadedClass =
-                (Class<? extends Plugin>) classLoader.loadClass("org.sonar.plugins.scm.svn.SvnPlugin");
+                (Class<? extends Plugin>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo("Expected classloader with key '_api_' but found key '_xxx_'"));
@@ -110,15 +113,14 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
 
 
     @Test
-    public void testLoadClassNoParentRef()
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException, MalformedURLException {
+    public void testLoadClassNoParentRef() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_xxx_", getClass().getClassLoader());
         builder.setMask("_xxx_", new Mask());
 
-        File[] sonarQubeDistributions = new File("sonarqube-lib/").listFiles();
+        File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
 
-        for (File pluginJar : new File(sonarQubeDistributions[0], "extensions/plugins/").listFiles()) {
+        for (File pluginJar : new File(sonarQubeDistributions[0], BUNDLED_PLUGINS_DIRECTORY).listFiles()) {
             builder.addURL("_xxx_", pluginJar.toURI().toURL());
         }
 
@@ -126,7 +128,7 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
         ClassLoader classLoader = loaders.get("_xxx_");
 
         Class<? extends Plugin> loadedClass =
-                (Class<? extends Plugin>) classLoader.loadClass("org.sonar.plugins.scm.svn.SvnPlugin");
+                (Class<? extends Plugin>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo("Could not access ClassLoader chain using reflection"));
@@ -137,16 +139,15 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
     }
 
     @Test
-    public void testLoadClassInvalidApiClassloader()
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException, MalformedURLException {
+    public void testLoadClassInvalidApiClassloader() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_customPlugin");
         builder.setParent("_customPlugin", new URLClassLoader(new URL[0]), new Mask());
         builder.setLoadingOrder("_customPlugin", ClassloaderBuilder.LoadingOrder.SELF_FIRST);
 
-        File[] sonarQubeDistributions = new File("sonarqube-lib/").listFiles();
+        File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
 
-        for (File pluginJar : new File(sonarQubeDistributions[0], "extensions/plugins/").listFiles()) {
+        for (File pluginJar : new File(sonarQubeDistributions[0], BUNDLED_PLUGINS_DIRECTORY).listFiles()) {
             builder.addURL("_customPlugin", pluginJar.toURI().toURL());
         }
 
@@ -154,7 +155,7 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
         ClassLoader classLoader = loaders.get("_customPlugin");
 
         Class<? extends Plugins> loadedClass =
-                (Class<? extends Plugins>) classLoader.loadClass("org.sonar.plugins.scm.svn.SvnPlugin");
+                (Class<? extends Plugins>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo(
@@ -168,8 +169,8 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
     @Test
     public void testLoadClassInvalidClassloader() throws ClassNotFoundException, MalformedURLException {
 
-        File[] sonarQubeDistributions = new File("sonarqube-lib/").listFiles();
-        File[] plugins = new File(sonarQubeDistributions[0], "extensions/plugins/").listFiles();
+        File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
+        File[] plugins = new File(sonarQubeDistributions[0], BUNDLED_PLUGINS_DIRECTORY).listFiles();
 
         URL[] urls = new URL[plugins.length];
         int i = 0;
@@ -180,7 +181,7 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
         ClassLoader classLoader = new URLClassLoader(urls);
 
         Class<? extends Plugins> loadedClass =
-                (Class<? extends Plugins>) classLoader.loadClass("org.sonar.plugins.scm.svn.SvnPlugin");
+                (Class<? extends Plugins>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo(

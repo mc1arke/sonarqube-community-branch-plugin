@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,7 +26,6 @@ import org.sonar.db.ce.CeTaskCharacteristicDto;
 import org.sonar.db.component.BranchDto;
 import org.sonar.db.component.BranchType;
 import org.sonar.db.component.ComponentDto;
-import org.sonar.db.organization.OrganizationDto;
 import org.sonar.server.ce.queue.BranchSupport;
 import org.sonar.server.ce.queue.BranchSupportDelegate;
 
@@ -71,9 +70,8 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
         String branch = StringUtils.trimToNull(characteristics.get(CeTaskCharacteristicDto.BRANCH_KEY));
 
         try {
-            BranchType branchType = BranchType.valueOf(branchTypeParam);
-            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch),
-                                             new BranchSupport.Branch(branch, branchType), null);
+            BranchType.valueOf(branchTypeParam);
+            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch), branch, null);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(String.format("Unsupported branch type '%s'", branchTypeParam), ex);
         }
@@ -82,15 +80,13 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
 
     @Override
     public ComponentDto createBranchComponent(DbSession dbSession, BranchSupport.ComponentKey componentKey,
-                                              OrganizationDto organization, ComponentDto mainComponentDto,
-                                              BranchDto mainComponentBranchDto) {
+                                              ComponentDto mainComponentDto, BranchDto mainComponentBranchDto) {
         if (!componentKey.getKey().equals(mainComponentDto.getKey())) {
             throw new IllegalStateException("Component Key and Main Component Key do not match");
         }
 
-        Optional<BranchSupport.Branch> branchOptional = componentKey.getBranch();
-        if (branchOptional.isPresent() && branchOptional.get().getName().equals(mainComponentBranchDto.getKey()) &&
-            mainComponentBranchDto.getBranchType() == branchOptional.get().getType()) {
+        Optional<String> branchOptional = componentKey.getBranchName();
+        if (branchOptional.isPresent() && branchOptional.get().equals(mainComponentBranchDto.getKey())) {
             return mainComponentDto;
         }
 

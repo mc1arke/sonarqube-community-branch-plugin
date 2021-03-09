@@ -23,11 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 
 public class CloudAnnotation extends CodeInsightsAnnotation {
-    @JsonProperty("external_id")
     private final String externalId;
-    @JsonProperty("summary")
     private final String link;
-    @JsonProperty("annotation_type")
     private final String annotationType;
 
     @JsonCreator
@@ -44,14 +41,23 @@ public class CloudAnnotation extends CodeInsightsAnnotation {
         this.annotationType = annotationType;
     }
 
+    @Override
+    @JsonProperty("summary")
+    public String getMessage() {
+        return super.getMessage();
+    }
+
+    @JsonProperty("external_id")
     public String getExternalId() {
         return externalId;
     }
 
+    @JsonProperty("link")
     public String getLink() {
         return link;
     }
 
+    @JsonProperty("annotation_type")
     public String getAnnotationType() {
         return annotationType;
     }

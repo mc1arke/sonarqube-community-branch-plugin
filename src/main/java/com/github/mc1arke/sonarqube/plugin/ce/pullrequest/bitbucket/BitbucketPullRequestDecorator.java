@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Mathias Åhsberg
+ * Copyright (C) 2020-2021 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,7 +24,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatus
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketException;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
@@ -45,6 +45,7 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -60,8 +61,6 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
     private static final Logger LOGGER = Loggers.get(BitbucketPullRequestDecorator.class);
 
-    private static final int DEFAULT_MAX_ANNOTATIONS = 1000;
-
     private static final DecorationResult DEFAULT_DECORATION_RESULT = DecorationResult.builder().build();
 
     private static final List<String> OPEN_ISSUE_STATUSES =
@@ -70,18 +69,15 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
-        String project = projectAlmSettingDto.getAlmRepo();
-        String repo = projectAlmSettingDto.getAlmSlug();
-        String url = almSettingDto.getUrl();
-        String token = almSettingDto.getPersonalAccessToken();
-        BitbucketConfiguration bitbucketConfiguration = new BitbucketConfiguration(url, token, repo, project);
-
-        BitbucketClient client = createClient(bitbucketConfiguration);
+        BitbucketClient client = createClient(almSettingDto, projectAlmSettingDto);
         try {
             if (!client.supportsCodeInsights()) {
                 LOGGER.warn("Your Bitbucket instance does not support the Code Insights API.");
                 return DEFAULT_DECORATION_RESULT;
             }
+
+            String project = client.resolveProject(almSettingDto, projectAlmSettingDto);
+            String repo = client.resolveRepository(almSettingDto, projectAlmSettingDto);
 
             CodeInsightsReport codeInsightsReport = client.createCodeInsightsReport(
                     toReport(client, analysisDetails),
@@ -104,13 +100,13 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
     }
 
     @VisibleForTesting
-    BitbucketClient createClient(BitbucketConfiguration bitbucketConfiguration) {
-        return BitbucketClientFactory.createClient(bitbucketConfiguration);
+    BitbucketClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
+        return BitbucketClientFactory.createClient(almSettingDto, projectAlmSettingDto);
     }
 
     @Override
-    public ALM alm() {
-        return ALM.BITBUCKET;
+    public List<ALM> alm() {
+        return Arrays.asList(ALM.BITBUCKET, ALM.BITBUCKET_CLOUD);
     }
 
     private List<ReportData> toReport(BitbucketClient client, AnalysisDetails analysisDetails) {
@@ -132,10 +128,14 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
         client.deleteAnnotations(project, repo, analysisDetails.getCommitSha());
 
-        Map<Object, Set<CodeInsightsAnnotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
+        AnnotationUploadLimit uploadLimit = client.getAnnotationUploadLimit();
+
+        Map<Integer, Set<CodeInsightsAnnotation>> annotationChunks = analysisDetails.getPostAnalysisIssueVisitor().getIssues().stream()
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status()))
+                .filter(i -> !(i.getIssue().type() == RuleType.SECURITY_HOTSPOT && Issue.SECURITY_HOTSPOT_RESOLUTIONS
+                    .contains(i.getIssue().resolution())))
                 .sorted(Comparator.comparing(a -> Severity.ALL.indexOf(a.getIssue().severity())))
                 .map(componentIssue -> {
                     String path = componentIssue.getComponent().getReportAttributes().getScmPath().get();
@@ -146,10 +146,17 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                             path,
                             toBitbucketSeverity(componentIssue.getIssue().severity()),
                             toBitbucketType(componentIssue.getIssue().type()));
-                }).collect(Collectors.groupingBy(s -> chunkCounter.getAndIncrement() / DEFAULT_MAX_ANNOTATIONS, toSet()));
+                }).collect(Collectors.groupingBy(s -> chunkCounter.getAndIncrement() / uploadLimit.getAnnotationBatchSize(), toSet()));
 
+        int totalAnnotationsCounter = 1;
         for (Set<CodeInsightsAnnotation> annotations : annotationChunks.values()) {
             try {
+                if (exceedsMaximumNumberOfAnnotations(totalAnnotationsCounter++, uploadLimit)) {
+                    LOGGER.warn("This project has too many issues. The provider only supports {}." +
+                            " The remaining annotations will be truncated.", uploadLimit.getTotalAllowedAnnotations());
+                    break;
+                }
+
                 client.uploadAnnotations(project, repo, analysisDetails.getCommitSha(), annotations);
             } catch (BitbucketException e) {
                 if (e.isError(BitbucketException.PAYLOAD_TOO_LARGE)) {
@@ -157,9 +164,13 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                 } else {
                     throw e;
                 }
-
             }
         }
+    }
+
+    @VisibleForTesting
+    static boolean exceedsMaximumNumberOfAnnotations(int chunkCounter, AnnotationUploadLimit uploadLimit) {
+        return (chunkCounter * uploadLimit.getAnnotationBatchSize()) > uploadLimit.getTotalAllowedAnnotations();
     }
 
     private String toBitbucketSeverity(String severity) {

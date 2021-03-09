@@ -45,7 +45,6 @@ import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.Measure;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
-import org.sonar.core.issue.DefaultIssue;
 import org.sonar.server.measure.Rating;
 
 import java.io.UnsupportedEncodingException;
@@ -64,6 +63,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class AnalysisDetails {
+
+    public static final String SCANNERROPERTY_PULLREQUEST_BRANCH = "sonar.pullrequest.branch";
+    public static final String SCANNERROPERTY_PULLREQUEST_BASE = "sonar.pullrequest.base";
+    public static final String SCANNERROPERTY_PULLREQUEST_KEY = "sonar.pullrequest.key";
 
     private static final List<String> CLOSED_ISSUE_STATUS = Arrays.asList(Issue.STATUS_CLOSED, Issue.STATUS_RESOLVED);
 
@@ -116,9 +119,25 @@ public class AnalysisDetails {
     public String getIssueUrl(String issueKey) {
         return publicRootURL + "/project/issues?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issueKey + "&open=" + issueKey;
     }
+    
+    public Optional<String> getPullRequestBase() {
+        return Optional.ofNullable(scannerContext.getProperties().get(SCANNERROPERTY_PULLREQUEST_BASE));
+    }
+
+    public Optional<String> getPullRequestBranch() {
+        return Optional.ofNullable(scannerContext.getProperties().get(SCANNERROPERTY_PULLREQUEST_BRANCH));
+    }
+
+    public Optional<String> getPullRequestKey() {
+        return Optional.ofNullable(scannerContext.getProperties().get(SCANNERROPERTY_PULLREQUEST_KEY));
+    }
 
     public QualityGate.Status getQualityGateStatus() {
         return qualityGate.getStatus();
+    }
+
+    public String getRuleUrlWithRuleKey(String ruleKey) {
+        return publicRootURL + "/coding_rules?open=" + encode(ruleKey) + "&rule_key=" + encode(ruleKey);
     }
 
     public Optional<String> getScannerProperty(String propertyName) {
@@ -128,9 +147,7 @@ public class AnalysisDetails {
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
         BigDecimal newCoverage = getNewCoverage().orElse(null);
-
-
-        double coverage = findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).orElse(0D);
+        BigDecimal coverage = getCoverage().orElse(null);
 
         BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
                 .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
@@ -175,7 +192,7 @@ public class AnalysisDetails {
                                                          issueCounts.get(RuleType.SECURITY_HOTSPOT), "Vulnerability",
                                                          "Vulnerabilities"))), new ListItem(new Image("Code Smell",
                                                                                                       baseImageUrl +
-                                                                                                      "/common/vulnerability.svg?sanitize=true"),
+                                                                                                      "/common/code_smell.svg?sanitize=true"),
                                                                                             new Text(" "), new Text(
                                                  pluralOf(issueCounts.get(RuleType.CODE_SMELL), "Code Smell",
                                                           "Code Smells")))),
@@ -201,7 +218,7 @@ public class AnalysisDetails {
     }
 
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
-        final DefaultIssue issue = componentIssue.getIssue();
+        final PostAnalysisIssueVisitor.LightIssue issue = componentIssue.getIssue();
 
         String baseImageUrl = getBaseImageUrl();
 
@@ -352,6 +369,10 @@ public class AnalysisDetails {
                 .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
                 .map(QualityGate.Condition::getValue)
                 .map(BigDecimal::new);
+    }
+
+    public Optional<BigDecimal> getCoverage(){
+        return findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).map(BigDecimal::new);
     }
 
     public static class BranchDetails {

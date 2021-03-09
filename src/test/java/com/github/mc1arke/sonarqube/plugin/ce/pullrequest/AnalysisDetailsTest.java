@@ -45,7 +45,6 @@ import org.sonar.ce.task.projectanalysis.measure.Measure;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.Metric;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
-import org.sonar.core.issue.DefaultIssue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -193,26 +192,26 @@ public class AnalysisDetailsTest {
         doReturn(treeRootHolder).when(measuresHolder).getTreeRootHolder();
 
         PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        DefaultIssue issue1 = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue1 = mock(PostAnalysisIssueVisitor.LightIssue.class);
         doReturn(Issue.STATUS_CLOSED).when(issue1).status();
 
-        DefaultIssue issue2 = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue2 = mock(PostAnalysisIssueVisitor.LightIssue.class);
         doReturn(Issue.STATUS_OPEN).when(issue2).status();
         doReturn(RuleType.BUG).when(issue2).type();
 
-        DefaultIssue issue3 = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue3 = mock(PostAnalysisIssueVisitor.LightIssue.class);
         doReturn(Issue.STATUS_OPEN).when(issue3).status();
         doReturn(RuleType.SECURITY_HOTSPOT).when(issue3).type();
 
-        DefaultIssue issue4 = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue4 = mock(PostAnalysisIssueVisitor.LightIssue.class);
         doReturn(Issue.STATUS_OPEN).when(issue4).status();
         doReturn(RuleType.CODE_SMELL).when(issue4).type();
 
-        DefaultIssue issue5 = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue5 = mock(PostAnalysisIssueVisitor.LightIssue.class);
         doReturn(Issue.STATUS_OPEN).when(issue5).status();
         doReturn(RuleType.VULNERABILITY).when(issue5).type();
 
-        DefaultIssue issue6 = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue6 = mock(PostAnalysisIssueVisitor.LightIssue.class);
         doReturn(Issue.STATUS_OPEN).when(issue6).status();
         doReturn(RuleType.BUG).when(issue6).type();
 
@@ -339,7 +338,7 @@ public class AnalysisDetailsTest {
                                                                                                                      "2 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/code_smell.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
@@ -439,7 +438,7 @@ public class AnalysisDetailsTest {
                                                                                                                      "0 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/code_smell.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
@@ -469,7 +468,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails.MeasuresHolder measuresHolder = mock(AnalysisDetails.MeasuresHolder.class);
         doReturn(treeRootHolder).when(measuresHolder).getTreeRootHolder();
 
-        DefaultIssue issue = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         doReturn(Issue.STATUS_OPEN).when(issue).status();
         doReturn(RuleType.BUG).when(issue).type();
         PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
@@ -546,7 +545,7 @@ public class AnalysisDetailsTest {
                                                                                                                     "0 Vulnerabilities")),
                                                                                                new ListItem(new Image(
                                                                                                        "Code Smell",
-                                                                                                       "http://host.name/path/common/vulnerability.svg?sanitize=true"),
+                                                                                                       "http://host.name/path/common/code_smell.svg?sanitize=true"),
                                                                                                             new Text(
                                                                                                                     " "),
                                                                                                             new Text(
@@ -644,7 +643,7 @@ public class AnalysisDetailsTest {
                                                                                                                      "0 Vulnerabilities")),
                                                                                                 new ListItem(new Image(
                                                                                                         "Code Smell",
-                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true"),
+                                                                                                        "http://localhost:9000/static/communityBranchPlugin/common/code_smell.svg?sanitize=true"),
                                                                                                              new Text(
                                                                                                                      " "),
                                                                                                              new Text(
@@ -757,4 +756,29 @@ public class AnalysisDetailsTest {
         assertEquals("http://localhost:9000/static/communityBranchPlugin", analysisDetails.getBaseImageUrl());
     }
 
+    @Test
+    public void testGetIssueUrl() {
+        Project project = mock(Project.class);
+        doReturn("projectKey").when(project).getKey();
+
+        AnalysisDetails.BranchDetails branchDetails = mock(AnalysisDetails.BranchDetails.class);
+        doReturn("123").when(branchDetails).getBranchName();
+
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(branchDetails, mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), project, mock(Configuration.class), "http://localhost:9000", mock(ScannerContext.class));
+
+        assertEquals("http://localhost:9000/project/issues?id=projectKey&pullRequest=123&issues=issueKey&open=issueKey", analysisDetails.getIssueUrl("issueKey"));
+    }
+
+    @Test
+    public void testGetRuleUrlWithRuleKey() {
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), mock(Project.class), mock(Configuration.class), "http://localhost:9000", mock(ScannerContext.class));
+
+        assertEquals("http://localhost:9000/coding_rules?open=ruleKey&rule_key=ruleKey", analysisDetails.getRuleUrlWithRuleKey("ruleKey"));
+    }
 }

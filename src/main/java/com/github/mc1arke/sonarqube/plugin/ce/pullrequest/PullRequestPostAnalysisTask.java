@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -156,7 +156,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
                                     projectAnalysis.getScannerContext());
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
-        LOGGER.info("using pull request decorator " + pullRequestDecorator.alm().getId());
+        LOGGER.info("using pull request decorator " + pullRequestDecorator.getClass().getName());
         DecorationResult decorationResult = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         decorationResult.getPullRequestUrl().ifPresent(pullRequestUrl -> persistPullRequestUrl(pullRequestUrl, projectAnalysis, optionalBranchName.get()));
@@ -168,7 +168,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         ALM alm = almSetting.getAlm();
 
         for (PullRequestBuildStatusDecorator pullRequestDecorator : pullRequestDecorators) {
-            if (alm == pullRequestDecorator.alm()) {
+            if (pullRequestDecorator.alm().contains(alm)) {
                 return Optional.of(pullRequestDecorator);
             }
         }

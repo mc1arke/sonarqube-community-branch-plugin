@@ -30,7 +30,6 @@ import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
-import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
@@ -71,6 +70,7 @@ public class GitlabServerPullRequestDecoratorTest {
         String discussionId = "6a9c1750b37d513a43987b574953fceb50b03ce7";
         String noteId = "1126";
         String filePath = "/path/to/file";
+        String sourceProjectId = "1";
         int lineNumber = 5;
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -86,10 +86,10 @@ public class GitlabServerPullRequestDecoratorTest {
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
         when(analysisDetails.getBranchName()).thenReturn(branchName);
         when(analysisDetails.getCommitSha()).thenReturn(commitSHA);
-        when(analysisDetails.getNewCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
+        when(analysisDetails.getCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
         PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        DefaultIssue defaultIssue = mock(DefaultIssue.class);
+        PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(defaultIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
         when(defaultIssue.getLine()).thenReturn(lineNumber);
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
@@ -116,7 +116,9 @@ public class GitlabServerPullRequestDecoratorTest {
                 "  \"diff_refs\": {\n" +
                 "    \"base_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\",\n" +
                 "    \"head_sha\":\"" + commitSHA + "\",\n" +
-                "    \"start_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\"}\n" +
+                "    \"start_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\"\n" +
+                "  }," +
+                "  \"source_project_id\": " + sourceProjectId  + "\n" +
                 "}")));
 
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/commits")).willReturn(okJson("[\n" +
@@ -130,6 +132,13 @@ public class GitlabServerPullRequestDecoratorTest {
         wireMockRule.stubFor(delete(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions/" + discussionId + "/notes/" + noteId)).willReturn(noContent()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/statuses/" + commitSHA))
+                .withQueryParam("name", equalTo("SonarQube"))
+                .withQueryParam("state", equalTo("failed"))
+                .withQueryParam("target_url", equalTo(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + branchName))
+                .withQueryParam("coverage", equalTo("10"))
+                .willReturn(created()));
+
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(sourceProjectId) + "/statuses/" + commitSHA))
                 .withQueryParam("name", equalTo("SonarQube"))
                 .withQueryParam("state", equalTo("failed"))
                 .withQueryParam("target_url", equalTo(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + branchName))

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,7 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,7 +51,7 @@ public class GithubPullRequestDecoratorTest {
 
     @Test
     public void testName() {
-        assertThat(testCase.alm()).isEqualTo(ALM.GITHUB);
+        assertThat(testCase.alm()).isEqualTo(Collections.singletonList(ALM.GITHUB));
     }
 
     @Test

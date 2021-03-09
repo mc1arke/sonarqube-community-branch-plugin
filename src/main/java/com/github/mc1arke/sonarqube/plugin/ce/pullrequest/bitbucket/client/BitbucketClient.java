@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Marvin Wichmann
+ * Copyright (C) 2020-2021 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,11 +18,14 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -88,5 +91,36 @@ public interface BitbucketClient {
      * @return boolean
      */
     boolean supportsCodeInsights();
+
+    /**
+     * <p>
+     *     Returns the annotation upload limit consisting of two different objects:
+     *     1. the batch size for each incremental annotation upload
+     *     2. the total allowed annotations for the given provider
+     * </p>
+     *
+     * @return the configured limit
+     */
+    AnnotationUploadLimit getAnnotationUploadLimit();
+
+    /**
+     * Extract the name of the project from the relevant configuration. The project is
+     * the value that should be used in the calls that take a `project` parameter.
+     *
+     * @param almSettingDto the global `AlmSettingDto` containing the global configuration for this ALM
+     * @param projectAlmSettingDto the `ProjectAlmSettingDto` assigned to the current project
+     * @return the resolved project name.
+     */
+    String resolveProject(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto);
+
+    /**
+     * Extract the name of the repository from the relevant configuration. The project is
+     * the value that should be used in the calls that take a `repository` parameter.
+     *
+     * @param almSettingDto the global `AlmSettingDto` containing the global configuration for this ALM
+     * @param projectAlmSettingDto the `ProjectAlmSettingDto` assigned to the current project
+     * @return the resolved repository name.
+     */
+    String resolveRepository(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto);
 
 }

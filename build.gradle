@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '8.2.0.32929'
+def sonarqubeVersion = '8.7.0.41497'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
@@ -56,9 +56,8 @@ compileJava {
 
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar')
-    testCompile fileTree(dir: sonarLibraries, include: '**/*.jar')
+    compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
+    testCompile fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.13.2'
@@ -68,6 +67,7 @@ dependencies {
     compile('io.aexp.nodes.graphql:nodes:0.5.0') {
         exclude group: 'com.fasterxml.jackson.core'
     }
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 }
 
 
@@ -114,6 +114,11 @@ tasks.jar.configure {
 
 tasks.shadowJar.configure {
     classifier = null
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:unchecked'
+    options.deprecation = true
 }
 
 assemble.dependsOn('shadowJar')

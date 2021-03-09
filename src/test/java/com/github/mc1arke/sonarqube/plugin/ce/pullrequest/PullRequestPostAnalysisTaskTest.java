@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,6 +44,7 @@ import org.sonar.db.component.BranchDto;
 import org.sonar.db.protobuf.DbProjectBranches;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -149,11 +150,11 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(Optional.of("branchName")).when(branch).getName();
 
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.BITBUCKET).when(decorator1).alm();
+        doReturn(Collections.singletonList(ALM.BITBUCKET)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
         PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.GITHUB).when(decorator2).alm();
+        doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -187,11 +188,11 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(Optional.empty()).when(projectAnalysis).getAnalysis();
 
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.AZURE_DEVOPS).when(decorator1).alm();
+        doReturn(Collections.singletonList(ALM.AZURE_DEVOPS)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
         PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.GITHUB).when(decorator2).alm();
+        doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -227,11 +228,11 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
 
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.BITBUCKET).when(decorator1).alm();
+        doReturn(Collections.singletonList(ALM.BITBUCKET)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
         PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.GITHUB).when(decorator2).alm();
+        doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -286,11 +287,11 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(scannerContext).when(projectAnalysis).getScannerContext();
 
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.GITLAB).when(decorator1).alm();
+        doReturn(Collections.singletonList(ALM.GITLAB)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
         PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.GITHUB).when(decorator2).alm();
+        doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
         testCase.finished(context);
@@ -317,11 +318,11 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(qualityGate).when(projectAnalysis).getQualityGate();
 
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.BITBUCKET).when(decorator1).alm();
+        doReturn(Collections.singletonList(ALM.BITBUCKET)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
         PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.GITHUB).when(decorator2).alm();
+        doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         doReturn(DecorationResult.builder().build()).when(decorator2).decorateQualityGateStatus(any(), any(), any());
         pullRequestBuildStatusDecorators.add(decorator2);
 
@@ -382,11 +383,11 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(qualityGate).when(projectAnalysis).getQualityGate();
 
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.GITHUB).when(decorator1).alm();
+        doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
         PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.BITBUCKET).when(decorator2).alm();
+        doReturn(Collections.singletonList(ALM.BITBUCKET)).when(decorator2).alm();
         doReturn(DecorationResult.builder().withPullRequestUrl("pullRequestUrl").build()).when(decorator2).decorateQualityGateStatus(any(), any(), any());
         pullRequestBuildStatusDecorators.add(decorator2);
 
@@ -456,7 +457,7 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(qualityGate).when(projectAnalysis).getQualityGate();
 
         PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
-        doReturn(ALM.GITHUB).when(decorator1).alm();
+        doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator1).alm();
         doReturn(DecorationResult.builder().withPullRequestUrl("pullRequestUrl").build()).when(decorator1).decorateQualityGateStatus(any(), any(), any());
         pullRequestBuildStatusDecorators.add(decorator1);
 
