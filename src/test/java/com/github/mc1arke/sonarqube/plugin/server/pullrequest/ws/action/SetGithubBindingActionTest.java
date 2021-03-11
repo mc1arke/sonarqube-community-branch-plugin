@@ -48,6 +48,11 @@ public class SetGithubBindingActionTest {
         when(repositoryParameter.setRequired(anyBoolean())).thenReturn(repositoryParameter);
         when(newAction.createParam("repository")).thenReturn(repositoryParameter);
 
+        WebService.NewParam commentEnabledParameter = mock(WebService.NewParam.class);
+        when(commentEnabledParameter.setBooleanPossibleValues()).thenReturn(commentEnabledParameter);
+        when(commentEnabledParameter.setRequired(anyBoolean())).thenReturn(commentEnabledParameter);
+        when(newAction.createParam("summaryCommentEnabled")).thenReturn(commentEnabledParameter);
+
         WebService.NewParam almSettingParameter = mock(WebService.NewParam.class);
         when(almSettingParameter.setMaximumLength(any(Integer.class))).thenReturn(almSettingParameter);
         when(almSettingParameter.setRequired(anyBoolean())).thenReturn(almSettingParameter);
@@ -68,11 +73,12 @@ public class SetGithubBindingActionTest {
 
         Request request = mock(Request.class);
         when(request.mandatoryParam("repository")).thenReturn("repository");
+        when(request.paramAsBoolean("summaryCommentEnabled")).thenReturn(true);
 
         SetGithubBindingAction testCase = new SetGithubBindingAction(dbClient, componentFinder, userSession);
         ProjectAlmSettingDto result = testCase.createProjectAlmSettingDto("projectUuid", "settingsUuid", request);
 
-        assertThat(result).isEqualToComparingFieldByField(new ProjectAlmSettingDto().setProjectUuid("projectUuid").setAlmSettingUuid("settingsUuid").setAlmRepo("repository").setMonorepo(false));
+        assertThat(result).isEqualToComparingFieldByField(new ProjectAlmSettingDto().setProjectUuid("projectUuid").setAlmSettingUuid("settingsUuid").setAlmRepo("repository").setSummaryCommentEnabled(true).setMonorepo(false));
 
     }
 }

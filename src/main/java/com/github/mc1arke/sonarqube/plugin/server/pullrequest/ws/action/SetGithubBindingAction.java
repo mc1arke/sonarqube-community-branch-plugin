@@ -28,6 +28,7 @@ import org.sonar.server.user.UserSession;
 public class SetGithubBindingAction extends SetBindingAction {
 
     private static final String REPOSITORY_PARAMETER = "repository";
+    private static final String SUMMARY_COMMENT_PARAMETER = "summaryCommentEnabled";
 
     public SetGithubBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
         super(dbClient, componentFinder, userSession, "set_github_binding");
@@ -37,6 +38,7 @@ public class SetGithubBindingAction extends SetBindingAction {
     protected void configureAction(WebService.NewAction action) {
         super.configureAction(action);
         action.createParam(REPOSITORY_PARAMETER).setRequired(true).setMaximumLength(256);
+        action.createParam(SUMMARY_COMMENT_PARAMETER).setRequired(false).setBooleanPossibleValues();
     }
 
     @Override
@@ -45,6 +47,7 @@ public class SetGithubBindingAction extends SetBindingAction {
                 .setProjectUuid(projectUuid)
                 .setAlmSettingUuid(settingsUuid)
                 .setAlmRepo(request.mandatoryParam(REPOSITORY_PARAMETER))
+                .setSummaryCommentEnabled(request.paramAsBoolean(SUMMARY_COMMENT_PARAMETER))
                 .setMonorepo(false);
     }
 
