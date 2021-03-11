@@ -357,6 +357,7 @@ public class GraphqlCheckRunProviderTest {
         when(analysisDetails.getBranchName()).thenReturn("branchName");
         when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
         when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
+        when(analysisDetails.getPullRequestKey()).thenReturn(Optional.of("1"));
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
 
         ArgumentCaptor<String> authenticationProviderArgumentCaptor = ArgumentCaptor.forClass(String.class);
@@ -398,18 +399,37 @@ public class GraphqlCheckRunProviderTest {
 
         ObjectMapper objectMapper = new ObjectMapper();
         GraphQLResponseEntity<CreateCheckRun> graphQLResponseEntity =
-                new ObjectMapper().readValue("{\"response\": {\"checkRun\": {\"id\": \"ABC\"}}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, CreateCheckRun.class));
+            objectMapper.readValue("{\"response\": {\"checkRun\": {\"id\": \"ABC\"}}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, CreateCheckRun.class));
 
-        ArgumentCaptor<GraphQLRequestEntity> requestEntityArgumentCaptor =
-                ArgumentCaptor.forClass(GraphQLRequestEntity.class);
+        ArgumentCaptor<GraphQLRequestEntity> requestEntityArgumentCaptor = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
 
         GraphQLTemplate graphQLTemplate = mock(GraphQLTemplate.class);
-        when(graphQLTemplate.mutate(requestEntityArgumentCaptor.capture(), eq(CreateCheckRun.class)))
-                .thenReturn(graphQLResponseEntity);
+        when(graphQLTemplate.mutate(requestEntityArgumentCaptor.capture(), eq(CreateCheckRun.class))).thenReturn(graphQLResponseEntity);
+
+        GraphQLResponseEntity<GetPullRequest> getPullRequestResponseEntity =
+            objectMapper.readValue("{" +
+                "\"response\": " +
+                "  {\n" +
+                "    \"pullRequest\": {\n" +
+                "      \"id\": \"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, GetPullRequest.class));
+
+        ArgumentCaptor<GraphQLRequestEntity> getPullRequestRequestEntityArgumentCaptor = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
+        when(graphQLTemplate.execute(getPullRequestRequestEntityArgumentCaptor.capture(), eq(GetPullRequest.class))).thenReturn(getPullRequestResponseEntity);
+
+        GraphQLResponseEntity<AddComment> addCommentResponseEntity =
+            objectMapper.readValue("{\"response\":{}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, AddComment.class));
+
+        ArgumentCaptor<GraphQLRequestEntity> addCommentRequestEntityArgumentCaptor = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
+        when(graphQLTemplate.mutate(addCommentRequestEntityArgumentCaptor.capture(), eq(AddComment.class))).thenReturn(addCommentResponseEntity);
+
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
+        when(projectAlmSettingDto.getSummaryCommentEnabled()).thenReturn(true);
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn(basePath);
         when(almSettingDto.getAppId()).thenReturn("app id");
@@ -419,7 +439,7 @@ public class GraphqlCheckRunProviderTest {
                 new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server);
         testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        assertEquals(1, requestBuilders.size());
+        assertEquals(3, requestBuilders.size());
 
         Map<String, String> headers = new HashMap<>();
         headers.put("Authorization", "Bearer dummyAuthToken");
@@ -473,7 +493,7 @@ public class GraphqlCheckRunProviderTest {
             position++;
         }
 
-        assertEquals(2 + position, inputObjectBuilders.size());
+        assertEquals(3 + position, inputObjectBuilders.size());
 
         ArgumentCaptor<List<InputObject<Object>>> annotationArgumentCaptor = ArgumentCaptor.forClass(List.class);
 
@@ -499,6 +519,25 @@ public class GraphqlCheckRunProviderTest {
         verify(inputObjectBuilders.get(position + 1)).put(eq("externalId"), eq("analysis ID"));
         verify(inputObjectBuilders.get(position + 1)).put(eq("output"), eq(inputObjects.get(position)));
         verify(inputObjectBuilders.get(position + 1)).build();
+
+        // Verify getPullRequest requestEntity
+        assertEquals(
+            "query { repository (owner:\"dummy\",name:\"repo\") { url pullRequest : pullRequest (number:1) { id } } } ",
+            getPullRequestRequestEntityArgumentCaptor.getValue().getRequest()
+        );
+
+        // Validate AddComment
+        verify(requestBuilders.get(2)).url(fullPath);
+        verify(requestBuilders.get(2)).headers(headers);
+        verify(requestBuilders.get(2)).requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE);
+        verify(requestBuilders.get(2)).build();
+        assertEquals(requestEntities.get(2), addCommentRequestEntityArgumentCaptor.getValue());
+
+        assertEquals(
+          "mutation { addComment (input:{body:\"dummy summary\",subjectId:\"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"}) { clientMutationId } } ",
+            addCommentRequestEntityArgumentCaptor.getValue().getRequest()
+        );
+
     }
 
     @Test

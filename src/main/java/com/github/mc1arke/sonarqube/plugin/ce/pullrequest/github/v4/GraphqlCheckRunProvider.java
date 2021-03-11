@@ -109,6 +109,8 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
 
+        String summary = analysisDetails.createAnalysisSummary(new MarkdownFormatterFactory());
+
         List<PostAnalysisIssueVisitor.ComponentIssue> issues = analysisDetails.getPostAnalysisIssueVisitor().getIssues();
 
         List<InputObject<Object>> annotations = createAnnotations(issues);
@@ -119,7 +121,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                                                                                                       QualityGate.Status.OK ?
                                                                                                       "success" :
                                                                                                       "failed"))
-                .put("summary", analysisDetails.createAnalysisSummary(new MarkdownFormatterFactory()))
+                .put("summary", summary)
                 .put("annotations", annotations);
 
         SimpleDateFormat startedDateFormat = new SimpleDateFormat(DATE_TIME_PATTERN);
@@ -165,9 +167,58 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                               inputObjectArguments, checkRunOutputContentBuilder, graphQLRequestEntityBuilder);
 
 
+        Optional<String> oPullRequestKey = analysisDetails.getPullRequestKey();
+        if (Optional.ofNullable(projectAlmSettingDto.getSummaryCommentEnabled()).orElse(true) && oPullRequestKey.isPresent()) {
+            postSummaryComment(apiUrl, headers, projectPath, oPullRequestKey.get(), summary);
+        }
+
         return DecorationResult.builder()
                 .withPullRequestUrl(repositoryAuthenticationToken.getRepositoryUrl() + "/pull/" + analysisDetails.getBranchName())
                 .build();
+
+    }
+
+    private void postSummaryComment(String apiUrl, Map<String, String> headers, String projectPath, String pullRequestKey, String summary) throws IOException {
+
+        String[] paths = projectPath.split("/", 2);
+        String owner = paths[0];
+        String projectName = paths[1];
+
+        GraphQLRequestEntity getPullRequest =
+            graphqlProvider.createRequestBuilder()
+                .url(getGraphqlUrl(apiUrl))
+                .headers(headers)
+                .request(GetPullRequest.class)
+                .arguments(
+                    new Arguments("repository", new Argument<>("owner", owner), new Argument<>("name", projectName)),
+                    new Arguments("repository.pullRequest", new Argument<>("number", Integer.valueOf(pullRequestKey)))
+                )
+                .requestMethod(GraphQLTemplate.GraphQLMethod.QUERY)
+                .build();
+
+
+        GraphQLResponseEntity<GetPullRequest> response =
+            executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().execute(r, t), getPullRequest, GetPullRequest.class);
+
+        String pullRequestId = response.getResponse().getPullRequest().getId();
+
+        InputObject.Builder<Object> repositoryInputObjectBuilder = graphqlProvider.createInputObject();
+
+        InputObject<Object> input = repositoryInputObjectBuilder
+            .put("body", summary)
+            .put("subjectId", pullRequestId)
+            .build();
+
+        GraphQLRequestEntity graphQLRequestEntity =
+            graphqlProvider.createRequestBuilder()
+                .url(getGraphqlUrl(apiUrl))
+                .headers(headers)
+                .request(AddComment.class)
+                .arguments(new Arguments("addComment", new Argument<>("input", input)))
+                .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE)
+                .build();
+
+        executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().mutate(r, t), graphQLRequestEntity, AddComment.class);
 
     }
 
