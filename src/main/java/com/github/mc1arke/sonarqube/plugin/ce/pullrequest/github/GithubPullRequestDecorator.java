@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,9 @@ import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
+import java.util.Collections;
+import java.util.List;
+
 public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
     private final CheckRunProvider checkRunProvider;
@@ -45,8 +48,8 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
     }
 
     @Override
-    public ALM alm() {
-        return ALM.GITHUB;
+    public List<ALM> alm() {
+        return Collections.singletonList(ALM.GITHUB);
     }
 
 }

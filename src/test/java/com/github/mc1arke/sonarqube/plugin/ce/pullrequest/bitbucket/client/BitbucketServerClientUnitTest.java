@@ -3,11 +3,11 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.Annotation;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.BitbucketServerConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.CreateReportRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.ErrorResponse;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.ServerProperties;
@@ -53,7 +53,8 @@ public class BitbucketServerClientUnitTest {
 
     @Before
     public void before() {
-        BitbucketConfiguration config = new BitbucketConfiguration("https://my-server.org", "token", "repository", "project");
+        BitbucketServerConfiguration
+                config = new BitbucketServerConfiguration("repo", "slug", "https://my-server.org", "token");
         underTest = new BitbucketServerClient(config, mapper) {
             @Override
             OkHttpClient getClient() {
@@ -353,10 +354,10 @@ public class BitbucketServerClientUnitTest {
         // then
         assertTrue(annotation instanceof Annotation);
         assertEquals("issueKey", ((Annotation) annotation).getExternalId());
-        assertEquals(12, ((Annotation) annotation).getLine());
+        assertEquals(12, annotation.getLine());
         assertEquals("http://localhost:9000/dashboard", ((Annotation) annotation).getLink());
-        assertEquals("/path/to/file", ((Annotation) annotation).getPath());
-        assertEquals("MAJOR", ((Annotation) annotation).getSeverity());
+        assertEquals("/path/to/file", annotation.getPath());
+        assertEquals("MAJOR", annotation.getSeverity());
         assertEquals("BUG", ((Annotation) annotation).getType());
     }
 
@@ -391,10 +392,10 @@ public class BitbucketServerClientUnitTest {
 
         // then
         assertTrue(result instanceof CreateReportRequest);
-        assertEquals(0, ((CreateReportRequest) result).getData().size());
-        assertEquals("reportDescription", ((CreateReportRequest) result).getDetails());
-        assertEquals("dashboardUrl", ((CreateReportRequest) result).getLink());
+        assertEquals(0, result.getData().size());
+        assertEquals("reportDescription", result.getDetails());
+        assertEquals("dashboardUrl", result.getLink());
         assertEquals("logoUrl", ((CreateReportRequest) result).getLogoUrl());
-        assertEquals("FAIL", ((CreateReportRequest) result).getResult());
+        assertEquals("FAIL", result.getResult());
     }
 }

@@ -24,13 +24,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Class for reusing models between the cloud and the server version
  */
 public class CodeInsightsAnnotation {
-    @JsonProperty("line")
     private final int line;
-    @JsonProperty("summary")
     private final String message;
-    @JsonProperty("path")
     private final String path;
-    @JsonProperty("severity")
     private final String severity;
 
     public CodeInsightsAnnotation(int line, String message, String path, String severity) {
@@ -40,18 +36,22 @@ public class CodeInsightsAnnotation {
         this.severity = severity;
     }
 
+    @JsonProperty("line")
     public int getLine() {
         return line;
     }
 
+    @JsonProperty("message")
     public String getMessage() {
         return message;
     }
 
+    @JsonProperty("path")
     public String getPath() {
         return path;
     }
 
+    @JsonProperty("severity")
     public String getSeverity() {
         return severity;
     }

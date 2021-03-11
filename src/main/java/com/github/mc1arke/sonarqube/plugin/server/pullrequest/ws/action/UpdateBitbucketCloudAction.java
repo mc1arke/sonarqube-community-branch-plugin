@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,34 +16,36 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.gitlab;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.UpdateAction;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.server.user.UserSession;
 
-public class UpdateGitlabAction extends UpdateAction {
+public class UpdateBitbucketCloudAction extends UpdateAction {
 
-    private static final String URL_PARAMETER = "url";
-    private static final String PERSONAL_ACCESS_TOKEN_PARAMETER = "personalAccessToken";
+    private static final String CLIENT_ID_PARAMETER = "clientId";
+    private static final String CLIENT_SECRET_PARAMETER = "clientSecret";
+    private static final String WORKSPACE_PARAMETER = "workspace";
 
-    public UpdateGitlabAction(DbClient dbClient, UserSession userSession) {
-        super(dbClient, userSession, "update_gitlab");
+    public UpdateBitbucketCloudAction(DbClient dbClient, UserSession userSession) {
+        super(dbClient, userSession, "update_bitbucketcloud");
     }
 
     @Override
     protected void configureAction(WebService.NewAction action) {
-        action.createParam(URL_PARAMETER).setMaximumLength(2000);
-        action.createParam(PERSONAL_ACCESS_TOKEN_PARAMETER).setRequired(true).setMaximumLength(2000);
+        action.createParam(CLIENT_ID_PARAMETER).setRequired(true).setMaximumLength(2000);
+        action.createParam(CLIENT_SECRET_PARAMETER).setRequired(true).setMaximumLength(2000);
+        action.createParam(WORKSPACE_PARAMETER).setRequired(true);
     }
 
     @Override
     protected AlmSettingDto updateAlmSettingsDto(AlmSettingDto almSettingDto, Request request) {
-        return almSettingDto.setPersonalAccessToken(request.mandatoryParam(PERSONAL_ACCESS_TOKEN_PARAMETER))
-            .setUrl(request.param(URL_PARAMETER));
+        return almSettingDto.setClientSecret(request.mandatoryParam(CLIENT_SECRET_PARAMETER))
+                .setClientId(request.mandatoryParam(CLIENT_ID_PARAMETER))
+                .setAppId(request.mandatoryParam(WORKSPACE_PARAMETER));
     }
 
 }

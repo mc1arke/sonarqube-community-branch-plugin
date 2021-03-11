@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.gitlab;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.WebService;
@@ -24,8 +24,6 @@ import org.sonar.db.DbClient;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
-
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBindingAction;
 
 public class SetGitlabBindingAction extends SetBindingAction {
     private static final String REPOSITORY_PARAMETER = "repository";
@@ -46,7 +44,8 @@ public class SetGitlabBindingAction extends SetBindingAction {
         return new ProjectAlmSettingDto()
                 .setProjectUuid(projectUuid)
                 .setAlmSettingUuid(settingsUuid)
-                .setAlmRepo(request.param(REPOSITORY_PARAMETER));
+                .setAlmRepo(request.param(REPOSITORY_PARAMETER))
+                .setMonorepo(false);
     }
 
 }
