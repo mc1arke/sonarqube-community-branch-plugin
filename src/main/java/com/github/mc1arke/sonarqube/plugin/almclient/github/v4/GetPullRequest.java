@@ -49,13 +49,22 @@ public class GetPullRequest {
 
         private final String id;
 
+        @GraphQLProperty(name = "comments", arguments = {@GraphQLArgument(name = "first", optional = true, type = "Integer"), @GraphQLArgument(name = "after", optional = true, type = "String")})
+        private final Comments comments;
+
         @JsonCreator
-        public PullRequest(@JsonProperty("id") String id) {
+        public PullRequest(@JsonProperty("id") String id, @JsonProperty("comments") Comments comments) {
             this.id = id;
+            this.comments = comments;
         }
 
         public String getId() {
             return id;
         }
+
+        public Comments getComments() {
+            return comments;
+        }
     }
+
 }
