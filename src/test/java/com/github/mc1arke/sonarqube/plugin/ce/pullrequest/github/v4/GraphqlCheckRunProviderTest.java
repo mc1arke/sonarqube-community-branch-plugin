@@ -25,7 +25,9 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubApplicati
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.RepositoryAuthenticationToken;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CheckAnnotationLevel;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CheckConclusionState;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CommentClassifiers;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.RequestableCheckStatusState;
+import io.aexp.nodes.graphql.Argument;
 import io.aexp.nodes.graphql.Arguments;
 import io.aexp.nodes.graphql.GraphQLRequestEntity;
 import io.aexp.nodes.graphql.GraphQLResponseEntity;
@@ -406,18 +408,45 @@ public class GraphqlCheckRunProviderTest {
         GraphQLTemplate graphQLTemplate = mock(GraphQLTemplate.class);
         when(graphQLTemplate.mutate(requestEntityArgumentCaptor.capture(), eq(CreateCheckRun.class))).thenReturn(graphQLResponseEntity);
 
+        GraphQLResponseEntity<Viewer> viewerResponseEntity = objectMapper.readValue("{" +
+                "  \"response\": {" +
+                "      \"login\": \"test-sonar[bot]\"" +
+                "  }" +
+                "}",
+            objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, Viewer.class));
+        ArgumentCaptor<GraphQLRequestEntity> getViewer = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
+        when(graphQLTemplate.query(getViewer.capture(), eq(Viewer.class))).thenReturn(viewerResponseEntity);
+
         GraphQLResponseEntity<GetPullRequest> getPullRequestResponseEntity =
             objectMapper.readValue("{" +
                 "\"response\": " +
-                "  {\n" +
-                "    \"pullRequest\": {\n" +
-                "      \"id\": \"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"\n" +
-                "    }\n" +
-                "  }\n" +
+                "  {" +
+                "    \"pullRequest\": {" +
+                "      \"id\": \"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"," +
+                "      \"comments\": {" +
+                "        \"nodes\": [" +
+                "          {" +
+                "            \"id\": \"MDEyOklzc3VlQ29tbWVudDE1MDE3\"," +
+                "            \"isMinimized\": false," +
+                "            \"author\": {" +
+                "              \"__typename\": \"Bot\"," +
+                "              \"login\": \"test-sonar\"" +
+                "            }" +
+                "          }"+
+                "        ]"+
+                "      }"+
+                "    }" +
+                "  }" +
                 "}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, GetPullRequest.class));
 
         ArgumentCaptor<GraphQLRequestEntity> getPullRequestRequestEntityArgumentCaptor = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
-        when(graphQLTemplate.execute(getPullRequestRequestEntityArgumentCaptor.capture(), eq(GetPullRequest.class))).thenReturn(getPullRequestResponseEntity);
+        when(graphQLTemplate.query(getPullRequestRequestEntityArgumentCaptor.capture(), eq(GetPullRequest.class))).thenReturn(getPullRequestResponseEntity);
+
+        GraphQLResponseEntity<MinimizeComment> minimizeCommentResponseEntity =
+            objectMapper.readValue("{\"response\":{}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, MinimizeComment.class));
+
+        ArgumentCaptor<GraphQLRequestEntity> minimizeCommentRequestEntityArgumentCaptor = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
+        when(graphQLTemplate.mutate(minimizeCommentRequestEntityArgumentCaptor.capture(), eq(MinimizeComment.class))).thenReturn(minimizeCommentResponseEntity);
 
         GraphQLResponseEntity<AddComment> addCommentResponseEntity =
             objectMapper.readValue("{\"response\":{}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, AddComment.class));
@@ -439,7 +468,7 @@ public class GraphqlCheckRunProviderTest {
                 new GraphqlCheckRunProvider(graphqlProvider, clock, githubApplicationAuthenticationProvider, server);
         testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        assertEquals(3, requestBuilders.size());
+        assertEquals(5, requestBuilders.size());
 
         Map<String, String> headers = new HashMap<>();
         headers.put("Authorization", "Bearer dummyAuthToken");
@@ -493,7 +522,7 @@ public class GraphqlCheckRunProviderTest {
             position++;
         }
 
-        assertEquals(3 + position, inputObjectBuilders.size());
+        assertEquals(4 + position, inputObjectBuilders.size());
 
         ArgumentCaptor<List<InputObject<Object>>> annotationArgumentCaptor = ArgumentCaptor.forClass(List.class);
 
@@ -520,19 +549,42 @@ public class GraphqlCheckRunProviderTest {
         verify(inputObjectBuilders.get(position + 1)).put(eq("output"), eq(inputObjects.get(position)));
         verify(inputObjectBuilders.get(position + 1)).build();
 
-        // Verify getPullRequest requestEntity
+        // Verify GetViewer
+        verify(requestBuilders.get(1)).url(fullPath);
+        verify(requestBuilders.get(1)).headers(headers);
+        verify(requestBuilders.get(1)).build();
+        assertEquals(requestEntities.get(1), getViewer.getValue());
         assertEquals(
-            "query { repository (owner:\"dummy\",name:\"repo\") { url pullRequest : pullRequest (number:1) { id } } } ",
+            "query { viewer { login } } ",
+            getViewer.getValue().getRequest()
+        );
+
+        // Verify GetPullRequest
+        verify(requestBuilders.get(2)).url(fullPath);
+        verify(requestBuilders.get(2)).headers(headers);
+        verify(requestBuilders.get(2)).build();
+        assertEquals(requestEntities.get(2), getPullRequestRequestEntityArgumentCaptor.getValue());
+        assertEquals(
+            "query { repository (owner:\"dummy\",name:\"repo\") { url pullRequest : pullRequest (number:1) { comments : comments (last:100) { nodes" +
+                " { author { type : __typename login } id minimized : isMinimized } } id } } } ",
             getPullRequestRequestEntityArgumentCaptor.getValue().getRequest()
         );
 
-        // Validate AddComment
-        verify(requestBuilders.get(2)).url(fullPath);
-        verify(requestBuilders.get(2)).headers(headers);
-        verify(requestBuilders.get(2)).requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE);
-        verify(requestBuilders.get(2)).build();
-        assertEquals(requestEntities.get(2), addCommentRequestEntityArgumentCaptor.getValue());
+        // Validate Minimize Comment
+        verify(requestBuilders.get(3)).url(fullPath);
+        verify(requestBuilders.get(3)).headers(headers);
+        verify(requestBuilders.get(3)).build();
+        assertEquals(requestEntities.get(3), minimizeCommentRequestEntityArgumentCaptor.getValue());
+        assertEquals(
+            "mutation { minimizeComment (input:{classifier:OUTDATED,subjectId:\"MDEyOklzc3VlQ29tbWVudDE1MDE3\"}) { clientMutationId } } ",
+            minimizeCommentRequestEntityArgumentCaptor.getValue().getRequest()
+        );
 
+        // Validate AddComment
+        verify(requestBuilders.get(4)).url(fullPath);
+        verify(requestBuilders.get(4)).headers(headers);
+        verify(requestBuilders.get(4)).build();
+        assertEquals(requestEntities.get(4), addCommentRequestEntityArgumentCaptor.getValue());
         assertEquals(
           "mutation { addComment (input:{body:\"dummy summary\",subjectId:\"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"}) { clientMutationId } } ",
             addCommentRequestEntityArgumentCaptor.getValue().getRequest()
