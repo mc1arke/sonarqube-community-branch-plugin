@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubApplicati
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.RepositoryAuthenticationToken;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CheckAnnotationLevel;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CheckConclusionState;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.CommentClassifiers;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v4.model.RequestableCheckStatusState;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import io.aexp.nodes.graphql.Argument;
@@ -46,6 +47,7 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -68,6 +70,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
     private static final Logger LOGGER = Loggers.get(GraphqlCheckRunProvider.class);
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ssXXX";
+    private static final String INPUT = "input";
 
     private final GraphqlProvider graphqlProvider;
     private final Clock clock;
@@ -147,13 +150,14 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
         InputObject.Builder<Object> repositoryInputObjectBuilder = graphqlProvider.createInputObject();
         inputObjectArguments.forEach(repositoryInputObjectBuilder::put);
 
+        String graphqlUrl = getGraphqlUrl(apiUrl);
 
         GraphQLRequestEntity.RequestBuilder graphQLRequestEntityBuilder =
                 graphqlProvider.createRequestBuilder()
-                        .url(getGraphqlUrl(apiUrl))
+                        .url(graphqlUrl)
                         .headers(headers)
                         .request(CreateCheckRun.class)
-                        .arguments(new Arguments("createCheckRun", new Argument<>("input", repositoryInputObjectBuilder
+                        .arguments(new Arguments("createCheckRun", new Argument<>(INPUT, repositoryInputObjectBuilder
                                 .put("headSha", analysisDetails.getCommitSha())
                                 .build())))
                         .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE);
@@ -168,7 +172,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
 
         if (Optional.ofNullable(projectAlmSettingDto.getSummaryCommentEnabled()).orElse(true)) {
-            postSummaryComment(apiUrl, headers, projectPath, analysisDetails.getBranchName(), summary);
+            postSummaryComment(graphqlUrl, headers, projectPath, analysisDetails.getBranchName(), summary);
         }
 
         return DecorationResult.builder()
@@ -177,29 +181,21 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
     }
 
-    private void postSummaryComment(String apiUrl, Map<String, String> headers, String projectPath, String pullRequestKey, String summary) throws IOException {
+    private void postSummaryComment(String graphqlUrl, Map<String, String> headers, String projectPath, String pullRequestKey, String summary) throws IOException {
+        String login = getLogin(graphqlUrl, headers);
 
         String[] paths = projectPath.split("/", 2);
         String owner = paths[0];
         String projectName = paths[1];
 
-        GraphQLRequestEntity getPullRequest =
-            graphqlProvider.createRequestBuilder()
-                .url(getGraphqlUrl(apiUrl))
-                .headers(headers)
-                .request(GetPullRequest.class)
-                .arguments(
-                    new Arguments("repository", new Argument<>("owner", owner), new Argument<>("name", projectName)),
-                    new Arguments("repository.pullRequest", new Argument<>("number", Integer.valueOf(pullRequestKey)))
-                )
-                .requestMethod(GraphQLTemplate.GraphQLMethod.QUERY)
-                .build();
+        GetPullRequest.PullRequest pullRequest = getPullRequest(graphqlUrl, headers, projectName, pullRequestKey, owner);
+        String pullRequestId = pullRequest.getId();
 
-
-        GraphQLResponseEntity<GetPullRequest> response =
-            executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().execute(r, t), getPullRequest, GetPullRequest.class);
-
-        String pullRequestId = response.getResponse().getPullRequest().getId();
+        getComments(pullRequest, graphqlUrl, headers, projectName, pullRequestKey, owner).stream()
+            .filter(c -> "Bot".equalsIgnoreCase(c.getAuthor().getType()) && login.equalsIgnoreCase(c.getAuthor().getLogin()))
+            .filter(c -> !c.isMinimized())
+            .map(Comments.CommentNode::getId)
+            .forEach(commentId -> this.minimizeComment(graphqlUrl, headers, commentId));
 
         InputObject.Builder<Object> repositoryInputObjectBuilder = graphqlProvider.createInputObject();
 
@@ -210,15 +206,83 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
         GraphQLRequestEntity graphQLRequestEntity =
             graphqlProvider.createRequestBuilder()
-                .url(getGraphqlUrl(apiUrl))
+                .url(graphqlUrl)
                 .headers(headers)
                 .request(AddComment.class)
-                .arguments(new Arguments("addComment", new Argument<>("input", input)))
+                .arguments(new Arguments("addComment", new Argument<>(INPUT, input)))
                 .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE)
                 .build();
 
         executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().mutate(r, t), graphQLRequestEntity, AddComment.class);
 
+    }
+
+    private List<Comments.CommentNode> getComments(GetPullRequest.PullRequest pullRequest, String graphqlUrl, Map<String, String> headers, String projectName, String pullRequestKey, String owner) throws MalformedURLException {
+        List<Comments.CommentNode> comments = new ArrayList<>(pullRequest.getComments().getNodes());
+
+        PageInfo currentPageInfo = pullRequest.getComments().getPageInfo();
+        if (currentPageInfo.hasNextPage()) {
+            GetPullRequest.PullRequest response = getPullRequest(graphqlUrl, headers, projectName, pullRequestKey, owner, currentPageInfo);
+            comments.addAll(getComments(response, graphqlUrl, headers, projectName, pullRequestKey, owner));
+        }
+
+        return comments;
+    }
+
+    private GetPullRequest.PullRequest getPullRequest(String graphqlUrl, Map<String, String> headers, String projectName, String pullRequestKey, String owner) throws MalformedURLException {
+        return getPullRequest(graphqlUrl, headers, projectName, pullRequestKey, owner, null);
+    }
+
+    private GetPullRequest.PullRequest getPullRequest(String graphqlUrl, Map<String, String> headers, String projectName, String pullRequestKey, String owner, PageInfo pageInfo) throws MalformedURLException {
+        GraphQLRequestEntity getPullRequest =
+                graphqlProvider.createRequestBuilder()
+                        .url(graphqlUrl)
+                        .headers(headers)
+                        .request(GetPullRequest.class)
+                        .arguments(
+                                new Arguments("repository", new Argument<>("owner", owner), new Argument<>("name", projectName)),
+                                new Arguments("repository.pullRequest", new Argument<>("number", Integer.valueOf(pullRequestKey))),
+                                new Arguments("repository.pullRequest.comments", new Argument<>("first", 100), new Argument<>("after", Optional.ofNullable(pageInfo).map(PageInfo::getEndCursor).orElse(null)))
+                        )
+                        .build();
+
+        return executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().query(r, t), getPullRequest, GetPullRequest.class).getResponse().getPullRequest();
+    }
+
+    private void minimizeComment(String graphqlUrl, Map<String, String> headers, String commentId) {
+            InputObject<Object> input = graphqlProvider.createInputObject()
+                .put("subjectId", commentId)
+                .put("classifier", CommentClassifiers.OUTDATED)
+                .build();
+
+        try {
+
+            GraphQLRequestEntity graphQLRequestEntity = graphqlProvider.createRequestBuilder()
+                .url(graphqlUrl)
+                .headers(headers)
+                .request(MinimizeComment.class)
+                .arguments(new Arguments("minimizeComment", new Argument<>(INPUT, input)))
+                .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE)
+                .build();
+
+            executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().mutate(r, t), graphQLRequestEntity, MinimizeComment.class);
+
+        } catch (IOException e) {
+            LOGGER.error("Error during minimize comment", e);
+        }
+    }
+
+    private String getLogin(String graphqlUrl, Map<String, String> headers) throws IOException {
+        GraphQLRequestEntity viewerQuery = graphqlProvider.createRequestBuilder()
+                .url(graphqlUrl)
+                .headers(headers)
+                .request(Viewer.class)
+                .build();
+
+        GraphQLResponseEntity<Viewer> response =
+            executeRequest((r, t) -> graphqlProvider.createGraphQLTemplate().query(r, t), viewerQuery, Viewer.class);
+
+        return response.getResponse().getLogin().replace("[bot]", "");
     }
 
     private static <R> GraphQLResponseEntity<R> executeRequest(
@@ -266,7 +330,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
 
        GraphQLRequestEntity graphQLRequestEntity = graphQLRequestEntityBuilder
                .request(UpdateCheckRun.class)
-               .arguments(new Arguments("updateCheckRun", new Argument<>("input", repositoryInputObject)))
+               .arguments(new Arguments("updateCheckRun", new Argument<>(INPUT, repositoryInputObject)))
                         .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE)
                         .build();
 
@@ -290,7 +354,7 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                     .put("path", componentIssue.getComponent().getReportAttributes().getScmPath().get())
                     .put("location", issueLocation)
                     .put("annotationLevel", mapToGithubAnnotationLevel(componentIssue.getIssue().severity()))
-                    .put("message", componentIssue.getIssue().getMessage().replaceAll("\\\\","\\\\\\\\").replaceAll("\"", "\\\\\"")).build();
+                    .put("message", componentIssue.getIssue().getMessage().replace("\\","\\\\").replace("\"", "\\\"")).build();
         }).collect(Collectors.toList());
     }
 
