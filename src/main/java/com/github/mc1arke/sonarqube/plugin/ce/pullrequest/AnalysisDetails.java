@@ -119,7 +119,7 @@ public class AnalysisDetails {
     public String getIssueUrl(String issueKey) {
         return publicRootURL + "/project/issues?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issueKey + "&open=" + issueKey;
     }
-    
+
     public Optional<String> getPullRequestBase() {
         return Optional.ofNullable(scannerContext.getProperties().get(SCANNERROPERTY_PULLREQUEST_BASE));
     }
@@ -204,7 +204,7 @@ public class AnalysisDetails {
                                                          Optional.ofNullable(newCoverage).map(decimalFormat::format)
                                                                  .map(i -> i + "% Coverage")
                                                                  .orElse("No coverage information") + " (" +
-                                                         decimalFormat.format(coverage) + "% Estimated after merge)")),
+                                                         decimalFormat.format(coverage != null ? coverage : 0) + "% Estimated after merge)")),
                                                  new ListItem(createDuplicateImage(newDuplications, baseImageUrl),
                                                               new Text(" "), new Text(
                                                          Optional.ofNullable(newDuplications).map(decimalFormat::format)
