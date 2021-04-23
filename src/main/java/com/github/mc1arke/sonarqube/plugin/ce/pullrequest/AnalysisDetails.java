@@ -204,7 +204,7 @@ public class AnalysisDetails {
                                                          Optional.ofNullable(newCoverage).map(decimalFormat::format)
                                                                  .map(i -> i + "% Coverage")
                                                                  .orElse("No coverage information") + " (" +
-                                                         decimalFormat.format(coverage != null ? coverage : 0) + "% Estimated after merge)")),
+                                                         decimalFormat.format(Optional.ofNullable(coverage).orElse(BigDecimal.valueOf(0))) + "% Estimated after merge)")),
                                                  new ListItem(createDuplicateImage(newDuplications, baseImageUrl),
                                                               new Text(" "), new Text(
                                                          Optional.ofNullable(newDuplications).map(decimalFormat::format)
