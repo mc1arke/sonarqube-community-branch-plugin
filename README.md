@@ -25,7 +25,21 @@ SonarQube Version | Plugin Version
 The plugin is intended to support the [features and parameters specified in the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/).
 
 # Installation
-Either build the project or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases). Copy the plugin JAR file to the `extensions/plugins/` **and** the `lib/common/` directories of your SonarQube instance and restart SonarQube.
+
+## Manual Install
+__Please ensure you follow the installation instructions for the version of the plugin you're installing by looking at the README on the relevant release tag.__
+
+Either build the project or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases).
+
+1. Copy the plugin JAR file to the `extensions/plugins/` directory of your SonarQube instance
+2. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web` to the `sonar.web.javaAdditionalOptions` property in your Sonarqube installation's `config/sonar.properties` file, e.g. `sonar.web.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-1.8.0.jar=web`
+3. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce` to the `sonar.ce.javaAdditionalOptions` property in your Sonarqube installation's `config/sonar.properties` file, e.g. `sonar.ce.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-1.8.0.jar=ce`
+4. Start Sonarqube, and accept the warning about using third-party plugins
+
+## Docker
+The plugin is distributed in the [mc1arke/sonarqube-with-community-branch-plugin](https://hub.docker.com/r/mc1arke/sonarqube-with-community-branch-plugin) Docker image, with the image versions matching the up-stream Sonarqube image version.
+
+__Note:__ If you're setting the `SONAR_WEB_JAVAADDITIONALOPTS` or `SONAR_CE_JAVAADDITIONALOPTS` environment variables in your container launch then you'll need to add the `javaagent` configuration to your overrides to match what's in the provided Dockerfile.
 
 # Configuration
 ## Global configuration

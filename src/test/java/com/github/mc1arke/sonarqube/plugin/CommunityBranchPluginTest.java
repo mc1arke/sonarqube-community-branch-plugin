@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
-import com.github.mc1arke.sonarqube.plugin.ce.CommunityBranchEditionProvider;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
@@ -36,6 +35,7 @@ import org.sonar.api.SonarQubeSide;
 import org.sonar.core.extension.CoreExtension;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -102,8 +102,8 @@ public class CommunityBranchPluginTest {
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
 
-        assertEquals(Arrays.asList(CommunityReportAnalysisComponentProvider.class, CommunityBranchEditionProvider.class),
-                     argumentCaptor.getAllValues().subList(0, 2));
+        assertEquals(Collections.singletonList(CommunityReportAnalysisComponentProvider.class),
+                     argumentCaptor.getAllValues().subList(0, 1));
     }
 
 
@@ -119,7 +119,7 @@ public class CommunityBranchPluginTest {
         final ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
-        assertEquals(13, argumentCaptor.getAllValues().size());
+        assertEquals(12, argumentCaptor.getAllValues().size());
 
         assertEquals(Arrays.asList(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class),
                      argumentCaptor.getAllValues().subList(0, 2));
