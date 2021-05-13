@@ -24,6 +24,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.component.Component;
@@ -44,9 +45,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.created;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -60,7 +64,16 @@ public class GitlabServerPullRequestDecoratorTest {
     public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig());
 
     @Test
-    public void decorateQualityGateStatus() {
+    public void decorateQualityGateStatusOk() {
+        decorateQualityGateStatus(QualityGate.Status.OK);
+    }
+
+    @Test
+    public void decorateQualityGateStatusError() {
+        decorateQualityGateStatus(QualityGate.Status.ERROR);
+    }
+
+    private void decorateQualityGateStatus(QualityGate.Status status) {
         String user = "sonar_user";
         String repositorySlug = "repo/slug";
         String commitSHA = "commitSHA";
@@ -83,6 +96,7 @@ public class GitlabServerPullRequestDecoratorTest {
         when(analysisDetails
                      .getScannerProperty(eq(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID)))
                 .thenReturn(Optional.of(repositorySlug));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(status);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
         when(analysisDetails.getBranchName()).thenReturn(branchName);
         when(analysisDetails.getCommitSha()).thenReturn(commitSHA);
@@ -126,40 +140,28 @@ public class GitlabServerPullRequestDecoratorTest {
                 "    \"id\": \"" + commitSHA + "\"\n" +
                 "  }]")));
 
-        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions")).willReturn(okJson("[\n" +
-                "  {\n" +
-                "    \"id\": \"" + discussionId + "\",\n" +
-                "    \"individual_note\": false,\n" +
-                "    \"notes\": [\n" +
-                "      {\n" +
-                "        \"id\": " + noteId + ",\n" +
-                "        \"type\": \"DiscussionNote\",\n" +
-                "        \"body\": \"discussion text\",\n" +
-                "        \"attachment\": null,\n" +
-                "        \"author\": {\n" +
-                "          \"id\": 1,\n" +
-                "          \"username\": \"" + user + "\"\n" +
-                "        }}]}]")));
+        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions")).willReturn(okJson(
+                "[\n" + discussionPostResponseBody(discussionId, noteId, user) + "]")));
 
         wireMockRule.stubFor(delete(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions/" + discussionId + "/notes/" + noteId)).willReturn(noContent()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/statuses/" + commitSHA))
                 .withQueryParam("name", equalTo("SonarQube"))
-                .withQueryParam("state", equalTo("failed"))
+                .withQueryParam("state", matching("^(failed)|(success)$"))
                 .withQueryParam("target_url", equalTo(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + branchName))
                 .withQueryParam("coverage", equalTo("10"))
                 .willReturn(created()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(sourceProjectId) + "/statuses/" + commitSHA))
                 .withQueryParam("name", equalTo("SonarQube"))
-                .withQueryParam("state", equalTo("failed"))
+                .withQueryParam("state", matching("^(failed)|(success)$"))
                 .withQueryParam("target_url", equalTo(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + branchName))
                 .withQueryParam("coverage", equalTo("10"))
                 .willReturn(created()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
                 .withRequestBody(equalTo("body=summary"))
-                .willReturn(created()));
+                .willReturn(created().withBody(discussionPostResponseBody(discussionId, noteId, user))));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions"))
                 .withRequestBody(equalTo("body=issue&" +
@@ -170,7 +172,12 @@ public class GitlabServerPullRequestDecoratorTest {
                         urlEncode("position[new_path]") + "=" + urlEncode(filePath) + "&" +
                         urlEncode("position[new_line]") + "=" + lineNumber + "&" +
                         urlEncode("position[position_type]") + "=text"))
-                .willReturn(created()));
+                .willReturn(created().withBody(discussionPostResponseBody(discussionId, noteId, user))));
+
+        wireMockRule.stubFor(put(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + branchName + "/discussions/" + discussionId))
+                .withQueryParam("resolved", equalTo("true"))
+                .willReturn(ok())
+        );
 
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
@@ -179,6 +186,23 @@ public class GitlabServerPullRequestDecoratorTest {
 
 
         pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+    }
+
+    private String discussionPostResponseBody(String discussionId, String noteId, String username) {
+        return "{\n" +
+                "    \"id\": \"" + discussionId + "\",\n" +
+                "    \"individual_note\": false,\n" +
+                "    \"notes\": [\n" +
+                "      {\n" +
+                "        \"id\": " + noteId + ",\n" +
+                "        \"type\": \"DiscussionNote\",\n" +
+                "        \"body\": \"discussion text\",\n" +
+                "        \"attachment\": null,\n" +
+                "        \"author\": {\n" +
+                "          \"id\": 1,\n" +
+                "          \"username\": \"" + username + "\"\n" +
+                "        }}]" +
+                "}";
     }
 
     private static String urlEncode(String value) {
