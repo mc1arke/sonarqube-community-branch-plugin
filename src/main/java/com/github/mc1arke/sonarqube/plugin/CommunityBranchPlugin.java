@@ -74,13 +74,31 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                 */
                                   PropertyDefinition
                                           .builder(PurgeConstants.DAYS_BEFORE_DELETING_INACTIVE_BRANCHES_AND_PRS)
-                                          .name("Number of days before purging inactive short living branches")
+                                          .name("Number of days before purging inactive branches and pull requests")
                                           .description(
-                                                  "Short living branches are permanently deleted when there are no analysis for the configured number of days.")
+                                                  "Branches and pull requests are permanently deleted when there has been no analysis for the configured number of days.")
                                           .category(CoreProperties.CATEGORY_HOUSEKEEPING)
-                                          .subCategory(CoreProperties.SUBCATEGORY_GENERAL).defaultValue("30")
-                                          .type(PropertyType.INTEGER).build()
+                                          .subCategory(CoreProperties.SUBCATEGORY_BRANCHES_AND_PULL_REQUESTS).defaultValue("30")
+                                          .type(PropertyType.INTEGER)
+                                          .index(1)
+                                          .build()
+                                  ,
 
+                                  PropertyDefinition
+                                          .builder(PurgeConstants.BRANCHES_TO_KEEP_WHEN_INACTIVE)
+                                          .name("Branches to keep when inactive")
+                                          .description("By default, branches and pull requests are automatically deleted when inactive. This setting allows you "
+                                                + "to protect branches (but not pull requests) from this deletion. When a branch is created with a name that "
+                                                + "matches any of the regular expressions on the list of values of this setting, the branch will not be deleted "
+                                                + "automatically even when it becomes inactive. Example:"
+                                                + "<ul><li>develop</li><li>release-.*</li></ul>")
+                                          .category(CoreProperties.CATEGORY_HOUSEKEEPING)
+                                          .subCategory(CoreProperties.SUBCATEGORY_BRANCHES_AND_PULL_REQUESTS)
+                                          .multiValues(true)
+                                          .defaultValue("master,develop,trunk")
+                                          .onQualifiers(Qualifiers.PROJECT)
+                                          .index(2)
+                                          .build()
 
                                  );
 
