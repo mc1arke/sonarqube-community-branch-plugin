@@ -31,6 +31,9 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.security.ProtectionDomain;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Optional;
 
 public final class CommunityBranchAgent {
 
@@ -43,17 +46,17 @@ public final class CommunityBranchAgent {
     public static void premain(String args, Instrumentation instrumentation) throws UnmodifiableClassException, ClassNotFoundException {
         LOGGER.info("Loading agent");
 
-        if (!"ce".equals(args) && !"web".equals(args)) {
-            throw new IllegalArgumentException("Invalid/missing agent argument");
-        }
+        Edition edition = Edition.fromString(args).orElseThrow(() -> new IllegalArgumentException("Invalid/missing agent argument"));
 
-        if ("ce".equals(args)) {
-            redefineEdition(instrumentation);
+        if (edition == Edition.CE) {
+            redefineEdition(instrumentation, new MethodDetails("org.sonar.core.platform.PlatformEditionProvider", "get", "return java.util.Optional.of(org.sonar.core.platform.EditionProvider.Edition.DEVELOPER);"));
+        } else if (edition == Edition.WEB) {
+            redefineEdition(instrumentation, new MethodDetails("org.sonar.server.almsettings.MultipleAlmFeatureProvider", "enabled", "return true;"));
         }
     }
 
-    private static void redefineEdition(Instrumentation instrumentation) throws ClassNotFoundException, UnmodifiableClassException {
-        String targetClassName = "org.sonar.core.platform.PlatformEditionProvider";
+    private static void redefineEdition(Instrumentation instrumentation, MethodDetails methodDetails) throws ClassNotFoundException, UnmodifiableClassException {
+        String targetClassName = methodDetails.getClassName();
 
         instrumentation.addTransformer(new ClassFileTransformer() {
 
@@ -71,13 +74,13 @@ public final class CommunityBranchAgent {
                 try {
                     ClassPool cp = ClassPool.getDefault();
                     CtClass cc = cp.get(targetClassName);
-                    CtMethod m = cc.getDeclaredMethod("get");
-                    m.setBody("return java.util.Optional.of(org.sonar.core.platform.EditionProvider.Edition.DEVELOPER);");
+                    CtMethod m = cc.getDeclaredMethod(methodDetails.getMethodName());
+                    m.setBody(methodDetails.getMethodBody());
 
                     byteCode = cc.toBytecode();
                     cc.detach();
                 } catch (NotFoundException | CannotCompileException | IOException e) {
-                    LOGGER.error("Could not transform class, will use default class definition", e);
+                    LOGGER.error(String.format("Could not transform class %s, will use default class definition", targetClassName), e);
                 }
 
                 return byteCode;
@@ -86,6 +89,39 @@ public final class CommunityBranchAgent {
         });
 
         instrumentation.retransformClasses(Class.forName(targetClassName));
+    }
+
+    private static class MethodDetails {
+
+        private final String className;
+        private final String methodName;
+        private final String methodBody;
+
+        public MethodDetails(String className, String methodName, String methodBody) {
+            this.className = className;
+            this.methodName = methodName;
+            this.methodBody = methodBody;
+        }
+
+        public String getClassName() {
+            return className;
+        }
+
+        public String getMethodName() {
+            return methodName;
+        }
+
+        public String getMethodBody() {
+            return methodBody;
+        }
+    }
+
+    private enum Edition {
+        CE, WEB;
+
+        private static Optional<Edition> fromString(String input) {
+            return Arrays.stream(values()).filter(v -> v.name().toLowerCase(Locale.ENGLISH).equals(input)).findFirst();
+        }
     }
 
 }

@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.core.platform.EditionProvider;
 import org.sonar.core.platform.PlatformEditionProvider;
+import org.sonar.server.almsettings.MultipleAlmFeatureProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +37,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 public class CommunityBranchAgentTest {
 
@@ -49,12 +49,40 @@ public class CommunityBranchAgentTest {
 
 
     @Test
-    public void checkNoRedefineForWebLaunch() throws UnmodifiableClassException, ClassNotFoundException {
+    public void checkRedefineForWebLaunchRedefinesTargetClass() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
         Instrumentation instrumentation = mock(Instrumentation.class);
 
         CommunityBranchAgent.premain("web", instrumentation);
 
-        verifyNoInteractions(instrumentation);
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        verify(instrumentation).retransformClasses(MultipleAlmFeatureProvider.class);
+        verify(instrumentation).addTransformer(classFileTransformerArgumentCaptor.capture());
+
+        try (InputStream inputStream = PlatformEditionProvider.class.getResourceAsStream(PlatformEditionProvider.class.getSimpleName())) {
+            byte[] input = IOUtils.toByteArray(inputStream);
+            byte[] result = classFileTransformerArgumentCaptor.getValue().transform(getClass().getClassLoader(), MultipleAlmFeatureProvider.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+
+            CustomClassloader classLoader = new CustomClassloader();
+
+            Class<?> loadedClass = classLoader.loadClass(MultipleAlmFeatureProvider.class.getName(), result);
+            assertThat(loadedClass.getMethod("enabled").invoke(loadedClass.getConstructor(PlatformEditionProvider.class).newInstance(new PlatformEditionProvider()))).isEqualTo(true);
+        }
+    }
+
+    @Test
+    public void checkRedefineForWebLaunchSkipsNonTargetClass() throws UnmodifiableClassException, ClassNotFoundException, IllegalClassFormatException {
+        Instrumentation instrumentation = mock(Instrumentation.class);
+
+        CommunityBranchAgent.premain("web", instrumentation);
+
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        verify(instrumentation).retransformClasses(MultipleAlmFeatureProvider.class);
+        verify(instrumentation).addTransformer(classFileTransformerArgumentCaptor.capture());
+
+        byte[] input = new byte[]{1, 2, 3, 4, 5, 6};
+        byte[] result = classFileTransformerArgumentCaptor.getValue().transform(getClass().getClassLoader(), "com/github/mc1arke/Dummy", getClass(), getClass().getProtectionDomain(), input);
+
+        assertThat(result).isEqualTo(input);
     }
 
     @Test
