@@ -55,12 +55,7 @@ public class BitbucketServerClientUnitTest {
     public void before() {
         BitbucketServerConfiguration
                 config = new BitbucketServerConfiguration("repo", "slug", "https://my-server.org", "token");
-        underTest = new BitbucketServerClient(config, mapper) {
-            @Override
-            OkHttpClient getClient() {
-                return client;
-            }
-        };
+        underTest = new BitbucketServerClient(config, mapper, client);
     }
 
     @Test

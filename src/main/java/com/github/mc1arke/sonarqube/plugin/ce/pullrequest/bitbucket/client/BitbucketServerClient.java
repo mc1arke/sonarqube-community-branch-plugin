@@ -30,7 +30,6 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.CreateReportRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.ErrorResponse;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.ServerProperties;
-import com.google.common.annotations.VisibleForTesting;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -61,10 +60,16 @@ public class BitbucketServerClient implements BitbucketClient {
 
     private final BitbucketServerConfiguration config;
     private final ObjectMapper objectMapper;
+    private final OkHttpClient okHttpClient;
 
-    public BitbucketServerClient(BitbucketServerConfiguration config, ObjectMapper objectMapper) {
+    public BitbucketServerClient(BitbucketServerConfiguration config, ObjectMapper objectMapper, OkHttpClient.Builder baseClientBuilder) {
+        this(config, objectMapper, createAuthorisingClient(baseClientBuilder, config));
+    }
+
+    BitbucketServerClient(BitbucketServerConfiguration config, ObjectMapper objectMapper, OkHttpClient okHttpClient) {
         this.config = config;
         this.objectMapper = objectMapper;
+        this.okHttpClient = okHttpClient;
     }
 
     @Override
@@ -97,7 +102,7 @@ public class BitbucketServerClient implements BitbucketClient {
                 .delete()
                 .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), project, repository, commit, REPORT_KEY))
                 .build();
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
         }
     }
@@ -113,7 +118,7 @@ public class BitbucketServerClient implements BitbucketClient {
                 .post(RequestBody.create(objectMapper.writeValueAsString(request), APPLICATION_JSON_MEDIA_TYPE))
                 .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), project, repository, commit, REPORT_KEY))
                 .build();
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
         }
     }
@@ -131,7 +136,7 @@ public class BitbucketServerClient implements BitbucketClient {
                 .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", config.getUrl(), project, repository, commit, REPORT_KEY))
                 .build();
 
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
         }
     }
@@ -174,7 +179,7 @@ public class BitbucketServerClient implements BitbucketClient {
                 .get()
                 .url(format("%s/rest/api/1.0/application-properties", config.getUrl()))
                 .build();
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
 
             return objectMapper.reader().forType(ServerProperties.class)
@@ -184,10 +189,8 @@ public class BitbucketServerClient implements BitbucketClient {
         }
     }
 
-    @VisibleForTesting
-    OkHttpClient getClient() {
-        return new OkHttpClient.Builder()
-                .addInterceptor(chain -> {
+    private static OkHttpClient createAuthorisingClient(OkHttpClient.Builder clientBuilder, BitbucketServerConfiguration config) {
+        return clientBuilder.addInterceptor(chain -> {
                     Request newRequest = chain.request().newBuilder()
                             .addHeader("Authorization", format("Bearer %s", config.getPersonalAccessToken()))
                             .addHeader("Accept", APPLICATION_JSON_MEDIA_TYPE.toString())
