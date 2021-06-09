@@ -5,7 +5,6 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.cloud.BitbucketCloudConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.cloud.CloudAnnotation;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.cloud.CloudCreateReportRequest;
 import com.google.common.collect.Sets;
@@ -32,7 +31,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
@@ -49,24 +47,10 @@ public class BitbucketCloudClientUnitTest {
     private OkHttpClient client;
 
     @Before
-    public void before() throws IOException {
-        BitbucketCloudConfiguration config = new BitbucketCloudConfiguration("clientId", "secret", "repository", "project");
-        OkHttpClient.Builder builder = mock(OkHttpClient.Builder.class);
-        when(builder.build()).thenReturn(client);
-        when(builder.addInterceptor(any())).thenReturn(builder);
+    public void before() {
         Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ResponseBody responseBody = mock(ResponseBody.class);
-        when(response.body()).thenReturn(responseBody);
-        String token  = "dummyToken";
-        when(responseBody.string()).thenReturn(token);
-        when(mapper.readValue(token, BitbucketCloudClient.AuthToken.class)).thenReturn(new BitbucketCloudClient.AuthToken("accessToken"));
-
         when(client.newCall(any())).thenReturn(call);
-        when(call.execute()).thenReturn(response);
-
-        underTest = new BitbucketCloudClient(config, mapper, () -> builder);
-        reset(client);
+        underTest = new BitbucketCloudClient(mapper, client);
     }
 
     @Test

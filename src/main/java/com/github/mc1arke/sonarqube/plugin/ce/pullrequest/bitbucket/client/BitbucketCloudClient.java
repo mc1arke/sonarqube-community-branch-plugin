@@ -47,7 +47,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -63,17 +62,15 @@ public class BitbucketCloudClient implements BitbucketClient {
     private static final String LINK_TEXT = "Go to SonarQube";
 
     private final ObjectMapper objectMapper;
-    private final String bearerToken;
-    private final Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier;
+    private final OkHttpClient okHttpClient;
 
-    public BitbucketCloudClient(BitbucketCloudConfiguration config, ObjectMapper objectMapper) {
-        this(config, objectMapper, OkHttpClient.Builder::new);
+    public BitbucketCloudClient(BitbucketCloudConfiguration config, ObjectMapper objectMapper, OkHttpClient.Builder baseClientBuilder) {
+        this(objectMapper, createAuthorisingClient(baseClientBuilder, negotiateBearerToken(config, objectMapper, baseClientBuilder.build())));
     }
 
-    BitbucketCloudClient(BitbucketCloudConfiguration config, ObjectMapper objectMapper, Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier) {
+    BitbucketCloudClient(ObjectMapper objectMapper, OkHttpClient okHttpClient) {
         this.objectMapper = objectMapper;
-        this.okHttpClientBuilderSupplier = okHttpClientBuilderSupplier;
-        this.bearerToken = negotiateBearerToken(config, objectMapper, okHttpClientBuilderSupplier.get().build());
+        this.okHttpClient = okHttpClient;
     }
 
     private static String negotiateBearerToken(BitbucketCloudConfiguration bitbucketCloudConfiguration, ObjectMapper objectMapper, OkHttpClient okHttpClient) {
@@ -142,7 +139,7 @@ public class BitbucketCloudClient implements BitbucketClient {
         LOGGER.info("Creating annotations on bitbucket cloud");
         LOGGER.debug("Create annotations: " + objectMapper.writeValueAsString(annotations));
 
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
         }
     }
@@ -166,7 +163,7 @@ public class BitbucketCloudClient implements BitbucketClient {
         LOGGER.info("Create report on bitbucket cloud: " + targetUrl);
         LOGGER.debug("Create report: " + body);
 
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
         }
     }
@@ -199,14 +196,13 @@ public class BitbucketCloudClient implements BitbucketClient {
 
         LOGGER.info("Deleting existing reports on bitbucket cloud");
 
-        try (Response response = getClient().newCall(req).execute()) {
+        try (Response response = okHttpClient.newCall(req).execute()) {
             // we dont need to validate the output here since most of the time this call will just return a 404
         }
     }
 
-    private OkHttpClient getClient() {
-        return okHttpClientBuilderSupplier.get()
-                .addInterceptor(chain -> {
+    private static OkHttpClient createAuthorisingClient(OkHttpClient.Builder baseClientBuilder, String bearerToken) {
+        return baseClientBuilder.addInterceptor(chain -> {
                     Request newRequest = chain.request().newBuilder()
                             .addHeader("Authorization", format("Bearer %s", bearerToken))
                             .addHeader("Accept", APPLICATION_JSON_MEDIA_TYPE.toString())

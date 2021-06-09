@@ -65,6 +65,7 @@ dependencies {
     runtime 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.7'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     compile 'org.javassist:javassist:3.27.0-GA'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0'
 }
 
 

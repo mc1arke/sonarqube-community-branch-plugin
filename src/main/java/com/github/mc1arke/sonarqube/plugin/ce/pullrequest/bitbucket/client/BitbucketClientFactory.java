@@ -23,6 +23,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.cloud.BitbucketCloudConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.BitbucketServerConfiguration;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -33,9 +37,9 @@ public final class BitbucketClientFactory {
 
     public static BitbucketClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
         if (almSettingDto.getAlm() == ALM.BITBUCKET_CLOUD) {
-            return new BitbucketCloudClient(new BitbucketCloudConfiguration(almSettingDto.getAppId(), projectAlmSettingDto.getAlmRepo(), almSettingDto.getClientId(), almSettingDto.getClientSecret()), createObjectMapper());
+            return new BitbucketCloudClient(new BitbucketCloudConfiguration(almSettingDto.getAppId(), projectAlmSettingDto.getAlmRepo(), almSettingDto.getClientId(), almSettingDto.getClientSecret()), createObjectMapper(), createBaseClientBuilder());
         } else {
-            return new BitbucketServerClient(new BitbucketServerConfiguration(projectAlmSettingDto.getAlmRepo(), projectAlmSettingDto.getAlmSlug(), almSettingDto.getUrl(), almSettingDto.getPersonalAccessToken()), createObjectMapper());
+            return new BitbucketServerClient(new BitbucketServerConfiguration(projectAlmSettingDto.getAlmRepo(), projectAlmSettingDto.getAlmSlug(), almSettingDto.getUrl(), almSettingDto.getPersonalAccessToken()), createObjectMapper(), createBaseClientBuilder());
         }
     }
 
@@ -43,5 +47,12 @@ public final class BitbucketClientFactory {
         return new ObjectMapper()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
+
+    private static OkHttpClient.Builder createBaseClientBuilder() {
+        Logger logger = Loggers.get(BitbucketClientFactory.class);
+        HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(logger::debug);
+        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        return new OkHttpClient.Builder().addInterceptor(httpLoggingInterceptor);
     }
 }
