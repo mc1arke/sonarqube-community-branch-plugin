@@ -30,6 +30,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
 import com.google.common.annotations.VisibleForTesting;
+import okhttp3.OkHttpClient;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
@@ -67,9 +68,19 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
             Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
                     .collect(Collectors.toList());
 
+    private final BitbucketClientFactory bitbucketClientFactory;
+
+    public BitbucketPullRequestDecorator() {
+        this(new BitbucketClientFactory(OkHttpClient.Builder::new));
+    }
+
+    BitbucketPullRequestDecorator(BitbucketClientFactory bitbucketClientFactory) {
+        this.bitbucketClientFactory = bitbucketClientFactory;
+    }
+
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
-        BitbucketClient client = createClient(almSettingDto, projectAlmSettingDto);
+        BitbucketClient client = bitbucketClientFactory.createClient(almSettingDto, projectAlmSettingDto);
         try {
             if (!client.supportsCodeInsights()) {
                 LOGGER.warn("Your Bitbucket instance does not support the Code Insights API.");
@@ -97,11 +108,6 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
         }
 
         return DEFAULT_DECORATION_RESULT;
-    }
-
-    @VisibleForTesting
-    BitbucketClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
-        return BitbucketClientFactory.createClient(almSettingDto, projectAlmSettingDto);
     }
 
     @Override
