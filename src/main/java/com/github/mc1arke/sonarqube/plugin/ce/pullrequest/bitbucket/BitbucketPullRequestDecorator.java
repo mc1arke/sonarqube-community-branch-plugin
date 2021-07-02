@@ -147,7 +147,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                     String path = componentIssue.getComponent().getReportAttributes().getScmPath().get();
                     return client.createCodeInsightsAnnotation(componentIssue.getIssue().key(),
                             Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0),
-                            analysisDetails.getIssueUrl(componentIssue.getIssue().key()),
+                            analysisDetails.getIssueUrl(componentIssue.getIssue()),
                             componentIssue.getIssue().getMessage(),
                             path,
                             toBitbucketSeverity(componentIssue.getIssue().severity()),

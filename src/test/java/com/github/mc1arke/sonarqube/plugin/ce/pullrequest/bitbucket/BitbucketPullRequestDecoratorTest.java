@@ -148,7 +148,7 @@ public class BitbucketPullRequestDecoratorTest {
         when(defaultIssue.key()).thenReturn(ISSUE_KEY);
         when(defaultIssue.type()).thenReturn(RuleType.BUG);
         when(defaultIssue.getMessage()).thenReturn(ISSUE_MESSAGE);
-        when(analysisDetails.getIssueUrl(ISSUE_KEY)).thenReturn(ISSUE_LINK);
+        when(analysisDetails.getIssueUrl(defaultIssue)).thenReturn(ISSUE_LINK);
         when(analysisDetails.getBaseImageUrl()).thenReturn(IMAGE_URL);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);

@@ -63,6 +63,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class AnalysisDetailsTest {
 
@@ -757,7 +758,7 @@ public class AnalysisDetailsTest {
     }
 
     @Test
-    public void testGetIssueUrl() {
+    public void testGetIssueUrlBug() {
         Project project = mock(Project.class);
         doReturn("projectKey").when(project).getKey();
 
@@ -769,7 +770,31 @@ public class AnalysisDetailsTest {
                         mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
                         mock(Analysis.class), project, mock(Configuration.class), "http://localhost:9000", mock(ScannerContext.class));
 
-        assertEquals("http://localhost:9000/project/issues?id=projectKey&pullRequest=123&issues=issueKey&open=issueKey", analysisDetails.getIssueUrl("issueKey"));
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        when(lightIssue.key()).thenReturn("issueKey");
+        when(lightIssue.type()).thenReturn(RuleType.BUG);
+
+        assertEquals("http://localhost:9000/project/issues?id=projectKey&pullRequest=123&issues=issueKey&open=issueKey", analysisDetails.getIssueUrl(lightIssue));
+    }
+
+    @Test
+    public void testGetIssueUrlSecurityHotspot() {
+        Project project = mock(Project.class);
+        doReturn("projectKey").when(project).getKey();
+
+        AnalysisDetails.BranchDetails branchDetails = mock(AnalysisDetails.BranchDetails.class);
+        doReturn("123").when(branchDetails).getBranchName();
+
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(branchDetails, mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), project, mock(Configuration.class), "http://localhost:9000", mock(ScannerContext.class));
+
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        when(lightIssue.key()).thenReturn("secondIssueKey");
+        when(lightIssue.type()).thenReturn(RuleType.SECURITY_HOTSPOT);
+
+        assertEquals("http://localhost:9000/security_hotspots?id=projectKey&pullRequest=123&hotspots=secondIssueKey", analysisDetails.getIssueUrl(lightIssue));
     }
 
     @Test
@@ -780,5 +805,54 @@ public class AnalysisDetailsTest {
                         mock(Analysis.class), mock(Project.class), mock(Configuration.class), "http://localhost:9000", mock(ScannerContext.class));
 
         assertEquals("http://localhost:9000/coding_rules?open=ruleKey&rule_key=ruleKey", analysisDetails.getRuleUrlWithRuleKey("ruleKey"));
+    }
+
+    @Test
+    public void testCreateAnalysisIssueSummary() {
+        FormatterFactory formatterFactory = mock(FormatterFactory.class);
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+
+        AnalysisDetails.BranchDetails branchDetails = mock(AnalysisDetails.BranchDetails.class);
+        when(branchDetails.getBranchName()).thenReturn("branchName");
+
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        when(lightIssue.type()).thenReturn(RuleType.BUG);
+        when(lightIssue.getMessage()).thenReturn("message");
+        when(lightIssue.severity()).thenReturn("severity");
+        when(lightIssue.key()).thenReturn("issueKey");
+        when(lightIssue.effortInMinutes()).thenReturn(123L);
+        when(componentIssue.getIssue()).thenReturn(lightIssue);
+
+        Project project = mock(Project.class);
+        when(project.getKey()).thenReturn("projectKey");
+
+        Formatter<Document> documentFormatter = mock(Formatter.class);
+        when(formatterFactory.documentFormatter()).thenReturn(documentFormatter);
+
+        AnalysisDetails analysisDetails =
+                new AnalysisDetails(branchDetails, mock(PostAnalysisIssueVisitor.class),
+                        mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class),
+                        mock(Analysis.class), project, mock(Configuration.class), "http://localhost:9000", mock(ScannerContext.class));
+
+        ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
+        analysisDetails.createAnalysisIssueSummary(componentIssue, formatterFactory);
+        verify(documentFormatter).format(documentArgumentCaptor.capture(), any());
+
+        assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(
+                new Document(
+                        new Paragraph(
+                                new Text("**Type:** BUG "),
+                                new Image("BUG", "http://localhost:9000/static/communityBranchPlugin/checks/IssueType/bug.svg?sanitize=true")
+                        ),
+                        new Paragraph(
+                                new Text("**Severity:** severity "),
+                                new Image("severity", "http://localhost:9000/static/communityBranchPlugin/checks/Severity/severity.svg?sanitize=true")
+                        ),
+                        new Paragraph(new Text("**Message:** message")),
+                        new Paragraph(new Text("**Duration (min):** 123")),
+                        new Text(""),
+                        new Link("http://localhost:9000/project/issues?id=projectKey&pullRequest=branchName&issues=issueKey&open=issueKey", new Text("View in SonarQube"))
+                )
+        );
     }
 }

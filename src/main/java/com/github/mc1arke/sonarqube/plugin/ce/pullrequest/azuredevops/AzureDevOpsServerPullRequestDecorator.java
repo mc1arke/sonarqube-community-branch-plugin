@@ -190,7 +190,7 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                         issue.getIssue().type().name(),
                         issue.getIssue().getMessage(),
                         analysisDetails.getRuleUrlWithRuleKey(issue.getIssue().getRuleKey().toString()),
-                        analysisDetails.getIssueUrl(issue.getIssue().key())
+                        analysisDetails.getIssueUrl(issue.getIssue())
                 );
 
                 CommentThread thread = new CommentThread(filePath, locate, message);
