@@ -116,8 +116,12 @@ public class AnalysisDetails {
         return publicRootURL + "/dashboard?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName();
     }
 
-    public String getIssueUrl(String issueKey) {
-        return publicRootURL + "/project/issues?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issueKey + "&open=" + issueKey;
+    public String getIssueUrl(PostAnalysisIssueVisitor.LightIssue issue) {
+        if (issue.type() == RuleType.SECURITY_HOTSPOT) {
+            return String.format("%s/security_hotspots?id=%s&pullRequest=%s&hotspots=%s", publicRootURL, encode(project.getKey()), branchDetails.getBranchName(), issue.key());
+        } else {
+            return String.format("%s/project/issues?id=%s&pullRequest=%s&issues=%s&open=%s", publicRootURL, encode(project.getKey()), branchDetails.getBranchName(), issue.key(), issue.key());
+        }
     }
 
     public Optional<String> getPullRequestBase() {
@@ -234,7 +238,7 @@ public class AnalysisDetails {
                 new Paragraph(new Text(String.format("**Message:** %s", issue.getMessage()))),
                 effortNode,
                 resolutionNode,
-                new Link(getIssueUrl(issue.key()), new Text("View in SonarQube"))
+                new Link(getIssueUrl(issue), new Text("View in SonarQube"))
         );
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
