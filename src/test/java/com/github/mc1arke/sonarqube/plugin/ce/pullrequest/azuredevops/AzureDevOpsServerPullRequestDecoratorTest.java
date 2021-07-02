@@ -97,7 +97,7 @@ public class AzureDevOpsServerPullRequestDecoratorTest {
         when(analysisDetails.getBranchName()).thenReturn(pullRequestId);
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(issueVisitor);
         when(analysisDetails.getRuleUrlWithRuleKey(ruleKeyVal)).thenReturn(ruleUrl);
-        when(analysisDetails.getIssueUrl(issueKeyVal)).thenReturn(issueUrl);
+        when(analysisDetails.getIssueUrl(defaultIssue)).thenReturn(issueUrl);
         when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of(filePath));
         when(issueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
 
