@@ -3,6 +3,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,22 +49,17 @@ public class BitbucketPullRequestDecoratorTest {
     private static final String DASHBOARD_URL = "https://dashboard-url";
     private static final String IMAGE_URL = "https://image-url";
 
-    private AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-
-    private BitbucketClient client = mock(BitbucketClient.class);
-
-    private BitbucketPullRequestDecorator underTest = new BitbucketPullRequestDecorator() {
-        @Override
-        BitbucketClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
-            return client;
-        }
-    };
+    private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+    private final BitbucketClient client = mock(BitbucketClient.class);
+    private final BitbucketClientFactory bitbucketClientFactory = mock(BitbucketClientFactory.class);
+    private final BitbucketPullRequestDecorator underTest = new BitbucketPullRequestDecorator(bitbucketClientFactory);
 
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
 
     @Before
     public void setUp() {
+        when(bitbucketClientFactory.createClient(any(), any())).thenReturn(client);
         when(client.resolveProject(any(), any())).thenReturn(PROJECT);
         when(client.resolveRepository(any(), any())).thenReturn(REPO);
     }
