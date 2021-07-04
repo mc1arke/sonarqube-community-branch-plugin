@@ -16,29 +16,20 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response;
-
-import java.util.List;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Discussion {
+public class Commit {
     private final String id;
 
-    private final List<Note> notes;
-
     @JsonCreator
-    public Discussion(@JsonProperty("id") String id, @JsonProperty("notes") List<Note> notes) {
+    public Commit(@JsonProperty("id") String id) {
         this.id = id;
-        this.notes = notes;
     }
 
     public String getId() {
         return id;
-    }
-
-    public List<Note> getNotes() {
-        return notes;
     }
 }

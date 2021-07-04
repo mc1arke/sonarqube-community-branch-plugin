@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2019 Markus Heberling
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,12 +16,29 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model;
 
-import java.util.Optional;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-interface LinkHeaderReader {
+import java.util.List;
 
-    Optional<String> findNextLink(String linkHeader);
+public class Discussion {
 
+    private final String id;
+    private final List<Note> notes;
+
+    @JsonCreator
+    public Discussion(@JsonProperty("id") String id, @JsonProperty("notes") List<Note> notes) {
+        this.id = id;
+        this.notes = notes;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public List<Note> getNotes() {
+        return notes;
+    }
 }

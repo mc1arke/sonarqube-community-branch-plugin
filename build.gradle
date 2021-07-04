@@ -55,7 +55,6 @@ compileJava {
 dependencies {
     compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
     testCompile fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
-    testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.13.2'
     testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.24.1'
@@ -66,6 +65,9 @@ dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     compile 'org.javassist:javassist:3.27.0-GA'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0'
+    testImplementation(platform('org.junit:junit-bom:5.7.2'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    testRuntime("org.junit.vintage:junit-vintage-engine")
 }
 
 
@@ -136,4 +138,11 @@ jacocoTestReport {
 
 plugins.withType(JacocoPlugin) {
     tasks["test"].finalizedBy 'jacocoTestReport'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }

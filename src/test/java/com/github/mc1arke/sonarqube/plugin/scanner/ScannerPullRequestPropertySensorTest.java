@@ -1,5 +1,6 @@
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabMergeRequestDecorator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -17,7 +18,6 @@ import java.util.Optional;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.AzureDevOpsServerPullRequestDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabServerPullRequestDecorator;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -69,10 +69,10 @@ public class ScannerPullRequestPropertySensorTest {
         context.fileSystem().add(inputFile);        
 
         when(system2.envVariable("GITLAB_CI")).thenReturn("false");
-        when(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL)).thenReturn("value");
-        when(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID)).thenReturn("value");
-        when(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL)).thenReturn("value");
-        when(system2.property(GitlabServerPullRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID)).thenReturn("value");        
+        when(system2.property(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL)).thenReturn("value");
+        when(system2.property(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID)).thenReturn("value");
+        when(system2.property(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL)).thenReturn("value");
+        when(system2.property(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID)).thenReturn("value");
 
         sensor = new ScannerPullRequestPropertySensor(projectConfiguration, system2);
         sensor.execute(context);

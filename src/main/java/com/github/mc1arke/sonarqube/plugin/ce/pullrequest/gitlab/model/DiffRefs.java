@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,23 +16,30 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model;
 
-import org.junit.Test;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
+public class DiffRefs {
+    private final String baseSha;
+    private final String headSha;
+    private final String startSha;
 
-import static org.junit.Assert.assertEquals;
+    public DiffRefs(@JsonProperty("base_sha") String baseSha, @JsonProperty("head_sha") String headSha, @JsonProperty("start_sha") String startSha) {
+        this.baseSha = baseSha;
+        this.headSha = headSha;
+        this.startSha = startSha;
+    }
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+    public String getBaseSha() {
+        return baseSha;
+    }
 
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(11, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    public String getHeadSha() {
+        return headSha;
+    }
+
+    public String getStartSha() {
+        return startSha;
     }
 }

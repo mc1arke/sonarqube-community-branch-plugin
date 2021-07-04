@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.LinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.RepositoryAuthenticationToken;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
