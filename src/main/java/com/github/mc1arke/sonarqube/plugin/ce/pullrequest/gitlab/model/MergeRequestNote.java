@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Markus Heberling
+ * Copyright (C) 2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,20 +16,17 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response;
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class MergeRequestNote {
 
-public class Commit {
-    private final String id;
+    private final String content;
 
-    @JsonCreator
-    public Commit(@JsonProperty("id") String id) {
-        this.id = id;
+    public MergeRequestNote(String content) {
+        this.content = content;
     }
 
-    public String getId() {
-        return id;
+    public String getContent() {
+        return content;
     }
 }

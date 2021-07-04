@@ -855,4 +855,48 @@ public class AnalysisDetailsTest {
                 )
         );
     }
+
+    @Test
+    public void testFakeIdReturnedForSummaryComment() {
+        AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
+                mock(Configuration.class),"", mock(ScannerContext.class));
+        assertThat(analysisDetails.parseIssueIdFromUrl("https://sonarqube.dummy/path/dashboard?pullRequest=123"))
+                .isEqualTo(Optional.of("decorator-summary-comment"));
+    }
+
+    @Test
+    public void testIssueIdReturnedForHotspotUrl() {
+        AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
+                mock(Configuration.class),"", mock(ScannerContext.class));
+        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/security_hotspots?hotspots=A1B2-Z9Y8X7"))
+                .isEqualTo(Optional.of("A1B2-Z9Y8X7"));
+    }
+
+    @Test
+    public void testNoIssueIdReturnedForHotspotUrlWithoutId() {
+        AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
+                mock(Configuration.class),"", mock(ScannerContext.class));
+        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/security_hotspots?other_parameter=ABC"))
+                .isEmpty();
+    }
+
+    @Test
+    public void testIssueIdReturnedForIssueUrl() {
+        AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
+                mock(Configuration.class),"", mock(ScannerContext.class));
+        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/issue?issues=XXX-YYY-ZZZ"))
+                .isEqualTo(Optional.of("XXX-YYY-ZZZ"));
+    }
+
+    @Test
+    public void testNoIssueIdReturnedForIssueUrlWithoutId() {
+        AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
+                mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
+                mock(Configuration.class),"", mock(ScannerContext.class));
+        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/issue?other_parameter=123")).isEmpty();
+    }
 }
