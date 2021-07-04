@@ -1,0 +1,264 @@
+/*
+ * Copyright (C) 2019-2021 Markus Heberling, Michael Clarke
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ */
+package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
+
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.issue.Issue;
+import org.sonar.api.platform.Server;
+import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.scm.Changeset;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.created;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+public class GitlabMergeRequestDecoratorIntegrationTest {
+
+    @Rule
+    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig());
+
+    @Test
+    public void decorateQualityGateStatusOk() {
+        decorateQualityGateStatus(QualityGate.Status.OK);
+    }
+
+    @Test
+    public void decorateQualityGateStatusError() {
+        decorateQualityGateStatus(QualityGate.Status.ERROR);
+    }
+
+    private void decorateQualityGateStatus(QualityGate.Status status) {
+        String user = "sonar_user";
+        String repositorySlug = "repo/slug";
+        String commitSHA = "commitSHA";
+        long mergeRequestIid = 6;
+        String projectKey = "projectKey";
+        String sonarRootUrl = "http://sonar:9000/sonar";
+        String discussionId = "6a9c1750b37d513a43987b574953fceb50b03ce7";
+        String noteId = "1126";
+        String filePath = "/path/to/file";
+        long sourceProjectId = 1234;
+        int lineNumber = 5;
+
+        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        when(almSettingDto.getPersonalAccessToken()).thenReturn("token");
+
+        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+        when(analysisDetails.getScannerProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL))
+                .thenReturn(Optional.of(wireMockRule.baseUrl()+"/api/v4"));
+        when(analysisDetails
+                     .getScannerProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID))
+                .thenReturn(Optional.of(repositorySlug));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(status);
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
+        when(analysisDetails.getBranchName()).thenReturn(Long.toString(mergeRequestIid));
+        when(analysisDetails.getCommitSha()).thenReturn(commitSHA);
+        when(analysisDetails.getCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
+        PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
+
+        ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
+
+        List<PostAnalysisIssueVisitor.ComponentIssue> issues = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+            PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+            when(defaultIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
+            when(defaultIssue.getLine()).thenReturn(lineNumber);
+            when(defaultIssue.key()).thenReturn("issueKey" + i);
+            when(componentIssue.getIssue()).thenReturn(defaultIssue);
+            Component component = mock(Component.class);
+            when(componentIssue.getComponent()).thenReturn(component);
+            when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of(filePath));
+
+            ScmInfo scmInfo = mock(ScmInfo.class);
+            when(scmInfo.hasChangesetForLine(anyInt())).thenReturn(true);
+            when(scmInfo.getChangesetForLine(anyInt())).thenReturn(Changeset.newChangesetBuilder()
+                    .setDate(0L)
+                    .setRevision(commitSHA)
+                    .build());
+            when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
+
+            issues.add(componentIssue);
+        }
+        when(issueVisitor.getIssues()).thenReturn(issues);
+        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(issueVisitor);
+        when(analysisDetails.createAnalysisSummary(any())).thenReturn("summary comment\n\n[link text]");
+        when(analysisDetails.createAnalysisIssueSummary(any(), any())).thenReturn("issue");
+        when(analysisDetails.parseIssueIdFromUrl(any())).thenCallRealMethod();
+
+        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/user")).withHeader("PRIVATE-TOKEN", equalTo("token")).willReturn(okJson("{\n" +
+                "  \"id\": 1,\n" +
+                "  \"username\": \"" + user + "\"}")));
+
+        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + mergeRequestIid)).willReturn(okJson("{\n" +
+                "  \"id\": 15235,\n" +
+                "  \"iid\": " + mergeRequestIid + ",\n" +
+                "  \"web_url\": \"http://gitlab.example.com/my-group/my-project/merge_requests/1\",\n" +
+                "  \"diff_refs\": {\n" +
+                "    \"base_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\",\n" +
+                "    \"head_sha\":\"" + commitSHA + "\",\n" +
+                "    \"start_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\"\n" +
+                "  }," +
+                "  \"source_project_id\": " + sourceProjectId  + "\n" +
+                "}")));
+
+        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/commits")).willReturn(okJson("[\n" +
+                "  {\n" +
+                "    \"id\": \"" + commitSHA + "\"\n" +
+                "  }]")));
+
+        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions")).willReturn(okJson(
+                "[\n" + discussionPostResponseBody(discussionId,
+                        discussionNote(noteId, user, "Old sonarqube issue.\\nPlease fix this finding", true, false),
+                        discussionNote(noteId + 1, "other", "I have fixed this", true, false)) +
+                        ", " +
+                        discussionPostResponseBody(discussionId + 1,
+                                discussionNote(noteId + 2, user, "Old Sonarqube issue that no longer exists\\n[View in SonarQube](https://sonarqube.dummy/security_hotspots?id=" + projectKey + "&pullRequest=1234&hotspots=randomId)", true, false),
+                                discussionNote(noteId + 3, "other", "System message about this being changed in a commit", false, true)) +
+                        "," +
+                        discussionPostResponseBody(discussionId + 2,
+                                discussionNote(noteId + 4, user, "Not a Sonarqube issue, but posted by the same user as Sonarqube, so will be cleaned up", true, false),
+                                discussionNote(noteId + 5, "other", "Investigating", true, false)) +
+                        "," +
+                        discussionPostResponseBody(discussionId + 3,
+                                discussionNote(noteId + 6, "other", "not posted by the Sonarqube user", true, false)) +
+                        "," +
+                        discussionPostResponseBody(discussionId + 4,
+                                discussionNote(noteId + 7, user, "Posted by system on behalf of Sonarqube user", false, true)) +
+                        "," +
+                        discussionPostResponseBody(discussionId + 5,
+                                discussionNote(noteId + 8, user, "Ongoing sonarqube issue that should not be closed\\n[View in SonarQube](https://sonarqube.dummy/security_hotspots?id=" + projectKey + "&pullRequest=1234&hotspots=issueKey1)", true, false)) +
+                        "," +
+                        discussionPostResponseBody(discussionId + 6,
+                                discussionNote(noteId + 9, user, "Resolved Sonarqube issue with response comment from other user so discussion can't be closed\\n[View in SonarQube](https://sonarqube.dummy/project/issues?id=" + projectKey + "&pullRequest=1234&issues=oldid&open=oldid)", true, false),
+                                discussionNote(noteId + 10, "other", "Comment from other user", true, false)) +
+                        "]")));
+
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + "/notes"))
+                .withRequestBody(equalTo("body=" + urlEncode("This looks like a comment from an old SonarQube version, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
+                .willReturn(created()));
+
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 2 + "/notes"))
+                .withRequestBody(equalTo("body=" + urlEncode("This looks like a comment from an old SonarQube version, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
+                .willReturn(created()));
+
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 6 + "/notes"))
+                .withRequestBody(equalTo("body=" + urlEncode("This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
+                .willReturn(created()));
+
+        wireMockRule.stubFor(post(urlEqualTo("/api/v4/projects/" + sourceProjectId + "/statuses/" + commitSHA + "?state=" + (status == QualityGate.Status.OK ? "success" : "failed")))
+                .withRequestBody(equalTo("name=SonarQube&target_url=" + urlEncode(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + mergeRequestIid) + "&description=SonarQube+Status&coverage=10"))
+                .willReturn(created()));
+
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
+                .withRequestBody(equalTo("body=summary+comment%0A%0A%5Blink+text%5D"))
+                .willReturn(created().withBody(discussionPostResponseBody(discussionId, discussionNote(noteId, user, "summary comment", true, false)))));
+
+        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
+                .withRequestBody(equalTo("body=issue&" +
+                        urlEncode("position[base_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
+                        urlEncode("position[start_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
+                        urlEncode("position[head_sha]") + "=" + commitSHA + "&" +
+                        urlEncode("position[old_path]") + "=" + urlEncode(filePath) + "&" +
+                        urlEncode("position[new_path]") + "=" + urlEncode(filePath) + "&" +
+                        urlEncode("position[new_line]") + "=" + lineNumber + "&" +
+                        urlEncode("position[position_type]") + "=text"))
+                .willReturn(created().withBody(discussionPostResponseBody(discussionId, discussionNote(noteId, user, "issue",true, false)))));
+
+        wireMockRule.stubFor(put(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId))
+                .withQueryParam("resolved", equalTo("true"))
+                .willReturn(ok())
+        );
+
+        wireMockRule.stubFor(put(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 1))
+                .withQueryParam("resolved", equalTo("true"))
+                .willReturn(ok())
+        );
+
+        Server server = mock(Server.class);
+        when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
+        GitlabMergeRequestDecorator pullRequestDecorator =
+                new GitlabMergeRequestDecorator(server, scmInfoRepository, new DefaultGitlabClientFactory());
+
+
+        assertThat(pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto).getPullRequestUrl()).isEqualTo(Optional.of("http://gitlab.example.com/my-group/my-project/merge_requests/1"));
+    }
+
+    private static String discussionPostResponseBody(String discussionId, String... notes) {
+        return "{\n" +
+                "    \"id\": \"" + discussionId + "\",\n" +
+                "    \"individual_note\": false,\n" +
+                "    \"notes\": [\n" + String.join(", ", notes) + "\n]" +
+                "}";
+    }
+
+    private static String discussionNote(String noteId, String username, String noteBody, boolean resolvable, boolean isSystem) {
+        return "{\n" +
+                "        \"id\": " + noteId + ",\n" +
+                "        \"type\": \"DiscussionNote\",\n" +
+                "        \"body\": \"" + noteBody + "\",\n" +
+                "        \"attachment\": null,\n" +
+                "        \"author\": {\n" +
+                "          \"id\": 1,\n" +
+                "          \"username\": \"" + username + "\"\n" +
+                "        },\n" +
+                "        \"resolved\": \"false\",\n" +
+                "        \"system\": \"" + isSystem + "\",\n" +
+                "        \"resolvable\": \"" + resolvable + "\"\n" +
+                "}";
+    }
+
+    private static String urlEncode(String value) {
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new Error("No support for UTF-8!", e);
+        }
+    }
+}

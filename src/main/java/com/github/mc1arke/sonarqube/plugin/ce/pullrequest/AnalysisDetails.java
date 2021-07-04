@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Node;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -49,6 +51,7 @@ import org.sonar.server.measure.Rating;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
@@ -121,6 +124,24 @@ public class AnalysisDetails {
             return String.format("%s/security_hotspots?id=%s&pullRequest=%s&hotspots=%s", publicRootURL, encode(project.getKey()), branchDetails.getBranchName(), issue.key());
         } else {
             return String.format("%s/project/issues?id=%s&pullRequest=%s&issues=%s&open=%s", publicRootURL, encode(project.getKey()), branchDetails.getBranchName(), issue.key(), issue.key());
+        }
+    }
+
+    public Optional<String> parseIssueIdFromUrl(String issueUrl) {
+        URI url = URI.create(issueUrl);
+        List<NameValuePair> parameters = URLEncodedUtils.parse(url, StandardCharsets.UTF_8);
+        if (url.getPath().endsWith("/dashboard")) {
+            return Optional.of("decorator-summary-comment");
+        } else if (url.getPath().endsWith("security_hotspots")) {
+            return parameters.stream()
+                    .filter(parameter -> "hotspots".equals(parameter.getName()))
+                    .map(NameValuePair::getValue)
+                    .findFirst();
+        } else {
+            return parameters.stream()
+                    .filter(parameter -> "issues".equals(parameter.getName()))
+                    .map(NameValuePair::getValue)
+                    .findFirst();
         }
     }
 
