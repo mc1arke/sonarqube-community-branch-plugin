@@ -178,6 +178,9 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
                         discussionPostResponseBody(discussionId + 6,
                                 discussionNote(noteId + 9, user, "Resolved Sonarqube issue with response comment from other user so discussion can't be closed\\n[View in SonarQube](https://sonarqube.dummy/project/issues?id=" + projectKey + "&pullRequest=1234&issues=oldid&open=oldid)", true, false),
                                 discussionNote(noteId + 10, "other", "Comment from other user", true, false)) +
+                        "," +
+                        discussionPostResponseBody(discussionId + 7,
+                                discussionNote(noteId + 11, user, "Sonarqube issue for anther project\\n[View in SonarQube](https://sonarqube.dummy/project/issues?id=abcd-" + projectKey + "&pullRequest=1234&issues=oldid&open=oldid)", true, false)) +
                         "]")));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + "/notes"))

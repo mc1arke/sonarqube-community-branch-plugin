@@ -127,21 +127,34 @@ public class AnalysisDetails {
         }
     }
 
-    public Optional<String> parseIssueIdFromUrl(String issueUrl) {
+    public Optional<ProjectIssueIdentifier> parseIssueIdFromUrl(String issueUrl) {
         URI url = URI.create(issueUrl);
         List<NameValuePair> parameters = URLEncodedUtils.parse(url, StandardCharsets.UTF_8);
+        Optional<String> optionalProjectId = parameters.stream()
+                .filter(parameter -> "id".equals(parameter.getName()))
+                .map(NameValuePair::getValue)
+                .findFirst();
+
+        if (!optionalProjectId.isPresent()) {
+            return Optional.empty();
+        }
+
+        String projectId = optionalProjectId.get();
+
         if (url.getPath().endsWith("/dashboard")) {
-            return Optional.of("decorator-summary-comment");
+            return Optional.of(new ProjectIssueIdentifier(projectId, "decorator-summary-comment"));
         } else if (url.getPath().endsWith("security_hotspots")) {
             return parameters.stream()
                     .filter(parameter -> "hotspots".equals(parameter.getName()))
                     .map(NameValuePair::getValue)
-                    .findFirst();
+                    .findFirst()
+                    .map(issueId -> new ProjectIssueIdentifier(projectId, issueId));
         } else {
             return parameters.stream()
                     .filter(parameter -> "issues".equals(parameter.getName()))
                     .map(NameValuePair::getValue)
-                    .findFirst();
+                    .findFirst()
+                    .map(issueId -> new ProjectIssueIdentifier(projectId, issueId));
         }
     }
 
@@ -237,7 +250,8 @@ public class AnalysisDetails {
                                                                  .orElse("No duplication information") + " (" +
                                                          decimalFormat.format(duplications) +
                                                          "% Estimated after merge)"))),
-                                         new Link(getDashboardUrl(), new Text("View in SonarQube")));
+                                         new Paragraph(new Text(String.format("**Project ID:** %s", project.getKey()))),
+                                         new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
 
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
@@ -259,7 +273,8 @@ public class AnalysisDetails {
                 new Paragraph(new Text(String.format("**Message:** %s", issue.getMessage()))),
                 effortNode,
                 resolutionNode,
-                new Link(getIssueUrl(issue), new Text("View in SonarQube"))
+                new Paragraph(new Text(String.format("**Project ID:** %s **Issue ID:** %s", project.getKey(), issue.key()))),
+                new Paragraph(new Link(getIssueUrl(issue), new Text("View in SonarQube")))
         );
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
@@ -463,6 +478,25 @@ public class AnalysisDetails {
 
         private String getImageName() {
             return imageName;
+        }
+    }
+
+    public static class ProjectIssueIdentifier {
+
+        private final String projectKey;
+        private final String issueKey;
+
+        public ProjectIssueIdentifier(String projectKey, String issueKey) {
+            this.projectKey = projectKey;
+            this.issueKey = issueKey;
+        }
+
+        public String getProjectKey() {
+            return projectKey;
+        }
+
+        public String getIssueKey() {
+            return issueKey;
         }
     }
 
