@@ -354,7 +354,8 @@ public class AnalysisDetailsTest {
                                                                                  "http://localhost:9000/static/communityBranchPlugin/checks/Duplications/NoDuplicationInfo.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "No duplication information (12.30% Estimated after merge)"))),
-                                                 new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
+                                                 new Paragraph(new Text("**Project ID:** Project Key")),
+                                                 new Paragraph(new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube"))));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
@@ -454,7 +455,8 @@ public class AnalysisDetailsTest {
                                                                                  "http://localhost:9000/static/communityBranchPlugin/checks/Duplications/20.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "18.00% Duplicated Code (21.78% Estimated after merge)"))),
-                                                 new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
+                                                 new Paragraph(new Text("**Project ID:** Project Key")),
+                                                 new Paragraph(new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube"))));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
@@ -561,7 +563,8 @@ public class AnalysisDetailsTest {
                                                                                  "http://host.name/path/checks/Duplications/10.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "10.00% Duplicated Code (21.78% Estimated after merge)"))),
-                                                 new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
+                                                 new Paragraph(new Text("**Project ID:** Project Key")),
+                                                 new Paragraph(new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube"))));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
@@ -659,7 +662,8 @@ public class AnalysisDetailsTest {
                                                                                  "http://localhost:9000/static/communityBranchPlugin/checks/Duplications/20plus.svg?sanitize=true"),
                                                                        new Text(" "), new Text(
                                                                   "30.00% Duplicated Code (21.78% Estimated after merge)"))),
-                                                 new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube")));
+                                                 new Paragraph(new Text("**Project ID:** Project Key")),
+                                                 new Paragraph(new Link("http://localhost:9000/dashboard?id=Project+Key&pullRequest=5", new Text("View in SonarQube"))));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
@@ -851,7 +855,8 @@ public class AnalysisDetailsTest {
                         new Paragraph(new Text("**Message:** message")),
                         new Paragraph(new Text("**Duration (min):** 123")),
                         new Text(""),
-                        new Link("http://localhost:9000/project/issues?id=projectKey&pullRequest=branchName&issues=issueKey&open=issueKey", new Text("View in SonarQube"))
+                        new Paragraph(new Text("**Project ID:** projectKey **Issue ID:** issueKey")),
+                        new Paragraph(new Link("http://localhost:9000/project/issues?id=projectKey&pullRequest=branchName&issues=issueKey&open=issueKey", new Text("View in SonarQube")))
                 )
         );
     }
@@ -861,8 +866,10 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                 mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
                 mock(Configuration.class),"", mock(ScannerContext.class));
-        assertThat(analysisDetails.parseIssueIdFromUrl("https://sonarqube.dummy/path/dashboard?pullRequest=123"))
-                .isEqualTo(Optional.of("decorator-summary-comment"));
+        assertThat(analysisDetails.parseIssueIdFromUrl("https://sonarqube.dummy/path/dashboard?id=project&pullRequest=123"))
+                .get()
+                .usingRecursiveComparison()
+                .isEqualTo(new AnalysisDetails.ProjectIssueIdentifier("project", "decorator-summary-comment"));
     }
 
     @Test
@@ -870,8 +877,10 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                 mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
                 mock(Configuration.class),"", mock(ScannerContext.class));
-        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/security_hotspots?hotspots=A1B2-Z9Y8X7"))
-                .isEqualTo(Optional.of("A1B2-Z9Y8X7"));
+        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/security_hotspots?id=projectIdentifier&hotspots=A1B2-Z9Y8X7"))
+                .get()
+                .usingRecursiveComparison()
+                .isEqualTo(new AnalysisDetails.ProjectIssueIdentifier("projectIdentifier", "A1B2-Z9Y8X7"));
     }
 
     @Test
@@ -879,7 +888,7 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                 mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
                 mock(Configuration.class),"", mock(ScannerContext.class));
-        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/security_hotspots?other_parameter=ABC"))
+        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/security_hotspots?id=projectId&other_parameter=ABC"))
                 .isEmpty();
     }
 
@@ -888,8 +897,10 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                 mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
                 mock(Configuration.class),"", mock(ScannerContext.class));
-        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/issue?issues=XXX-YYY-ZZZ"))
-                .isEqualTo(Optional.of("XXX-YYY-ZZZ"));
+        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/issue?id=projectId&issues=XXX-YYY-ZZZ"))
+                .get()
+                .usingRecursiveComparison()
+                .isEqualTo(new AnalysisDetails.ProjectIssueIdentifier("projectId", "XXX-YYY-ZZZ"));
     }
 
     @Test
@@ -897,6 +908,6 @@ public class AnalysisDetailsTest {
         AnalysisDetails analysisDetails = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), mock(PostAnalysisIssueVisitor.class),
                 mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
                 mock(Configuration.class),"", mock(ScannerContext.class));
-        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/issue?other_parameter=123")).isEmpty();
+        assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/issue?id=projectId&other_parameter=123")).isEmpty();
     }
 }
