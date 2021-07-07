@@ -279,7 +279,7 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId2");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2));
 
-        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of("issueId"));
+        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -369,7 +369,7 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId5");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2));
 
-        when(analysisDetails.parseIssueIdFromUrl("https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded")).thenReturn(Optional.of("new-issue"));
+        when(analysisDetails.parseIssueIdFromUrl("https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "new-issue")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -402,7 +402,7 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId5");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2));
 
-        when(analysisDetails.parseIssueIdFromUrl("https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded")).thenReturn(Optional.of("issueId"));
+        when(analysisDetails.parseIssueIdFromUrl("https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
         doThrow(new IOException("dummy")).when(gitlabClient).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
 
@@ -440,7 +440,37 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId6");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2, note3));
 
-        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of("issueId"));
+        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
+        verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
+    }
+
+    @Test
+    public void shouldNotCommentOrAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeWithOtherProjectId() throws IOException {
+        Note note = mock(Note.class);
+        when(note.getAuthor()).thenReturn(sonarqubeUser);
+        when(note.getBody()).thenReturn("And another post with an issue ID\n[View in SonarQube](url)");
+        when(note.isResolvable()).thenReturn(true);
+
+        Note note2 = mock(Note.class);
+        when(note2.getAuthor()).thenReturn(sonarqubeUser);
+        when(note2.getBody()).thenReturn(OLD_SONARQUBE_ISSUE_COMMENT);
+        when(note2.isResolvable()).thenReturn(true);
+
+        Note note3 = mock(Note.class);
+        when(note3.getAuthor()).thenReturn(sonarqubeUser);
+        when(note3.getBody()).thenReturn("Some additional comment");
+        when(note3.isResolvable()).thenReturn(true);
+
+        Discussion discussion = mock(Discussion.class);
+        when(discussion.getId()).thenReturn("discussionId6");
+        when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2, note3));
+
+        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier("otherProjectKey", "issueId")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -550,7 +580,7 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussion-id");
         when(discussion.getNotes()).thenReturn(Collections.singletonList(note));
 
-        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of("issueKey1"));
+        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueKey1")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
         when(postAnalysisIssueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
         when(analysisDetails.createAnalysisIssueSummary(eq(componentIssue), any())).thenReturn("Issue Summary");

@@ -117,10 +117,13 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus()))
                 .collect(Collectors.toList());
 
-        List<Triple<Discussion, Note, Optional<String>>> currentProjectSonarqueComments = findOpenSonarqubeComments(gitlabClient,
+        List<Triple<Discussion, Note, Optional<AnalysisDetails.ProjectIssueIdentifier>>> currentProjectSonarqueComments = findOpenSonarqubeComments(gitlabClient,
                 mergeRequest,
                 user.getUsername(),
-                analysis);
+                analysis)
+                .stream()
+                .filter(comment -> commentIsFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
+                .collect(Collectors.toList());
 
         List<String> commentKeysForOpenComments = closeOldDiscussionsAndExtractRemainingKeys(gitlabClient,
                 user.getUsername(),
@@ -153,6 +156,10 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
                 .orElse(mergeRequest.getWebUrl());
 
         return DecorationResult.builder().withPullRequestUrl(mergeRequestHtmlUrl).build();
+    }
+
+    private static boolean commentIsFromCurrentProject(Triple<Discussion, Note, Optional<AnalysisDetails.ProjectIssueIdentifier>> comment, String projectId) {
+        return comment.getRight().filter(projectIssueIdentifier -> projectId.equals(projectIssueIdentifier.getProjectKey())).isPresent();
     }
 
     @Override
@@ -283,10 +290,10 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
 
     }
 
-    private static List<Triple<Discussion, Note, Optional<String>>> findOpenSonarqubeComments(GitlabClient gitlabClient,
-                                                                                              MergeRequest mergeRequest,
-                                                                                              String currentUsername,
-                                                                                              AnalysisDetails analysisDetails) {
+    private static List<Triple<Discussion, Note, Optional<AnalysisDetails.ProjectIssueIdentifier>>> findOpenSonarqubeComments(GitlabClient gitlabClient,
+                                                                                                                              MergeRequest mergeRequest,
+                                                                                                                              String currentUsername,
+                                                                                                                              AnalysisDetails analysisDetails) {
         try {
             return gitlabClient.getMergeRequestDiscussions(mergeRequest.getSourceProjectId(), mergeRequest.getIid()).stream()
                     .map(discussion -> discussion.getNotes().stream()
@@ -304,19 +311,19 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
     }
 
     private static List<String> closeOldDiscussionsAndExtractRemainingKeys(GitlabClient gitlabClient, String currentUsername,
-                                                                               List<Triple<Discussion, Note, Optional<String>>> openSonarqubeComments,
-                                                                               List<PostAnalysisIssueVisitor.ComponentIssue> openIssues,
-                                                                               MergeRequest mergeRequest) {
+                                                                                                   List<Triple<Discussion, Note, Optional<AnalysisDetails.ProjectIssueIdentifier>>> openSonarqubeComments,
+                                                                                                   List<PostAnalysisIssueVisitor.ComponentIssue> openIssues,
+                                                                                                   MergeRequest mergeRequest) {
         List<String> openIssueKeys = openIssues.stream()
                 .map(issue -> issue.getIssue().key())
                 .collect(Collectors.toList());
 
         List<String> remainingCommentKeys = new ArrayList<>();
 
-        for (Triple<Discussion, Note, Optional<String>> openSonarqubeComment : openSonarqubeComments) {
-            Optional<String> issueKey = openSonarqubeComment.getRight();
+        for (Triple<Discussion, Note, Optional<AnalysisDetails.ProjectIssueIdentifier>> openSonarqubeComment : openSonarqubeComments) {
+            Optional<AnalysisDetails.ProjectIssueIdentifier> noteIdentifier = openSonarqubeComment.getRight();
             Discussion discussion = openSonarqubeComment.getLeft();
-            if (!issueKey.isPresent()) {
+            if (!noteIdentifier.isPresent()) {
                 LOGGER.warn("Note {} was found on discussion {} in Merge Request {} posted by Sonarqube user {}, " +
                         "but Sonarqube issue details could not be parsed from it. " +
                         "This discussion will therefore will not be cleaned up.",
@@ -324,10 +331,14 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
                         openSonarqubeComment.getLeft().getId(),
                         mergeRequest.getIid(),
                         currentUsername);
-            } else if (!openIssueKeys.contains(issueKey.get())) {
+                continue;
+            }
+
+            String issueKey = noteIdentifier.get().getIssueKey();
+            if (!openIssueKeys.contains(issueKey)) {
                 resolveOrPlaceFinalCommentOnDiscussion(gitlabClient, currentUsername, discussion, mergeRequest);
             } else {
-                remainingCommentKeys.add(issueKey.get());
+                remainingCommentKeys.add(issueKey);
             }
         }
 
@@ -355,7 +366,7 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
         }
     }
 
-    private static Optional<String> parseIssueDetails(Note note, AnalysisDetails analysisDetails) {
+    private static Optional<AnalysisDetails.ProjectIssueIdentifier> parseIssueDetails(Note note, AnalysisDetails analysisDetails) {
         try (BufferedReader reader = new BufferedReader(new StringReader(note.getBody()))) {
             return reader.lines()
                     .filter(line -> line.contains("View in SonarQube"))
@@ -368,7 +379,7 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
         }
     }
 
-    private static Optional<String> parseIssueLineDetails(String noteLine, AnalysisDetails analysisDetails) {
+    private static Optional<AnalysisDetails.ProjectIssueIdentifier> parseIssueLineDetails(String noteLine, AnalysisDetails analysisDetails) {
         Matcher identifierMatcher = NOTE_VIEW_LINK_PATTERN.matcher(noteLine);
 
         if (identifierMatcher.matches()) {
