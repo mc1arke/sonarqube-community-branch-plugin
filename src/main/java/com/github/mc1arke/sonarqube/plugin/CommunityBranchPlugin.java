@@ -18,6 +18,12 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.DefaultLinkHeaderReader;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.DefaultBitbucketClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.DefaultGithubClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAuthenticationProvider;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
@@ -26,14 +32,17 @@ import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectPullRequestsL
 import com.github.mc1arke.sonarqube.plugin.scanner.ScannerPullRequestPropertySensor;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.CreateBitbucketCloudAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.AzureDevopsValidator;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.BitbucketValidator;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.GithubValidator;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.GitlabValidator;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.DeleteBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetAzureBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBitbucketBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBitbucketCloudBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetGithubBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetGitlabBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.UpdateBitbucketCloudAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.ValidateBindingAction;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.Plugin;
 import org.sonar.api.PropertyType;
@@ -66,8 +75,19 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                   SetAzureBindingAction.class,
                                   SetBitbucketBindingAction.class,
                                   SetBitbucketCloudBindingAction.class,
-                                  SetGitlabBindingAction.class, CreateBitbucketCloudAction.class, UpdateBitbucketCloudAction.class,
+                                  SetGitlabBindingAction.class,
+                    ValidateBindingAction.class,
 
+                    GithubValidator.class,
+                    DefaultGithubClientFactory.class,
+                    DefaultLinkHeaderReader.class,
+                    RestApplicationAuthenticationProvider.class,
+                    DefaultBitbucketClientFactory.class,
+                    BitbucketValidator.class,
+                    GitlabValidator.class,
+                    DefaultGitlabClientFactory.class,
+                    DefaultAzureDevopsClientFactory.class,
+                    AzureDevopsValidator.class,
 
                 /* org.sonar.db.purge.PurgeConfiguration uses the value for the this property if it's configured, so it only
                 needs to be specified here, but doesn't need any additional classes to perform the relevant purge/cleanup

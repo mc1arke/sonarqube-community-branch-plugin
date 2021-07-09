@@ -18,18 +18,20 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Commit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.CommitNote;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.DiffRefs;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Discussion;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.MergeRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.MergeRequestNote;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Note;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.PipelineStatus;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.User;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.DiffRefs;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Note;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.PipelineStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.User;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;

@@ -27,7 +27,10 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
+import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.user.UserSession;
+
+import static java.lang.String.format;
 
 public abstract class SetBindingAction extends ProjectWsAction {
 
@@ -46,12 +49,17 @@ public abstract class SetBindingAction extends ProjectWsAction {
     protected void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
         String almSetting = request.mandatoryParam(ALM_SETTING_PARAMETER);
 
-        AlmSettingDto almSettingDto = getAlmSetting(dbSession, almSetting);
-        getDbClient().projectAlmSettingDao().insertOrUpdate(dbSession, createProjectAlmSettingDto(project.getUuid(), almSettingDto.getUuid(), request));
+        DbClient dbClient = getDbClient();
+        AlmSettingDto almSettingDto = getAlmSetting(dbClient, dbSession, almSetting);
+        dbClient.projectAlmSettingDao().insertOrUpdate(dbSession, createProjectAlmSettingDto(project.getUuid(), almSettingDto.getUuid(), request));
         dbSession.commit();
 
         response.noContent();
+    }
 
+    private static AlmSettingDto getAlmSetting(DbClient dbClient, DbSession dbSession, String almSetting) {
+        return dbClient.almSettingDao().selectByKey(dbSession, almSetting)
+                .orElseThrow(() -> new NotFoundException(format("ALM setting '%s' could not be found", almSetting)));
     }
 
 

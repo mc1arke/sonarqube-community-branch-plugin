@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
@@ -30,17 +31,18 @@ import java.util.List;
 
 public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
-    private final CheckRunProvider checkRunProvider;
+    private final GithubClientFactory githubClientFactory;
 
-    public GithubPullRequestDecorator(CheckRunProvider checkRunProvider) {
-        this.checkRunProvider = checkRunProvider;
+    public GithubPullRequestDecorator(GithubClientFactory githubClientFactory) {
+        this.githubClientFactory = githubClientFactory;
     }
 
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
                                           ProjectAlmSettingDto projectAlmSettingDto) {
         try {
-            return checkRunProvider.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
+            return githubClientFactory.createClient(projectAlmSettingDto, almSettingDto)
+                    .createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
         } catch (Exception ex) {
             throw new IllegalStateException("Could not decorate Pull Request on Github", ex);
         }

@@ -18,6 +18,8 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.LinkHeaderReader;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -33,7 +35,6 @@ import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -88,6 +89,8 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getPersonalAccessToken()).thenReturn("token");
+        when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl()+"/api/v4");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl()+"/api/v4");
@@ -221,10 +224,11 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
                 .willReturn(ok())
         );
 
+        LinkHeaderReader linkHeaderReader = mock(LinkHeaderReader.class);
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
         GitlabMergeRequestDecorator pullRequestDecorator =
-                new GitlabMergeRequestDecorator(server, scmInfoRepository, new DefaultGitlabClientFactory());
+                new GitlabMergeRequestDecorator(server, scmInfoRepository, new DefaultGitlabClientFactory(linkHeaderReader));
 
 
         assertThat(pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto).getPullRequestUrl()).isEqualTo(Optional.of("http://gitlab.example.com/my-group/my-project/merge_requests/1"));
@@ -255,10 +259,6 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
     }
 
     private static String urlEncode(String value) {
-        try {
-            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            throw new Error("No support for UTF-8!", e);
-        }
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }

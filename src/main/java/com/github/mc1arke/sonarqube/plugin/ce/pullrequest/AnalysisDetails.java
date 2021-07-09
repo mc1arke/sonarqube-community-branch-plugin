@@ -131,7 +131,7 @@ public class AnalysisDetails {
                 .map(NameValuePair::getValue)
                 .findFirst();
 
-        if (!optionalProjectId.isPresent()) {
+        if (optionalProjectId.isEmpty()) {
             return Optional.empty();
         }
 

@@ -25,7 +25,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<Document> documentFormatter() {
-        return new BaseFormatter<Document>() {
+        return new BaseFormatter<>() {
             @Override
             public String format(Document node, FormatterFactory formatterFactory) {
                 return childContents(node, formatterFactory);
@@ -35,7 +35,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<Heading> headingFormatter() {
-        return new BaseFormatter<Heading>() {
+        return new BaseFormatter<>() {
             @Override
             public String format(Heading node, FormatterFactory formatterFactory) {
                 StringBuilder output = new StringBuilder();
@@ -48,7 +48,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<Image> imageFormatter() {
-        return new BaseFormatter<Image>() {
+        return new BaseFormatter<>() {
             @Override
             public String format(Image node, FormatterFactory formatterFactory) {
                 return String.format("![%s](%s)", node.getAltText(), node.getSource());
@@ -58,7 +58,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<Link> linkFormatter() {
-        return new BaseFormatter<Link>() {
+        return new BaseFormatter<>() {
             @Override
             public String format(Link node, FormatterFactory formatterFactory) {
                 return String.format("[%s](%s)", node.getChildren().isEmpty() ? node.getUrl() : childContents(node, formatterFactory), node.getUrl());
@@ -68,7 +68,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<List> listFormatter() {
-        return new BaseFormatter<List>() {
+        return new BaseFormatter<>() {
             @Override
             public String format(List node, FormatterFactory formatterFactory) {
                 StringBuilder output = new StringBuilder();
@@ -88,7 +88,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<ListItem> listItemFormatter() {
-        return new BaseFormatter<ListItem>() {
+        return new BaseFormatter<>() {
             @Override
             public String format(ListItem node, FormatterFactory formatterFactory) {
                 return childContents(node, formatterFactory);
@@ -98,7 +98,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<Paragraph> paragraphFormatter() {
-        return new BaseFormatter<Paragraph>() {
+        return new BaseFormatter<>() {
             @Override
             public String format(Paragraph node, FormatterFactory formatterFactory) {
                 return childContents(node, formatterFactory) + System.lineSeparator() + System.lineSeparator();
@@ -108,7 +108,7 @@ public final class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<Text> textFormatter() {
-        return new BaseFormatter<Text>() {
+        return new BaseFormatter<>() {
             @Override
             public String format(Text node, FormatterFactory formatterFactory) {
                 return htmlEscaper().escape(node.getContent()).trim();
