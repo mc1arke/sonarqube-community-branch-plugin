@@ -201,7 +201,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
         for (Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>> openSonarqubeComment : openSonarqubeComments) {
             Optional<AnalysisDetails.ProjectIssueIdentifier> noteIdentifier = openSonarqubeComment.getRight();
             D discussion = openSonarqubeComment.getLeft();
-            if (!noteIdentifier.isPresent()) {
+            if (noteIdentifier.isEmpty()) {
                 continue;
             }
 

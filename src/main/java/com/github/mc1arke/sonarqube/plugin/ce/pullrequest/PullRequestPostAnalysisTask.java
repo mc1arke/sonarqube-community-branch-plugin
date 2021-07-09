@@ -81,13 +81,13 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         LOGGER.debug("found " + pullRequestDecorators.size() + " pull request decorators");
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
-        if (!optionalPullRequest.isPresent()) {
+        if (optionalPullRequest.isEmpty()) {
             LOGGER.trace("Current analysis is not for a Pull Request. Task being skipped");
             return;
         }
 
         Optional<String> optionalBranchName = optionalPullRequest.get().getName();
-        if (!optionalBranchName.isPresent()) {
+        if (optionalBranchName.isEmpty()) {
             LOGGER.warn("No branch name has been submitted with the Pull Request. Analysis will be skipped");
             return;
         }
@@ -99,7 +99,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             Optional<ProjectAlmSettingDto> optionalProjectAlmSettingDto =
                     dbClient.projectAlmSettingDao().selectByProject(dbSession, projectAnalysis.getProject().getUuid());
 
-            if (!optionalProjectAlmSettingDto.isPresent()) {
+            if (optionalProjectAlmSettingDto.isEmpty()) {
                 LOGGER.debug("No ALM has been set on the current project");
                 return;
             }
@@ -110,7 +110,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
         }
 
-        if (!optionalAlmSettingDto.isPresent()) {
+        if (optionalAlmSettingDto.isEmpty()) {
             LOGGER.warn("The ALM configured for this project could not be found");
             return;
         }
@@ -119,13 +119,13 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         Optional<PullRequestBuildStatusDecorator> optionalPullRequestDecorator =
                 findCurrentPullRequestStatusDecorator(almSettingDto, pullRequestDecorators);
 
-        if (!optionalPullRequestDecorator.isPresent()) {
+        if (optionalPullRequestDecorator.isEmpty()) {
             LOGGER.info("No decorator found for this Pull Request");
             return;
         }
 
         Optional<Analysis> optionalAnalysis = projectAnalysis.getAnalysis();
-        if (!optionalAnalysis.isPresent()) {
+        if (optionalAnalysis.isEmpty()) {
             LOGGER.warn(
                     "No analysis results were created for this project analysis. This is likely to be due to an earlier failure");
             return;
@@ -134,7 +134,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         Analysis analysis = optionalAnalysis.get();
 
         Optional<String> revision = analysis.getRevision();
-        if (!revision.isPresent()) {
+        if (revision.isEmpty()) {
             LOGGER.warn("No commit details were submitted with this analysis. Check the project is committed to Git");
             return;
         }

@@ -18,17 +18,19 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Note;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.PipelineStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DiscussionAwarePullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Commit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.CommitNote;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Discussion;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.MergeRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.MergeRequestNote;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Note;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.PipelineStatus;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -69,7 +71,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
 
     @Override
     protected GitlabClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
-        return gitlabClientFactory.createClient(almSettingDto.getUrl(), almSettingDto.getPersonalAccessToken());
+        return gitlabClientFactory.createClient(projectAlmSettingDto, almSettingDto);
     }
 
     @Override

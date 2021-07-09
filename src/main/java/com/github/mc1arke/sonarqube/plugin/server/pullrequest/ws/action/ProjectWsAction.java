@@ -21,17 +21,17 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
+import org.sonar.api.web.UserRole;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.project.ProjectDto;
+import org.sonar.server.almsettings.ws.AlmSettingsWsAction;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 
 import java.util.Optional;
 
-import static org.sonar.api.web.UserRole.ADMIN;
-
-public abstract class ProjectWsAction extends AlmSettingsWebserviceAction {
+public abstract class ProjectWsAction implements AlmSettingsWsAction {
 
     private static final String PROJECT_PARAMETER = "project";
 
@@ -40,14 +40,20 @@ public abstract class ProjectWsAction extends AlmSettingsWebserviceAction {
     private final ComponentFinder componentFinder;
     private final UserSession userSession;
     private final boolean projectParameterRequired;
+    private final String permission;
 
     protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, boolean projectParameterRequired) {
-        super(dbClient);
+        this(actionName, dbClient, componentFinder, userSession, projectParameterRequired, UserRole.ADMIN);
+    }
+
+    protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, boolean projectParameterRequired, String permission) {
+        super();
         this.actionName = actionName;
         this.dbClient = dbClient;
         this.componentFinder = componentFinder;
         this.userSession = userSession;
         this.projectParameterRequired = projectParameterRequired;
+        this.permission = permission;
     }
 
     @Override
@@ -69,7 +75,7 @@ public abstract class ProjectWsAction extends AlmSettingsWebserviceAction {
             ProjectDto project;
             if (projectKey.isPresent()) {
                 project = componentFinder.getProjectByKey(dbSession, projectKey.get());
-                userSession.checkProjectPermission(ADMIN, project);
+                userSession.checkProjectPermission(permission, project);
             } else {
                 if (projectParameterRequired) {
                     throw new IllegalArgumentException("The 'project' parameter is missing");
@@ -82,4 +88,8 @@ public abstract class ProjectWsAction extends AlmSettingsWebserviceAction {
     }
 
     protected abstract void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession);
+
+    protected DbClient getDbClient() {
+        return dbClient;
+    }
 }

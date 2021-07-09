@@ -18,19 +18,18 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketException;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClientFactory;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketException;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsAnnotation;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.CodeInsightsReport;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.DataValue;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.ReportData;
 import com.google.common.annotations.VisibleForTesting;
-import okhttp3.OkHttpClient;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
@@ -70,17 +69,13 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
     private final BitbucketClientFactory bitbucketClientFactory;
 
-    public BitbucketPullRequestDecorator() {
-        this(new BitbucketClientFactory(OkHttpClient.Builder::new));
-    }
-
-    BitbucketPullRequestDecorator(BitbucketClientFactory bitbucketClientFactory) {
+    public BitbucketPullRequestDecorator(BitbucketClientFactory bitbucketClientFactory) {
         this.bitbucketClientFactory = bitbucketClientFactory;
     }
 
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
-        BitbucketClient client = bitbucketClientFactory.createClient(almSettingDto, projectAlmSettingDto);
+        BitbucketClient client = bitbucketClientFactory.createClient(projectAlmSettingDto, almSettingDto);
         try {
             if (!client.supportsCodeInsights()) {
                 LOGGER.warn("Your Bitbucket instance does not support the Code Insights API.");

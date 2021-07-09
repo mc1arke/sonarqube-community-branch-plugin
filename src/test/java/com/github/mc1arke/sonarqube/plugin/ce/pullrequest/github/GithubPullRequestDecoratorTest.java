@@ -18,6 +18,8 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClient;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import org.junit.Test;
@@ -27,7 +29,6 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,11 +43,12 @@ import static org.mockito.Mockito.verify;
 
 public class GithubPullRequestDecoratorTest {
 
-    private CheckRunProvider checkRunProvider = mock(CheckRunProvider.class);
-    private AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-    private GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(checkRunProvider);
-    private ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-    private AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+    private final GithubClient githubClient = mock(GithubClient.class);
+    private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+    private final GithubClientFactory githubClientFactory = mock(GithubClientFactory.class);
+    private final GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(githubClientFactory);
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
 
 
     @Test
@@ -55,9 +57,10 @@ public class GithubPullRequestDecoratorTest {
     }
 
     @Test
-    public void testDecorateQualityGatePropagateException() throws IOException, GeneralSecurityException {
+    public void testDecorateQualityGatePropagateException() throws IOException {
         Exception dummyException = new IOException("Dummy Exception");
-        doThrow(dummyException).when(checkRunProvider).createCheckRun(any(), any(), any());
+        doReturn(githubClient).when(githubClientFactory).createClient(any(), any());
+        doThrow(dummyException).when(githubClient).createCheckRun(any(), any(), any());
 
         assertThatThrownBy(() -> testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .hasMessage("Could not decorate Pull Request on Github")
@@ -65,13 +68,14 @@ public class GithubPullRequestDecoratorTest {
     }
 
     @Test
-    public void testDecorateQualityGateReturnValue() throws IOException, GeneralSecurityException {
+    public void testDecorateQualityGateReturnValue() throws IOException {
         DecorationResult expectedResult = DecorationResult.builder().build();
-        doReturn(expectedResult).when(checkRunProvider).createCheckRun(any(), any(), any());
+        doReturn(githubClient).when(githubClientFactory).createClient(any(), any());
+        doReturn(expectedResult).when(githubClient).createCheckRun(any(), any(), any());
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         ArgumentCaptor<AnalysisDetails> argumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
-        verify(checkRunProvider).createCheckRun(argumentCaptor.capture(), eq(almSettingDto), eq(projectAlmSettingDto));
+        verify(githubClient).createCheckRun(argumentCaptor.capture(), eq(almSettingDto), eq(projectAlmSettingDto));
         assertEquals(analysisDetails, argumentCaptor.getValue());
         assertThat(decorationResult).isSameAs(expectedResult);
     }
