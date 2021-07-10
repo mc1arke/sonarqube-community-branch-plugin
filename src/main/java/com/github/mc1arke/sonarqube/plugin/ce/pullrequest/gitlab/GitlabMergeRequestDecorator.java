@@ -18,21 +18,22 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Note;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.PipelineStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Commit;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.CommitNote;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Discussion;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.MergeRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.MergeRequestNote;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.Note;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.PipelineStatus;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.model.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
@@ -96,20 +97,15 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysis, AlmSettingDto almSettingDto,
                                                       ProjectAlmSettingDto projectAlmSettingDto) {
-        String apiURL = Optional.ofNullable(StringUtils.stripToNull(almSettingDto.getUrl()))
-                .orElseGet(() -> getMandatoryScannerProperty(analysis, PULLREQUEST_GITLAB_INSTANCE_URL));
-        String projectId = Optional.ofNullable(StringUtils.stripToNull(projectAlmSettingDto.getAlmRepo()))
-                .orElseGet(() -> getMandatoryScannerProperty(analysis, PULLREQUEST_GITLAB_PROJECT_ID));
+        String projectId = projectAlmSettingDto.getAlmRepo();
+        GitlabClient gitlabClient = gitlabClientFactory.createClient(projectAlmSettingDto, almSettingDto);
+
         long mergeRequestIid;
         try {
             mergeRequestIid = Long.parseLong(analysis.getBranchName());
         } catch (NumberFormatException ex) {
             throw new IllegalStateException("Could not parse Merge Request ID", ex);
         }
-        String apiToken = almSettingDto.getPersonalAccessToken();
-
-        GitlabClient gitlabClient = gitlabClientFactory.createClient(apiURL, apiToken);
-
         MergeRequest mergeRequest = getMergeRequest(gitlabClient, projectId, mergeRequestIid);
         User user = getCurrentGitlabUser(gitlabClient);
         List<String> commitIds = getCommitIdsForMergeRequest(gitlabClient, mergeRequest);
@@ -197,8 +193,8 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
             String dashboardUrl = String.format(
                     "%s/dashboard?id=%s&pullRequest=%s",
                     sonarqubeRootUrl,
-                    URLEncoder.encode(analysis.getAnalysisProjectKey(), StandardCharsets.UTF_8.name()),
-                    URLEncoder.encode(analysis.getBranchName(), StandardCharsets.UTF_8.name()));
+                    URLEncoder.encode(analysis.getAnalysisProjectKey(), StandardCharsets.UTF_8),
+                    URLEncoder.encode(analysis.getBranchName(), StandardCharsets.UTF_8));
 
             PipelineStatus pipelineStatus = new PipelineStatus("SonarQube",
                     "SonarQube Status",
@@ -211,11 +207,6 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
         } catch (IOException ex) {
             throw new IllegalStateException("Could not update pipeline status in Gitlab", ex);
         }
-    }
-
-    private static String getMandatoryScannerProperty(AnalysisDetails analysis, String propertyName) {
-        return analysis.getScannerProperty(propertyName)
-                .orElseThrow(() -> new IllegalStateException(String.format("'%s' has not been set in scanner properties", propertyName)));
     }
 
     private static List<PostAnalysisIssueVisitor.ComponentIssue> findIssuesWithoutComments(List<PostAnalysisIssueVisitor.ComponentIssue> openSonarqubeIssues,
@@ -316,10 +307,10 @@ public class GitlabMergeRequestDecorator implements PullRequestBuildStatusDecora
         for (Triple<Discussion, Note, Optional<String>> openSonarqubeComment : openSonarqubeComments) {
             Optional<String> issueKey = openSonarqubeComment.getRight();
             Discussion discussion = openSonarqubeComment.getLeft();
-            if (!issueKey.isPresent()) {
+            if (issueKey.isEmpty()) {
                 LOGGER.warn("Note {} was found on discussion {} in Merge Request {} posted by Sonarqube user {}, " +
                         "but Sonarqube issue details could not be parsed from it. " +
-                        "This discussion will therefore will not be cleaned up.",
+                        "This discussion will therefore not be cleaned up.",
                         openSonarqubeComment.getMiddle().getId(),
                         openSonarqubeComment.getLeft().getId(),
                         mergeRequest.getIid(),

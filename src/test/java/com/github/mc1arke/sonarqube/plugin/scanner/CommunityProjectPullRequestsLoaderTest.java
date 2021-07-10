@@ -139,7 +139,7 @@ public class CommunityProjectPullRequestsLoaderTest {
     }
 
     @Test
-    public void testAllPullRequestsFromNonEmptyServerResponseWithoutAnalysisDateAndQualityGateStatusForCancelledPr() throws ParseException {
+    public void testAllPullRequestsFromNonEmptyServerResponseWithoutAnalysisDateAndQualityGateStatusForCancelledPr() {
         WsResponse mockResponse = mock(WsResponse.class);
         when(scannerWsClient.call(any())).thenReturn(mockResponse);
 

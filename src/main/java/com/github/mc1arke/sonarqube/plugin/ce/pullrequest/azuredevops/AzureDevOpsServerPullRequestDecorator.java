@@ -290,9 +290,9 @@ public class AzureDevOpsServerPullRequestDecorator implements PullRequestBuildSt
                 new GitStatusContext(gitStatusContextGenre, gitStatusContextName),
                 String.format("%s/dashboard?id=%s&pullRequest=%s", server.getPublicRootUrl(),
                         URLEncoder.encode(analysisDetails.getAnalysisProjectKey(),
-                                StandardCharsets.UTF_8.name()),
+                                StandardCharsets.UTF_8),
                         URLEncoder.encode(analysisDetails.getBranchName(),
-                                StandardCharsets.UTF_8.name())
+                                StandardCharsets.UTF_8)
                 )
         );
         return new ObjectMapper().writeValueAsString(status);

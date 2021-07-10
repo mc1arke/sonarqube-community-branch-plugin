@@ -1,10 +1,10 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClient;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.BitbucketClientFactory;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.AnnotationUploadLimit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

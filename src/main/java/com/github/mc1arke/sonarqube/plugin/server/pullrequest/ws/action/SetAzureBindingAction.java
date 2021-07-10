@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
 
 import org.sonar.api.server.ws.Request;
+import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.server.component.ComponentFinder;
@@ -26,10 +27,20 @@ import org.sonar.server.user.UserSession;
 
 public class SetAzureBindingAction extends SetBindingAction {
 
+    private static final String PROJECT_NAME_PARAMETER = "projectName";
+    private static final String REPOSITORY_NAME_PARAMETER = "repositoryName";
+
     public SetAzureBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
         super(dbClient, componentFinder, userSession, "set_azure_binding");
     }
 
+
+    @Override
+    protected void configureAction(WebService.NewAction action) {
+        super.configureAction(action);
+        action.createParam(REPOSITORY_NAME_PARAMETER).setRequired(true).setMaximumLength(256);
+        action.createParam(PROJECT_NAME_PARAMETER).setRequired(true).setMaximumLength(256);
+    }
 
     @Override
     protected ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid,
@@ -37,6 +48,8 @@ public class SetAzureBindingAction extends SetBindingAction {
         return new ProjectAlmSettingDto()
                 .setProjectUuid(projectUuid)
                 .setAlmSettingUuid(settingsUuid)
+                .setAlmRepo(request.mandatoryParam(REPOSITORY_NAME_PARAMETER))
+                .setAlmSlug(request.mandatoryParam(PROJECT_NAME_PARAMETER))
                 .setMonorepo(false);
     }
 
