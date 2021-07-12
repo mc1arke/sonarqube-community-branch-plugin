@@ -167,9 +167,8 @@ public class GraphqlCheckRunProvider implements CheckRunProvider {
                               inputObjectArguments, checkRunOutputContentBuilder, graphQLRequestEntityBuilder);
 
 
-        Optional<String> oPullRequestKey = analysisDetails.getPullRequestKey();
-        if (Optional.ofNullable(projectAlmSettingDto.getSummaryCommentEnabled()).orElse(true) && oPullRequestKey.isPresent()) {
-            postSummaryComment(apiUrl, headers, projectPath, oPullRequestKey.get(), summary);
+        if (Optional.ofNullable(projectAlmSettingDto.getSummaryCommentEnabled()).orElse(true)) {
+            postSummaryComment(apiUrl, headers, projectPath, analysisDetails.getBranchName(), summary);
         }
 
         return DecorationResult.builder()

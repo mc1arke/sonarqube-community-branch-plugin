@@ -3,16 +3,18 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 public class CommentThreadResponse {
     
-    private final CommentThread[] value;
+    private final List<CommentThread> value;
 
     @JsonCreator
-    public CommentThreadResponse(@JsonProperty("value") CommentThread[] value) {
+    public CommentThreadResponse(@JsonProperty("value") List<CommentThread> value) {
         this.value = value;
     }
 
-    public CommentThread[] getValue() {
+    public List<CommentThread> getValue() {
         return this.value;
     }
 }

@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author Michael Clarke
  */
-public class CommunityProjectBranchesLoaderTest {
+public class CommunityRepositoryBranchesLoaderTest {
 
     private final ScannerWsClient scannerWsClient = mock(ScannerWsClient.class);
     private final ExpectedException expectedException = ExpectedException.none();

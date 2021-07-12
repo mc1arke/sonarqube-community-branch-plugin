@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -92,7 +92,7 @@ public class GraphqlCheckRunProviderTest {
         when(analysisDetails.createAnalysisSummary(any())).thenReturn("dummy summary");
         when(analysisDetails.getCommitSha()).thenReturn("commit SHA");
         when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
-        when(analysisDetails.getBranchName()).thenReturn("branchName");
+        when(analysisDetails.getBranchName()).thenReturn("12345");
         when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
         when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
@@ -128,7 +128,7 @@ public class GraphqlCheckRunProviderTest {
                 "- Error{message='example message', locations=[]}").isExactlyInstanceOf(IllegalStateException.class);
 
         verify(githubApplicationAuthenticationProvider)
-                .getInstallationToken(eq("http://host.name"), eq("app id"), eq("private key"), eq("dummy/repo"));
+                .getInstallationToken("http://host.name", "app id", "private key", "dummy/repo");
 
     }
 
@@ -354,10 +354,9 @@ public class GraphqlCheckRunProviderTest {
         when(analysisDetails.getCommitSha()).thenReturn("commit SHA");
         when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
         when(analysisDetails.getAnalysisProjectName()).thenReturn("projectName");
-        when(analysisDetails.getBranchName()).thenReturn("branchName");
+        when(analysisDetails.getBranchName()).thenReturn("13579");
         when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
         when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
-        when(analysisDetails.getPullRequestKey()).thenReturn(Optional.of("1"));
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
 
         ArgumentCaptor<String> authenticationProviderArgumentCaptor = ArgumentCaptor.forClass(String.class);
@@ -446,9 +445,9 @@ public class GraphqlCheckRunProviderTest {
         headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
 
-        verify(requestBuilders.get(0)).url(eq(fullPath));
-        verify(requestBuilders.get(0)).headers(eq(headers));
-        verify(requestBuilders.get(0)).requestMethod(eq(GraphQLTemplate.GraphQLMethod.MUTATE));
+        verify(requestBuilders.get(0)).url(fullPath);
+        verify(requestBuilders.get(0)).headers(headers);
+        verify(requestBuilders.get(0)).requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE);
         verify(requestBuilders.get(0)).build();
         assertEquals(requestEntities.get(0), requestEntityArgumentCaptor.getValue());
 
@@ -470,22 +469,22 @@ public class GraphqlCheckRunProviderTest {
                 continue;
             }
             int line = (null == issueList.get(i).getIssue().getLine() ? 0 : issueList.get(i).getIssue().getLine());
-            verify(inputObjectBuilders.get(position)).put(eq("startLine"), eq(line));
-            verify(inputObjectBuilders.get(position)).put(eq("endLine"), eq(line));
+            verify(inputObjectBuilders.get(position)).put("startLine", line);
+            verify(inputObjectBuilders.get(position)).put("endLine", line);
             verify(inputObjectBuilders.get(position)).build();
             position++;
 
             String path = issueList.get(i).getComponent().getReportAttributes().getScmPath().get();
             InputObject.Builder<Object> fileBuilder = inputObjectBuilders.get(position);
-            verify(fileBuilder).put(eq("path"), eq(path));
-            verify(fileBuilder).put(eq("location"), eq(inputObjects.get(position - 1)));
+            verify(fileBuilder).put("path", path);
+            verify(fileBuilder).put("location", inputObjects.get(position - 1));
             String sonarQubeSeverity = issueList.get(i).getIssue().severity();
-            verify(fileBuilder).put(eq("annotationLevel"),
-                                    eq(sonarQubeSeverity.equals(Severity.INFO) ? CheckAnnotationLevel.NOTICE :
+            verify(fileBuilder).put("annotationLevel",
+                                    sonarQubeSeverity.equals(Severity.INFO) ? CheckAnnotationLevel.NOTICE :
                                        sonarQubeSeverity.equals(Severity.MINOR) ||
                                        sonarQubeSeverity.equals(Severity.MAJOR) ? CheckAnnotationLevel.WARNING :
-                                       CheckAnnotationLevel.FAILURE));
-            verify(fileBuilder).put(eq("message"), eq(messageOutput[i]));
+                                       CheckAnnotationLevel.FAILURE);
+            verify(fileBuilder).put("message", messageOutput[i]);
             verify(inputObjectBuilders.get(position)).build();
 
             expectedAnnotationObjects.add(inputObjects.get(position));
@@ -498,31 +497,31 @@ public class GraphqlCheckRunProviderTest {
         ArgumentCaptor<List<InputObject<Object>>> annotationArgumentCaptor = ArgumentCaptor.forClass(List.class);
 
         verify(inputObjectBuilders.get(position))
-                .put(eq("title"), eq("Quality Gate " + (status == QualityGate.Status.OK ? "success" : "failed")));
-        verify(inputObjectBuilders.get(position)).put(eq("summary"), eq("dummy summary"));
+                .put("title", "Quality Gate " + (status == QualityGate.Status.OK ? "success" : "failed"));
+        verify(inputObjectBuilders.get(position)).put("summary", "dummy summary");
         verify(inputObjectBuilders.get(position)).put(eq("annotations"), annotationArgumentCaptor.capture());
         verify(inputObjectBuilders.get(position)).build();
 
         assertThat(annotationArgumentCaptor.getValue()).isEqualTo(expectedAnnotationObjects);
 
-        verify(inputObjectBuilders.get(position + 1)).put(eq("repositoryId"), eq("repository ID"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("name"), eq("projectName Sonarqube Results"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("headSha"), eq("commit SHA"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("status"), eq(RequestableCheckStatusState.COMPLETED));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("conclusion"), eq(status == QualityGate.Status.OK ?
+        verify(inputObjectBuilders.get(position + 1)).put("repositoryId", "repository ID");
+        verify(inputObjectBuilders.get(position + 1)).put("name", "projectName Sonarqube Results");
+        verify(inputObjectBuilders.get(position + 1)).put("headSha", "commit SHA");
+        verify(inputObjectBuilders.get(position + 1)).put("status", RequestableCheckStatusState.COMPLETED);
+        verify(inputObjectBuilders.get(position + 1)).put("conclusion", status == QualityGate.Status.OK ?
                                                                                CheckConclusionState.SUCCESS :
-                                                                               CheckConclusionState.FAILURE));
+                                                                               CheckConclusionState.FAILURE);
         verify(inputObjectBuilders.get(position + 1))
-                .put(eq("detailsUrl"), eq("http://sonar.server/root/dashboard?id=projectKey&pullRequest=branchName"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("startedAt"), eq("1970-01-15T06:56:07Z"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("completedAt"), eq("2009-02-13T23:31:30Z"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("externalId"), eq("analysis ID"));
-        verify(inputObjectBuilders.get(position + 1)).put(eq("output"), eq(inputObjects.get(position)));
+                .put("detailsUrl", "http://sonar.server/root/dashboard?id=projectKey&pullRequest=13579");
+        verify(inputObjectBuilders.get(position + 1)).put("startedAt", "1970-01-15T06:56:07Z");
+        verify(inputObjectBuilders.get(position + 1)).put("completedAt", "2009-02-13T23:31:30Z");
+        verify(inputObjectBuilders.get(position + 1)).put("externalId", "analysis ID");
+        verify(inputObjectBuilders.get(position + 1)).put("output", inputObjects.get(position));
         verify(inputObjectBuilders.get(position + 1)).build();
 
         // Verify getPullRequest requestEntity
         assertEquals(
-            "query { repository (owner:\"dummy\",name:\"repo\") { url pullRequest : pullRequest (number:1) { id } } } ",
+            "query { repository (owner:\"dummy\",name:\"repo\") { url pullRequest : pullRequest (number:13579) { id } } } ",
             getPullRequestRequestEntityArgumentCaptor.getValue().getRequest()
         );
 
@@ -569,7 +568,7 @@ public class GraphqlCheckRunProviderTest {
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssuesVisitor);
-        when(analysisDetails.getBranchName()).thenReturn("branchName");
+        when(analysisDetails.getBranchName()).thenReturn("13579");
         when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
         when(analysisDetails.getAnalysisDate()).thenReturn(new Date());
 
