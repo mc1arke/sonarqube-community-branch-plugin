@@ -21,7 +21,8 @@ package com.github.mc1arke.sonarqube.plugin.ce;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DefaultLinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestPostAnalysisTask;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.AzureDevOpsServerPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.AzureDevOpsPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.DefaultAzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.RestApplicationAuthenticationProvider;
@@ -44,7 +45,7 @@ public class CommunityReportAnalysisComponentProvider implements ReportAnalysisC
                              PostAnalysisIssueVisitor.class, GithubPullRequestDecorator.class,
                              GraphqlCheckRunProvider.class, DefaultLinkHeaderReader.class, RestApplicationAuthenticationProvider.class,
                              BitbucketPullRequestDecorator.class, GitlabMergeRequestDecorator.class, DefaultGitlabClientFactory.class,
-                             AzureDevOpsServerPullRequestDecorator.class);
+                             DefaultAzureDevopsClientFactory.class, AzureDevOpsPullRequestDecorator.class);
     }
 
 }

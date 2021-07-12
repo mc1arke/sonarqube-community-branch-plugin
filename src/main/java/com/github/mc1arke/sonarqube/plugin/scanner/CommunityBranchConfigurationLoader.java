@@ -103,6 +103,15 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
                         v -> mutableLocalSettings.putIfAbsent(ScannerProperties.BRANCH_NAME, v));
             }
         }
+        if (Boolean.parseBoolean(system2.envVariable("TF_BUILD"))) {
+            Optional.ofNullable(system2.envVariable("SYSTEM_PULLREQUEST_PULLREQUESTID")).ifPresent(
+                    v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_KEY, v));
+            Optional.ofNullable(system2.envVariable("SYSTEM_PULLREQUEST_SOURCEBRANCH")).ifPresent(
+                    v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BRANCH, v));
+            Optional.ofNullable(system2.envVariable("SYSTEM_PULLREQUEST_TARGETBRANCH")).ifPresent(
+                    v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BASE, v));
+
+        }
         return Collections.unmodifiableMap(mutableLocalSettings);
     }
 
