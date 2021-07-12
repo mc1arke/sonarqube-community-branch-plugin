@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author Michael Clarke
  */
-public class CommunityProjectPullRequestsLoaderTest {
+public class CommunityRepositoryPullRequestsLoaderTest {
 
     private final ScannerWsClient scannerWsClient = mock(ScannerWsClient.class);
     private final ExpectedException expectedException = ExpectedException.none();

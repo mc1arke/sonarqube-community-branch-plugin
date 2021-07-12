@@ -13,7 +13,7 @@ public class CommentPosition implements Serializable {
     @JsonCreator
     public CommentPosition(@JsonProperty("line") int line, @JsonProperty("offset") int offset){
         this.line = line;
-        this.offset = offset + 1;
+        this.offset = offset;
     }
     
     /**
