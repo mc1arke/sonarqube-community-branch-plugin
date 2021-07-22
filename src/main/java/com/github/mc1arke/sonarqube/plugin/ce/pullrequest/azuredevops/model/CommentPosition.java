@@ -3,9 +3,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.Serializable;
-
-public class CommentPosition implements Serializable {
+public class CommentPosition {
     
     private final int line;
     private final int offset;

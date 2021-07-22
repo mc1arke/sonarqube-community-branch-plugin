@@ -4,21 +4,20 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.CommentThreadStatus;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
  * Represents a comment thread of a pull request. A thread contains meta data about the file
  * it was left on along with one or more comments (an initial comment and the subsequent replies).
  */
-public class CommentThread implements Serializable {
+public class CommentThread {
 
     private final CommentThreadStatus status;
     private final List<Comment> comments;
     private final CommentThreadContext threadContext;
-    private final Integer id;
+    private final int id;
     @JsonProperty("isDeleted")
-    private final Boolean deleted;
+    private final boolean deleted;
 
     @JsonCreator
     public CommentThread(@JsonProperty("status") CommentThreadStatus status,
@@ -32,14 +31,6 @@ public class CommentThread implements Serializable {
         this.threadContext = context;
         this.id = id;
         this.deleted = deleted;
-    }
-
-    public CommentThread(CommentThreadStatus status) {
-        this(status, null, null, null, null);
-    }
-
-    public CommentThread(List<Comment> comments, CommentThreadContext context) {
-        this(CommentThreadStatus.ACTIVE, comments, context, 0, false);
     }
 
     /**
@@ -66,14 +57,14 @@ public class CommentThread implements Serializable {
     /**
      * The comment thread id.
      */
-    public Integer getId() {
+    public int getId() {
         return this.id;
     }
 
     /**
      * Specify if the thread is deleted which happens when all comments are deleted.
      */
-    public Boolean isDeleted() {
+    public boolean isDeleted() {
         return this.deleted;
     }
 

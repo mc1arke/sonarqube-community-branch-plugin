@@ -90,11 +90,8 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         when(almSettingDto.getPersonalAccessToken()).thenReturn("token");
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        when(analysisDetails.getScannerProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL))
-                .thenReturn(Optional.of(wireMockRule.baseUrl()+"/api/v4"));
-        when(analysisDetails
-                     .getScannerProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID))
-                .thenReturn(Optional.of(repositorySlug));
+        when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl()+"/api/v4");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
         when(analysisDetails.getQualityGateStatus()).thenReturn(status);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
         when(analysisDetails.getBranchName()).thenReturn(Long.toString(mergeRequestIid));
