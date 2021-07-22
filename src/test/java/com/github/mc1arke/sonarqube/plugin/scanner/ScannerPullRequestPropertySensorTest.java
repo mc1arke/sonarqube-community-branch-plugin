@@ -7,7 +7,6 @@ import org.sonar.api.batch.fs.internal.DefaultInputFile;
 import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonar.api.batch.sensor.internal.SensorContextTester;
 import org.sonar.api.utils.System2;
-import org.sonar.scanner.scan.ProjectConfiguration;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,11 +19,9 @@ import static org.mockito.Mockito.when;
 
 public class ScannerPullRequestPropertySensorTest {
 
-    private ScannerPullRequestPropertySensor sensor;
-
     private final System2 system2 = mock(System2.class);
-    private final ProjectConfiguration projectConfiguration = mock(ProjectConfiguration.class);
     private final ExpectedException expectedException = ExpectedException.none();
+    private final ScannerPullRequestPropertySensor sensor = new ScannerPullRequestPropertySensor(system2);
 
     @Rule
     public ExpectedException expectedException() {
@@ -46,12 +43,11 @@ public class ScannerPullRequestPropertySensorTest {
         when(system2.envVariable("CI_MERGE_REQUEST_PROJECT_URL")).thenReturn("value");
         when(system2.envVariable("CI_PIPELINE_ID")).thenReturn("value");        
 
-        sensor = new ScannerPullRequestPropertySensor(projectConfiguration, system2);
         sensor.execute(context);
 
         Map<String, String> properties = context.getContextProperties();
 
-        assertEquals(4, properties.size());
+        assertEquals(2, properties.size());
     }    
 
     @Test
@@ -64,17 +60,13 @@ public class ScannerPullRequestPropertySensorTest {
         context.fileSystem().add(inputFile);        
 
         when(system2.envVariable("GITLAB_CI")).thenReturn("true");
-        when(system2.property(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_INSTANCE_URL)).thenReturn("value");
-        when(system2.property(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PROJECT_ID)).thenReturn("value");
         when(system2.envVariable("CI_MERGE_REQUEST_PROJECT_URL")).thenReturn("value");
         when(system2.envVariable("CI_PIPELINE_ID")).thenReturn("value");
 
-        sensor = new ScannerPullRequestPropertySensor(projectConfiguration, system2);
         sensor.execute(context);
 
         Map<String, String> properties = context.getContextProperties();
 
-        assertEquals(4, properties.size());
-    }    
-
+        assertEquals(2, properties.size());
+    }
 }

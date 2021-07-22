@@ -21,22 +21,16 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PullRequest {
+public class IdentityRef {
 
-    private final int id;
-    private final Repository repository;
+    private final String id;
 
     @JsonCreator
-    public PullRequest(@JsonProperty("pullRequestId") int id, @JsonProperty("repository") Repository repository) {
+    public IdentityRef(@JsonProperty("id") String id) {
         this.id = id;
-        this.repository = repository;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
-    }
-
-    public Repository getRepository() {
-        return repository;
     }
 }

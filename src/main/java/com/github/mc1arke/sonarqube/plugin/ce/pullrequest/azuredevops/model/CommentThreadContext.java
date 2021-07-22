@@ -3,9 +3,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.Serializable;
-
-public class CommentThreadContext implements Serializable {
+public class CommentThreadContext {
 
     private final String filePath;
     private final CommentPosition rightFileStart;

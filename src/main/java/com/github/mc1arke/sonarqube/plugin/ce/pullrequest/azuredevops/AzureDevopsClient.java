@@ -18,26 +18,32 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
 
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.Comment;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.CommentThread;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.Commit;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.CreateCommentRequest;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.CreateCommentThreadRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.GitPullRequestStatus;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.PullRequest;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.CommentThreadStatus;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.Repository;
 
 import java.io.IOException;
 import java.util.List;
 
 public interface AzureDevopsClient {
 
-    void submitPullRequestStatus(String projectId, String repositoryName, long pullRequestId, GitPullRequestStatus status) throws IOException;
+    PullRequest retrievePullRequest(String projectName, String repositoryName, int pullRequestId) throws IOException;
 
-    List<CommentThread> retrieveThreads(String projectId, String repositoryName, long pullRequestId) throws IOException;
+    List<Commit> getPullRequestCommits(String projectName, String repositoryName, int pullRequestId) throws IOException;
 
-    void createThread(String projectId, String repositoryName, long pullRequestId, CommentThread thread) throws IOException;
+    List<CommentThread> retrieveThreads(String projectName, String repositoryName, int pullRequestId) throws IOException;
 
-    void addCommentToThread(String projectId, String repositoryName, long pullRequestId, long threadId, Comment comment) throws IOException;
+    CommentThread createThread(String projectName, String repositoryName, int pullRequestId, CreateCommentThreadRequest commentThreadRequest) throws IOException;
 
-    void updateThreadStatus(String projectId, String repositoryName, long pullRequestId, long threadId, CommentThreadStatus status) throws IOException;
+    void addCommentToThread(String projectName, String repositoryName, int pullRequestId, int threadId, CreateCommentRequest comment) throws IOException;
 
-    PullRequest retrievePullRequest(String projectId, String repositoryName, long pullRequestId) throws IOException;
+    void resolvePullRequestThread(String projectName, String repositoryName, int pullRequestId, int threadId) throws IOException;
+
+    void submitPullRequestStatus(String projectName, String repositoryName, int pullRequestId, GitPullRequestStatus status) throws IOException;
+
+    Repository getRepository(String projectName, String repositoryName) throws IOException;
 }
