@@ -18,25 +18,15 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class CreateCommentRequest {
 
-public class PullRequest {
+    private final String content;
 
-    private final int id;
-    private final Repository repository;
-
-    @JsonCreator
-    public PullRequest(@JsonProperty("pullRequestId") int id, @JsonProperty("repository") Repository repository) {
-        this.id = id;
-        this.repository = repository;
+    public CreateCommentRequest(String content) {
+        this.content = content;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public Repository getRepository() {
-        return repository;
+    public String getContent() {
+        return content;
     }
 }

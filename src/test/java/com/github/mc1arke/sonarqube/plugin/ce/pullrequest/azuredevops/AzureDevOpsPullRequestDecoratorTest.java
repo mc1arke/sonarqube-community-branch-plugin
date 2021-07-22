@@ -12,6 +12,9 @@ import org.sonar.api.platform.Server;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.scm.Changeset;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -30,6 +33,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -54,11 +59,14 @@ public class AzureDevOpsPullRequestDecoratorTest {
     private final int lineNumber = 5;
     private final String token = "token";
     private final String authHeader = "Basic OnRva2Vu";
+    private final String authorId = "author-id";
+    private final String projectName = "Project Name";
 
     private ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
     private AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private Server server = mock(Server.class);
-    private AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, new DefaultAzureDevopsClientFactory());
+    private ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
+    private AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory());
     private AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
 
     private PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
@@ -70,6 +78,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
         when(almSettingDto.getPersonalAccessToken()).thenReturn(token);
         when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl());
 
+        when(analysisDetails.getAnalysisProjectName()).thenReturn(projectName);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(sonarProject);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
         when(analysisDetails.getBranchName()).thenReturn(pullRequestId);
@@ -77,7 +86,11 @@ public class AzureDevOpsPullRequestDecoratorTest {
         when(analysisDetails.getRuleUrlWithRuleKey(ruleKeyVal)).thenReturn(ruleUrl);
         when(analysisDetails.getIssueUrl(defaultIssue)).thenReturn(issueUrl);
         when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of(filePath));
+        when(analysisDetails.parseIssueIdFromUrl(any())).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier("projectKey", "issueid")));
         when(issueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
+
+        when(analysisDetails.createAnalysisSummary(any())).thenReturn("analysis summary");
+        when(analysisDetails.createAnalysisIssueSummary(any(), any())).thenReturn("issue summary");
 
         DbIssues.Locations locate = DbIssues.Locations.newBuilder().build();
         RuleType rule = RuleType.CODE_SMELL;
@@ -91,6 +104,13 @@ public class AzureDevOpsPullRequestDecoratorTest {
         when(defaultIssue.getMessage()).thenReturn(issueMessage);
         when(defaultIssue.getRuleKey()).thenReturn(ruleKey);
         when(defaultIssue.key()).thenReturn(issueKeyVal);
+        when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of("scmPath"));
+        Changeset changeset = mock(Changeset.class);
+        when(changeset.getRevision()).thenReturn("revisionId");
+        ScmInfo scmInfo = mock(ScmInfo.class);
+        when(scmInfo.hasChangesetForLine(anyInt())).thenReturn(true);
+        when(scmInfo.getChangesetForLine(anyInt())).thenReturn(changeset);
+        when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
         when(ruleKey.toString()).thenReturn(ruleKeyVal);
         when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
 
@@ -132,12 +152,12 @@ public class AzureDevOpsPullRequestDecoratorTest {
                         "                                \"href\": \"" + wireMockRule.baseUrl() + "/fabrikam/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzkwNzU4MjE0NC0yNDM3MzcyODg4LTE5Njg5NDAzMjgtMjIxNQ\"" + System.lineSeparator() +
                         "                            }" + System.lineSeparator() +
                         "                        }," + System.lineSeparator() +
-                        "                        \"id\": \"c27db56f-07a0-43ac-9725-d6666e8b66b5\"," + System.lineSeparator() +
+                        "                        \"id\": \"" + authorId + "\"," + System.lineSeparator() +
                         "                        \"uniqueName\": \"user@mail.ru\"," + System.lineSeparator() +
                         "                        \"imageUrl\": \"" + wireMockRule.baseUrl() + "/fabrikam/_api/_common/identityImage?id=c27db56f-07a0-43ac-9725-d6666e8b66b5\"," + System.lineSeparator() +
                         "                        \"descriptor\": \"win.Uy0xLTUtMjEtMzkwNzU4MjE0NC0yNDM3MzcyODg4LTE5Njg5NDAzMjgtMjIxNQ\"" + System.lineSeparator() +
                         "                    }," + System.lineSeparator() +
-                        "                    \"content\": \"CODE_SMELL: Remove this unnecessary 'using'. ([rule](" + wireMockRule.baseUrl() + "/coding_rules?open=" + issueKeyVal + "&rule_key=" + issueKeyVal + "))\"," + System.lineSeparator() +
+                        "                    \"content\": \"CODE_SMELL: Remove this unnecessary 'using'. \\n[View in SonarQube](" + wireMockRule.baseUrl() + "/coding_rules?open=" + issueKeyVal + "&rule_key=" + issueKeyVal + ")\"," + System.lineSeparator() +
                         "                    \"publishedDate\": \"2020-03-10T17:40:09.603Z\"," + System.lineSeparator() +
                         "                    \"lastUpdatedDate\": \"2020-03-10T18:05:06.99Z\"," + System.lineSeparator() +
                         "                    \"lastContentUpdatedDate\": \"2020-03-10T18:05:06.99Z\"," + System.lineSeparator() +
@@ -289,22 +309,184 @@ public class AzureDevOpsPullRequestDecoratorTest {
                 )
                 .willReturn(ok()));
 
+        wireMockRule.stubFor(get(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/" + pullRequestId + "/commits?api-version=4.1"))
+                .withHeader("Accept", equalTo("application/json"))
+                .withHeader("Authorization", equalTo(authHeader))
+                .willReturn(aResponse().withStatus(200).withBody("{\"value\": [{" + System.lineSeparator() +
+                        "  \"parents\": []," + System.lineSeparator() +
+                        "  \"treeId\": \"7fa1a3523ffef51c525ea476bffff7d648b8cb3d\"," + System.lineSeparator() +
+                        "  \"push\": {" + System.lineSeparator() +
+                        "    \"pushedBy\": {" + System.lineSeparator() +
+                        "      \"id\": \"8c8c7d32-6b1b-47f4-b2e9-30b477b5ab3d\"," + System.lineSeparator() +
+                        "      \"displayName\": \"Chuck Reinhart\"," + System.lineSeparator() +
+                        "      \"uniqueName\": \"fabrikamfiber3@hotmail.com\"," + System.lineSeparator() +
+                        "      \"url\": \"https://vssps.dev.azure.com/fabrikam/_apis/Identities/8c8c7d32-6b1b-47f4-b2e9-30b477b5ab3d\"," + System.lineSeparator() +
+                        "      \"imageUrl\": \"https://dev.azure.com/fabrikam/_api/_common/identityImage?id=8c8c7d32-6b1b-47f4-b2e9-30b477b5ab3d\"" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"pushId\": 1," + System.lineSeparator() +
+                        "    \"date\": \"2014-01-29T23:33:15.2434002Z\"" + System.lineSeparator() +
+                        "  }," + System.lineSeparator() +
+                        "  \"commitId\": \"revisionId\"," + System.lineSeparator() +
+                        "  \"author\": {" + System.lineSeparator() +
+                        "    \"name\": \"Chuck Reinhart\"," + System.lineSeparator() +
+                        "    \"email\": \"fabrikamfiber3@hotmail.com\"," + System.lineSeparator() +
+                        "    \"date\": \"2014-01-29T23:32:09Z\"" + System.lineSeparator() +
+                        "  }," + System.lineSeparator() +
+                        "  \"committer\": {" + System.lineSeparator() +
+                        "    \"name\": \"Chuck Reinhart\"," + System.lineSeparator() +
+                        "    \"email\": \"fabrikamfiber3@hotmail.com\"," + System.lineSeparator() +
+                        "    \"date\": \"2014-01-29T23:32:09Z\"" + System.lineSeparator() +
+                        "  }," + System.lineSeparator() +
+                        "  \"comment\": \"First cut\\n\"," + System.lineSeparator() +
+                        "  \"url\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/278d5cd2-584d-4b63-824a-2ba458937249/commits/be67f8871a4d2c75f13a51c1d3c30ac0d74d4ef4\"," + System.lineSeparator() +
+                        "  \"remoteUrl\": \"https://dev.azure.com/fabrikam/_git/Fabrikam-Fiber-Git/commit/be67f8871a4d2c75f13a51c1d3c30ac0d74d4ef4\"," + System.lineSeparator() +
+                        "  \"_links\": {" + System.lineSeparator() +
+                        "    \"self\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/278d5cd2-584d-4b63-824a-2ba458937249/commits/be67f8871a4d2c75f13a51c1d3c30ac0d74d4ef4\"" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"repository\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/278d5cd2-584d-4b63-824a-2ba458937249\"" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"changes\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/278d5cd2-584d-4b63-824a-2ba458937249/commits/be67f8871a4d2c75f13a51c1d3c30ac0d74d4ef4/changes\"" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"web\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_git/Fabrikam-Fiber-Git/commit/be67f8871a4d2c75f13a51c1d3c30ac0d74d4ef4\"" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"tree\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/278d5cd2-584d-4b63-824a-2ba458937249/trees/7fa1a3523ffef51c525ea476bffff7d648b8cb3d\"" + System.lineSeparator() +
+                        "    }" + System.lineSeparator() +
+                        "  }" + System.lineSeparator() +
+                        "}]}")));
+
 
         wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/statuses?api-version=4.1"))
-                .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .withRequestBody(equalTo("{" +
                         "\"state\":\"SUCCEEDED\"," +
-                        "\"description\":\"SonarQube Gate\"," +
-                        "\"context\":{\"genre\":\"SonarQube\",\"name\":\"QualityGate\"}," +
+                        "\"description\":\"SonarQube Quality Gate - " + projectName + " (" + sonarProject + ")\"," +
+                        "\"context\":{\"genre\":\"sonarqube/qualitygate\",\"name\":\"" + sonarProject + "\"}," +
                         "\"targetUrl\":\"" + sonarRootUrl + "/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId + "\"" +
                         "}")
                 )
                 .willReturn(ok()));
 
-        wireMockRule.stubFor(patch(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/" + pullRequestId + "/threads/" + threadId + "?api-version=4.1"))
+        wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
+                .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
+                .withHeader("Authorization", equalTo(authHeader))
+                .withRequestBody(equalTo("{\"comments\":[{\"content\":\"analysis summary\"}],\"status\":\"active\"}"))
+                .willReturn(aResponse().withStatus(200).withBody("{" + System.lineSeparator() +
+                        "  \"pullRequestThreadContext\": {" + System.lineSeparator() +
+                        "    \"iterationContext\": {" + System.lineSeparator() +
+                        "      \"firstComparingIteration\": 1," + System.lineSeparator() +
+                        "      \"secondComparingIteration\": 2" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"changeTrackingId\": 1" + System.lineSeparator() +
+                        "  }," + System.lineSeparator() +
+                        "  \"id\": " + threadId + "," + System.lineSeparator() +
+                        "  \"publishedDate\": \"2016-11-01T16:30:50.083Z\"," + System.lineSeparator() +
+                        "  \"lastUpdatedDate\": \"2016-11-01T16:30:50.083Z\"," + System.lineSeparator() +
+                        "  \"comments\": [" + System.lineSeparator() +
+                        "    {" + System.lineSeparator() +
+                        "      \"id\": 1," + System.lineSeparator() +
+                        "      \"parentCommentId\": 0," + System.lineSeparator() +
+                        "      \"author\": {" + System.lineSeparator() +
+                        "        \"id\": \"d6245f20-2af8-44f4-9451-8107cb2767db\"," + System.lineSeparator() +
+                        "        \"displayName\": \"Normal Paulk\"," + System.lineSeparator() +
+                        "        \"uniqueName\": \"fabrikamfiber16@hotmail.com\"," + System.lineSeparator() +
+                        "        \"url\": \"https://dev.azure.com/fabrikam/_apis/Identities/d6245f20-2af8-44f4-9451-8107cb2767db\"," + System.lineSeparator() +
+                        "        \"imageUrl\": \"https://dev.azure.com/fabrikam/_api/_common/identityImage?id=d6245f20-2af8-44f4-9451-8107cb2767db\"" + System.lineSeparator() +
+                        "      }," + System.lineSeparator() +
+                        "      \"content\": \"Should we add a comment about what this value means?\"," + System.lineSeparator() +
+                        "      \"publishedDate\": \"2016-11-01T16:30:50.083Z\"," + System.lineSeparator() +
+                        "      \"lastUpdatedDate\": \"2016-11-01T16:30:50.083Z\"," + System.lineSeparator() +
+                        "      \"commentType\": \"text\"" + System.lineSeparator() +
+                        "    }" + System.lineSeparator() +
+                        "  ]," + System.lineSeparator() +
+                        "  \"status\": \"active\"," + System.lineSeparator() +
+                        "  \"threadContext\": {" + System.lineSeparator() +
+                        "    \"filePath\": \"/new_feature.cpp\"," + System.lineSeparator() +
+                        "    \"rightFileStart\": {" + System.lineSeparator() +
+                        "      \"line\": 5," + System.lineSeparator() +
+                        "      \"offset\": 1" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"rightFileEnd\": {" + System.lineSeparator() +
+                        "      \"line\": 5," + System.lineSeparator() +
+                        "      \"offset\": 13" + System.lineSeparator() +
+                        "    }" + System.lineSeparator() +
+                        "  }," + System.lineSeparator() +
+                        "  \"properties\": {}," + System.lineSeparator() +
+                        "  \"isDeleted\": false," + System.lineSeparator() +
+                        "  \"_links\": {" + System.lineSeparator() +
+                        "    \"self\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/3411ebc1-d5aa-464f-9615-0b527bc66719/pullRequests/22/threads/148\"" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"repository\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/3411ebc1-d5aa-464f-9615-0b527bc66719\"" + System.lineSeparator() +
+                        "    }" + System.lineSeparator() +
+                        "  }" + System.lineSeparator() +
+                        "}")));
+
+        wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
+                .withHeader("Accept", equalTo("application/json"))
+                .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
+                .withHeader("Authorization", equalTo(authHeader))
+                .withRequestBody(equalTo("{\"threadContext\":{\"filePath\":\"/scmPath\",\"rightFileStart\":{\"line\":0,\"offset\":1},\"rightFileEnd\":{\"line\":0,\"offset\":1}},\"comments\":[{\"content\":\"issue summary\"}],\"status\":\"active\"}"))
+                .willReturn(aResponse().withStatus(200).withBody("{" + System.lineSeparator() +
+                        "  \"pullRequestThreadContext\": {" + System.lineSeparator() +
+                        "    \"iterationContext\": {" + System.lineSeparator() +
+                        "      \"firstComparingIteration\": 1," + System.lineSeparator() +
+                        "      \"secondComparingIteration\": 2" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"changeTrackingId\": 1" + System.lineSeparator() +
+                        "  }," + System.lineSeparator() +
+                        "  \"id\": " + threadId + "," + System.lineSeparator() +
+                        "  \"publishedDate\": \"2016-11-01T16:30:50.083Z\"," + System.lineSeparator() +
+                        "  \"lastUpdatedDate\": \"2016-11-01T16:30:50.083Z\"," + System.lineSeparator() +
+                        "  \"comments\": [" + System.lineSeparator() +
+                        "    {" + System.lineSeparator() +
+                        "      \"id\": 1," + System.lineSeparator() +
+                        "      \"parentCommentId\": 0," + System.lineSeparator() +
+                        "      \"author\": {" + System.lineSeparator() +
+                        "        \"id\": \"d6245f20-2af8-44f4-9451-8107cb2767db\"," + System.lineSeparator() +
+                        "        \"displayName\": \"Normal Paulk\"," + System.lineSeparator() +
+                        "        \"uniqueName\": \"fabrikamfiber16@hotmail.com\"," + System.lineSeparator() +
+                        "        \"url\": \"https://dev.azure.com/fabrikam/_apis/Identities/d6245f20-2af8-44f4-9451-8107cb2767db\"," + System.lineSeparator() +
+                        "        \"imageUrl\": \"https://dev.azure.com/fabrikam/_api/_common/identityImage?id=d6245f20-2af8-44f4-9451-8107cb2767db\"" + System.lineSeparator() +
+                        "      }," + System.lineSeparator() +
+                        "      \"content\": \"Should we add a comment about what this value means?\"," + System.lineSeparator() +
+                        "      \"publishedDate\": \"2016-11-01T16:30:50.083Z\"," + System.lineSeparator() +
+                        "      \"lastUpdatedDate\": \"2016-11-01T16:30:50.083Z\"," + System.lineSeparator() +
+                        "      \"commentType\": \"text\"" + System.lineSeparator() +
+                        "    }" + System.lineSeparator() +
+                        "  ]," + System.lineSeparator() +
+                        "  \"status\": \"active\"," + System.lineSeparator() +
+                        "  \"threadContext\": {" + System.lineSeparator() +
+                        "    \"filePath\": \"/new_feature.cpp\"," + System.lineSeparator() +
+                        "    \"rightFileStart\": {" + System.lineSeparator() +
+                        "      \"line\": 5," + System.lineSeparator() +
+                        "      \"offset\": 1" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"rightFileEnd\": {" + System.lineSeparator() +
+                        "      \"line\": 5," + System.lineSeparator() +
+                        "      \"offset\": 13" + System.lineSeparator() +
+                        "    }" + System.lineSeparator() +
+                        "  }," + System.lineSeparator() +
+                        "  \"properties\": {}," + System.lineSeparator() +
+                        "  \"isDeleted\": false," + System.lineSeparator() +
+                        "  \"_links\": {" + System.lineSeparator() +
+                        "    \"self\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/3411ebc1-d5aa-464f-9615-0b527bc66719/pullRequests/22/threads/148\"" + System.lineSeparator() +
+                        "    }," + System.lineSeparator() +
+                        "    \"repository\": {" + System.lineSeparator() +
+                        "      \"href\": \"https://dev.azure.com/fabrikam/_apis/git/repositories/3411ebc1-d5aa-464f-9615-0b527bc66719\"" + System.lineSeparator() +
+                        "    }" + System.lineSeparator() +
+                        "  }" + System.lineSeparator() +
+                        "}")));
+
+        wireMockRule.stubFor(patch(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/" + pullRequestId + "/threads/" + threadId + "?api-version=4.1"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .withRequestBody(equalTo("{" +
@@ -316,7 +498,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void testName() {
-        assertThat(new AzureDevOpsPullRequestDecorator(mock(Server.class), mock(AzureDevopsClientFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
+        assertThat(new AzureDevOpsPullRequestDecorator(mock(Server.class), mock(ScmInfoRepository.class), mock(AzureDevopsClientFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
     }
 
     @Test

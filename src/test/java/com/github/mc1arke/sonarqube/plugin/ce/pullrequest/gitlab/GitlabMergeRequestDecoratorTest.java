@@ -76,10 +76,6 @@ public class GitlabMergeRequestDecoratorTest {
     private static final String HEAD_SHA = "headSha";
     private static final String START_SHA = "startSha";
     private static final String MERGE_REQUEST_WEB_URL = "https://gitlab.dummy/path/to/mr";
-    private static final String OLD_SONARQUBE_VERSION_COMMENT = "This looks like a comment from an old SonarQube version, " +
-            "but due to other comments being present in this discussion, " +
-            "the discussion is not being being closed automatically. " +
-            "Please manually resolve this discussion once the other comments have been reviewed.";
     private static final String OLD_SONARQUBE_ISSUE_COMMENT = "This issue no longer exists in SonarQube, " +
             "but due to other comments being present in this discussion, " +
             "the discussion is not being being closed automatically. " +
@@ -127,24 +123,6 @@ public class GitlabMergeRequestDecoratorTest {
     @Test
     public void shouldReturnCorrectDecoratorType() {
         assertThat(underTest.alm()).containsOnly(ALM.GITLAB);
-    }
-
-    @Test
-    public void shouldThrowErrorWhenInstanceUrlNotSetInDtoOrScannerProperties() {
-        when(almSettingDto.getUrl()).thenReturn(" ");
-
-        assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("'sonar.pullrequest.gitlab.instanceUrl' has not been set in scanner properties");
-    }
-
-    @Test
-    public void shouldThrowErrorWhenProjectIdNotSetInDtoOrScannerProperties() {
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn(" ");
-
-        assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("'sonar.pullrequest.gitlab.projectId' has not been set in scanner properties");
     }
 
     @Test
@@ -293,7 +271,7 @@ public class GitlabMergeRequestDecoratorTest {
     @Test
     public void shouldNotAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndAnotherUserWithNoId() throws IOException {
         User otherUser = mock(User.class);
-        when(otherUser.getUsername()).thenReturn("other.user@github.dummy");
+        when(otherUser.getUsername()).thenReturn("other.user@gitlab.dummy");
 
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
@@ -330,7 +308,7 @@ public class GitlabMergeRequestDecoratorTest {
 
         Note note2 = mock(Note.class);
         when(note2.getAuthor()).thenReturn(sonarqubeUser);
-        when(note2.getBody()).thenReturn(OLD_SONARQUBE_VERSION_COMMENT);
+        when(note2.getBody()).thenReturn("dummy");
         when(note2.isResolvable()).thenReturn(true);
 
         Note note3 = mock(Note.class);
@@ -353,7 +331,7 @@ public class GitlabMergeRequestDecoratorTest {
     @Test
     public void shouldCommentAboutCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndAnotherUserWithIssuedId() throws IOException {
         User otherUser = mock(User.class);
-        when(otherUser.getUsername()).thenReturn("other.user@github.dummy");
+        when(otherUser.getUsername()).thenReturn("other.user@gitlab.dummy");
 
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
@@ -386,7 +364,7 @@ public class GitlabMergeRequestDecoratorTest {
     @Test
     public void shouldThrowErrorIfUnableToCleanUpDiscussionOnGitlab() throws IOException {
         User otherUser = mock(User.class);
-        when(otherUser.getUsername()).thenReturn("other.user@github.dummy");
+        when(otherUser.getUsername()).thenReturn("other.user@gitlab.dummy");
 
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
@@ -408,7 +386,7 @@ public class GitlabMergeRequestDecoratorTest {
 
         assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Could not clean-up discussion on Gitlab");
+                .hasMessage("Could not add note to Merge Request discussion");
         verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
 
         ArgumentCaptor<String> discussionIdArgumentCaptor = ArgumentCaptor.forClass(String.class);

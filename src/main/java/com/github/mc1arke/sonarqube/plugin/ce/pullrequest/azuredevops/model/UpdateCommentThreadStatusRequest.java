@@ -18,25 +18,17 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.model.enums.CommentThreadStatus;
 
-public class PullRequest {
+public class UpdateCommentThreadStatusRequest {
 
-    private final int id;
-    private final Repository repository;
+    private final CommentThreadStatus status;
 
-    @JsonCreator
-    public PullRequest(@JsonProperty("pullRequestId") int id, @JsonProperty("repository") Repository repository) {
-        this.id = id;
-        this.repository = repository;
+    public UpdateCommentThreadStatusRequest(CommentThreadStatus status) {
+        this.status = status;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public Repository getRepository() {
-        return repository;
+    public CommentThreadStatus getStatus() {
+        return status;
     }
 }
