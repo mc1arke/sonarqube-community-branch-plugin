@@ -55,7 +55,7 @@ compileJava {
 dependencies {
     compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
     testCompile fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.11.2'
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.20.2'
     testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.24.1'
     zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
