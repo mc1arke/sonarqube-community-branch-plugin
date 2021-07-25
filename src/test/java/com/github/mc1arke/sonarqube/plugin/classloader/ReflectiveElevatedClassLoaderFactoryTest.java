@@ -22,7 +22,6 @@ import org.hamcrest.core.IsEqual;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.internal.configuration.plugins.Plugins;
 import org.sonar.api.Plugin;
 import org.sonar.classloader.ClassloaderBuilder;
 import org.sonar.classloader.Mask;
@@ -154,15 +153,15 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
         Map<String, ClassLoader> loaders = builder.build();
         ClassLoader classLoader = loaders.get("_customPlugin");
 
-        Class<? extends Plugins> loadedClass =
-                (Class<? extends Plugins>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
+        Class<? extends Plugin> loadedClass =
+                (Class<? extends Plugin>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo(
                 "Expected classloader of type 'org.sonar.classloader.ClassRealm' but got 'java.net.URLClassLoader'"));
 
         ReflectiveElevatedClassLoaderFactory testCase = new ReflectiveElevatedClassLoaderFactory();
-        testCase.createClassLoader((Class<? extends Plugin>) loadedClass);
+        testCase.createClassLoader(loadedClass);
 
     }
 
@@ -180,15 +179,15 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
 
         ClassLoader classLoader = new URLClassLoader(urls);
 
-        Class<? extends Plugins> loadedClass =
-                (Class<? extends Plugins>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
+        Class<? extends Plugin> loadedClass =
+                (Class<? extends Plugin>) classLoader.loadClass(TARGET_PLUGIN_CLASS);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(IsEqual.equalTo(
                 "Expected classloader of type 'org.sonar.classloader.ClassRealm' but got 'java.net.URLClassLoader'"));
 
         ReflectiveElevatedClassLoaderFactory testCase = new ReflectiveElevatedClassLoaderFactory();
-        testCase.createClassLoader((Class<? extends Plugin>) loadedClass);
+        testCase.createClassLoader(loadedClass);
 
     }
 
