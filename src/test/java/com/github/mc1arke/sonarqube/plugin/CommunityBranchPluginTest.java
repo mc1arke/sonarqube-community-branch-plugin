@@ -41,7 +41,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -111,7 +110,7 @@ public class CommunityBranchPluginTest {
     public void testServerSideLoad() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
-        final CoreExtension.Context context = spy(mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS));
+        final CoreExtension.Context context = mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS);
         when(context.getRuntime().getSonarQubeSide()).thenReturn(SonarQubeSide.SERVER);
 
         testCase.load(context);
