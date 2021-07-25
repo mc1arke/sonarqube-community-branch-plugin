@@ -64,7 +64,7 @@ dependencies {
     runtime 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.4'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     compile 'org.javassist:javassist:3.28.0-GA'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.1'
     testImplementation(platform('org.junit:junit-bom:5.7.2'))
     testImplementation('org.junit.jupiter:junit-jupiter')
     testRuntime("org.junit.vintage:junit-vintage-engine")
