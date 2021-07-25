@@ -53,6 +53,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           java-package: jdk
+          distribution: adopt
       -
         name: Cache deps
         uses: actions/cache@v2
@@ -89,6 +90,7 @@ jobs:
         with:
           java-version: 11
           java-package: jdk
+          distribution: adopt
       -
         name: Cache deps
         uses: actions/cache@v2
@@ -149,6 +151,7 @@ jobs:
         with:
           java-version: 11
           java-package: jdk
+          distribution: adopt
       -
         name: Cache deps
         uses: actions/cache@v2
