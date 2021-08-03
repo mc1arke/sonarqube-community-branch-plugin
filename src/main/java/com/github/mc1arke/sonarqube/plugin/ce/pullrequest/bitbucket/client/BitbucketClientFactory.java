@@ -23,19 +23,31 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.cloud.BitbucketCloudConfiguration;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.client.model.server.BitbucketServerConfiguration;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
-public final class BitbucketClientFactory {
-    private BitbucketClientFactory() {
+import java.util.function.Supplier;
+
+public class BitbucketClientFactory {
+
+    private static final Logger LOGGER = Loggers.get(BitbucketClientFactory.class);
+
+    private final Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier;
+
+    public BitbucketClientFactory(Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier) {
+        this.okHttpClientBuilderSupplier = okHttpClientBuilderSupplier;
     }
 
-    public static BitbucketClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
+    public BitbucketClient createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto) {
         if (almSettingDto.getAlm() == ALM.BITBUCKET_CLOUD) {
-            return new BitbucketCloudClient(new BitbucketCloudConfiguration(almSettingDto.getAppId(), projectAlmSettingDto.getAlmRepo(), almSettingDto.getClientId(), almSettingDto.getClientSecret()), createObjectMapper());
+            return new BitbucketCloudClient(new BitbucketCloudConfiguration(almSettingDto.getAppId(), projectAlmSettingDto.getAlmRepo(), almSettingDto.getClientId(), almSettingDto.getClientSecret()), createObjectMapper(), createBaseClientBuilder(okHttpClientBuilderSupplier));
         } else {
-            return new BitbucketServerClient(new BitbucketServerConfiguration(projectAlmSettingDto.getAlmRepo(), projectAlmSettingDto.getAlmSlug(), almSettingDto.getUrl(), almSettingDto.getPersonalAccessToken()), createObjectMapper());
+            return new BitbucketServerClient(new BitbucketServerConfiguration(projectAlmSettingDto.getAlmRepo(), projectAlmSettingDto.getAlmSlug(), almSettingDto.getUrl(), almSettingDto.getPersonalAccessToken()), createObjectMapper(), createBaseClientBuilder(okHttpClientBuilderSupplier));
         }
     }
 
@@ -43,5 +55,11 @@ public final class BitbucketClientFactory {
         return new ObjectMapper()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
+
+    private static OkHttpClient.Builder createBaseClientBuilder(Supplier<OkHttpClient.Builder> builderSupplier) {
+        HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(LOGGER::debug);
+        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        return builderSupplier.get().addInterceptor(httpLoggingInterceptor);
     }
 }

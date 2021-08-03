@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Node;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -49,6 +51,7 @@ import org.sonar.server.measure.Rating;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
@@ -116,8 +119,43 @@ public class AnalysisDetails {
         return publicRootURL + "/dashboard?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName();
     }
 
-    public String getIssueUrl(String issueKey) {
-        return publicRootURL + "/project/issues?id=" + encode(project.getKey()) + "&pullRequest=" + branchDetails.getBranchName() + "&issues=" + issueKey + "&open=" + issueKey;
+    public String getIssueUrl(PostAnalysisIssueVisitor.LightIssue issue) {
+        if (issue.type() == RuleType.SECURITY_HOTSPOT) {
+            return String.format("%s/security_hotspots?id=%s&pullRequest=%s&hotspots=%s", publicRootURL, encode(project.getKey()), branchDetails.getBranchName(), issue.key());
+        } else {
+            return String.format("%s/project/issues?id=%s&pullRequest=%s&issues=%s&open=%s", publicRootURL, encode(project.getKey()), branchDetails.getBranchName(), issue.key(), issue.key());
+        }
+    }
+
+    public Optional<ProjectIssueIdentifier> parseIssueIdFromUrl(String issueUrl) {
+        URI url = URI.create(issueUrl);
+        List<NameValuePair> parameters = URLEncodedUtils.parse(url, StandardCharsets.UTF_8);
+        Optional<String> optionalProjectId = parameters.stream()
+                .filter(parameter -> "id".equals(parameter.getName()))
+                .map(NameValuePair::getValue)
+                .findFirst();
+
+        if (!optionalProjectId.isPresent()) {
+            return Optional.empty();
+        }
+
+        String projectId = optionalProjectId.get();
+
+        if (url.getPath().endsWith("/dashboard")) {
+            return Optional.of(new ProjectIssueIdentifier(projectId, "decorator-summary-comment"));
+        } else if (url.getPath().endsWith("security_hotspots")) {
+            return parameters.stream()
+                    .filter(parameter -> "hotspots".equals(parameter.getName()))
+                    .map(NameValuePair::getValue)
+                    .findFirst()
+                    .map(issueId -> new ProjectIssueIdentifier(projectId, issueId));
+        } else {
+            return parameters.stream()
+                    .filter(parameter -> "issues".equals(parameter.getName()))
+                    .map(NameValuePair::getValue)
+                    .findFirst()
+                    .map(issueId -> new ProjectIssueIdentifier(projectId, issueId));
+        }
     }
 
     public Optional<String> getPullRequestBase() {
@@ -212,7 +250,8 @@ public class AnalysisDetails {
                                                                  .orElse("No duplication information") + " (" +
                                                          decimalFormat.format(duplications) +
                                                          "% Estimated after merge)"))),
-                                         new Link(getDashboardUrl(), new Text("View in SonarQube")));
+                                         new Paragraph(new Text(String.format("**Project ID:** %s", project.getKey()))),
+                                         new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
 
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
@@ -234,7 +273,8 @@ public class AnalysisDetails {
                 new Paragraph(new Text(String.format("**Message:** %s", issue.getMessage()))),
                 effortNode,
                 resolutionNode,
-                new Link(getIssueUrl(issue.key()), new Text("View in SonarQube"))
+                new Paragraph(new Text(String.format("**Project ID:** %s **Issue ID:** %s", project.getKey(), issue.key()))),
+                new Paragraph(new Link(getIssueUrl(issue), new Text("View in SonarQube")))
         );
         return formatterFactory.documentFormatter().format(document, formatterFactory);
     }
@@ -438,6 +478,25 @@ public class AnalysisDetails {
 
         private String getImageName() {
             return imageName;
+        }
+    }
+
+    public static class ProjectIssueIdentifier {
+
+        private final String projectKey;
+        private final String issueKey;
+
+        public ProjectIssueIdentifier(String projectKey, String issueKey) {
+            this.projectKey = projectKey;
+            this.issueKey = issueKey;
+        }
+
+        public String getProjectKey() {
+            return projectKey;
+        }
+
+        public String getIssueKey() {
+            return issueKey;
         }
     }
 

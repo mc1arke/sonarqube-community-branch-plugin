@@ -34,6 +34,9 @@ repositories {
         patternLayout({a ->
             artifact '/Distribution/[module]/[module]-[revision].[ext]'
         })
+        metadataSources(sources -> {
+            sources.artifact()
+        })
     }
 }
 
@@ -53,18 +56,22 @@ compileJava {
 
 
 dependencies {
-    compileOnly fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
-    testCompile fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar')
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
-    testCompile group: 'org.assertj', name: 'assertj-core', version: '3.13.2'
-    testCompile group: 'com.github.tomakehurst', name: 'wiremock', version: '2.24.1'
-    zip "sonarqube:sonarqube:${sonarqubeVersion}@zip"
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.62'
-    compile files('lib/nodes-0.5.0.jar')
-    runtime 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.7'
-    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-    compile 'org.javassist:javassist:3.27.0-GA'
+    compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
+    testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
+    testImplementation('org.mockito:mockito-core:3.11.2')
+    testImplementation('org.assertj:assertj-core:3.20.2')
+    testImplementation('com.github.tomakehurst:wiremock:2.27.2')
+    zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
+    implementation('org.bouncycastle:bcpkix-jdk15on:1.69')
+    implementation(files('lib/nodes-0.5.0.jar'))
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.4')
+    compileOnly('com.google.code.findbugs:jsr305:3.0.2')
+    implementation('org.javassist:javassist:3.28.0-GA')
+    implementation('com.squareup.okhttp3:logging-interceptor:4.9.1')
+    testImplementation(platform('org.junit:junit-bom:5.7.2'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation('junit:junit:4.13.2')
+    testRuntimeOnly('org.junit.vintage:junit-vintage-engine')
 }
 
 
@@ -72,11 +79,11 @@ project.afterEvaluate {
     if (file("${sonarLibraries}").exists()) {
         return
     }
-    println 'Extracting SonarQube libraries (this may take a while)...'
+    project.getLogger().lifecycle('Extracting SonarQube libraries (this may take a while)...')
     configurations.zip.resolvedConfiguration.resolvedArtifacts.each { artifact ->
         copy {
             from zipTree(artifact.getFile())
-            into "${sonarqubeLibDir}"
+            into sonarqubeLibDir
         }
     }
 }
@@ -129,10 +136,17 @@ pitest {
 
 jacocoTestReport {
     reports {
-        xml.enabled true
+        xml.required = true
     }
 }
 
 plugins.withType(JacocoPlugin) {
     tasks["test"].finalizedBy 'jacocoTestReport'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }

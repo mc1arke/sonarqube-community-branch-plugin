@@ -21,16 +21,21 @@ package com.github.mc1arke.sonarqube.plugin;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtMethod;
 import javassist.NotFoundException;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
+import org.sonar.core.platform.EditionProvider;
 
 import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.security.ProtectionDomain;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Optional;
 
 public final class CommunityBranchAgent {
 
@@ -43,18 +48,18 @@ public final class CommunityBranchAgent {
     public static void premain(String args, Instrumentation instrumentation) throws UnmodifiableClassException, ClassNotFoundException {
         LOGGER.info("Loading agent");
 
-        if (!"ce".equals(args) && !"web".equals(args)) {
-            throw new IllegalArgumentException("Invalid/missing agent argument");
-        }
+        Component component = Component.fromString(args).orElseThrow(() -> new IllegalArgumentException("Invalid/missing agent argument"));
 
-        if ("ce".equals(args)) {
-            redefineEdition(instrumentation);
+        if (component == Component.CE) {
+            redefineEdition(instrumentation, "org.sonar.core.platform.PlatformEditionProvider", redefineOptionalEditionGetMethod());
+        } else if (component == Component.WEB) {
+            redefineEdition(instrumentation, "org.sonar.server.almsettings.MultipleAlmFeatureProvider", redefineConstructorEditionProviderField(EditionProvider.Edition.ENTERPRISE));
+            redefineEdition(instrumentation, "org.sonar.server.newcodeperiod.ws.SetAction", redefineConstructorEditionProviderField(EditionProvider.Edition.DEVELOPER));
+            redefineEdition(instrumentation, "org.sonar.server.newcodeperiod.ws.UnsetAction", redefineConstructorEditionProviderField(EditionProvider.Edition.DEVELOPER));
         }
     }
 
-    private static void redefineEdition(Instrumentation instrumentation) throws ClassNotFoundException, UnmodifiableClassException {
-        String targetClassName = "org.sonar.core.platform.PlatformEditionProvider";
-
+    private static void redefineEdition(Instrumentation instrumentation, String targetClassName, Redefiner redefiner) throws ClassNotFoundException, UnmodifiableClassException {
         instrumentation.addTransformer(new ClassFileTransformer() {
 
             @Override
@@ -71,13 +76,13 @@ public final class CommunityBranchAgent {
                 try {
                     ClassPool cp = ClassPool.getDefault();
                     CtClass cc = cp.get(targetClassName);
-                    CtMethod m = cc.getDeclaredMethod("get");
-                    m.setBody("return java.util.Optional.of(org.sonar.core.platform.EditionProvider.Edition.DEVELOPER);");
+
+                    redefiner.redefine(cc);
 
                     byteCode = cc.toBytecode();
                     cc.detach();
                 } catch (NotFoundException | CannotCompileException | IOException e) {
-                    LOGGER.error("Could not transform class, will use default class definition", e);
+                    LOGGER.error(String.format("Could not transform class %s, will use default class definition", targetClassName), e);
                 }
 
                 return byteCode;
@@ -86,6 +91,34 @@ public final class CommunityBranchAgent {
         });
 
         instrumentation.retransformClasses(Class.forName(targetClassName));
+    }
+
+
+    private static Redefiner redefineOptionalEditionGetMethod() {
+        return ctClass -> {
+            CtMethod ctMethod = ctClass.getDeclaredMethod("get");
+            ctMethod.setBody("return java.util.Optional.of(org.sonar.core.platform.EditionProvider.Edition.DEVELOPER);");
+        };
+    }
+
+    private static Redefiner redefineConstructorEditionProviderField(EditionProvider.Edition edition) {
+        return ctClass -> {
+            CtConstructor ctConstructor = ctClass.getDeclaredConstructors()[0];
+            ctConstructor.insertAfter("this.editionProvider = new com.github.mc1arke.sonarqube.plugin.CommunityPlatformEditionProvider(org.sonar.core.platform.EditionProvider.Edition." + edition.name() + ");");
+        };
+    }
+
+    private enum Component {
+        CE, WEB;
+
+        private static Optional<Component> fromString(String input) {
+            return Arrays.stream(values()).filter(v -> v.name().toLowerCase(Locale.ENGLISH).equals(input)).findFirst();
+        }
+    }
+
+    @FunctionalInterface
+    private interface Redefiner {
+        void redefine(CtClass ctClass) throws CannotCompileException, NotFoundException;
     }
 
 }

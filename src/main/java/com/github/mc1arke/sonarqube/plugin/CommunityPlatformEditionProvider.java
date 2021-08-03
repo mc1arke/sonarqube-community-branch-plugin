@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,23 +16,22 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.ce;
+package com.github.mc1arke.sonarqube.plugin;
 
-import org.junit.Test;
+import org.sonar.core.platform.PlatformEditionProvider;
 
-import java.util.List;
+import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+public class CommunityPlatformEditionProvider extends PlatformEditionProvider {
 
-/**
- * @author Michael Clarke
- */
-public class CommunityReportAnalysisComponentProviderTest {
+    private final Edition edition;
 
-    @Test
-    public void testGetComponents() {
-        List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(11, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+    public CommunityPlatformEditionProvider(Edition edition) {
+        this.edition = edition;
+    }
+
+    @Override
+    public Optional<Edition> get() {
+        return Optional.of(edition);
     }
 }

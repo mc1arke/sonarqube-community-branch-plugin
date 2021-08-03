@@ -40,10 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -64,7 +61,7 @@ public class CommunityBranchPluginBootstrapTest {
     }
 
     @Test
-    public void testDefineInvokedOnSuccessLoad() throws ClassNotFoundException {
+    public void testDefineInvokedOnSuccessLoad() {
         Plugin.Context context = mock(Plugin.Context.class);
         Configuration configuration = mock(Configuration.class);
         when(context.getBootConfiguration()).thenReturn(configuration);
@@ -73,8 +70,12 @@ public class CommunityBranchPluginBootstrapTest {
         when(context.getRuntime()).thenReturn(sonarRuntime);
         when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
-        ClassLoader classLoader = mock(ClassLoader.class);
-        when(classLoader.loadClass(any())).thenReturn((Class) MockPlugin.class);
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Class<?> loadClass(String name) {
+                return MockPlugin.class;
+            }
+        };
 
         ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock(ElevatedClassLoaderFactory.class);
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
@@ -91,7 +92,7 @@ public class CommunityBranchPluginBootstrapTest {
     }
 
     @Test
-    public void testDefineNotInvokedForNonScanner() throws ClassNotFoundException {
+    public void testDefineNotInvokedForNonScanner() {
         Plugin.Context context = mock(Plugin.Context.class);
         Configuration configuration = mock(Configuration.class);
         when(context.getBootConfiguration()).thenReturn(configuration);
@@ -100,8 +101,12 @@ public class CommunityBranchPluginBootstrapTest {
         when(context.getRuntime()).thenReturn(sonarRuntime);
         when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SERVER);
 
-        ClassLoader classLoader = mock(ClassLoader.class);
-        when(classLoader.loadClass(any())).thenReturn((Class) MockPlugin.class);
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Class<?> loadClass(String name) {
+                return MockPlugin.class;
+            }
+        };
 
         ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock(ElevatedClassLoaderFactory.class);
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
@@ -117,10 +122,15 @@ public class CommunityBranchPluginBootstrapTest {
         assertNull(MockPlugin.invokedContext);
     }
 
+
     @Test
-    public void testFailureOnIncorrectClassTypeReturned() throws ReflectiveOperationException {
-        ClassLoader classLoader = mock(ClassLoader.class);
-        doReturn(this.getClass()).when(classLoader).loadClass(any());
+    public void testFailureOnIncorrectClassTypeReturned() {
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Class<?> loadClass(String name) {
+                return CommunityBranchPluginBootstrapTest.class;
+            }
+        };
 
         ElevatedClassLoaderFactory classLoaderFactory = mock(ElevatedClassLoaderFactory.class);
         when(classLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
@@ -149,10 +159,13 @@ public class CommunityBranchPluginBootstrapTest {
     }
 
     @Test
-    public void testFailureOnReflectiveOperationException() throws ReflectiveOperationException {
-        ClassLoader classLoader = mock(ClassLoader.class);
-        doThrow(new ClassNotFoundException("Whoops")).when(classLoader).loadClass(any());
-
+    public void testFailureOnReflectiveOperationException() {
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Class<?> loadClass(String name) throws ClassNotFoundException {
+                throw new ClassNotFoundException("Whoops");
+            }
+        };
         Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
         SonarRuntime sonarRuntime = mock(SonarRuntime.class);
         when(context.getRuntime()).thenReturn(sonarRuntime);
