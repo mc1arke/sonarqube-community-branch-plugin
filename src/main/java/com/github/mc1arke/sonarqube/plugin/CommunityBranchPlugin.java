@@ -134,7 +134,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                     PropertyDefinition.builder(AZURE_DEVOPS_API_VERSION)
                             .category(CoreProperties.CATEGORY_GENERAL)
                             .subCategory(CoreProperties.SUBCATEGORY_GENERAL)
-                            .defaultValue("6.0")
+                            .defaultValue("4.1")
                             .onQualifiers(Qualifiers.APP)
                             .name("Azure DevOps API Version")
                             .description("API Version to submit with any Azure DevOps API request")
