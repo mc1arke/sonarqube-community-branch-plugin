@@ -22,8 +22,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -37,20 +39,25 @@ import java.util.Optional;
 public class DefaultAzureDevopsClientFactory implements AzureDevopsClientFactory {
 
     private final ObjectMapper objectMapper;
+    private final Configuration config;
 
-    public DefaultAzureDevopsClientFactory() {
+    public DefaultAzureDevopsClientFactory(Configuration config) {
+        this.config = config;
         objectMapper = new ObjectMapper()
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
                 .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
     }
 
     @Override
     public AzureDevopsClient createClient(ProjectAlmSettingDto projectAlmSettingDto, AlmSettingDto almSettingDto) {
         String apiUrl = Optional.ofNullable(almSettingDto.getUrl()).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("ALM URL must be provided"));
+        String apiVersion = config.get(CommunityBranchPlugin.AZURE_DEVOPS_API_VERSION).orElseThrow(() -> new IllegalStateException("Azure DevOps API Version must be provided"));
         String accessToken = Optional.ofNullable(almSettingDto.getPersonalAccessToken()).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("Personal Access Token must be provided"));
-        return new AzureDevopsRestClient(apiUrl, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), objectMapper);
+
+        return new AzureDevopsRestClient(apiUrl, apiVersion, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), objectMapper);
     }
 }
