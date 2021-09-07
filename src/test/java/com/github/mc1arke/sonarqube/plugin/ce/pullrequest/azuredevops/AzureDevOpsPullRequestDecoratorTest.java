@@ -1,5 +1,6 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
@@ -9,6 +10,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.api.rule.RuleKey;
@@ -35,8 +37,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,20 +64,28 @@ public class AzureDevOpsPullRequestDecoratorTest {
     private final String authHeader = "Basic OnRva2Vu";
     private final String authorId = "author-id";
     private final String projectName = "Project Name";
+    private final String apiVersion = "4.1";
 
     private ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
     private AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private Server server = mock(Server.class);
     private ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
-    private AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory());
+    private AzureDevOpsPullRequestDecorator pullRequestDecorator;
     private AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
 
     private PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
     private PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
     private PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
     private Component component = mock(Component.class);
+    private Configuration configuration = mock(Configuration.class);
+
+    public AzureDevOpsPullRequestDecoratorTest() {
+        pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory(configuration));
+    }
 
     private void configureTestDefaults() {
+        when(configuration.get(eq(CommunityBranchPlugin.AZURE_DEVOPS_API_VERSION))).thenReturn(Optional.of(apiVersion));
+
         when(almSettingDto.getPersonalAccessToken()).thenReturn(token);
         when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl());
 
@@ -505,6 +514,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void testDecorateQualityGateRepoNameException() {
+        when(configuration.get(eq(CommunityBranchPlugin.AZURE_DEVOPS_API_VERSION))).thenReturn(Optional.of(apiVersion));
         when(almSettingDto.getUrl()).thenReturn("almUrl");
         when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
         when(analysisDetails.getBranchName()).thenReturn("123");
@@ -517,6 +527,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void testDecorateQualityGateRepoSlugException() {
+        when(configuration.get(eq(CommunityBranchPlugin.AZURE_DEVOPS_API_VERSION))).thenReturn(Optional.of(apiVersion));
         when(almSettingDto.getUrl()).thenReturn("almUrl");
         when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
         when(analysisDetails.getBranchName()).thenReturn("123");
@@ -529,6 +540,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void testDecorateQualityGateProjectIDException() {
+        when(configuration.get(eq(CommunityBranchPlugin.AZURE_DEVOPS_API_VERSION))).thenReturn(Optional.of(apiVersion));
         when(almSettingDto.getUrl()).thenReturn("almUrl");
         when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
@@ -541,6 +553,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void testDecorateQualityGatePRBranchException() {
+        when(configuration.get(eq(CommunityBranchPlugin.AZURE_DEVOPS_API_VERSION))).thenReturn(Optional.of(apiVersion));
         when(almSettingDto.getUrl()).thenReturn("almUrl");
         when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
         when(analysisDetails.getBranchName()).thenReturn("NON-NUMERIC");
@@ -549,6 +562,18 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
         assertThatThrownBy(() -> pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .hasMessage("Could not parse Pull Request Key")
+                .isExactlyInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    public void testDecorateQualityGateAPIVersionException() {
+        when(almSettingDto.getUrl()).thenReturn("almUrl");
+        when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn("slug");
+
+        assertThatThrownBy(() -> pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
+                .hasMessage("Azure DevOps API Version must be provided")
                 .isExactlyInstanceOf(IllegalStateException.class);
     }
 
