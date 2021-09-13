@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * The status of a comment thread
+ * Enum names match those here: https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-threads/get?#commentthreadstatus
  */
 public enum CommentThreadStatus {
     /**
@@ -24,7 +25,7 @@ public enum CommentThreadStatus {
     /**
      * The thread status is resolved as won't fix.
      */
-    @JsonProperty("wontfix")
+    @JsonProperty("wontFix")
     WONTFIX,
     /**
      * The thread status is closed.
@@ -34,7 +35,7 @@ public enum CommentThreadStatus {
     /**
      * The thread status is resolved as by design.
      */
-    @JsonProperty("bydesign")
+    @JsonProperty("byDesign")
     BYDESIGN,
     /**
      * The thread status is pending.
