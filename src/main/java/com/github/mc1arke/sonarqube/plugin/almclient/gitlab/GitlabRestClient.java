@@ -111,7 +111,7 @@ class GitlabRestClient implements GitlabClient {
 
         HttpPost httpPost = new HttpPost(targetUrl);
         httpPost.addHeader("Content-type", ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
-        httpPost.setEntity(new UrlEncodedFormEntity(requestContent));
+        httpPost.setEntity(new UrlEncodedFormEntity(requestContent, StandardCharsets.UTF_8));
         return entity(httpPost, Discussion.class, httpResponse -> validateResponse(httpResponse, 201, "Discussion successfully created"));
     }
 
