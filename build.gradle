@@ -40,7 +40,7 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '9.0.0.45539'
+def sonarqubeVersion = '9.1.0.47736'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 

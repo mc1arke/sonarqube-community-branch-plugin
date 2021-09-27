@@ -28,6 +28,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
@@ -45,13 +46,15 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
     private static final Logger LOGGER = Loggers.get(DefaultBitbucketClientFactory.class);
 
     private final Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier;
+    private final Settings settings;
 
-    public DefaultBitbucketClientFactory() {
-        this(OkHttpClient.Builder::new);
+    public DefaultBitbucketClientFactory(Settings settings) {
+        this(settings, OkHttpClient.Builder::new);
     }
 
-    DefaultBitbucketClientFactory(Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier) {
+    DefaultBitbucketClientFactory(Settings settings, Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier) {
         this.okHttpClientBuilderSupplier = okHttpClientBuilderSupplier;
+        this.settings = settings;
     }
 
     @Override
@@ -63,7 +66,7 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "App ID must be set in configuration"));
             String clientId = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getClientId()))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client ID must be set in configuration"));
-            String clientSecret = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getClientSecret()))
+            String clientSecret = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getDecryptedClientSecret(settings.getEncryption())))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client Secret must be set in configuration"));
             return new BitbucketCloudClient(new BitbucketCloudConfiguration(appId, almRepo, clientId, clientSecret), createObjectMapper(), createBaseClientBuilder(okHttpClientBuilderSupplier));
         } else {
@@ -71,7 +74,7 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "ALM slug must be set in configuration"));
             String url = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getUrl()))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "URL must be set in configuration"));
-            String personalAccessToken = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getPersonalAccessToken()))
+            String personalAccessToken = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption())))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "Personal access token must be set in configuration"));
             return new BitbucketServerClient(new BitbucketServerConfiguration(almRepo, almSlug, url, personalAccessToken), createObjectMapper(), createBaseClientBuilder(okHttpClientBuilderSupplier));
         }

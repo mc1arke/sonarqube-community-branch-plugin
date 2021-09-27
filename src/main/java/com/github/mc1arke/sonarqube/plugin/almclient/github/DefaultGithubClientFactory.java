@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.almclient.github;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.GraphqlGithubClient;
 import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.config.internal.Settings;
 import org.sonar.api.platform.Server;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.AlmSettingDto;
@@ -35,16 +36,18 @@ public class DefaultGithubClientFactory implements GithubClientFactory {
 
     private final GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider;
     private final Server server;
+    private final Settings settings;
 
-    public DefaultGithubClientFactory(GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider, Server server) {
+    public DefaultGithubClientFactory(GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider, Server server, Settings settings) {
         this.githubApplicationAuthenticationProvider = githubApplicationAuthenticationProvider;
         this.server = server;
+        this.settings = settings;
     }
 
     @Override
     public GithubClient createClient(ProjectAlmSettingDto projectAlmSettingDto, AlmSettingDto almSettingDto) {
         String apiUrl = Optional.ofNullable(almSettingDto.getUrl()).orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "No URL has been set for Github connections"));
-        String apiPrivateKey = Optional.ofNullable(almSettingDto.getPrivateKey()).orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "No private key has been set for Github connections"));
+        String apiPrivateKey = Optional.ofNullable(almSettingDto.getDecryptedPrivateKey(settings.getEncryption())).orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "No private key has been set for Github connections"));
         String projectPath = Optional.ofNullable(projectAlmSettingDto.getAlmRepo()).orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "No repository name has been set for Github connections"));
         String appId = Optional.ofNullable(almSettingDto.getAppId()).orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "No App ID has been set for Github connections"));
 

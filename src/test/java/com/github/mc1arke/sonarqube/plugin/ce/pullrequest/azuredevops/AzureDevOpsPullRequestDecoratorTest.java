@@ -6,9 +6,12 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.internal.Encryption;
+import org.sonar.api.config.internal.Settings;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.api.rule.RuleKey;
@@ -64,20 +67,27 @@ public class AzureDevOpsPullRequestDecoratorTest {
     private final String authorId = "author-id";
     private final String projectName = "Project Name";
 
-    private ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-    private AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-    private Server server = mock(Server.class);
-    private ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
-    private AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory());
-    private AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+    private final Server server = mock(Server.class);
+    private final ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
+    private final Settings settings = mock(Settings.class);
+    private final Encryption encryption = mock(Encryption.class);
+    private final AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory(settings));
+    private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
 
-    private PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
-    private PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-    private PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
-    private Component component = mock(Component.class);
+    private final PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
+    private final PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+    private final PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+    private final Component component = mock(Component.class);
+
+    @Before
+    public void setUp() {
+        when(settings.getEncryption()).thenReturn(encryption);
+    }
 
     private void configureTestDefaults() {
-        when(almSettingDto.getPersonalAccessToken()).thenReturn(token);
+        when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn(token);
         when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl());
 
         when(analysisDetails.getAnalysisProjectName()).thenReturn(projectName);
@@ -506,7 +516,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     @Test
     public void testDecorateQualityGateRepoNameException() {
         when(almSettingDto.getUrl()).thenReturn("almUrl");
-        when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
+        when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("personalAccessToken");
         when(analysisDetails.getBranchName()).thenReturn("123");
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("prj");
 
@@ -518,7 +528,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     @Test
     public void testDecorateQualityGateRepoSlugException() {
         when(almSettingDto.getUrl()).thenReturn("almUrl");
-        when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
+        when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("personalAccessToken");
         when(analysisDetails.getBranchName()).thenReturn("123");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
 
@@ -530,7 +540,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     @Test
     public void testDecorateQualityGateProjectIDException() {
         when(almSettingDto.getUrl()).thenReturn("almUrl");
-        when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
+        when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("personalAccessToken");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("slug");
 
@@ -542,7 +552,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     @Test
     public void testDecorateQualityGatePRBranchException() {
         when(almSettingDto.getUrl()).thenReturn("almUrl");
-        when(almSettingDto.getPersonalAccessToken()).thenReturn("personalAccessToken");
+        when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("personalAccessToken");
         when(analysisDetails.getBranchName()).thenReturn("NON-NUMERIC");
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("prj");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");

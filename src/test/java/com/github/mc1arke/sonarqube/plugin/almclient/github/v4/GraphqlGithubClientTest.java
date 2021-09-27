@@ -110,7 +110,7 @@ public class GraphqlGithubClientTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
 
         GraphqlGithubClient testCase =
                 new GraphqlGithubClient(graphqlProvider, clock, repositoryAuthenticationToken, server);
@@ -156,7 +156,7 @@ public class GraphqlGithubClientTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("url");
         when(almSettingDto.getAppId()).thenReturn("app ID");
-        when(almSettingDto.getPrivateKey()).thenReturn("key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("key");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("group/repo");
 
         GraphqlGithubClient testCase =
@@ -441,7 +441,7 @@ public class GraphqlGithubClientTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn(basePath);
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
 
         GraphqlGithubClient testCase =
                 new GraphqlGithubClient(graphqlProvider, clock, repositoryAuthenticationToken, server);
@@ -637,7 +637,7 @@ public class GraphqlGithubClientTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedClientSecret(any())).thenReturn("private key");
 
         GraphqlGithubClient testCase = new GraphqlGithubClient(graphqlProvider, clock, repositoryAuthenticationToken, server);
         testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -680,7 +680,7 @@ public class GraphqlGithubClientTest {
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("url");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
 
         GraphqlGithubClient underTest = new GraphqlGithubClient(mock(RepositoryAuthenticationToken.class), mock(Server.class));

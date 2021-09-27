@@ -51,7 +51,7 @@ public abstract class SetBindingAction extends ProjectWsAction {
 
         DbClient dbClient = getDbClient();
         AlmSettingDto almSettingDto = getAlmSetting(dbClient, dbSession, almSetting);
-        dbClient.projectAlmSettingDao().insertOrUpdate(dbSession, createProjectAlmSettingDto(project.getUuid(), almSettingDto.getUuid(), request));
+        dbClient.projectAlmSettingDao().insertOrUpdate(dbSession, createProjectAlmSettingDto(project.getUuid(), almSettingDto.getUuid(), request), almSettingDto.getUuid(), project.getName(), project.getKey());
         dbSession.commit();
 
         response.noContent();
