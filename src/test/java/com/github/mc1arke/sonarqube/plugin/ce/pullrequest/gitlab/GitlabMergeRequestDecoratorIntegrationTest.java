@@ -26,6 +26,8 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.internal.Encryption;
+import org.sonar.api.config.internal.Settings;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.component.Component;
@@ -88,7 +90,7 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
 
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-        when(almSettingDto.getPersonalAccessToken()).thenReturn("token");
+        when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("token");
         when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl()+"/api/v4");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
 
@@ -227,8 +229,11 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         LinkHeaderReader linkHeaderReader = mock(LinkHeaderReader.class);
         Server server = mock(Server.class);
         when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
+        Settings settings = mock(Settings.class);
+        Encryption encryption = mock(Encryption.class);
+        when(settings.getEncryption()).thenReturn(encryption);
         GitlabMergeRequestDecorator pullRequestDecorator =
-                new GitlabMergeRequestDecorator(server, scmInfoRepository, new DefaultGitlabClientFactory(linkHeaderReader));
+                new GitlabMergeRequestDecorator(server, scmInfoRepository, new DefaultGitlabClientFactory(linkHeaderReader, settings));
 
 
         assertThat(pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto).getPullRequestUrl()).isEqualTo(Optional.of("http://gitlab.example.com/my-group/my-project/merge_requests/1"));

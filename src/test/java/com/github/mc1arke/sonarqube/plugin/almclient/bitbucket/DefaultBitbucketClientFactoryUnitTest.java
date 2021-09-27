@@ -4,6 +4,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.sonar.api.config.internal.Encryption;
+import org.sonar.api.config.internal.Settings;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -33,8 +35,12 @@ public class DefaultBitbucketClientFactoryUnitTest {
         when(responseBody.string()).thenReturn("{}");
         when(builder.build().newCall(any()).execute().body()).thenReturn(responseBody);
 
+        Settings settings = mock(Settings.class);
+        Encryption encryption = mock(Encryption.class);
+
         // when
-        BitbucketClient client = new DefaultBitbucketClientFactory(() -> builder).createClient(projectAlmSettingDto, almSettingDto);
+        when(settings.getEncryption()).thenReturn(encryption);
+        BitbucketClient client = new DefaultBitbucketClientFactory(settings, () -> builder).createClient(projectAlmSettingDto, almSettingDto);
 
         // then
         assertTrue(client instanceof BitbucketCloudClient);
@@ -50,8 +56,12 @@ public class DefaultBitbucketClientFactoryUnitTest {
                 .setAlmRepo("almRepo")
                 .setAlmSlug("almSlug");
 
+        Settings settings = mock(Settings.class);
+        Encryption encryption = mock(Encryption.class);
+
         // when
-        BitbucketClient client = new DefaultBitbucketClientFactory(() -> mock(OkHttpClient.Builder.class, Mockito.RETURNS_DEEP_STUBS)).createClient(projectAlmSettingDto, almSettingDto);
+        when(settings.getEncryption()).thenReturn(encryption);
+        BitbucketClient client = new DefaultBitbucketClientFactory(settings, () -> mock(OkHttpClient.Builder.class, Mockito.RETURNS_DEEP_STUBS)).createClient(projectAlmSettingDto, almSettingDto);
 
         // then
         assertTrue(client instanceof BitbucketServerClient);

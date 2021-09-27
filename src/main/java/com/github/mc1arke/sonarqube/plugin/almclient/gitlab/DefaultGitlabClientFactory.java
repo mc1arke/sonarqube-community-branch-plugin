@@ -24,6 +24,7 @@ import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.LinkHeaderReader;
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -36,10 +37,12 @@ public class DefaultGitlabClientFactory implements GitlabClientFactory {
 
     private final ObjectMapper objectMapper;
     private final LinkHeaderReader linkHeaderReader;
+    private final Settings settings;
 
-    public DefaultGitlabClientFactory(LinkHeaderReader linkHeaderReader) {
+    public DefaultGitlabClientFactory(LinkHeaderReader linkHeaderReader, Settings settings) {
         super();
         this.linkHeaderReader = linkHeaderReader;
+        this.settings = settings;
         this.objectMapper = new ObjectMapper()
                 .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
@@ -50,7 +53,7 @@ public class DefaultGitlabClientFactory implements GitlabClientFactory {
     public GitlabClient createClient(ProjectAlmSettingDto projectAlmSettingDto, AlmSettingDto almSettingDto) {
         String apiURL = Optional.ofNullable(StringUtils.stripToNull(almSettingDto.getUrl()))
                 .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "ALM URL must be specified"));
-        String apiToken = almSettingDto.getPersonalAccessToken();
+        String apiToken = almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption());
 
         return new GitlabRestClient(apiURL, apiToken, linkHeaderReader, objectMapper);
     }

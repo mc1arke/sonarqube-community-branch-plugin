@@ -127,7 +127,7 @@ public class PullRequestPostAnalysisTaskTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
         when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
@@ -163,7 +163,7 @@ public class PullRequestPostAnalysisTaskTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.AZURE_DEVOPS);
         when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
@@ -201,7 +201,7 @@ public class PullRequestPostAnalysisTaskTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
         when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
@@ -241,7 +241,7 @@ public class PullRequestPostAnalysisTaskTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
         when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
@@ -273,7 +273,7 @@ public class PullRequestPostAnalysisTaskTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
         when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
@@ -470,7 +470,7 @@ public class PullRequestPostAnalysisTaskTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getPrivateKey()).thenReturn("private key");
+        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
         when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);

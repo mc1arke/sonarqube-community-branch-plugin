@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -37,8 +38,10 @@ import java.util.Optional;
 public class DefaultAzureDevopsClientFactory implements AzureDevopsClientFactory {
 
     private final ObjectMapper objectMapper;
+    private final Settings settings;
 
-    public DefaultAzureDevopsClientFactory() {
+    public DefaultAzureDevopsClientFactory(Settings settings) {
+        this.settings = settings;
         objectMapper = new ObjectMapper()
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
                 .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
@@ -50,7 +53,7 @@ public class DefaultAzureDevopsClientFactory implements AzureDevopsClientFactory
     @Override
     public AzureDevopsClient createClient(ProjectAlmSettingDto projectAlmSettingDto, AlmSettingDto almSettingDto) {
         String apiUrl = Optional.ofNullable(almSettingDto.getUrl()).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("ALM URL must be provided"));
-        String accessToken = Optional.ofNullable(almSettingDto.getPersonalAccessToken()).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("Personal Access Token must be provided"));
+        String accessToken = Optional.ofNullable(almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption())).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("Personal Access Token must be provided"));
         return new AzureDevopsRestClient(apiUrl, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), objectMapper);
     }
 }

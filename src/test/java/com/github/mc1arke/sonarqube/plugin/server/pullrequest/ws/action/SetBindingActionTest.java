@@ -103,7 +103,7 @@ public class SetBindingActionTest {
 
         testCase.handle(request, response);
 
-        verify(projectAlmSettingDao).insertOrUpdate(eq(dbSession), eq(projectAlmSettingDto));
+        verify(projectAlmSettingDao).insertOrUpdate(eq(dbSession), eq(projectAlmSettingDto), any(), any(), any());
         verify(dbSession).commit();
         verify(response).noContent();
     }
