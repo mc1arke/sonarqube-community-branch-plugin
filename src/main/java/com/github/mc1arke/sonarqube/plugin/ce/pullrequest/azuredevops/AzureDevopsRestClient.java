@@ -68,37 +68,37 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
 
     @Override
     public void submitPullRequestStatus(String projectId, String repositoryName, int pullRequestId, GitPullRequestStatus status) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/statuses?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8.name()), pullRequestId, API_VERSION_PREVIEW);
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/statuses?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION_PREVIEW);
         execute(url, "post", objectMapper.writeValueAsString(status), null);
     }
 
     @Override
     public Repository getRepository(String projectId, String repositoryName) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8.name()), API_VERSION);
+        String url = String.format("%s/%s/_apis/git/repositories/%s?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), API_VERSION);
         return execute(url, "get", null, Repository.class);
     }
 
     @Override
     public List<CommentThread> retrieveThreads(String projectId, String repositoryName, int pullRequestId) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8.name()), pullRequestId, API_VERSION);
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         return Objects.requireNonNull(execute(url, "get", null, CommentThreadResponse.class)).getValue();
     }
 
     @Override
     public CommentThread createThread(String projectId, String repositoryName, int pullRequestId, CreateCommentThreadRequest thread) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8.name()), pullRequestId, API_VERSION);
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         return execute(url, "post", objectMapper.writeValueAsString(thread), CommentThread.class);
     }
 
     @Override
     public void addCommentToThread(String projectId, String repositoryName, int pullRequestId, int threadId, CreateCommentRequest comment) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads/%s/comments?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8.name()), pullRequestId, threadId, API_VERSION);
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads/%s/comments?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, threadId, API_VERSION);
         execute(url, "post", objectMapper.writeValueAsString(comment), null);
     }
 
     @Override
     public void resolvePullRequestThread(String projectId, String repositoryName, int pullRequestId, int threadId) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads/%s?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8.name()), pullRequestId, threadId, API_VERSION);
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads/%s?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, threadId, API_VERSION);
 
         UpdateCommentThreadStatusRequest commentThread = new UpdateCommentThreadStatusRequest(CommentThreadStatus.CLOSED);
         execute(url, "patch", objectMapper.writeValueAsString(commentThread), null);
@@ -106,13 +106,13 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
 
     @Override
     public PullRequest retrievePullRequest(String projectId, String repositoryName, int pullRequestId) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8.name()), pullRequestId, API_VERSION);
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         return execute(url, "get", null, PullRequest.class);
     }
 
     @Override
     public List<Commit> getPullRequestCommits(String projectId, String repositoryName, int pullRequestId) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/commits?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name()), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8.name()), pullRequestId, API_VERSION);
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/commits?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         return Objects.requireNonNull(execute(url, "get", null, Commits.class)).getValue();
     }
 
@@ -143,13 +143,14 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
             return;
         }
 
-        String responseContent;
-        try {
-            responseContent = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8.name());
-        } catch (IOException ex) {
-            LOGGER.warn("Could not decode response entity", ex);
-            responseContent = "";
-        }
+        String responseContent = Optional.ofNullable(httpResponse.getEntity()).map(entity -> {
+            try {
+                return EntityUtils.toString(entity, StandardCharsets.UTF_8.name());
+            } catch (IOException ex) {
+                LOGGER.warn("Could not decode response entity", ex);
+                return "";
+            }
+        }).orElse("");
 
         LOGGER.error("Azure Devops response status did not match expected value. Expected: 200"
                 + System.lineSeparator()
@@ -158,5 +159,9 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
                 + responseContent);
 
         throw new IllegalStateException("An unexpected response code was returned from the Azure Devops API - Expected: 200, Got: " + httpResponse.getStatusLine().getStatusCode());
+    }
+
+    private static String encode(String input) throws IOException {
+        return URLEncoder.encode(input, StandardCharsets.UTF_8.name()).replace("+", "%20");
     }
 }
