@@ -121,7 +121,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     }
 
     private void setupStubs() {
-        wireMockRule.stubFor(get(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
+        wireMockRule.stubFor(get(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .willReturn(aResponse()
@@ -196,7 +196,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                         "    \"count\": 2" + System.lineSeparator() +
                         "}")));
 
-        wireMockRule.stubFor(get(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/" + pullRequestId +"?api-version=4.1"))
+        wireMockRule.stubFor(get(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/" + pullRequestId +"?api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .willReturn(aResponse()
@@ -301,7 +301,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                                 "  \"artifactId\": \"vstfs:///Git/PullRequestId/a7573007-bbb3-4341-b726-0c4148a07853%2f3411ebc1-d5aa-464f-9615-0b527bc66719%2f22\"" + System.lineSeparator() +
                                 "}")));
 
-        wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/" + pullRequestId + "/threads/" + threadId + "/comments?api-version=4.1"))
+        wireMockRule.stubFor(post(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/" + pullRequestId + "/threads/" + threadId + "/comments?api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
@@ -309,7 +309,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                 )
                 .willReturn(ok()));
 
-        wireMockRule.stubFor(get(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/" + pullRequestId + "/commits?api-version=4.1"))
+        wireMockRule.stubFor(get(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/" + pullRequestId + "/commits?api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .willReturn(aResponse().withStatus(200).withBody("{\"value\": [{" + System.lineSeparator() +
@@ -360,7 +360,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                         "}]}")));
 
 
-        wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/statuses?api-version=4.1-preview"))
+        wireMockRule.stubFor(post(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/"+ pullRequestId +"/statuses?api-version=4.1-preview"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .withRequestBody(equalTo("{" +
@@ -372,7 +372,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                 )
                 .willReturn(ok()));
 
-        wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
+        wireMockRule.stubFor(post(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
@@ -429,7 +429,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                         "  }" + System.lineSeparator() +
                         "}")));
 
-        wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
+        wireMockRule.stubFor(post(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
@@ -486,7 +486,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                         "  }" + System.lineSeparator() +
                         "}")));
 
-        wireMockRule.stubFor(patch(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/" + pullRequestId + "/threads/" + threadId + "?api-version=4.1"))
+        wireMockRule.stubFor(patch(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/" + pullRequestId + "/threads/" + threadId + "?api-version=4.1"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .withRequestBody(equalTo("{" +
