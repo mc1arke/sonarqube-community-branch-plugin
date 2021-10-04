@@ -362,7 +362,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                         "}]}")));
 
 
-        wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/statuses?api-version=4.1"))
+        wireMockRule.stubFor(post(urlEqualTo("/azure+Project/_apis/git/repositories/my+Repository/pullRequests/"+ pullRequestId +"/statuses?api-version=4.1-preview"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .withRequestBody(equalTo("{" +

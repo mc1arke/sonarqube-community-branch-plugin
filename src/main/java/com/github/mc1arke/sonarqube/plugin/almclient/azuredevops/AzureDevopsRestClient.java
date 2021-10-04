@@ -51,6 +51,7 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
 
     private static final Logger LOGGER = Loggers.get(AzureDevopsRestClient.class);
     private static final String API_VERSION = "4.1";
+    private static final String API_VERSION_PREVIEW = API_VERSION + "-preview";
 
     private final String authToken;
     private final String apiUrl;
@@ -65,7 +66,7 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
 
     @Override
     public void submitPullRequestStatus(String projectId, String repositoryName, int pullRequestId, GitPullRequestStatus status) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/statuses?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8), pullRequestId, API_VERSION);
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/statuses?api-version=%s", apiUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8), URLEncoder.encode(repositoryName, StandardCharsets.UTF_8), pullRequestId, API_VERSION_PREVIEW);
         execute(url, "post", objectMapper.writeValueAsString(status), null);
     }
 
