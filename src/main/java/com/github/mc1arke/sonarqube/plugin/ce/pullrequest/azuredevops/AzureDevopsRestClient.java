@@ -35,7 +35,6 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
@@ -46,6 +45,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class AzureDevopsRestClient implements AzureDevopsClient {
 
@@ -56,12 +56,14 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
     private final String authToken;
     private final String apiUrl;
     private final ObjectMapper objectMapper;
+    private final Supplier<CloseableHttpClient> httpClientFactory;
 
-    public AzureDevopsRestClient(String apiUrl, String authToken, ObjectMapper objectMapper) {
+    AzureDevopsRestClient(String apiUrl, String authToken, ObjectMapper objectMapper, Supplier<CloseableHttpClient> httpClientFactory) {
         super();
         this.apiUrl = apiUrl;
         this.authToken = authToken;
         this.objectMapper = objectMapper;
+        this.httpClientFactory = httpClientFactory;
     }
 
     @Override
@@ -124,7 +126,7 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
         Optional.ofNullable(content).ifPresent(body -> requestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8.name())));
         Optional.ofNullable(type).ifPresent(responseType -> requestBuilder.addHeader("Accept", ContentType.APPLICATION_JSON.getMimeType()));
 
-        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+        try (CloseableHttpClient httpClient = httpClientFactory.get()) {
             HttpResponse httpResponse = httpClient.execute(requestBuilder.build());
 
             validateResponse(httpResponse);
