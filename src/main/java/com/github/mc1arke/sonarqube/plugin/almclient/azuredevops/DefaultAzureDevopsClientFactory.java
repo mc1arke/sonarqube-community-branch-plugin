@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.impl.client.HttpClients;
 import org.sonar.api.ce.ComputeEngineSide;
 import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
@@ -54,6 +55,6 @@ public class DefaultAzureDevopsClientFactory implements AzureDevopsClientFactory
     public AzureDevopsClient createClient(ProjectAlmSettingDto projectAlmSettingDto, AlmSettingDto almSettingDto) {
         String apiUrl = Optional.ofNullable(almSettingDto.getUrl()).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("ALM URL must be provided"));
         String accessToken = Optional.ofNullable(almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption())).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("Personal Access Token must be provided"));
-        return new AzureDevopsRestClient(apiUrl, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), objectMapper);
+        return new AzureDevopsRestClient(apiUrl, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), objectMapper, HttpClients::createSystem);
     }
 }
