@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.LinkHeaderReader;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.impl.client.HttpClients;
 import org.sonar.api.ce.ComputeEngineSide;
 import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
@@ -55,6 +56,6 @@ public class DefaultGitlabClientFactory implements GitlabClientFactory {
                 .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "ALM URL must be specified"));
         String apiToken = almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption());
 
-        return new GitlabRestClient(apiURL, apiToken, linkHeaderReader, objectMapper);
+        return new GitlabRestClient(apiURL, apiToken, linkHeaderReader, objectMapper, HttpClients::createSystem);
     }
 }

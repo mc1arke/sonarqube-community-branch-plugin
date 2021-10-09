@@ -130,8 +130,8 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         }
         when(issueVisitor.getIssues()).thenReturn(issues);
         when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(issueVisitor);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("summary comment\n\n[link text]");
-        when(analysisDetails.createAnalysisIssueSummary(any(), any())).thenReturn("issue");
+        when(analysisDetails.createAnalysisSummary(any())).thenReturn("summary commént\n\n[link text]");
+        when(analysisDetails.createAnalysisIssueSummary(any(), any())).thenReturn("issué");
         when(analysisDetails.parseIssueIdFromUrl(any())).thenCallRealMethod();
 
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/user")).withHeader("PRIVATE-TOKEN", equalTo("token")).willReturn(okJson("{\n" +
@@ -202,11 +202,11 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
                 .willReturn(created()));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
-                .withRequestBody(equalTo("body=summary+comment%0A%0A%5Blink+text%5D"))
+                .withRequestBody(equalTo("body=summary+comm%C3%A9nt%0A%0A%5Blink+text%5D"))
                 .willReturn(created().withBody(discussionPostResponseBody(discussionId, discussionNote(noteId, user, "summary comment", true, false)))));
 
         wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
-                .withRequestBody(equalTo("body=issue&" +
+                .withRequestBody(equalTo("body=issu%C3%A9&" +
                         urlEncode("position[base_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
                         urlEncode("position[start_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
                         urlEncode("position[head_sha]") + "=" + commitSHA + "&" +

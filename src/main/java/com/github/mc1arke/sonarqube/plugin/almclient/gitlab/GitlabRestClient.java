@@ -37,7 +37,6 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.sonar.api.utils.log.Logger;
@@ -52,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 class GitlabRestClient implements GitlabClient {
 
@@ -61,12 +61,14 @@ class GitlabRestClient implements GitlabClient {
     private final String authToken;
     private final ObjectMapper objectMapper;
     private final LinkHeaderReader linkHeaderReader;
+    private final Supplier<CloseableHttpClient> httpClientFactory;
 
-    GitlabRestClient(String baseGitlabApiUrl, String authToken, LinkHeaderReader linkHeaderReader, ObjectMapper objectMapper) {
+    GitlabRestClient(String baseGitlabApiUrl, String authToken, LinkHeaderReader linkHeaderReader, ObjectMapper objectMapper, Supplier<CloseableHttpClient> httpClientFactory) {
         this.baseGitlabApiUrl = baseGitlabApiUrl;
         this.authToken = authToken;
         this.linkHeaderReader = linkHeaderReader;
         this.objectMapper = objectMapper;
+        this.httpClientFactory = httpClientFactory;
     }
 
     @Override
@@ -111,7 +113,7 @@ class GitlabRestClient implements GitlabClient {
 
         HttpPost httpPost = new HttpPost(targetUrl);
         httpPost.addHeader("Content-type", ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
-        httpPost.setEntity(new UrlEncodedFormEntity(requestContent));
+        httpPost.setEntity(new UrlEncodedFormEntity(requestContent, StandardCharsets.UTF_8));
         return entity(httpPost, Discussion.class, httpResponse -> validateResponse(httpResponse, 201, "Discussion successfully created"));
     }
 
@@ -120,7 +122,7 @@ class GitlabRestClient implements GitlabClient {
         String targetUrl = String.format("%s/projects/%s/merge_requests/%s/discussions/%s/notes", baseGitlabApiUrl, projectId, mergeRequestIid, discussionId);
 
         HttpPost httpPost = new HttpPost(targetUrl);
-        httpPost.setEntity(new UrlEncodedFormEntity(Collections.singletonList(new BasicNameValuePair("body", noteContent))));
+        httpPost.setEntity(new UrlEncodedFormEntity(Collections.singletonList(new BasicNameValuePair("body", noteContent)), StandardCharsets.UTF_8));
         entity(httpPost, null, httpResponse -> validateResponse(httpResponse, 201, "Commit discussions note added"));
     }
 
@@ -146,7 +148,7 @@ class GitlabRestClient implements GitlabClient {
 
         HttpPost httpPost = new HttpPost(statusUrl);
         httpPost.addHeader("Content-type", ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
-        httpPost.setEntity(new UrlEncodedFormEntity(entityFields));
+        httpPost.setEntity(new UrlEncodedFormEntity(entityFields, StandardCharsets.UTF_8));
         entity(httpPost, null, httpResponse -> {
             if (httpResponse.toString().contains("Cannot transition status")) {
                 // Workaround for https://gitlab.com/gitlab-org/gitlab-ce/issues/25807
@@ -169,7 +171,7 @@ class GitlabRestClient implements GitlabClient {
     private <X> X entity(HttpRequestBase httpRequest, Class<X> type, Consumer<HttpResponse> responseValidator) throws IOException {
         httpRequest.addHeader("PRIVATE-TOKEN", authToken);
 
-        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+        try (CloseableHttpClient httpClient = httpClientFactory.get()) {
             HttpResponse httpResponse = httpClient.execute(httpRequest);
 
             responseValidator.accept(httpResponse);
@@ -188,7 +190,7 @@ class GitlabRestClient implements GitlabClient {
     private <X> List<X> entities(HttpGet httpRequest, Class<X> type, Consumer<HttpResponse> responseValidator) throws IOException {
         httpRequest.addHeader("PRIVATE-TOKEN", authToken);
 
-        try (CloseableHttpClient httpClient = HttpClients.createSystem()) {
+        try (CloseableHttpClient httpClient = httpClientFactory.get()) {
             HttpResponse httpResponse = httpClient.execute(httpRequest);
 
             responseValidator.accept(httpResponse);
@@ -209,21 +211,22 @@ class GitlabRestClient implements GitlabClient {
 
     private static void validateResponse(HttpResponse httpResponse, int expectedStatus, String successLogMessage) {
         if (httpResponse.getStatusLine().getStatusCode() == expectedStatus) {
-            LOGGER.debug(Optional.ofNullable(successLogMessage).map(v -> v + System.lineSeparator()).orElse("") + httpResponse.toString());
+            LOGGER.debug(Optional.ofNullable(successLogMessage).map(v -> v + System.lineSeparator()).orElse("") + httpResponse);
             return;
         }
 
-        String responseContent;
-        try {
-            responseContent = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            LOGGER.warn("Could not decode response entity", ex);
-            responseContent = "";
-        }
+        String responseContent = Optional.ofNullable(httpResponse.getEntity()).map(entity -> {
+            try {
+                return EntityUtils.toString(entity, StandardCharsets.UTF_8);
+            } catch (IOException ex) {
+                LOGGER.warn("Could not decode response entity", ex);
+                return "";
+            }
+        }).orElse("");
 
         LOGGER.error("Gitlab response status did not match expected value. Expected: " + expectedStatus
                 + System.lineSeparator()
-                + httpResponse.toString()
+                + httpResponse
                 + System.lineSeparator()
                 + responseContent);
 
