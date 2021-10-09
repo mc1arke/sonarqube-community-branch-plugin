@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DefaultLinkHeaderReader;
+import org.apache.http.impl.client.HttpClients;
 
 public class DefaultGitlabClientFactory implements GitlabClientFactory {
 
@@ -36,6 +37,6 @@ public class DefaultGitlabClientFactory implements GitlabClientFactory {
 
     @Override
     public GitlabClient createClient(String baseApiUrl, String authToken) {
-        return new GitlabRestClient(baseApiUrl, authToken, new DefaultLinkHeaderReader(), objectMapper);
+        return new GitlabRestClient(baseApiUrl, authToken, new DefaultLinkHeaderReader(), objectMapper, HttpClients::createSystem);
     }
 }
