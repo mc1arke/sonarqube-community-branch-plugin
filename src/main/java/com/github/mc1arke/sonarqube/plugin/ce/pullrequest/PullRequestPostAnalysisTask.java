@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2021 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -73,22 +73,16 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             LOGGER.warn("No pull request ID has been submitted with the Pull Request. Analysis will be skipped");
             return;
         }
-
-        ProjectAlmSettingDto projectAlmSettingDto;
+        ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto();
         Optional<AlmSettingDto> optionalAlmSettingDto;
         try (DbSession dbSession = dbClient.openSession(false)) {
 
-            Optional<ProjectAlmSettingDto> optionalProjectAlmSettingDto =
-                    dbClient.projectAlmSettingDao().selectByProject(dbSession, projectAnalysis.getProject().getUuid());
-
-            if (optionalProjectAlmSettingDto.isEmpty()) {
-                LOGGER.debug("No ALM has been set on the current project");
-                return;
-            }
-
-            projectAlmSettingDto = optionalProjectAlmSettingDto.get();
-            String almSettingUuid = projectAlmSettingDto.getAlmSettingUuid();
-            optionalAlmSettingDto = dbClient.almSettingDao().selectByUuid(dbSession, almSettingUuid);
+            projectAlmSettingDto.setAlmRepo("Pay-Baymax/" + projectAnalysis.getProject().getKey());
+            projectAlmSettingDto.setAlmSettingUuid("AXxy3BubdvWBwkcdvIfk");
+            projectAlmSettingDto.setAlmSlug("");
+            projectAlmSettingDto.setProjectUuid(projectAnalysis.getProject().getUuid());
+            projectAlmSettingDto.setSummaryCommentEnabled(false);
+            optionalAlmSettingDto = dbClient.almSettingDao().selectByUuid(dbSession, "AXxy3BubdvWBwkcdvIfk");
 
         }
 
