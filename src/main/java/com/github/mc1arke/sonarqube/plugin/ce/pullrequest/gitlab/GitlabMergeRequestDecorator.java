@@ -34,6 +34,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisit
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
@@ -58,8 +59,8 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     private final GitlabClientFactory gitlabClientFactory;
     private final FormatterFactory formatterFactory;
 
-    public GitlabMergeRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, GitlabClientFactory gitlabClientFactory) {
-        super(server, scmInfoRepository);
+    public GitlabMergeRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, Configuration configuration, GitlabClientFactory gitlabClientFactory) {
+        super(server, scmInfoRepository, configuration);
         this.gitlabClientFactory = gitlabClientFactory;
         this.formatterFactory = new MarkdownFormatterFactory();
     }

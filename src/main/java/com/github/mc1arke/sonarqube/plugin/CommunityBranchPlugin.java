@@ -25,6 +25,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.github.DefaultGithubClientF
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DiscussionAwarePullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
@@ -118,6 +119,18 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .defaultValue("master,develop,trunk")
                                           .onQualifiers(Qualifiers.PROJECT)
                                           .index(2)
+                                          .build()
+                                  ,
+
+                                  PropertyDefinition
+                                          .builder(DiscussionAwarePullRequestDecorator.SUBMIT_ISSUE_NOTES)
+                                          .name("Submit notes for issues")
+                                          .description("Whether or not to submit notes for each raised issue when decorating Pull Requests.")
+                                          .category(CoreProperties.CATEGORY_GENERAL)
+                                          .subCategory(CoreProperties.SUBCATEGORY_GENERAL)
+                                          .type(PropertyType.BOOLEAN)
+                                          .defaultValue("true")
+                                          .onQualifiers(Qualifiers.PROJECT)
                                           .build()
 
                                  );

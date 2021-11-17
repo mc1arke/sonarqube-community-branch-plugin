@@ -41,6 +41,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactor
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
@@ -63,8 +64,8 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     private final AzureDevopsClientFactory azureDevopsClientFactory;
     private final FormatterFactory formatterFactory;
 
-    public AzureDevOpsPullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, AzureDevopsClientFactory azureDevopsClientFactory) {
-        super(server, scmInfoRepository);
+    public AzureDevOpsPullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, Configuration configuration, AzureDevopsClientFactory azureDevopsClientFactory) {
+        super(server, scmInfoRepository, configuration);
         this.azureDevopsClientFactory = azureDevopsClientFactory;
         this.formatterFactory = new MarkdownFormatterFactory();
     }

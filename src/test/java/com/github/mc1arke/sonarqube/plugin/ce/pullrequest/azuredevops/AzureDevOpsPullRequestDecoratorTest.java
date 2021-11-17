@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.internal.Encryption;
 import org.sonar.api.config.internal.Settings;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.api.rule.RuleKey;
@@ -73,7 +74,8 @@ public class AzureDevOpsPullRequestDecoratorTest {
     private final ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
     private final Settings settings = mock(Settings.class);
     private final Encryption encryption = mock(Encryption.class);
-    private final AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory(settings));
+    private Configuration configuration = mock(Configuration.class);
+    private final AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, configuration, new DefaultAzureDevopsClientFactory(settings));
     private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
 
     private final PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
@@ -510,7 +512,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void testName() {
-        assertThat(new AzureDevOpsPullRequestDecorator(mock(Server.class), mock(ScmInfoRepository.class), mock(AzureDevopsClientFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
+        assertThat(new AzureDevOpsPullRequestDecorator(mock(Server.class), mock(ScmInfoRepository.class), mock(Configuration.class), mock(AzureDevopsClientFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
     }
 
     @Test

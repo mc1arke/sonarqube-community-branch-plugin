@@ -22,6 +22,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
@@ -41,6 +42,8 @@ import java.util.stream.Collectors;
 
 public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> implements PullRequestBuildStatusDecorator {
 
+    public static final String SUBMIT_ISSUE_NOTES = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.submitIssueNotes";
+
     private static final String RESOLVED_ISSUE_NEEDING_CLOSED_MESSAGE =
             "This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being being closed automatically. " +
                     "Please manually resolve this discussion once the other comments have been reviewed.";
@@ -54,11 +57,13 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
     private final Server server;
     private final ScmInfoRepository scmInfoRepository;
+    private final Configuration configuration;
 
-    protected DiscussionAwarePullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository) {
+    protected DiscussionAwarePullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, Configuration configuration) {
         super();
         this.server = server;
         this.scmInfoRepository = scmInfoRepository;
+        this.configuration = configuration;
     }
 
     @Override
@@ -96,11 +101,13 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .filter(issue -> isIssueFromCommitInCurrentRequest(issue.getLeft(), commitIds, scmInfoRepository))
                 .collect(Collectors.toList());
 
-        uncommentedIssues.forEach(issue -> submitCommitNoteForIssue(client,
-                pullRequest,
-                issue.getLeft(),
-                issue.getRight(),
-                analysis));
+        if (configuration.getBoolean(SUBMIT_ISSUE_NOTES).orElse(true)) {
+            uncommentedIssues.forEach(issue -> submitCommitNoteForIssue(client,
+                    pullRequest,
+                    issue.getLeft(),
+                    issue.getRight(),
+                    analysis));
+        }
         submitSummaryNote(client, pullRequest, analysis);
         submitPipelineStatus(client, pullRequest, analysis, server.getPublicRootUrl());
 

@@ -22,6 +22,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DiscussionAwarePullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
@@ -36,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.component.Component;
@@ -87,6 +89,7 @@ public class GitlabMergeRequestDecoratorTest {
     private final GitlabClientFactory gitlabClientFactory = mock(GitlabClientFactory.class);
     private final Server server = mock(Server.class);
     private final ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
+    private final Configuration configuration = mock(Configuration.class);
     private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -95,7 +98,7 @@ public class GitlabMergeRequestDecoratorTest {
     private final PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
     private final DiffRefs diffRefs = mock(DiffRefs.class);
 
-    private final GitlabMergeRequestDecorator underTest = new GitlabMergeRequestDecorator(server, scmInfoRepository, gitlabClientFactory);
+    private final GitlabMergeRequestDecorator underTest = new GitlabMergeRequestDecorator(server, scmInfoRepository, configuration, gitlabClientFactory);
 
     @Before
     public void setUp() throws IOException {
@@ -536,6 +539,45 @@ public class GitlabMergeRequestDecoratorTest {
 
         assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(0)).isEqualToComparingFieldByField(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
         assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(1)).isNotInstanceOf(CommitNote.class);
+    }
+
+    @Test
+    public void shouldNotStartNewDiscussionForNewIssueFromCommitInMergeRequestWhenConfiguredNotTo() throws IOException {
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        when(configuration.getBoolean(DiscussionAwarePullRequestDecorator.SUBMIT_ISSUE_NOTES)).thenReturn(Optional.of(false));
+        when(lightIssue.key()).thenReturn("issueKey1");
+        when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
+        when(lightIssue.getLine()).thenReturn(999);
+
+        Component component = mock(Component.class);
+
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+        when(componentIssue.getIssue()).thenReturn(lightIssue);
+        when(componentIssue.getComponent()).thenReturn(component);
+
+        when(postAnalysisIssueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(new ArrayList<>());
+        when(analysisDetails.createAnalysisIssueSummary(eq(componentIssue), any())).thenReturn("Issue Summary");
+        when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of("path-to-file"));
+        when(analysisDetails.createAnalysisSummary(any())).thenReturn("Summary comment");
+
+        Changeset changeset = mock(Changeset.class);
+        when(changeset.getRevision()).thenReturn("DEF");
+
+        ScmInfo scmInfo = mock(ScmInfo.class);
+        when(scmInfo.hasChangesetForLine(999)).thenReturn(true);
+        when(scmInfo.getChangesetForLine(999)).thenReturn(changeset);
+        when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
+        verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
+
+        ArgumentCaptor<MergeRequestNote> mergeRequestNoteArgumentCaptor = ArgumentCaptor.forClass(MergeRequestNote.class);
+        verify(gitlabClient, times(1)).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), mergeRequestNoteArgumentCaptor.capture());
+
+        assertThat(mergeRequestNoteArgumentCaptor.getValue()).isEqualToComparingFieldByField(new MergeRequestNote("Summary comment"));
     }
 
     @Test
