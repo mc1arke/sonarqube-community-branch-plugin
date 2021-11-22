@@ -179,7 +179,7 @@ class BitbucketServerClient implements BitbucketClient {
     public Repository retrieveRepository(String project, String repo) throws IOException {
         Request req = new Request.Builder()
                 .get()
-                .url(format("/rest/api/1.0/projects/%s/repos/%s", project, repo))
+                .url(format("%s/rest/api/1.0/projects/%s/repos/%s", config.getUrl(), project, repo))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
