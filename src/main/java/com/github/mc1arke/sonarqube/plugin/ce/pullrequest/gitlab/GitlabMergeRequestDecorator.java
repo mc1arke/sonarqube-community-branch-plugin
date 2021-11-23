@@ -236,4 +236,12 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
         }
     }
 
+    protected void deleteDiscussionNote(GitlabClient client, Discussion discussion, Note note, MergeRequest pullRequest) {
+        try {
+            client.deleteMergeRequestDiscussionNote(pullRequest.getSourceProjectId(), pullRequest.getIid(), discussion.getId(), note.getId());
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not delete Merge Request discussion", ex);
+        }
+    }
+
 }

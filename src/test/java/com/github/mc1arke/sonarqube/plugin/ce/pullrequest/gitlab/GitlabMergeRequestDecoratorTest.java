@@ -36,6 +36,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.User;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.Issue;
@@ -460,6 +461,87 @@ public class GitlabMergeRequestDecoratorTest {
 
         verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
         verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
+    }
+
+    @Test
+    public void shouldOnlyDeleteNotesFromSonarqube() throws IOException {
+
+        when(configuration.getBoolean(DiscussionAwarePullRequestDecorator.KEEP_OLD_NOTES)).thenReturn(Optional.of(false));
+
+        User otherUser = mock(User.class);
+        when(otherUser.getUsername()).thenReturn("other.user@gitlab.dummy");
+
+        Note note = mock(Note.class);
+        when(note.getAuthor()).thenReturn(sonarqubeUser);
+        when(note.getBody()).thenReturn("[View in SonarQube](url)");
+        when(note.isResolvable()).thenReturn(true);
+
+        Note note2 = mock(Note.class);
+        when(note2.getAuthor()).thenReturn(otherUser);
+        when(note2.getBody()).thenReturn("System post on behalf of user");
+        when(note2.isSystem()).thenReturn(true);
+
+        Note note3 = mock(Note.class);
+        when(note3.getAuthor()).thenReturn(otherUser);
+        when(note3.getBody()).thenReturn("User post");
+        when(note3.isSystem()).thenReturn(false);
+
+        Discussion discussion = mock(Discussion.class);
+        when(discussion.getId()).thenReturn("discussionId23");
+        when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2, note3));
+
+        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+        verify(gitlabClient, times(1)).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
+    }
+
+    @Test
+    public void shouldDeleteResolvedNotesFromSonarqube() throws IOException {
+
+        when(configuration.getBoolean(DiscussionAwarePullRequestDecorator.KEEP_OLD_NOTES)).thenReturn(Optional.of(false));
+
+        Note note = mock(Note.class);
+        when(note.getAuthor()).thenReturn(sonarqubeUser);
+        when(note.getBody()).thenReturn("[View in SonarQube](url)");
+        when(note.isResolvable()).thenReturn(true);
+        when(note.isResolved()).thenReturn(true);
+
+        Discussion discussion = mock(Discussion.class);
+        when(discussion.getId()).thenReturn("discussionId23");
+        when(discussion.getNotes()).thenReturn(Arrays.asList(note));
+
+        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+        verify(gitlabClient, times(1)).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
+    }
+
+    @Test
+    public void shouldNotDeleteNotesFromNotFromSonarQube() throws IOException {
+
+        when(configuration.getBoolean(DiscussionAwarePullRequestDecorator.KEEP_OLD_NOTES)).thenReturn(Optional.of(false));
+
+        Note note = mock(Note.class);
+        when(note.getAuthor()).thenReturn(sonarqubeUser);
+        when(note.getBody()).thenReturn("This note doesn't come from SonarQbue");
+        when(note.isResolvable()).thenReturn(true);
+
+        Note note2 = mock(Note.class);
+        when(note2.getAuthor()).thenReturn(sonarqubeUser);
+        when(note2.getBody()).thenReturn("This note doesn't come from SonarQube");
+
+        Discussion discussion = mock(Discussion.class);
+        when(discussion.getId()).thenReturn("discussionId43");
+        when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2));
+
+        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+        verify(gitlabClient, never()).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
     }
 
     @Test

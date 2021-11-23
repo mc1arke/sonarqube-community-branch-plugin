@@ -44,6 +44,8 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
     public static final String SUBMIT_ISSUE_NOTES = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.submitIssueNotes";
 
+    public static final String KEEP_OLD_NOTES = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.keepOldNotes";
+
     private static final String RESOLVED_ISSUE_NEEDING_CLOSED_MESSAGE =
             "This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being being closed automatically. " +
                     "Please manually resolve this discussion once the other comments have been reviewed.";
@@ -77,10 +79,12 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus()))
                 .collect(Collectors.toList());
 
-        List<Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>>> currentProjectSonarqueComments = findOpenSonarqubeComments(client,
+        boolean findOnlyOpenComments = configuration.getBoolean(KEEP_OLD_NOTES).orElse(true);
+        List<Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>>> currentProjectSonarqueComments = findSonarqubeComments(client,
                 pullRequest,
                 user,
-                analysis)
+                analysis,
+                findOnlyOpenComments)
                 .stream()
                 .filter(comment -> isCommentFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
                 .collect(Collectors.toList());
@@ -143,6 +147,8 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
     protected abstract void resolveDiscussion(C client, D discussion, P pullRequest);
 
+    protected abstract void deleteDiscussionNote(C client, D discussion, N note, P pullRequest);
+
     protected abstract void submitSummaryNote(C client, P pullRequest, AnalysisDetails analysis);
 
     protected abstract List<D> getDiscussions(C client, P pullRequest);
@@ -178,16 +184,16 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .isPresent();
     }
 
-    private List<Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>>> findOpenSonarqubeComments(C client, P pullRequest,
+    private List<Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>>> findSonarqubeComments(C client, P pullRequest,
                                                                            U currentUser,
-                                                                           AnalysisDetails analysisDetails) {
+                                                                           AnalysisDetails analysisDetails, boolean onlyUnresolved) {
         return getDiscussions(client, pullRequest).stream()
                 .map(discussion -> {
                     List<N> commentsForDiscussion = getNotesForDiscussion(client, discussion);
                     return commentsForDiscussion.stream()
                         .findFirst()
                         .filter(note -> isNoteFromCurrentUser(note, currentUser))
-                        .filter(note -> !isResolved(client, discussion, commentsForDiscussion, currentUser))
+                        .filter(note -> !onlyUnresolved || !isResolved(client, discussion, commentsForDiscussion, currentUser))
                         .map(note -> new ImmutableTriple<>(discussion, note, parseIssueDetails(client, note, analysisDetails)));
                 })
                 .filter(Optional::isPresent)
@@ -214,7 +220,11 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
             String issueKey = noteIdentifier.get().getIssueKey();
             if (!openIssueKeys.contains(issueKey)) {
-                resolveOrPlaceFinalCommentOnDiscussion(client, currentUser, discussion, pullRequest);
+                if (configuration.getBoolean(KEEP_OLD_NOTES).orElse(true)) {
+                    resolveOrPlaceFinalCommentOnDiscussion(client, currentUser, discussion, pullRequest);
+                } else {
+                    deleteSonarDiscussionNotes(client, currentUser, discussion, pullRequest);
+                }
             } else {
                 remainingCommentKeys.add(issueKey);
             }
@@ -238,6 +248,14 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
             resolveDiscussion(client, discussion, pullRequest);
         }
 
+    }
+
+    private void deleteSonarDiscussionNotes(C client, U currentUser, D discussion, P pullRequest) {
+        for (N note: getNotesForDiscussion(client, discussion)) {
+            if (isNoteFromCurrentUser(note, currentUser)) {
+                deleteDiscussionNote(client, discussion, note, pullRequest);
+            }
+        }
     }
 
     protected Optional<AnalysisDetails.ProjectIssueIdentifier> parseIssueDetails(C client, N note, AnalysisDetails analysisDetails) {

@@ -132,6 +132,19 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .defaultValue("true")
                                           .onQualifiers(Qualifiers.PROJECT)
                                           .build()
+                                  ,
+
+                                  PropertyDefinition
+                                          .builder(DiscussionAwarePullRequestDecorator.KEEP_OLD_NOTES)
+                                          .name("Keep old issue and summary notes")
+                                          .description("Whether or not to keep stale notes on decorated Pull Requests. If enabled, old discussion will be "
+                                                + "resolved where possible. If disabled, old notes will be removed. The latter reduces clutter in decorated PRs")
+                                          .category(CoreProperties.CATEGORY_GENERAL)
+                                          .subCategory(CoreProperties.SUBCATEGORY_GENERAL)
+                                          .type(PropertyType.BOOLEAN)
+                                          .defaultValue("true")
+                                          .onQualifiers(Qualifiers.PROJECT)
+                                          .build()
 
                                  );
 

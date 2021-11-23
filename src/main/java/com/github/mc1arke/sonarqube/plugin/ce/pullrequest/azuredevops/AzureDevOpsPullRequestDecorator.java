@@ -231,6 +231,11 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     }
 
     @Override
+    protected void deleteDiscussionNote(AzureDevopsClient client, CommentThread discussion, Comment note, PullRequest pullRequest) {
+        throw new UnsupportedOperationException("Deleting notes on Azure is not yet implemented.");
+    }
+
+    @Override
     protected Optional<AnalysisDetails.ProjectIssueIdentifier> parseIssueDetails(AzureDevopsClient client, Comment note, AnalysisDetails analysisDetails) {
         Optional<AnalysisDetails.ProjectIssueIdentifier> issueIdentifier = super.parseIssueDetails(client, note, analysisDetails);
         if (issueIdentifier.isPresent()) {
