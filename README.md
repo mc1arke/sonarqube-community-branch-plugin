@@ -72,6 +72,8 @@ sonar.pullrequest.base = target_branch_name (e.g master)
   pull-request. These properties indicate to sonar that a branch is being analyzed rather than a pull-request so no
     pull-request decoration will be executed.
     
+ :information_source: In case GitHub actions doesn’t recognize your pull requests please read [this workaround](https://github.com/mc1arke/sonarqube-community-branch-plugin/issues/104#issuecomment-619120886).
+    
 ## Serving images for PR decoration
 By default, images for PR decoration are served as static resources on the SonarQube server as a part of Community Branch Plugin. 
 
