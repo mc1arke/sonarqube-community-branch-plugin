@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,11 +25,19 @@ import com.github.mc1arke.sonarqube.plugin.almclient.github.DefaultGithubClientF
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
+import com.github.mc1arke.sonarqube.plugin.scanner.BranchConfigurationFactory;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectPullRequestsLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.ScannerPullRequestPropertySensor;
+import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.AzureDevopsAutoConfigurer;
+import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.BitbucketPipelinesAutoConfigurer;
+import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.CirrusCiAutoConfigurer;
+import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.CodeMagicAutoConfigurer;
+import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.GithubActionsAutoConfigurer;
+import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.GitlabCiAutoConfigurer;
+import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.JenkinsAutoConfigurer;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.AzureDevopsValidator;
@@ -143,7 +151,11 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
         if (SonarQubeSide.SCANNER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
                                   CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class,
-                                  ScannerPullRequestPropertySensor.class);
+                                  ScannerPullRequestPropertySensor.class, BranchConfigurationFactory.class,
+                                  AzureDevopsAutoConfigurer.class, BitbucketPipelinesAutoConfigurer.class,
+                                  CirrusCiAutoConfigurer.class, CodeMagicAutoConfigurer.class,
+                                  GithubActionsAutoConfigurer.class, GitlabCiAutoConfigurer.class,
+                                  JenkinsAutoConfigurer.class);
         }
     }
 }
