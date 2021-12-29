@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,328 +18,106 @@
  */
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
-import org.hamcrest.core.IsEqual;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 import org.sonar.api.notifications.AnalysisWarnings;
 import org.sonar.api.utils.System2;
 import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.BranchConfigurationLoader;
-import org.sonar.scanner.scan.branch.BranchInfo;
-import org.sonar.scanner.scan.branch.BranchType;
 import org.sonar.scanner.scan.branch.DefaultBranchConfiguration;
 import org.sonar.scanner.scan.branch.ProjectBranches;
 import org.sonar.scanner.scan.branch.ProjectPullRequests;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchConfigurationLoaderTest {
-
-    private final ExpectedException expectedException = ExpectedException.none();
+class CommunityBranchConfigurationLoaderTest {
 
     private final AnalysisWarnings analysisWarnings = mock(AnalysisWarnings.class);
     private final System2 system2 = mock(System2.class);
-    private final BranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(system2, analysisWarnings);
-
-    @Rule
-    public ExpectedException expectedException() {
-        return expectedException;
-    }
+    private final BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
+    private final BranchAutoConfigurer branchAutoConfigurer = mock(BranchAutoConfigurer.class);
+    private final BranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(system2, analysisWarnings, branchConfigurationFactory, List.of(branchAutoConfigurer));
 
     @Test
-    public void testExceptionWhenNoExistingBranchAndBranchParamsPresent() {
-        ProjectBranches branchInfo = mock(ProjectBranches.class);
-        when(branchInfo.isEmpty()).thenReturn(true);
-
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "dummy");
-
-        BranchConfiguration branchConfiguration = testCase.load(parameters, branchInfo, mock(ProjectPullRequests.class));
-
-        assertEquals("dummy", branchConfiguration.branchName());
-        assertNull(branchConfiguration.referenceBranchName());
-        assertEquals(BranchType.BRANCH, branchConfiguration.branchType());
-    }
-
-    @Test
-    public void testDefaultConfigWhenNoExistingBranchAndBranchNameParamMaster() {
-        ProjectBranches branchInfo = mock(ProjectBranches.class);
-        when(branchInfo.isEmpty()).thenReturn(true);
-
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "master");
-
-        BranchConfiguration branchConfiguration = testCase.load(parameters, mock(ProjectBranches.class), mock(ProjectPullRequests.class));
-        assertEquals("master", branchConfiguration.branchName());
-        assertNull(branchConfiguration.targetBranchName());
-        assertNull(branchConfiguration.referenceBranchName());
-        assertEquals(BranchType.BRANCH, branchConfiguration.branchType());    }
-
-    @Test
-    public void testErrorWhenNoExistingBranchAndBranchTargetMasterButNoSourceBranch() {
-        ProjectBranches branchInfo = mock(ProjectBranches.class);
-        when(branchInfo.isEmpty()).thenReturn(true);
-
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "dummy");
-
-        BranchConfiguration branchConfiguration = testCase.load(parameters, branchInfo, mock(ProjectPullRequests.class));
-
-        assertEquals("dummy", branchConfiguration.branchName());
-        assertNull(branchConfiguration.referenceBranchName());
-        assertNull(branchConfiguration.targetBranchName());
-        assertEquals(BranchType.BRANCH, branchConfiguration.branchType());
-    }
-
-    @Test
-    public void testWarningWhenTargetBranchParameterSpecified() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "feature/shortLivedBranch");
-        parameters.put("sonar.branch.target", "dummy");
-
-        BranchInfo mockTargetBranchInfo = mock(BranchInfo.class);
-        when(mockTargetBranchInfo.name()).thenReturn("defaultBranchInfo");
-        when(mockTargetBranchInfo.type()).thenReturn(BranchType.BRANCH);
-
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
-        when(projectBranches.get("masterxxx")).thenReturn(mockTargetBranchInfo);
-        when(projectBranches.defaultBranchName()).thenReturn("masterxxx");
-
-        BranchConfiguration result = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
-
-        assertNull(result.targetBranchName());
-        assertEquals("feature/shortLivedBranch", result.branchName());
-        assertEquals("masterxxx", result.referenceBranchName());
-        assertFalse(result.isPullRequest());
-
-        verify(analysisWarnings).addUnique(eq("Property 'sonar.branch.target' is no longer supported"));
-    }
-
-
-    @Test
-    public void testDefaultConfigWhenNoExistingBranchAndBranchParamsAllMaster() {
-        ProjectBranches branchInfo = mock(ProjectBranches.class);
-        when(branchInfo.isEmpty()).thenReturn(true);
-
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "master");
-
-        BranchConfiguration branchConfiguration = testCase.load(parameters, branchInfo, mock(ProjectPullRequests.class));
-
-        assertEquals("master", branchConfiguration.branchName());
-        assertEquals(BranchType.BRANCH, branchConfiguration.branchType());
-        assertNull(branchConfiguration.referenceBranchName());
-        assertNull(branchConfiguration.targetBranchName());
-    }
-
-    @Test
-    public void testDefaultBranchInfoWhenNoBranchParametersSpecifiedAndNoBranchesExist() {
-        ProjectBranches branchInfo = mock(ProjectBranches.class);
-        when(branchInfo.isEmpty()).thenReturn(true);
-
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("dummy", "dummy");
-
-
-        assertEquals(DefaultBranchConfiguration.class,
-                     testCase.load(parameters, branchInfo, mock(ProjectPullRequests.class)).getClass());
-    }
-
-    @Test
-    public void testDefaultBranchInfoWhenNoParametersSpecified() {
-        assertEquals(DefaultBranchConfiguration.class, testCase.load(new HashMap<>(), mock(ProjectBranches.class),
-                                                                     mock(ProjectPullRequests.class)).getClass());
-    }
-
-    @Test
-    public void testValidBranchInfoWhenAllBranchParametersSpecified() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "feature/shortLivedFeatureBranch");
-
-        BranchInfo mockTargetBranchInfo = mock(BranchInfo.class);
-        when(mockTargetBranchInfo.name()).thenReturn("masterBranchInfo");
-        when(mockTargetBranchInfo.type()).thenReturn(BranchType.BRANCH);
-
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
-        when(projectBranches.get("master")).thenReturn(mockTargetBranchInfo);
-        when(projectBranches.defaultBranchName()).thenReturn("master");
-
-        BranchConfiguration result = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
-
-        assertNull(result.targetBranchName());
-        assertEquals("feature/shortLivedFeatureBranch", result.branchName());
-        assertEquals("master", result.referenceBranchName());
-        assertFalse(result.isPullRequest());
-
-        expectedException
-                .expectMessage(IsEqual.equalTo("Only a branch of type PULL_REQUEST can have a Pull Request key"));
-        expectedException.expect(IllegalStateException.class);
-
-        result.pullRequestKey();
-    }
-
-    @Test
-    public void testValidBranchInfoWhenOnlySourceBranchSpecifiedAndMasterExists() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "feature/shortLivedBranch");
-
-        BranchInfo mockTargetBranchInfo = mock(BranchInfo.class);
-        when(mockTargetBranchInfo.name()).thenReturn("defaultBranchInfo");
-        when(mockTargetBranchInfo.type()).thenReturn(BranchType.BRANCH);
-
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
-        when(projectBranches.get("masterxxx")).thenReturn(mockTargetBranchInfo);
-        when(projectBranches.defaultBranchName()).thenReturn("masterxxx");
-
-        BranchConfiguration result = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
-
-        assertNull(result.targetBranchName());
-        assertEquals("feature/shortLivedBranch", result.branchName());
-        assertEquals("masterxxx", result.referenceBranchName());
-        assertFalse(result.isPullRequest());
-    }
-
-    @Test
-    public void testExceptionWhenOnlySourceBranchSpecifiedAndNoMasterExists() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "feature/shortLivedBranch");
-
-        BranchInfo mockTargetBranchInfo = mock(BranchInfo.class);
-        when(mockTargetBranchInfo.name()).thenReturn("defaultBranchInfo");
-        when(mockTargetBranchInfo.type()).thenReturn(BranchType.BRANCH);
+    void shouldReturnResultFromAutoConfigurerIfPresentAndNoParametersSpecified() {
+        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        when(branchAutoConfigurer.detectConfiguration(any(), any())).thenReturn(Optional.of(branchConfiguration));
 
         ProjectBranches projectBranches = mock(ProjectBranches.class);
 
-        BranchConfiguration branchConfiguration = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
+        BranchConfiguration actual = testCase.load(Map.of(), projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("feature/shortLivedBranch", branchConfiguration.branchName());
-        assertNull(branchConfiguration.referenceBranchName());
-        assertNull(branchConfiguration.targetBranchName());
-        assertEquals(BranchType.BRANCH, branchConfiguration.branchType());
+        assertThat(actual).isSameAs(branchConfiguration);
+        verify(branchAutoConfigurer).detectConfiguration(system2, projectBranches);
+        verifyNoInteractions(branchConfigurationFactory);
     }
 
     @Test
-    public void testExistingBranchOnlySourceParameters() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.branch.name", "longLivedBranch");
-
-        BranchInfo mockTargetBranchInfo = mock(BranchInfo.class);
-        when(mockTargetBranchInfo.name()).thenReturn("longLivedBranch");
-        when(mockTargetBranchInfo.type()).thenReturn(BranchType.BRANCH);
-
+    void shouldReturnDefaultBranchIfAutoConfigurerNoResultAndNoParametersSpecified() {
+        when(branchAutoConfigurer.detectConfiguration(any(), any())).thenReturn(Optional.empty());
 
         ProjectBranches projectBranches = mock(ProjectBranches.class);
-        when(projectBranches.get("longLivedBranch")).thenReturn(mockTargetBranchInfo);
 
-        BranchConfiguration result = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
+        BranchConfiguration actual = testCase.load(Map.of(), projectBranches, mock(ProjectPullRequests.class));
 
-        assertNull(result.targetBranchName());
-        assertEquals("longLivedBranch", result.branchName());
-        assertEquals("longLivedBranch", result.referenceBranchName());
-        assertFalse(result.isPullRequest());
+        assertThat(actual).usingRecursiveComparison().isEqualTo(new DefaultBranchConfiguration());
+        verify(branchAutoConfigurer).detectConfiguration(system2, projectBranches);
+        verifyNoInteractions(branchConfigurationFactory);
     }
 
     @Test
-    public void testPullRequestAllParameters() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.pullrequest.branch", "feature/sourceBranch");
-        parameters.put("sonar.pullrequest.base", "target");
-        parameters.put("sonar.pullrequest.key", "pr-key");
-
-        BranchInfo mockTargetBranchInfo = mock(BranchInfo.class);
-        when(mockTargetBranchInfo.name()).thenReturn("targetInfo");
-        when(mockTargetBranchInfo.type()).thenReturn(BranchType.BRANCH);
-
+    void shouldCreateBranchConfigurationIfAnyBranchPropertiesSet() {
         ProjectBranches projectBranches = mock(ProjectBranches.class);
-        when(projectBranches.get("target")).thenReturn(mockTargetBranchInfo);
+        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        when(branchConfigurationFactory.createBranchConfiguration(any(), any())).thenReturn(branchConfiguration);
 
-        BranchConfiguration result = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
+        BranchConfiguration actual = testCase.load(Map.of("sonar.branch.name", "branch", "sonar.branch.target", "target"), projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("target", result.targetBranchName());
-        assertEquals("feature/sourceBranch", result.branchName());
-        assertEquals("target", result.referenceBranchName());
-        assertTrue(result.isPullRequest());
-        assertEquals("pr-key", result.pullRequestKey());
-    }
-
-
-    @Test
-    public void testPullRequestMandatoryParameters() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.pullrequest.branch", "feature/sourceBranch");
-        parameters.put("sonar.pullrequest.key", "pr-key");
-
-        BranchInfo mockTargetBranchInfo = mock(BranchInfo.class);
-        when(mockTargetBranchInfo.name()).thenReturn("masterInfo");
-        when(mockTargetBranchInfo.type()).thenReturn(BranchType.BRANCH);
-
-
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
-        when(projectBranches.get("master")).thenReturn(mockTargetBranchInfo);
-        when(projectBranches.defaultBranchName()).thenReturn("master");
-
-        BranchConfiguration result = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
-
-        assertEquals("master", result.targetBranchName());
-        assertEquals("feature/sourceBranch", result.branchName());
-        assertEquals("master", result.referenceBranchName());
-        assertTrue(result.isPullRequest());
+        assertThat(actual).isSameAs(branchConfiguration);
+        verify(branchConfigurationFactory).createBranchConfiguration("branch", projectBranches);
+        verifyNoInteractions(branchAutoConfigurer);
+        verify(analysisWarnings).addUnique("Property 'sonar.branch.target' is no longer supported");
     }
 
     @Test
-    public void testPullRequestMandatoryParameters2() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.pullrequest.branch", "feature/sourceBranch");
-        parameters.put("sonar.pullrequest.key", "pr-key");
-        parameters.put("sonar.pullrequest.base", "");
-
-        BranchInfo mockTargetBranchInfo = mock(BranchInfo.class);
-        when(mockTargetBranchInfo.name()).thenReturn("masterInfo");
-        when(mockTargetBranchInfo.type()).thenReturn(BranchType.BRANCH);
-
-
+    void shouldCreatePullConfigurationIfAnyPullRequestPropertiesSet() {
         ProjectBranches projectBranches = mock(ProjectBranches.class);
-        when(projectBranches.get("master")).thenReturn(mockTargetBranchInfo);
-        when(projectBranches.defaultBranchName()).thenReturn("master");
+        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        when(branchConfigurationFactory.createPullRequestConfiguration(any(), any(), any(), any())).thenReturn(branchConfiguration);
 
-        BranchConfiguration result = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
+        BranchConfiguration actual = testCase.load(Map.of("sonar.pullrequest.key", "key", "sonar.pullrequest.branch", "source", "sonar.pullrequest.base", "target"), projectBranches, mock(ProjectPullRequests.class));
 
-        assertEquals("master", result.targetBranchName());
-        assertEquals("feature/sourceBranch", result.branchName());
-        assertEquals("master", result.referenceBranchName());
-        assertTrue(result.isPullRequest());
+        assertThat(actual).isSameAs(branchConfiguration);
+        verify(branchConfigurationFactory).createPullRequestConfiguration("key", "source", "target", projectBranches);
+        verifyNoInteractions(branchAutoConfigurer);
+        verifyNoInteractions(analysisWarnings);
     }
 
+    @Test
+    void shouldThrowErrorIfBothBranchAndPullRequestParametersPresent() {
+        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.key", "key", "sonar.pullrequest.branch", "source", "sonar.branch.name", "branch"), mock(ProjectBranches.class), mock(ProjectPullRequests.class))).hasMessage("sonar.pullrequest and sonar.branch parameters should not be specified in the same scan");
+    }
 
     @Test
-    public void testPullRequestNoSuchTarget() {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("sonar.pullrequest.branch", "feature/sourceBranch");
-        parameters.put("sonar.pullrequest.base", "missingTarget");
-        parameters.put("sonar.pullrequest.key", "pr-key");
+    void shouldThrowErrorIfPullRequestAnlysisWithoutPullRequestKey() {
+        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.base", "target"), mock(ProjectBranches.class), mock(ProjectPullRequests.class))).hasMessage("sonar.pullrequest.key is required for a pull request analysis");
+    }
 
-
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
-
-        BranchConfiguration branchConfiguration = testCase.load(parameters, projectBranches, mock(ProjectPullRequests.class));
-        assertEquals("feature/sourceBranch", branchConfiguration.branchName());
-        assertEquals("missingTarget", branchConfiguration.targetBranchName());
-        assertNull(branchConfiguration.referenceBranchName());
-        assertEquals(BranchType.PULL_REQUEST, branchConfiguration.branchType());
+    @Test
+    void shouldThrowErrorIfPullRequestAnalysisWithoutPullRequestBranch() {
+        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.key", "key"), mock(ProjectBranches.class), mock(ProjectPullRequests.class))).hasMessage("sonar.pullrequest.branch is required for a pull request analysis");
     }
 
 }
