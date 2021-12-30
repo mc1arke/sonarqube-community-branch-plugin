@@ -1,10 +1,10 @@
 ARG SONARQUBE_VERSION
 
-FROM openjdk:11-jdk-slim as builder
+FROM gradle:7.3.3-jdk11-alpine as builder
 
 COPY . /home/build/project
 WORKDIR /home/build/project
-RUN ./gradlew build -x test
+RUN gradle build -x test
 
 FROM sonarqube:${SONARQUBE_VERSION}
 COPY --from=builder --chown=sonarqube:sonarqube /home/build/project/build/libs/sonarqube-community-branch-plugin-*.jar /opt/sonarqube/extensions/plugins/
