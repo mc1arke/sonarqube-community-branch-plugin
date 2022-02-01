@@ -53,7 +53,6 @@ import static java.lang.String.format;
 class BitbucketCloudClient implements BitbucketClient {
 
     private static final Logger LOGGER = Loggers.get(BitbucketCloudClient.class);
-    private static final String REPORT_KEY = "com.github.mc1arke.sonarqube";
     private static final MediaType APPLICATION_JSON_MEDIA_TYPE = MediaType.get("application/json");
     private static final String TITLE = "SonarQube";
     private static final String REPORTER = "SonarQube";
@@ -116,12 +115,12 @@ class BitbucketCloudClient implements BitbucketClient {
     }
 
     @Override
-    public void deleteAnnotations(String commitSha) {
+    public void deleteAnnotations(String commitSha, String reportKey) {
         // not needed here.
     }
 
     @Override
-    public void uploadAnnotations(String commit, Set<CodeInsightsAnnotation> baseAnnotations) throws IOException {
+    public void uploadAnnotations(String commit, Set<CodeInsightsAnnotation> baseAnnotations, String reportKey) throws IOException {
         Set<CloudAnnotation> annotations = baseAnnotations.stream().map(CloudAnnotation.class::cast).collect(Collectors.toSet());
 
         if (annotations.isEmpty()) {
@@ -130,7 +129,7 @@ class BitbucketCloudClient implements BitbucketClient {
 
         Request req = new Request.Builder()
                 .post(RequestBody.create(objectMapper.writeValueAsString(annotations), APPLICATION_JSON_MEDIA_TYPE))
-                .url(format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/reports/%s/annotations", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commit, REPORT_KEY))
+                .url(format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/reports/%s/annotations", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commit, reportKey))
                 .build();
 
         LOGGER.info("Creating annotations on bitbucket cloud");
@@ -147,10 +146,10 @@ class BitbucketCloudClient implements BitbucketClient {
     }
 
     @Override
-    public void uploadReport(String commit, CodeInsightsReport codeInsightReport) throws IOException {
-        deleteExistingReport(commit);
+    public void uploadReport(String commit, CodeInsightsReport codeInsightReport, String reportKey) throws IOException {
+        deleteExistingReport(commit, reportKey);
 
-        String targetUrl = format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/reports/%s", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commit, REPORT_KEY);
+        String targetUrl = format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/reports/%s", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commit, reportKey);
         String body = objectMapper.writeValueAsString(codeInsightReport);
         Request req = new Request.Builder()
                 .put(RequestBody.create(body, APPLICATION_JSON_MEDIA_TYPE))
@@ -191,10 +190,10 @@ class BitbucketCloudClient implements BitbucketClient {
         }
     }
 
-    void deleteExistingReport(String commit) throws IOException {
+    void deleteExistingReport(String commit, String reportKey) throws IOException {
         Request req = new Request.Builder()
                 .delete()
-                .url(format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/reports/%s", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commit, REPORT_KEY))
+                .url(format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/reports/%s", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commit, reportKey))
                 .build();
 
         LOGGER.info("Deleting existing reports on bitbucket cloud");

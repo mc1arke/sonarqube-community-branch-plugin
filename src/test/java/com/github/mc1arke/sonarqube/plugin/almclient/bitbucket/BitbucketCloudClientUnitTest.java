@@ -89,13 +89,13 @@ public class BitbucketCloudClientUnitTest {
         when(mapper.writeValueAsString(report)).thenReturn("{payload}");
 
         // when
-        underTest.uploadReport("commit", report);
+        underTest.uploadReport("commit", report, "reportKey");
 
         // then
         verify(client, times(2)).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("PUT", request.method());
-        assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository/commit/commit/reports/com.github.mc1arke.sonarqube", request.url().toString());
+        assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository/commit/commit/reports/reportKey", request.url().toString());
     }
 
     @Test
@@ -109,13 +109,13 @@ public class BitbucketCloudClientUnitTest {
         when(call.execute()).thenReturn(response);
 
         // when
-        underTest.deleteExistingReport("commit");
+        underTest.deleteExistingReport("commit", "reportKey");
 
         // then
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("DELETE", request.method());
-        assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository/commit/commit/reports/com.github.mc1arke.sonarqube", request.url().toString());
+        assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository/commit/commit/reports/reportKey", request.url().toString());
     }
 
     @Test
@@ -134,13 +134,13 @@ public class BitbucketCloudClientUnitTest {
         when(mapper.writeValueAsString(any())).thenReturn("{payload}");
 
         // when
-        underTest.uploadAnnotations("commit", annotations);
+        underTest.uploadAnnotations("commit", annotations, "reportKey");
 
         // then
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("POST", request.method());
-        assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository/commit/commit/reports/com.github.mc1arke.sonarqube/annotations", request.url().toString());
+        assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository/commit/commit/reports/reportKey/annotations", request.url().toString());
     }
 
     @Test
@@ -172,7 +172,7 @@ public class BitbucketCloudClientUnitTest {
         when(mapper.writeValueAsString(report)).thenReturn("{payload}");
 
         // when,then
-        assertThatThrownBy(() -> underTest.uploadReport("commit", report))
+        assertThatThrownBy(() -> underTest.uploadReport("commit", report, "reportKey"))
                 .isInstanceOf(BitbucketCloudException.class)
                 .hasMessage("HTTP Status Code: 400; Message:error!")
                 .extracting(e -> ((BitbucketCloudException) e).isError(400))
@@ -185,7 +185,7 @@ public class BitbucketCloudClientUnitTest {
         Set<CodeInsightsAnnotation> annotations = Sets.newHashSet();
 
         // when
-        underTest.uploadAnnotations("commit", annotations);
+        underTest.uploadAnnotations("commit", annotations, "reportKey");
 
         // then
         verify(client, never()).newCall(any());
