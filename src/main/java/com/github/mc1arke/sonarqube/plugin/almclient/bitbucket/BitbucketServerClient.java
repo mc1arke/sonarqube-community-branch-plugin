@@ -227,4 +227,45 @@ class BitbucketServerClient implements BitbucketClient {
             throw new BitbucketException(response.code(), errors);
         }
     }
+
+    @Override
+    public void setApproval(boolean approve, String project, String repository, String prId) throws IOException {
+        if (prId == null) {
+            return;
+        }
+
+        String reqURL = format("%s/rest/api/1.0/projects/%s/repos/%s/pull-requests/%s/approve", config.getUrl(), project, repository, prId);
+        // relying on approve response error code we can understand if already
+        // approved without extra calls on activity resource
+        if (!approve) {
+            Request req = new Request.Builder()
+                    .delete()
+                    .url(reqURL)
+                    .build();
+            try (Response response = okHttpClient.newCall(req).execute()) {
+                if (response.code() == 404) {
+                    // it is already not approved
+                    LOGGER.info("Pull request {} already disapproved", prId);
+                } else {
+                    validate(response);
+                    LOGGER.debug("Pull request {} disapproved", prId);
+                }
+            }
+        } else {
+            Request req = new Request.Builder()
+                    .post(RequestBody.create(new byte[0]))
+                    .url(reqURL)
+                    .build();
+            try (Response response = okHttpClient.newCall(req).execute()) {
+                if (response.code() == 409) {
+                    // it is already approved nothing to do
+                    LOGGER.info("Pull request {} already approved", prId);
+                } else {
+                    validate(response);
+                    LOGGER.debug("Pull request {} approved", prId);
+                }
+            }
+        }
+    }
+
 }

@@ -363,6 +363,10 @@ public class AnalysisDetails {
                                                                                  .filter(i -> k == i.type()).count()));
     }
 
+    public boolean getApproval() {
+        return configuration.getBoolean(CommunityBranchPlugin.PULL_REQUEST_APPROVE_ENABLED).orElse(false);
+    }
+
     private static String pluralOf(long value, String singleLabel, String multiLabel) {
         return value + " " + (1 == value ? singleLabel : multiLabel);
     }

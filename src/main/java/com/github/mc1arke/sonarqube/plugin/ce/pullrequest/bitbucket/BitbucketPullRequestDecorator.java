@@ -98,6 +98,11 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                     analysisDetails.getCommitSha(), codeInsightsReport);
 
             updateAnnotations(client, project, repo, analysisDetails);
+
+            if (analysisDetails.getApproval()) {
+                String prId = analysisDetails.getBranchName();
+                client.setApproval(QualityGate.Status.ERROR != analysisDetails.getQualityGateStatus(), project, repo, prId);
+            }
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }

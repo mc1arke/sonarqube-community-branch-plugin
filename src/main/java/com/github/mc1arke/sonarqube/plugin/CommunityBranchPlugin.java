@@ -58,6 +58,7 @@ import org.sonar.core.extension.CoreExtension;
 public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
     public static final String IMAGE_URL_BASE = "com.github.mc1arke.sonarqube.plugin.branch.image-url-base";
+    public static final String PULL_REQUEST_APPROVE_ENABLED = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.approve.enabled";
 
     @Override
     public String getName() {
@@ -134,7 +135,14 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .description("Base URL used to load the images for the PR comments (please use this only if images are not displayed properly).")
                                           .type(PropertyType.STRING)
                                           .build());
-
+            context.addExtensions(PropertyDefinition.builder(PULL_REQUEST_APPROVE_ENABLED)
+                                          .category(CoreProperties.CATEGORY_ALM_INTEGRATION)
+                                          .subCategory("bitbucket")
+                                          .type(PropertyType.BOOLEAN)
+                                          .defaultValue(String.valueOf(false))
+                                          .name("Enable approving pull requests")
+                                          .description("This approve pull request when quality gate is passed (if implemented).")
+                                          .build());
         }
     }
 

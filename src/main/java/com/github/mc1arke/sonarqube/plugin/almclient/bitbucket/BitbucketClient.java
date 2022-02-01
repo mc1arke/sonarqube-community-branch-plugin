@@ -132,4 +132,12 @@ public interface BitbucketClient {
      */
     Repository retrieveRepository(String project, String repo) throws IOException;
 
+    /**
+     * Marks the specified pull request as approved by logged user.
+     * @param approve or not the pull request
+     * @param project the project as resolved from {@link #resolveProject(AlmSettingDto, ProjectAlmSettingDto)}
+     * @param repo the repository as resolved from {@link #resolveRepository(AlmSettingDto, ProjectAlmSettingDto)}
+     * @param prId the branch name
+     */
+    void setApproval(boolean approve, String project, String repository, String prId) throws IOException;
 }
