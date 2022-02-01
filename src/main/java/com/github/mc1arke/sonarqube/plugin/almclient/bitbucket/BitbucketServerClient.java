@@ -51,7 +51,6 @@ import static java.lang.String.format;
 
 class BitbucketServerClient implements BitbucketClient {
     private static final Logger LOGGER = Loggers.get(BitbucketServerClient.class);
-    private static final String REPORT_KEY = "com.github.mc1arke.sonarqube";
     private static final MediaType APPLICATION_JSON_MEDIA_TYPE = MediaType.get("application/json");
     private static final String TITLE = "SonarQube";
     private static final String REPORTER = "SonarQube";
@@ -93,10 +92,10 @@ class BitbucketServerClient implements BitbucketClient {
     }
 
     @Override
-    public void deleteAnnotations(String commit) throws IOException {
+    public void deleteAnnotations(String commit, String reportKey) throws IOException {
         Request req = new Request.Builder()
                 .delete()
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, REPORT_KEY))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
@@ -104,7 +103,7 @@ class BitbucketServerClient implements BitbucketClient {
     }
 
     @Override
-    public void uploadAnnotations(String commit, Set<CodeInsightsAnnotation> annotations) throws IOException {
+    public void uploadAnnotations(String commit, Set<CodeInsightsAnnotation> annotations, String reportKey) throws IOException {
         if (annotations.isEmpty()) {
             return;
         }
@@ -112,7 +111,7 @@ class BitbucketServerClient implements BitbucketClient {
         CreateAnnotationsRequest request = new CreateAnnotationsRequest(annotationSet);
         Request req = new Request.Builder()
                 .post(RequestBody.create(objectMapper.writeValueAsString(request), APPLICATION_JSON_MEDIA_TYPE))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, REPORT_KEY))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
@@ -125,11 +124,11 @@ class BitbucketServerClient implements BitbucketClient {
     }
 
     @Override
-    public void uploadReport(String commit, CodeInsightsReport codeInsightReport) throws IOException {
+    public void uploadReport(String commit, CodeInsightsReport codeInsightReport, String reportKey) throws IOException {
         String body = objectMapper.writeValueAsString(codeInsightReport);
         Request req = new Request.Builder()
                 .put(RequestBody.create(body, APPLICATION_JSON_MEDIA_TYPE))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", config.getUrl(), config.getProject(), config.getRepository(), commit, REPORT_KEY))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
                 .build();
 
         try (Response response = okHttpClient.newCall(req).execute()) {

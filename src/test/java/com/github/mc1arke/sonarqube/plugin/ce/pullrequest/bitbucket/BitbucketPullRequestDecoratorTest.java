@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 class BitbucketPullRequestDecoratorTest {
 
     private static final String COMMIT = "commit";
+    private static final String REPORT_KEY = "report-key";
 
     private static final String ISSUE_KEY = "issue-key";
     private static final int ISSUE_LINE = 1;
@@ -73,7 +74,7 @@ class BitbucketPullRequestDecoratorTest {
         verify(client).createCodeInsightsAnnotation(ISSUE_KEY, ISSUE_LINE, ISSUE_LINK, ISSUE_MESSAGE, ISSUE_PATH, "HIGH", "BUG");
         verify(client).createLinkDataValue(DASHBOARD_URL);
         verify(client).createCodeInsightsReport(any(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
-        verify(client).deleteAnnotations(COMMIT);
+        verify(client).deleteAnnotations(COMMIT, REPORT_KEY);
     }
 
     @ParameterizedTest(name = "{arguments}")
@@ -94,6 +95,7 @@ class BitbucketPullRequestDecoratorTest {
     private void mockValidAnalysis() {
         when(analysisDetails.getCommitSha()).thenReturn(COMMIT);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn(REPORT_KEY);
 
         when(analysisDetails.getAnalysisDate()).thenReturn(Date.from(Instant.now()));
 
