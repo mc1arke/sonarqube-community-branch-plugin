@@ -69,7 +69,7 @@ public interface BitbucketClient {
      *
      * @throws IOException if the annotations cannot be uploaded
      */
-    void uploadAnnotations(String project, String repo, String commitSha, Set<CodeInsightsAnnotation> annotations, String projectName) throws IOException;
+    void uploadAnnotations(String project, String repo, String commitSha, Set<CodeInsightsAnnotation> annotations, String reportKey) throws IOException;
 
     /**
      * Creates a DataValue of type DataValue.Link or DataValue.CloudLink depending on the implementation
