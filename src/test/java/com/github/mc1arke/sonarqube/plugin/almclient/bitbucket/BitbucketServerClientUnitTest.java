@@ -240,13 +240,13 @@ public class BitbucketServerClientUnitTest {
         when(mapper.writeValueAsString(report)).thenReturn("{payload}");
 
         // when
-        underTest.uploadReport("project", "repository", "commit", report);
+        underTest.uploadReport("project", "repository", "commit", report, "reportKey");
 
         // then
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("PUT", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/com.github.mc1arke.sonarqube", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey", request.url().toString());
     }
 
     @Test
@@ -264,7 +264,7 @@ public class BitbucketServerClientUnitTest {
         when(mapper.writeValueAsString(report)).thenReturn("{payload}");
 
         // when,then
-        assertThatThrownBy(() -> underTest.uploadReport("project", "repository", "commit", report))
+        assertThatThrownBy(() -> underTest.uploadReport("project", "repository", "commit", report, "reportKey"))
                 .isInstanceOf(BitbucketException.class);
     }
 
@@ -295,7 +295,7 @@ public class BitbucketServerClientUnitTest {
 
 
         // when,then
-        assertThatThrownBy(() -> underTest.uploadReport("project", "repository", "commit", report))
+        assertThatThrownBy(() -> underTest.uploadReport("project", "repository", "commit", report, "reportKey"))
                 .isInstanceOf(BitbucketException.class)
                 .hasMessage("error!")
                 .extracting(e -> ((BitbucketException) e).isError(400))
@@ -323,13 +323,13 @@ public class BitbucketServerClientUnitTest {
         when(response.isSuccessful()).thenReturn(true);
 
         // when
-        underTest.uploadAnnotations("project", "repository", "commit", annotations);
+        underTest.uploadAnnotations("project", "repository", "commit", annotations, "reportKey");
 
         // then
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("POST", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/com.github.mc1arke.sonarqube/annotations", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
 
         try (Buffer bodyContent = new Buffer()) {
             request.body().writeTo(bodyContent);
@@ -343,7 +343,7 @@ public class BitbucketServerClientUnitTest {
         Set<CodeInsightsAnnotation> annotations = Sets.newHashSet();
 
         // when
-        underTest.uploadAnnotations("project", "repository", "commit", annotations);
+        underTest.uploadAnnotations("project", "repository", "commit", annotations, "reportKey");
 
         // then
         verify(client, never()).newCall(any());
@@ -361,13 +361,13 @@ public class BitbucketServerClientUnitTest {
         when(response.isSuccessful()).thenReturn(true);
 
         // when
-        underTest.deleteAnnotations("project", "repository", "commit");
+        underTest.deleteAnnotations("project", "repository", "commit", "reportKey");
 
         // then
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("DELETE", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/com.github.mc1arke.sonarqube/annotations", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
     }
 
     @Test

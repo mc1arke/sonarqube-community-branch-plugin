@@ -95,7 +95,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
             );
 
             client.uploadReport(project, repo,
-                    analysisDetails.getCommitSha(), codeInsightsReport);
+                    analysisDetails.getCommitSha(), codeInsightsReport, analysisDetails.getAnalysisProjectKey());
 
             updateAnnotations(client, project, repo, analysisDetails);
         } catch (IOException e) {
@@ -127,7 +127,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
     private void updateAnnotations(BitbucketClient client, String project, String repo, AnalysisDetails analysisDetails) throws IOException {
         final AtomicInteger chunkCounter = new AtomicInteger(0);
 
-        client.deleteAnnotations(project, repo, analysisDetails.getCommitSha());
+        client.deleteAnnotations(project, repo, analysisDetails.getCommitSha(), analysisDetails.getAnalysisProjectKey());
 
         AnnotationUploadLimit uploadLimit = client.getAnnotationUploadLimit();
 
@@ -136,7 +136,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
                 .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status()))
                 .filter(i -> !(i.getIssue().type() == RuleType.SECURITY_HOTSPOT && Issue.SECURITY_HOTSPOT_RESOLUTIONS
-                    .contains(i.getIssue().resolution())))
+                        .contains(i.getIssue().resolution())))
                 .sorted(Comparator.comparing(a -> Severity.ALL.indexOf(a.getIssue().severity())))
                 .map(componentIssue -> {
                     String path = componentIssue.getComponent().getReportAttributes().getScmPath().get();
@@ -158,7 +158,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                     break;
                 }
 
-                client.uploadAnnotations(project, repo, analysisDetails.getCommitSha(), annotations);
+                client.uploadAnnotations(project, repo, analysisDetails.getCommitSha(), annotations, analysisDetails.getAnalysisProjectKey());
             } catch (BitbucketException e) {
                 if (e.isError(BitbucketException.PAYLOAD_TOO_LARGE)) {
                     LOGGER.warn("The annotations will be truncated since the maximum number of annotations for this report has been reached.");
