@@ -61,14 +61,14 @@ public interface BitbucketClient {
      *
      * @throws IOException if the annotations cannot be deleted
      */
-    void deleteAnnotations(String project, String repo, String commitSha) throws IOException;
+    void deleteAnnotations(String project, String repo, String commitSha, String reportKey) throws IOException;
 
     /**
      * Uploads CodeInsights Annotations for the given commit.
      *
      * @throws IOException if the annotations cannot be uploaded
      */
-    void uploadAnnotations(String project, String repo, String commitSha, Set<CodeInsightsAnnotation> annotations) throws IOException;
+    void uploadAnnotations(String project, String repo, String commitSha, Set<CodeInsightsAnnotation> annotations, String reportKey) throws IOException;
 
     /**
      * Creates a DataValue of type DataValue.Link or DataValue.CloudLink depending on the implementation
@@ -78,7 +78,7 @@ public interface BitbucketClient {
     /**
      * Uploads the code insights report for the given commit
      */
-    void uploadReport(String project, String repo, String commitSha, CodeInsightsReport codeInsightReport) throws IOException;
+    void uploadReport(String project, String repo, String commitSha, CodeInsightsReport codeInsightReport, String reportKey) throws IOException;
 
     /**
      * <p>
