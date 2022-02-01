@@ -40,6 +40,7 @@ public class BitbucketPullRequestDecoratorTest {
     private static final String PROJECT = "project";
     private static final String REPO = "repo";
     private static final String COMMIT = "commit";
+    private static final String REPORT_KEY = "report-key";
 
     private static final String ISSUE_KEY = "issue-key";
     private static final int ISSUE_LINE = 1;
@@ -76,7 +77,7 @@ public class BitbucketPullRequestDecoratorTest {
         verify(client).createCodeInsightsAnnotation(eq(ISSUE_KEY), eq(ISSUE_LINE), eq(ISSUE_LINK), eq(ISSUE_MESSAGE), eq(ISSUE_PATH), eq("HIGH"), eq("BUG"));
         verify(client).createLinkDataValue(DASHBOARD_URL);
         verify(client).createCodeInsightsReport(any(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(QualityGate.Status.OK));
-        verify(client).deleteAnnotations(PROJECT, REPO, COMMIT);
+        verify(client).deleteAnnotations(PROJECT, REPO, COMMIT, REPORT_KEY);
     }
 
     @Test
@@ -121,6 +122,7 @@ public class BitbucketPullRequestDecoratorTest {
     private void mockValidAnalysis() {
         when(analysisDetails.getCommitSha()).thenReturn(COMMIT);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn(REPORT_KEY);
 
         Map<RuleType, Long> ruleCount = new HashMap<>();
         ruleCount.put(RuleType.CODE_SMELL, 1L);
