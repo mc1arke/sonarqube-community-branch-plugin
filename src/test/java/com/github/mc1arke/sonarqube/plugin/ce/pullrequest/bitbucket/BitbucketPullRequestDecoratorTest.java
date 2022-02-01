@@ -122,7 +122,7 @@ public class BitbucketPullRequestDecoratorTest {
     private void mockValidAnalysis() {
         when(analysisDetails.getCommitSha()).thenReturn(COMMIT);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
-        when(analysisDetails.getAnalysisProjectName()).thenReturn(REPORT_KEY);
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn(REPORT_KEY);
 
         Map<RuleType, Long> ruleCount = new HashMap<>();
         ruleCount.put(RuleType.CODE_SMELL, 1L);
