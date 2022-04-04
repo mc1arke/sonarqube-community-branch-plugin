@@ -66,7 +66,7 @@ public class CommunityBranchAgentTest {
         verify(instrumentation).retransformClasses(MultipleAlmFeatureProvider.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
-        try (InputStream inputStream = MultipleAlmFeatureProvider.class.getResourceAsStream(MultipleAlmFeatureProvider.class.getSimpleName())) {
+        try (InputStream inputStream = MultipleAlmFeatureProvider.class.getResourceAsStream(MultipleAlmFeatureProvider.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
             byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(classLoader, MultipleAlmFeatureProvider.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
             Class<?> redefined = classLoader.loadClass(MultipleAlmFeatureProvider.class.getName(), result);
@@ -92,7 +92,7 @@ public class CommunityBranchAgentTest {
         verify(instrumentation).retransformClasses(SetAction.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
-        try (InputStream inputStream = SetAction.class.getResourceAsStream(SetAction.class.getSimpleName())) {
+        try (InputStream inputStream = SetAction.class.getResourceAsStream(SetAction.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
             byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(1).transform(classLoader, SetAction.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
@@ -124,7 +124,7 @@ public class CommunityBranchAgentTest {
         verify(instrumentation).retransformClasses(UnsetAction.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
-        try (InputStream inputStream = SetAction.class.getResourceAsStream(SetAction.class.getSimpleName())) {
+        try (InputStream inputStream = UnsetAction.class.getResourceAsStream(UnsetAction.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
             byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(2).transform(classLoader, UnsetAction.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
@@ -204,6 +204,6 @@ public class CommunityBranchAgentTest {
             return defineClass(name, value, 0, value.length);
         }
 
-    };
+    }
 
 }

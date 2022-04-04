@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2022 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,6 +35,7 @@ import org.sonar.api.utils.log.Loggers;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -48,6 +49,7 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
     private final Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier;
     private final Settings settings;
 
+    @Autowired
     public DefaultBitbucketClientFactory(Settings settings) {
         this(settings, OkHttpClient.Builder::new);
     }

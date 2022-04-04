@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,6 +35,7 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.sonar.api.ce.ComputeEngineSide;
 import org.sonar.api.server.ServerSide;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -64,6 +65,7 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
     private final UrlConnectionProvider urlProvider;
     private final ObjectMapper objectMapper;
 
+    @Autowired
     public RestApplicationAuthenticationProvider(LinkHeaderReader linkHeaderReader) {
         this(Clock.systemDefaultZone(), linkHeaderReader, new DefaultUrlConnectionProvider());
     }
