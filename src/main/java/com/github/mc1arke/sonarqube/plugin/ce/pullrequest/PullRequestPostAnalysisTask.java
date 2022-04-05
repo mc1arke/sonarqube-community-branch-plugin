@@ -76,8 +76,8 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto();
         Optional<AlmSettingDto> optionalAlmSettingDto;
         try (DbSession dbSession = dbClient.openSession(false)) {
-
-            projectAlmSettingDto.setAlmRepo("Pay-Baymax/" + projectAnalysis.getProject().getKey());
+            projectAlmSettingDto.setAlmRepo(projectAnalysis.getScannerContext().getProperties().getOrDefault(
+					"sonar.pullrequest.github.repository", "Pay-Baymax/" + projectAnalysis.getProject().getKey()));
             projectAlmSettingDto.setAlmSettingUuid("AXxy3BubdvWBwkcdvIfk");
             projectAlmSettingDto.setAlmSlug("");
             projectAlmSettingDto.setProjectUuid(projectAnalysis.getProject().getUuid());
