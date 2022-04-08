@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.annotation.CheckForNull;
 
@@ -38,7 +39,9 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
     @Override
     public void onIssue(Component component, DefaultIssue defaultIssue) {
-        collectedIssues.add(new ComponentIssue(component, defaultIssue));
+        collectedIssues.add(new ComponentIssue(component, Optional.ofNullable(defaultIssue)
+                .map(LightIssue::new)
+                .orElse(null)));
     }
 
     public List<ComponentIssue> getIssues() {
@@ -50,11 +53,10 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
         private final Component component;
         private final LightIssue issue;
 
-        ComponentIssue(Component component, DefaultIssue issue) {
+        ComponentIssue(Component component, LightIssue issue) {
             super();
             this.component = component;
-            this.issue = (issue != null) ? new LightIssue(issue) : null;
-            // the null test is to please PostAnalysisIssueVisitorTest.checkAllIssuesCollected()
+            this.issue = issue;
         }
 
         public Component getComponent() {
@@ -85,7 +87,7 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
         private final DbIssues.Locations locations;
         private final RuleKey ruleKey;
 
-        private LightIssue(DefaultIssue issue) {
+        LightIssue(DefaultIssue issue) {
             this.effortInMinutes = issue.effortInMinutes();
             this.key = issue.key();
             this.line = issue.getLine();

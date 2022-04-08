@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,26 +16,21 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.cloud;
+package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
-import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
+import okhttp3.OkHttpClient;
+import org.junit.jupiter.api.Test;
 
-public class BitbucketCloudConfiguration extends BitbucketConfiguration {
+import static org.assertj.core.api.Assertions.assertThat;
 
-    private final String clientId;
-    private final String secret;
+class HttpClientBuilderFactoryTest {
 
-    public BitbucketCloudConfiguration(String repository, String project, String clientId, String secret) {
-        super(repository, project);
-        this.clientId = clientId;
-        this.secret = secret;
-    }
+    @Test
+    void verifyNotSameInstanceReturnedByFactory() {
+        HttpClientBuilderFactory underTest = new HttpClientBuilderFactory();
+        OkHttpClient.Builder builder1 = underTest.createClientBuilder();
+        OkHttpClient.Builder builder2 = underTest.createClientBuilder();
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getSecret() {
-        return secret;
+        assertThat(builder1).isNotSameAs(builder2);
     }
 }

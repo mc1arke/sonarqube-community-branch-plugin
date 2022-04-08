@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,7 @@ import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
 import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.Measure;
 import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
@@ -909,5 +910,53 @@ public class AnalysisDetailsTest {
                 mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
                 mock(Configuration.class),"", mock(ScannerContext.class));
         assertThat(analysisDetails.parseIssueIdFromUrl("http://subdomain.sonarqube.dummy/path/issue?id=projectId&other_parameter=123")).isEmpty();
+    }
+    
+    @Test
+    public void shouldOnlyReturnNonClosedFileIssuesWithScmInfo() {
+        PostAnalysisIssueVisitor.LightIssue lightIssue1 = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        when(lightIssue1.status()).thenReturn(Issue.STATUS_OPEN);
+        Component component1 = mock(Component.class);
+        when(component1.getType()).thenReturn(Component.Type.FILE);
+        ReportAttributes reportAttributes1 = mock(ReportAttributes.class);
+        when(reportAttributes1.getScmPath()).thenReturn(Optional.of("path"));
+        when(component1.getReportAttributes()).thenReturn(reportAttributes1);
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue1 = new PostAnalysisIssueVisitor.ComponentIssue(component1, lightIssue1);
+
+        PostAnalysisIssueVisitor.LightIssue lightIssue2 = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        when(lightIssue2.status()).thenReturn(Issue.STATUS_OPEN);
+        Component component2 = mock(Component.class);
+        when(component2.getType()).thenReturn(Component.Type.FILE);
+        ReportAttributes reportAttributes2 = mock(ReportAttributes.class);
+        when(reportAttributes2.getScmPath()).thenReturn(Optional.empty());
+        when(component2.getReportAttributes()).thenReturn(reportAttributes2);
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue2 = new PostAnalysisIssueVisitor.ComponentIssue(component2, lightIssue2);
+
+        PostAnalysisIssueVisitor.LightIssue lightIssue3 = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        when(lightIssue3.status()).thenReturn(Issue.STATUS_OPEN);
+        Component component3 = mock(Component.class);
+        when(component3.getType()).thenReturn(Component.Type.PROJECT);
+        ReportAttributes reportAttributes3 = mock(ReportAttributes.class);
+        when(reportAttributes3.getScmPath()).thenReturn(Optional.of("path"));
+        when(component3.getReportAttributes()).thenReturn(reportAttributes3);
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue3 = new PostAnalysisIssueVisitor.ComponentIssue(component3, lightIssue3);
+
+        PostAnalysisIssueVisitor.LightIssue lightIssue4 = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        when(lightIssue4.status()).thenReturn(Issue.STATUS_CLOSED);
+        Component component4 = mock(Component.class);
+        when(component4.getType()).thenReturn(Component.Type.FILE);
+        ReportAttributes reportAttributes4 = mock(ReportAttributes.class);
+        when(reportAttributes4.getScmPath()).thenReturn(Optional.of("path"));
+        when(component4.getReportAttributes()).thenReturn(reportAttributes4);
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue4 = new PostAnalysisIssueVisitor.ComponentIssue(component4, lightIssue4);
+
+        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
+        when(postAnalysisIssueVisitor.getIssues()).thenReturn(Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4));
+        
+        AnalysisDetails underTest = new AnalysisDetails(mock(AnalysisDetails.BranchDetails.class), postAnalysisIssueVisitor,
+                mock(QualityGate.class), mock(AnalysisDetails.MeasuresHolder.class), mock(Analysis.class), mock(Project.class),
+                mock(Configuration.class),"", mock(ScannerContext.class));
+        
+        assertThat(underTest.getScmReportableIssues()).containsOnly(componentIssue1);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2022 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,10 +23,8 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsight
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Repository;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -55,21 +53,21 @@ public interface BitbucketClient {
      */
     CodeInsightsReport createCodeInsightsReport(List<ReportData> reportData,
                                                 String reportDescription, Instant creationDate, String dashboardUrl,
-                                                String logoUrl, QualityGate.Status status);
+                                                String logoUrl, ReportStatus reportStatus);
 
     /**
      * Deletes all code insights annotations for the given parameters.
      *
      * @throws IOException if the annotations cannot be deleted
      */
-    void deleteAnnotations(String project, String repo, String commitSha) throws IOException;
+    void deleteAnnotations(String commitSha) throws IOException;
 
     /**
      * Uploads CodeInsights Annotations for the given commit.
      *
      * @throws IOException if the annotations cannot be uploaded
      */
-    void uploadAnnotations(String project, String repo, String commitSha, Set<CodeInsightsAnnotation> annotations) throws IOException;
+    void uploadAnnotations(String commitSha, Set<CodeInsightsAnnotation> annotations) throws IOException;
 
     /**
      * Creates a DataValue of type DataValue.Link or DataValue.CloudLink depending on the implementation
@@ -79,7 +77,7 @@ public interface BitbucketClient {
     /**
      * Uploads the code insights report for the given commit
      */
-    void uploadReport(String project, String repo, String commitSha, CodeInsightsReport codeInsightReport) throws IOException;
+    void uploadReport(String commitSha, CodeInsightsReport codeInsightReport) throws IOException;
 
     /**
      * <p>
@@ -105,31 +103,9 @@ public interface BitbucketClient {
     AnnotationUploadLimit getAnnotationUploadLimit();
 
     /**
-     * Extract the name of the project from the relevant configuration. The project is
-     * the value that should be used in the calls that take a `project` parameter.
-     *
-     * @param almSettingDto the global `AlmSettingDto` containing the global configuration for this ALM
-     * @param projectAlmSettingDto the `ProjectAlmSettingDto` assigned to the current project
-     * @return the resolved project name.
-     */
-    String resolveProject(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto);
-
-    /**
-     * Extract the name of the repository from the relevant configuration. The project is
-     * the value that should be used in the calls that take a `repository` parameter.
-     *
-     * @param almSettingDto the global `AlmSettingDto` containing the global configuration for this ALM
-     * @param projectAlmSettingDto the `ProjectAlmSettingDto` assigned to the current project
-     * @return the resolved repository name.
-     */
-    String resolveRepository(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto);
-
-    /**
      * Retrieve the details of the repository from the target Bitbucket instance.
-     * @param project the project as resolved from {@link #resolveProject(AlmSettingDto, ProjectAlmSettingDto)}
-     * @param repo the repository as resolved from {@link #resolveRepository(AlmSettingDto, ProjectAlmSettingDto)}
      * @return the repository details retrieved from Bitbucket.
      */
-    Repository retrieveRepository(String project, String repo) throws IOException;
+    Repository retrieveRepository() throws IOException;
 
 }

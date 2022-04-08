@@ -3,12 +3,13 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.measures.CoreMetrics;
@@ -27,18 +28,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class BitbucketPullRequestDecoratorTest {
+class BitbucketPullRequestDecoratorTest {
 
-    private static final String PROJECT = "project";
-    private static final String REPO = "repo";
     private static final String COMMIT = "commit";
 
     private static final String ISSUE_KEY = "issue-key";
@@ -57,15 +55,13 @@ public class BitbucketPullRequestDecoratorTest {
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         when(bitbucketClientFactory.createClient(any(), any())).thenReturn(client);
-        when(client.resolveProject(any(), any())).thenReturn(PROJECT);
-        when(client.resolveRepository(any(), any())).thenReturn(REPO);
     }
 
     @Test
-    public void testValidAnalysis() throws IOException {
+    void testValidAnalysis() throws IOException {
         when(client.supportsCodeInsights()).thenReturn(true);
         AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(1000, 1000);
         when(client.getAnnotationUploadLimit()).thenReturn(uploadLimit);
@@ -73,43 +69,19 @@ public class BitbucketPullRequestDecoratorTest {
         mockValidAnalysis();
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        verify(client).createCodeInsightsAnnotation(eq(ISSUE_KEY), eq(ISSUE_LINE), eq(ISSUE_LINK), eq(ISSUE_MESSAGE), eq(ISSUE_PATH), eq("HIGH"), eq("BUG"));
+        verify(client).createCodeInsightsAnnotation(ISSUE_KEY, ISSUE_LINE, ISSUE_LINK, ISSUE_MESSAGE, ISSUE_PATH, "HIGH", "BUG");
         verify(client).createLinkDataValue(DASHBOARD_URL);
-        verify(client).createCodeInsightsReport(any(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(QualityGate.Status.OK));
-        verify(client).deleteAnnotations(PROJECT, REPO, COMMIT);
+        verify(client).createCodeInsightsReport(any(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
+        verify(client).deleteAnnotations(COMMIT);
     }
 
-    @Test
-    public void testExceedsMaximumNumberOfAnnotations() {
+    @ParameterizedTest(name = "{arguments}")
+    @CsvSource({"100, 1000, 2",
+            "1000, 1000, 1",
+            "100, 1000, 10"})
+    void testExceedsMaximumNumberOfAnnotations(int annotationBatchSize, int totalAllowedAnnotations, int counter) {
         // given
-        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(100, 1000);
-        int counter = 2;
-
-        // when
-        boolean result = BitbucketPullRequestDecorator.exceedsMaximumNumberOfAnnotations(counter, uploadLimit);
-
-        // then
-        assertFalse(result);
-    }
-
-    @Test
-    public void testExceedsMaximumNumberOfAnnotationsEdgeCase() {
-        // given
-        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(1000, 1000);
-        int counter = 1;
-
-        // when
-        boolean result = BitbucketPullRequestDecorator.exceedsMaximumNumberOfAnnotations(counter, uploadLimit);
-
-        // then
-        assertFalse(result);
-    }
-
-    @Test
-    public void testExceedsMaximumNumberOfAnnotationsEdgeBatchCase() {
-        // given
-        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(100, 1000);
-        int counter = 10;
+        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(annotationBatchSize, totalAllowedAnnotations);
 
         // when
         boolean result = BitbucketPullRequestDecorator.exceedsMaximumNumberOfAnnotations(counter, uploadLimit);
@@ -155,10 +127,7 @@ public class BitbucketPullRequestDecoratorTest {
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
         when(componentIssue.getComponent()).thenReturn(component);
 
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
-
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
+        when(analysisDetails.getScmReportableIssues()).thenReturn(Collections.singletonList(componentIssue));
     }
 
 }
