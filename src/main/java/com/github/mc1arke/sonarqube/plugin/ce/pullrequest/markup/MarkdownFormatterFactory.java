@@ -77,6 +77,6 @@ public final class MarkdownFormatterFactory extends BaseFormatterFactory {
 
     @Override
     public Formatter<Text> textFormatter() {
-        return node -> htmlEscaper().escape(node.getContent()).trim();
+        return node -> htmlEscaper().escape(node.getContent());
     }
 }
