@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -72,7 +72,7 @@ class BitbucketValidatorTest {
     void testInvalidConfigurationExceptionThrownIfRetrieveRepositoryFails() throws IOException {
         BitbucketValidator underTest = new BitbucketValidator(bitbucketClientFactory);
         BitbucketClient bitbucketClient = mock(BitbucketClient.class);
-        when(bitbucketClient.retrieveRepository(any(), any())).thenThrow(new IOException("dummy"));
+        when(bitbucketClient.retrieveRepository()).thenThrow(new IOException("dummy"));
         when(bitbucketClientFactory.createClient(any(), any())).thenReturn(bitbucketClient);
         assertThatThrownBy(() -> underTest.validate(projectAlmSettingDto, almSettingDto))
                 .isInstanceOf(InvalidConfigurationException.class)

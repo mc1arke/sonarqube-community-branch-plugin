@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -68,6 +68,9 @@ import java.util.stream.Collectors;
 public class AnalysisDetails {
 
     private static final List<String> CLOSED_ISSUE_STATUS = Arrays.asList(Issue.STATUS_CLOSED, Issue.STATUS_RESOLVED);
+    private static final List<String> OPEN_ISSUE_STATUSES =
+            Issue.STATUSES.stream().filter(s -> !CLOSED_ISSUE_STATUS.contains(s))
+                    .collect(Collectors.toList());
 
     private static final List<BigDecimal> COVERAGE_LEVELS =
             Arrays.asList(BigDecimal.valueOf(100), BigDecimal.valueOf(90), BigDecimal.valueOf(60),
@@ -397,6 +400,15 @@ public class AnalysisDetails {
 
     public Optional<BigDecimal> getCoverage(){
         return findMeasure(CoreMetrics.COVERAGE_KEY).map(Measure::getDoubleValue).map(BigDecimal::new);
+    }
+
+    public List<PostAnalysisIssueVisitor.ComponentIssue> getScmReportableIssues() {
+        return postAnalysisIssueVisitor.getIssues().stream()
+                .filter(i -> getSCMPathForIssue(i).isPresent())
+                .filter(i -> i.getComponent().getType() == Component.Type.FILE)
+                .filter(i -> i.getIssue().resolution() == null)
+                .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status()))
+                .collect(Collectors.toList());
     }
 
     public static class BranchDetails {

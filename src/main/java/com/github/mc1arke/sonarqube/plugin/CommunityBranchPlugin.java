@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin;
 import com.github.mc1arke.sonarqube.plugin.almclient.DefaultLinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.DefaultBitbucketClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.HttpClientBuilderFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.DefaultGithubClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
@@ -90,6 +91,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                     DefaultGithubClientFactory.class,
                     DefaultLinkHeaderReader.class,
                     RestApplicationAuthenticationProvider.class,
+                    HttpClientBuilderFactory.class,
                     DefaultBitbucketClientFactory.class,
                     BitbucketValidator.class,
                     GitlabValidator.class,

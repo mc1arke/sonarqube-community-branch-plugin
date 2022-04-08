@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,7 +57,7 @@ public class PostAnalysisIssueVisitorTest {
         for (int i = 0; i < 100; i++) {
             DefaultIssue issue = (i == 10 ? null : mock(DefaultIssue.class));
             Component component = (i == 5 ? null : mock(Component.class));
-            expected.add(new PostAnalysisIssueVisitor.ComponentIssue(component, issue));
+            expected.add(new PostAnalysisIssueVisitor.ComponentIssue(component, null == issue ? null : new PostAnalysisIssueVisitor.LightIssue(issue)));
 
             testCase.onIssue(component, issue);
         }

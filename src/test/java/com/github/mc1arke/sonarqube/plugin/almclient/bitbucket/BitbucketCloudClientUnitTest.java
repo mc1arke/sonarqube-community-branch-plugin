@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,11 @@ package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.cloud.CloudAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.cloud.CloudCreateReportRequest;
 import com.google.common.collect.Sets;
@@ -37,7 +39,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.sonar.api.ce.posttask.QualityGate;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -67,9 +68,10 @@ public class BitbucketCloudClientUnitTest {
 
     @Before
     public void before() {
+        BitbucketConfiguration bitbucketConfiguration = new BitbucketConfiguration("repository", "project");
         Call call = mock(Call.class);
         when(client.newCall(any())).thenReturn(call);
-        underTest = new BitbucketCloudClient(mapper, client);
+        underTest = new BitbucketCloudClient(mapper, client, bitbucketConfiguration);
     }
 
     @Test
@@ -87,7 +89,7 @@ public class BitbucketCloudClientUnitTest {
         when(mapper.writeValueAsString(report)).thenReturn("{payload}");
 
         // when
-        underTest.uploadReport("project", "repository", "commit", report);
+        underTest.uploadReport("commit", report);
 
         // then
         verify(client, times(2)).newCall(captor.capture());
@@ -107,7 +109,7 @@ public class BitbucketCloudClientUnitTest {
         when(call.execute()).thenReturn(response);
 
         // when
-        underTest.deleteExistingReport("project", "repository", "commit");
+        underTest.deleteExistingReport("commit");
 
         // then
         verify(client).newCall(captor.capture());
@@ -132,7 +134,7 @@ public class BitbucketCloudClientUnitTest {
         when(mapper.writeValueAsString(any())).thenReturn("{payload}");
 
         // when
-        underTest.uploadAnnotations("project", "repository", "commit", annotations);
+        underTest.uploadAnnotations("commit", annotations);
 
         // then
         verify(client).newCall(captor.capture());
@@ -170,7 +172,7 @@ public class BitbucketCloudClientUnitTest {
         when(mapper.writeValueAsString(report)).thenReturn("{payload}");
 
         // when,then
-        assertThatThrownBy(() -> underTest.uploadReport("project", "repository", "commit", report))
+        assertThatThrownBy(() -> underTest.uploadReport("commit", report))
                 .isInstanceOf(BitbucketCloudException.class)
                 .hasMessage("HTTP Status Code: 400; Message:error!")
                 .extracting(e -> ((BitbucketCloudException) e).isError(400))
@@ -183,7 +185,7 @@ public class BitbucketCloudClientUnitTest {
         Set<CodeInsightsAnnotation> annotations = Sets.newHashSet();
 
         // when
-        underTest.uploadAnnotations("project", "repository", "commit", annotations);
+        underTest.uploadAnnotations("commit", annotations);
 
         // then
         verify(client, never()).newCall(any());
@@ -199,10 +201,10 @@ public class BitbucketCloudClientUnitTest {
         // then
         assertTrue(annotation instanceof CloudAnnotation);
         assertEquals("issueKey", ((CloudAnnotation) annotation).getExternalId());
-        assertEquals(12, ((CloudAnnotation) annotation).getLine());
+        assertEquals(12, annotation.getLine());
         assertEquals("http://localhost:9000/dashboard", ((CloudAnnotation) annotation).getLink());
-        assertEquals("/path/to/file", ((CloudAnnotation) annotation).getPath());
-        assertEquals("MAJOR", ((CloudAnnotation) annotation).getSeverity());
+        assertEquals("/path/to/file", annotation.getPath());
+        assertEquals("MAJOR", annotation.getSeverity());
         assertEquals("BUG", ((CloudAnnotation) annotation).getAnnotationType());
     }
 
@@ -234,15 +236,15 @@ public class BitbucketCloudClientUnitTest {
         // given
 
         // when
-        CodeInsightsReport result = underTest.createCodeInsightsReport(new ArrayList<>(), "reportDescription", Instant.now(), "dashboardUrl", "logoUrl", QualityGate.Status.ERROR);
+        CodeInsightsReport result = underTest.createCodeInsightsReport(new ArrayList<>(), "reportDescription", Instant.now(), "dashboardUrl", "logoUrl", ReportStatus.FAILED);
 
         // then
         assertTrue(result instanceof CloudCreateReportRequest);
-        assertEquals(0, ((CloudCreateReportRequest) result).getData().size());
-        assertEquals("reportDescription", ((CloudCreateReportRequest) result).getDetails());
-        assertEquals("dashboardUrl", ((CloudCreateReportRequest) result).getLink());
+        assertEquals(0, result.getData().size());
+        assertEquals("reportDescription", result.getDetails());
+        assertEquals("dashboardUrl", result.getLink());
         assertEquals("logoUrl", ((CloudCreateReportRequest) result).getLogoUrl());
-        assertEquals("FAILED", ((CloudCreateReportRequest) result).getResult());
+        assertEquals("FAILED", result.getResult());
 
     }
 }
