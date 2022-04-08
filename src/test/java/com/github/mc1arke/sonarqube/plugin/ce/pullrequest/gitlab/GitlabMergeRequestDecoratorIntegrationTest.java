@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021 Markus Heberling, Michael Clarke
+ * Copyright (C) 2019-2022 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.LinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -233,7 +234,7 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         Encryption encryption = mock(Encryption.class);
         when(settings.getEncryption()).thenReturn(encryption);
         GitlabMergeRequestDecorator pullRequestDecorator =
-                new GitlabMergeRequestDecorator(server, scmInfoRepository, new DefaultGitlabClientFactory(linkHeaderReader, settings));
+                new GitlabMergeRequestDecorator(server, scmInfoRepository, new DefaultGitlabClientFactory(linkHeaderReader, settings), mock(MarkdownFormatterFactory.class));
 
 
         assertThat(pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto).getPullRequestUrl()).isEqualTo(Optional.of("http://gitlab.example.com/my-group/my-project/merge_requests/1"));

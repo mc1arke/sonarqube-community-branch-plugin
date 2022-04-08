@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,8 @@ package com.github.mc1arke.sonarqube.plugin.almclient.github.v4;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.RepositoryAuthenticationToken;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.model.Annotation;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.model.CheckRunDetails;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.model.CheckAnnotationLevel;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.model.CheckConclusionState;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.model.RequestableCheckStatusState;
@@ -30,24 +32,20 @@ import io.aexp.nodes.graphql.GraphQLRequestEntity;
 import io.aexp.nodes.graphql.GraphQLResponseEntity;
 import io.aexp.nodes.graphql.GraphQLTemplate;
 import io.aexp.nodes.graphql.InputObject;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
-import org.sonar.api.platform.Server;
 import org.sonar.api.rule.Severity;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +56,7 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
@@ -69,29 +67,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class GraphqlGithubClientTest {
+class GraphqlGithubClientTest {
 
     private final GraphqlProvider graphqlProvider = mock(GraphqlProvider.class, RETURNS_DEEP_STUBS);
     private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1234567890), ZoneId.of("UTC"));
-    private final Server server = mock(Server.class);
-    private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
 
     @Test
-    public void createCheckRunExceptionOnErrorResponse() throws IOException {
-        when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
-
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(new ArrayList<>());
-
-        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("dummy summary");
-        when(analysisDetails.getCommitSha()).thenReturn("commit SHA");
-        when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
-        when(analysisDetails.getBranchName()).thenReturn("12345");
-        when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
-        when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
-
+    void createCheckRunExceptionOnErrorResponse() throws IOException {
         RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
         when(repositoryAuthenticationToken.getAuthenticationToken()).thenReturn("dummyAuthToken");
         when(repositoryAuthenticationToken.getRepositoryId()).thenReturn("repository ID");
@@ -105,249 +87,22 @@ public class GraphqlGithubClientTest {
         when(graphQLTemplate.mutate(any(), eq(CreateCheckRun.class))).thenReturn(graphQLResponseEntity);
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-        when(almSettingDto.getUrl()).thenReturn("http://host.name");
-        when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
-
         GraphqlGithubClient testCase =
-                new GraphqlGithubClient(graphqlProvider, clock, repositoryAuthenticationToken, server);
-        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto))
+                new GraphqlGithubClient(graphqlProvider, "https://api.url", repositoryAuthenticationToken);
+        CheckRunDetails checkRunDetails = CheckRunDetails.builder().withAnnotations(List.of()).withStartTime(ZonedDateTime.now()).withEndTime(ZonedDateTime.now()).build();
+        assertThatThrownBy(() -> testCase.createCheckRun(checkRunDetails, true))
                 .hasMessage(
                 "An error was returned in the response from the Github API:" + System.lineSeparator() +
                 "- Error{message='example message', locations=[]}").isExactlyInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    public void createCheckRunExceptionOnInvalidIssueSeverity() {
-        when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
-
-        ReportAttributes reportAttributes = mock(ReportAttributes.class);
-        when(reportAttributes.getScmPath()).thenReturn(Optional.of("path"));
-
-        Component component = mock(Component.class);
-        when(component.getType()).thenReturn(Component.Type.FILE);
-        when(component.getReportAttributes()).thenReturn(reportAttributes);
-
-        PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(defaultIssue.severity()).thenReturn("dummy");
-        when(defaultIssue.status()).thenReturn(Issue.STATUS_OPEN);
-        when(defaultIssue.resolution()).thenReturn(null);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue.getIssue()).thenReturn(defaultIssue);
-        when(componentIssue.getComponent()).thenReturn(component);
-
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
-
-        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("dummy summary");
-        when(analysisDetails.getCommitSha()).thenReturn("commit SHA");
-        when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
-        when(analysisDetails.getBranchName()).thenReturn("branchName");
-        when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
-        when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
-
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-        when(almSettingDto.getUrl()).thenReturn("url");
-        when(almSettingDto.getAppId()).thenReturn("app ID");
-        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("key");
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn("group/repo");
-
-        GraphqlGithubClient testCase =
-                new GraphqlGithubClient(graphqlProvider, clock, mock(RepositoryAuthenticationToken.class), server);
-        assertThatThrownBy(() -> testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto))
-                .hasMessage("Unknown severity value: dummy")
-                .isExactlyInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    public void createCheckRunHappyPathOkStatus() throws IOException {
-        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain", "http://api.target.domain/graphql");
-    }
-
-    @Test
-    public void createCheckRunHappyPathOkStatusTrailingSlash() throws IOException {
-        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/", "http://api.target.domain/graphql");
-    }
-
-    @Test
-    public void createCheckRunHappyPathOkStatusApiPath() throws IOException {
-        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/api", "http://api.target.domain/api/graphql");
-    }
-
-    @Test
-    public void createCheckRunHappyPathOkStatusApiPathTrailingSlash() throws IOException {
-        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/api/", "http://api.target.domain/api/graphql");
-    }
-
-    @Test
-    public void createCheckRunHappyPathOkStatusV3Path() throws IOException {
-        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/api/v3", "http://api.target.domain/api/graphql");
-    }
-
-    @Test
-    public void createCheckRunHappyPathOkStatusV3PathTrailingSlash() throws IOException {
-        createCheckRunHappyPath(QualityGate.Status.OK, "http://api.target.domain/api/v3/", "http://api.target.domain/api/graphql");
-    }
-
-    @Test
-    public void createCheckRunHappyPathErrorStatus() throws IOException {
-        createCheckRunHappyPath(QualityGate.Status.ERROR, "http://abc.de/", "http://abc.de/graphql");
-    }
-
-    private void createCheckRunHappyPath(QualityGate.Status status, String basePath, String fullPath) throws IOException {
-        String[] messageInput = {
-            "issue 1",
-            "issue 2",
-            "issue 3",
-            "issue 4",
-            "issue 5",
-            "issue 6",
-            "issue \\ \" \\\" \"\\ \\\\ \"\" 7"
-        };
-
-        String[] messageOutput = {
-            "issue 1",
-            "issue 2",
-            "issue 3",
-            "issue 4",
-            "issue 5",
-            "issue 6",
-            "issue \\\\ \\\" \\\\\\\" \\\"\\\\ \\\\\\\\ \\\"\\\" 7"
-        };
-
-        when(server.getPublicRootUrl()).thenReturn("http://sonar.server/root");
-
-        PostAnalysisIssueVisitor.LightIssue issue1 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(issue1.getLine()).thenReturn(2);
-        when(issue1.getMessage()).thenReturn(messageInput[0]);
-        when(issue1.severity()).thenReturn(Severity.INFO);
-        when(issue1.status()).thenReturn(Issue.STATUS_OPEN);
-        when(issue1.resolution()).thenReturn(null);
-
-        ReportAttributes reportAttributes = mock(ReportAttributes.class);
-        when(reportAttributes.getScmPath()).thenReturn(Optional.of("path/to.file"));
-        Component component1 = mock(Component.class);
-        when(component1.getReportAttributes()).thenReturn(reportAttributes);
-        when(component1.getType()).thenReturn(Component.Type.FILE);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue1 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue1.getComponent()).thenReturn(component1);
-        when(componentIssue1.getIssue()).thenReturn(issue1);
-
-        PostAnalysisIssueVisitor.LightIssue issue2 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(issue2.getLine()).thenReturn(null);
-        when(issue2.getMessage()).thenReturn(messageInput[1]);
-        when(issue2.status()).thenReturn(Issue.STATUS_OPEN);
-        when(issue2.resolution()).thenReturn(null);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue2 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue2.getComponent()).thenReturn(component1);
-        when(componentIssue2.getIssue()).thenReturn(issue2);
-        when(issue2.severity()).thenReturn(Severity.BLOCKER);
-
-        ReportAttributes reportAttributes2 = mock(ReportAttributes.class);
-        when(reportAttributes2.getScmPath()).thenReturn(Optional.empty());
-        Component component2 = mock(Component.class);
-        when(component2.getReportAttributes()).thenReturn(reportAttributes);
-        when(component2.getType()).thenReturn(Component.Type.FILE);
-
-        PostAnalysisIssueVisitor.LightIssue issue3 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(issue3.getLine()).thenReturn(9);
-        when(issue3.severity()).thenReturn(Severity.CRITICAL);
-        when(issue3.getMessage()).thenReturn(messageInput[2]);
-        when(issue3.status()).thenReturn(Issue.STATUS_OPEN);
-        when(issue3.resolution()).thenReturn(null);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue3 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue3.getComponent()).thenReturn(component2);
-        when(componentIssue3.getIssue()).thenReturn(issue3);
-
-        ReportAttributes reportAttributes3 = mock(ReportAttributes.class);
-        when(reportAttributes3.getScmPath()).thenReturn(Optional.empty());
-        Component component3 = mock(Component.class);
-        when(component3.getReportAttributes()).thenReturn(reportAttributes);
-        when(component3.getType()).thenReturn(Component.Type.PROJECT);
-
-        PostAnalysisIssueVisitor.LightIssue issue4 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(issue4.getLine()).thenReturn(2);
-        when(issue4.severity()).thenReturn(Severity.CRITICAL);
-        when(issue4.getMessage()).thenReturn(messageInput[3]);
-        when(issue4.status()).thenReturn(Issue.STATUS_OPEN);
-        when(issue4.resolution()).thenReturn(null);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue4 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue4.getComponent()).thenReturn(component3);
-        when(componentIssue4.getIssue()).thenReturn(issue4);
-
-        PostAnalysisIssueVisitor.LightIssue issue5 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(issue5.getLine()).thenReturn(1999);
-        when(issue5.severity()).thenReturn(Severity.MAJOR);
-        when(issue5.getMessage()).thenReturn(messageInput[4]);
-        when(issue5.status()).thenReturn(Issue.STATUS_OPEN);
-        when(issue5.resolution()).thenReturn(null);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue5 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue5.getComponent()).thenReturn(component2);
-        when(componentIssue5.getIssue()).thenReturn(issue5);
-
-        PostAnalysisIssueVisitor.LightIssue issue6 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(issue6.getLine()).thenReturn(42);
-        when(issue6.severity()).thenReturn(Severity.MINOR);
-        when(issue6.getMessage()).thenReturn(messageInput[5]);
-        when(issue6.status()).thenReturn(Issue.STATUS_OPEN);
-        when(issue6.resolution()).thenReturn(null);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue6 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue6.getComponent()).thenReturn(component2);
-        when(componentIssue6.getIssue()).thenReturn(issue6);
-
-        PostAnalysisIssueVisitor.LightIssue issue7 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(issue7.getLine()).thenReturn(42);
-        when(issue7.severity()).thenReturn(Severity.MINOR);
-        when(issue7.getMessage()).thenReturn(messageInput[6]);
-        when(issue7.status()).thenReturn(Issue.STATUS_OPEN);
-        when(issue7.resolution()).thenReturn(null);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue7 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue7.getComponent()).thenReturn(component2);
-        when(componentIssue7.getIssue()).thenReturn(issue7);
-
-        PostAnalysisIssueVisitor.LightIssue issue8 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(issue8.getLine()).thenReturn(42);
-        when(issue8.severity()).thenReturn(Severity.MINOR);
-        when(issue8.status()).thenReturn(Issue.STATUS_RESOLVED);
-        when(issue8.resolution()).thenReturn(Issue.RESOLUTION_FIXED);
-
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue8 = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        when(componentIssue8.getComponent()).thenReturn(component2);
-        when(componentIssue8.getIssue()).thenReturn(issue8);
-
-        List<PostAnalysisIssueVisitor.ComponentIssue> issueList =
-                Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4, componentIssue5,
-                              componentIssue6, componentIssue7, componentIssue8);
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(issueList);
-
-        when(analysisDetails.getQualityGateStatus()).thenReturn(status);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("dummy summary");
-        when(analysisDetails.getCommitSha()).thenReturn("commit SHA");
-        when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
-        when(analysisDetails.getAnalysisProjectName()).thenReturn("projectName");
-        when(analysisDetails.getBranchName()).thenReturn("13579");
-        when(analysisDetails.getAnalysisDate()).thenReturn(new Date(1234567890));
-        when(analysisDetails.getAnalysisId()).thenReturn("analysis ID");
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
-
+    void verifyCheckRunSubmitsCorrectAnnotations() throws IOException {
         RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
         when(repositoryAuthenticationToken.getAuthenticationToken()).thenReturn("dummyAuthToken");
         when(repositoryAuthenticationToken.getRepositoryId()).thenReturn("repository ID");
+        when(repositoryAuthenticationToken.getOwnerName()).thenReturn("owner");
+        when(repositoryAuthenticationToken.getRepositoryName()).thenReturn("repository");
 
         List<InputObject.Builder<Object>> inputObjectBuilders = new ArrayList<>();
         List<InputObject<Object>> inputObjects = new ArrayList<>();
@@ -393,7 +148,7 @@ public class GraphqlGithubClientTest {
         ArgumentCaptor<GraphQLRequestEntity> getViewer = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
         when(graphQLTemplate.query(getViewer.capture(), eq(Viewer.class))).thenReturn(viewerResponseEntity);
 
-        GraphQLResponseEntity<GetPullRequest> getPullRequestResponseEntity =
+        GraphQLResponseEntity<GetRepository> getPullRequestResponseEntity =
             objectMapper.readValue("{" +
                 "\"response\": " +
                 "  {" +
@@ -416,10 +171,10 @@ public class GraphqlGithubClientTest {
                 "      }"+
                 "    }" +
                 "  }" +
-                "}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, GetPullRequest.class));
+                "}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, GetRepository.class));
 
         ArgumentCaptor<GraphQLRequestEntity> getPullRequestRequestEntityArgumentCaptor = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
-        when(graphQLTemplate.query(getPullRequestRequestEntityArgumentCaptor.capture(), eq(GetPullRequest.class))).thenReturn(getPullRequestResponseEntity);
+        when(graphQLTemplate.query(getPullRequestRequestEntityArgumentCaptor.capture(), eq(GetRepository.class))).thenReturn(getPullRequestResponseEntity);
 
         GraphQLResponseEntity<MinimizeComment> minimizeCommentResponseEntity =
             objectMapper.readValue("{\"response\":{}}", objectMapper.getTypeFactory().constructParametricType(GraphQLResponseEntity.class, MinimizeComment.class));
@@ -435,17 +190,29 @@ public class GraphqlGithubClientTest {
 
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
-        when(projectAlmSettingDto.getSummaryCommentEnabled()).thenReturn(true);
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-        when(almSettingDto.getUrl()).thenReturn(basePath);
-        when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
+        CheckRunDetails checkRunDetails = CheckRunDetails.builder()
+                .withAnnotations(IntStream.range(0, 30).mapToObj(i -> Annotation.builder()
+                            .withLine(i)
+                            .withSeverity(CheckAnnotationLevel.WARNING)
+                            .withScmPath("scmPath" + i)
+                            .withMessage("annotationMessage " + i)
+                            .build()).collect(Collectors.toList()))
+                .withCheckConclusionState(CheckConclusionState.SUCCESS)
+                .withCommitId("commit-id")
+                .withSummary("Summary message")
+                .withDashboardUrl("dashboard-url")
+                .withStartTime(clock.instant().atZone(ZoneId.of("UTC")).minus(1, ChronoUnit.MINUTES))
+                .withEndTime(clock.instant().atZone(ZoneId.of("UTC")))
+                .withExternalId("external-id")
+                .withName("Name")
+                .withTitle("Title")
+                .withPullRequestId(999)
+                .build();
+
 
         GraphqlGithubClient testCase =
-                new GraphqlGithubClient(graphqlProvider, clock, repositoryAuthenticationToken, server);
-        testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
+                new GraphqlGithubClient(graphqlProvider, "http://api.target.domain/api", repositoryAuthenticationToken);
+        testCase.createCheckRun(checkRunDetails, true);
 
         assertEquals(5, requestBuilders.size());
 
@@ -453,11 +220,7 @@ public class GraphqlGithubClientTest {
         headers.put("Authorization", "Bearer dummyAuthToken");
         headers.put("Accept", "application/vnd.github.antiope-preview+json");
 
-
-        verify(requestBuilders.get(0)).url(fullPath);
-        verify(requestBuilders.get(0)).headers(headers);
         verify(requestBuilders.get(0)).requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE);
-        verify(requestBuilders.get(0)).build();
         assertEquals(requestEntities.get(0), requestEntityArgumentCaptor.getValue());
 
         ArgumentCaptor<Arguments> argumentsArgumentCaptor = ArgumentCaptor.forClass(Arguments.class);
@@ -468,30 +231,26 @@ public class GraphqlGithubClientTest {
 
         List<InputObject<Object>> expectedAnnotationObjects = new ArrayList<>();
         int position = 0;
-        for (int i = 0; i < issueList.size(); i++) {
-            if (issueList.get(i).getComponent().getType() != Component.Type.FILE ||
-                issueList.get(i).getComponent().getReportAttributes().getScmPath().isEmpty() ||
-                issueList.get(i).getIssue().resolution() != null) {
-                continue;
-            }
-            int line = (null == issueList.get(i).getIssue().getLine() ? 0 : issueList.get(i).getIssue().getLine());
-            verify(inputObjectBuilders.get(position)).put("startLine", line);
-            verify(inputObjectBuilders.get(position)).put("endLine", line);
-            verify(inputObjectBuilders.get(position)).build();
+        for (Annotation annotation : checkRunDetails.getAnnotations()) {
+            int line = annotation.getLine();
+
+            assertThat(inputObjectBuilders.get(position).build())
+                    .usingRecursiveComparison()
+                            .isEqualTo(new InputObject.Builder<>()
+                                    .put("startLine", line)
+                                    .put("endLine", line)
+                                    .build());
             position++;
 
-            String path = issueList.get(i).getComponent().getReportAttributes().getScmPath().get();
-            InputObject.Builder<Object> fileBuilder = inputObjectBuilders.get(position);
-            verify(fileBuilder).put("path", path);
-            verify(fileBuilder).put("location", inputObjects.get(position - 1));
-            String sonarQubeSeverity = issueList.get(i).getIssue().severity();
-            verify(fileBuilder).put("annotationLevel",
-                                    sonarQubeSeverity.equals(Severity.INFO) ? CheckAnnotationLevel.NOTICE :
-                                       sonarQubeSeverity.equals(Severity.MINOR) ||
-                                       sonarQubeSeverity.equals(Severity.MAJOR) ? CheckAnnotationLevel.WARNING :
-                                       CheckAnnotationLevel.FAILURE);
-            verify(fileBuilder).put("message", messageOutput[i]);
-            verify(inputObjectBuilders.get(position)).build();
+            String path = annotation.getScmPath();
+            InputObject<Object> fileBuilder = inputObjectBuilders.get(position).build();
+            assertThat(fileBuilder).usingRecursiveComparison()
+                            .isEqualTo(new InputObject.Builder<>()
+                                    .put("path", path)
+                                    .put("location", inputObjects.get(position - 1))
+                                    .put("annotationLevel", annotation.getSeverity())
+                                    .put("message", annotation.getMessage())
+                                    .build());
 
             expectedAnnotationObjects.add(inputObjects.get(position));
 
@@ -500,35 +259,36 @@ public class GraphqlGithubClientTest {
 
         assertEquals(4 + position, inputObjectBuilders.size());
 
-        ArgumentCaptor<List<InputObject<Object>>> annotationArgumentCaptor = ArgumentCaptor.forClass(List.class);
+        assertThat(inputObjectBuilders.get(position).build())
+                .usingRecursiveComparison()
+                        .isEqualTo(new InputObject.Builder<>()
+                                .put("title", "Title")
+                                .put("summary", "Summary message")
+                                .put("annotations", expectedAnnotationObjects)
+                                .build());
 
-        verify(inputObjectBuilders.get(position))
-                .put("title", "Quality Gate " + (status == QualityGate.Status.OK ? "success" : "failed"));
-        verify(inputObjectBuilders.get(position)).put("summary", "dummy summary");
-        verify(inputObjectBuilders.get(position)).put(eq("annotations"), annotationArgumentCaptor.capture());
-        verify(inputObjectBuilders.get(position)).build();
+        assertThat(inputObjectBuilders.get(position + 1).build())
+                .usingRecursiveComparison()
+                        .isEqualTo(new InputObject.Builder<>()
+                                .put("repositoryId", "repository ID")
+                                .put("name", "Name")
+                                .put("headSha", "commit-id")
+                                .put("status", RequestableCheckStatusState.COMPLETED)
+                                .put("conclusion", CheckConclusionState.SUCCESS)
+                                .put("detailsUrl", "dashboard-url")
+                                .put("startedAt", "2009-02-13T23:30:30Z")
+                                .put("completedAt", "2009-02-13T23:31:30Z")
+                                .put("externalId", "external-id")
+                                .put("output", inputObjects.get(position))
+                                .build());
 
-        assertThat(annotationArgumentCaptor.getValue()).isEqualTo(expectedAnnotationObjects);
-
-        verify(inputObjectBuilders.get(position + 1)).put("repositoryId", "repository ID");
-        verify(inputObjectBuilders.get(position + 1)).put("name", "projectName Sonarqube Results");
-        verify(inputObjectBuilders.get(position + 1)).put("headSha", "commit SHA");
-        verify(inputObjectBuilders.get(position + 1)).put("status", RequestableCheckStatusState.COMPLETED);
-        verify(inputObjectBuilders.get(position + 1)).put("conclusion", status == QualityGate.Status.OK ?
-                                                                               CheckConclusionState.SUCCESS :
-                                                                               CheckConclusionState.FAILURE);
-        verify(inputObjectBuilders.get(position + 1))
-                .put("detailsUrl", "http://sonar.server/root/dashboard?id=projectKey&pullRequest=13579");
-        verify(inputObjectBuilders.get(position + 1)).put("startedAt", "1970-01-15T06:56:07Z");
-        verify(inputObjectBuilders.get(position + 1)).put("completedAt", "2009-02-13T23:31:30Z");
-        verify(inputObjectBuilders.get(position + 1)).put("externalId", "analysis ID");
-        verify(inputObjectBuilders.get(position + 1)).put("output", inputObjects.get(position));
-        verify(inputObjectBuilders.get(position + 1)).build();
+        for (int i = 0; i < 5; i++) {
+            verify(requestBuilders.get(i)).url("http://api.target.domain/api/graphql");
+            verify(requestBuilders.get(i)).headers(headers);
+            verify(requestBuilders.get(i)).build();
+        }
 
         // Verify GetViewer
-        verify(requestBuilders.get(1)).url(fullPath);
-        verify(requestBuilders.get(1)).headers(headers);
-        verify(requestBuilders.get(1)).build();
         assertEquals(requestEntities.get(1), getViewer.getValue());
         assertEquals(
             "query { viewer { login } } ",
@@ -536,20 +296,14 @@ public class GraphqlGithubClientTest {
         );
 
         // Verify GetPullRequest
-        verify(requestBuilders.get(2)).url(fullPath);
-        verify(requestBuilders.get(2)).headers(headers);
-        verify(requestBuilders.get(2)).build();
         assertEquals(requestEntities.get(2), getPullRequestRequestEntityArgumentCaptor.getValue());
         assertEquals(
-            "query { repository (owner:\"dummy\",name:\"repo\") { url pullRequest : pullRequest (number:13579) { comments : comments (first:100) { nodes" +
+            "query { repository (owner:\"owner\",name:\"repository\") { url pullRequest : pullRequest (number:999) { comments : comments (first:100) { nodes" +
                 " { author { type : __typename login } id minimized : isMinimized } pageInfo { hasNextPage endCursor } } id } } } ",
             getPullRequestRequestEntityArgumentCaptor.getValue().getRequest()
         );
 
         // Validate Minimize Comment
-        verify(requestBuilders.get(3)).url(fullPath);
-        verify(requestBuilders.get(3)).headers(headers);
-        verify(requestBuilders.get(3)).build();
         assertEquals(requestEntities.get(3), minimizeCommentRequestEntityArgumentCaptor.getValue());
         assertEquals(
             "mutation { minimizeComment (input:{classifier:OUTDATED,subjectId:\"MDEyOklzc3VlQ29tbWVudDE1MDE3\"}) { clientMutationId } } ",
@@ -557,19 +311,16 @@ public class GraphqlGithubClientTest {
         );
 
         // Validate AddComment
-        verify(requestBuilders.get(4)).url(fullPath);
-        verify(requestBuilders.get(4)).headers(headers);
-        verify(requestBuilders.get(4)).build();
         assertEquals(requestEntities.get(4), addCommentRequestEntityArgumentCaptor.getValue());
         assertEquals(
-          "mutation { addComment (input:{body:\"dummy summary\",subjectId:\"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"}) { clientMutationId } } ",
+          "mutation { addComment (input:{body:\"Summary message\",subjectId:\"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"}) { clientMutationId } } ",
             addCommentRequestEntityArgumentCaptor.getValue().getRequest()
         );
 
     }
 
     @Test
-    public void checkExcessIssuesCorrectlyReported() throws IOException {
+    void checkExcessIssuesCorrectlyReported() throws IOException {
         ReportAttributes reportAttributes = mock(ReportAttributes.class);
         when(reportAttributes.getScmPath()).thenReturn(Optional.of("abc"));
         Component component = mock(Component.class);
@@ -592,11 +343,8 @@ public class GraphqlGithubClientTest {
                     return componentIssue;
                 }).collect(Collectors.toList());
 
-        PostAnalysisIssueVisitor postAnalysisIssuesVisitor = mock(PostAnalysisIssueVisitor.class);
-        when(postAnalysisIssuesVisitor.getIssues()).thenReturn(issues);
-
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssuesVisitor);
+        when(analysisDetails.getScmReportableIssues()).thenReturn(issues);
         when(analysisDetails.getBranchName()).thenReturn("13579");
         when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
         when(analysisDetails.getAnalysisDate()).thenReturn(new Date());
@@ -624,23 +372,23 @@ public class GraphqlGithubClientTest {
         when(graphQLTemplate.mutate(any(), eq(UpdateCheckRun.class))).thenReturn(graphQLResponseEntity2);
         when(graphqlProvider.createGraphQLTemplate()).thenReturn(graphQLTemplate);
 
-        Clock clock = mock(Clock.class);
-        when(clock.instant()).thenReturn(Instant.now());
+        Clock clock = Clock.fixed(Instant.now(), ZoneId.of("UTC"));
 
         RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
         when(repositoryAuthenticationToken.getAuthenticationToken()).thenReturn("dummy");
 
-        Server server = mock(Server.class);
+        CheckRunDetails checkRunDetails = mock(CheckRunDetails.class);
+        when(checkRunDetails.getAnnotations()).thenReturn(IntStream.range(0, 120).mapToObj(i -> Annotation.builder()
+                .withLine(i).withMessage("message " + i)
+                .withSeverity(CheckAnnotationLevel.NOTICE)
+                .withScmPath("path " + i)
+                .build())
+                .collect(Collectors.toList()));
+        when(checkRunDetails.getStartTime()).thenReturn(clock.instant().atZone(ZoneId.of("UTC")));
+        when(checkRunDetails.getEndTime()).thenReturn(clock.instant().atZone(ZoneId.of("UTC")));
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn("dummy/repo");
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-        when(almSettingDto.getUrl()).thenReturn("http://host.name");
-        when(almSettingDto.getAppId()).thenReturn("app id");
-        when(almSettingDto.getDecryptedClientSecret(any())).thenReturn("private key");
-
-        GraphqlGithubClient testCase = new GraphqlGithubClient(graphqlProvider, clock, repositoryAuthenticationToken, server);
-        testCase.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto);
+        GraphqlGithubClient testCase = new GraphqlGithubClient(graphqlProvider, "https://api.url/path", repositoryAuthenticationToken);
+        testCase.createCheckRun(checkRunDetails, false);
 
         ArgumentCaptor<Class<?>> classArgumentCaptor = ArgumentCaptor.forClass(Class.class);
         verify(graphQLTemplate, times(3)).mutate(any(GraphQLRequestEntity.class), classArgumentCaptor.capture());
@@ -652,41 +400,6 @@ public class GraphqlGithubClientTest {
         assertThat(annotationsArgumentCaptor.getAllValues().get(0)).hasSize(50);
         assertThat(annotationsArgumentCaptor.getAllValues().get(1)).hasSize(50);
         assertThat(annotationsArgumentCaptor.getAllValues().get(2)).hasSize(20);
-    }
-
-    @Test
-    public void checkCorrectDefaultValuesInjected() {
-        Clock clock = Clock.systemDefaultZone();
-        RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
-        assertThat(new GraphqlGithubClient(repositoryAuthenticationToken, server)).usingRecursiveComparison()
-                .isEqualTo(new GraphqlGithubClient(new DefaultGraphqlProvider(), clock,
-                                                       repositoryAuthenticationToken, server));
-    }
-
-    @Test
-    public void checkExceptionThrownOnMissingUrl() {
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-
-        GraphqlGithubClient underTest = new GraphqlGithubClient(mock(RepositoryAuthenticationToken.class), mock(Server.class));
-        assertThatThrownBy(() -> underTest.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("No URL has been set for Github connections");
-    }
-
-    @Test
-    public void checkExceptionThrownOnMissingRepoPath() {
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-        when(almSettingDto.getUrl()).thenReturn("url");
-        when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-
-        GraphqlGithubClient underTest = new GraphqlGithubClient(mock(RepositoryAuthenticationToken.class), mock(Server.class));
-        assertThatThrownBy(() -> underTest.createCheckRun(analysisDetails, almSettingDto, projectAlmSettingDto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("No repository name has been set for Github connections");
     }
 
 }

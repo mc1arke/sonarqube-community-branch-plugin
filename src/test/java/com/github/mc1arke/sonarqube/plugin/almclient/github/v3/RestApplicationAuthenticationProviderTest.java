@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,6 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -97,7 +96,7 @@ public class RestApplicationAuthenticationProviderTest {
         HttpURLConnection repositoriesUrlConnection = mock(HttpURLConnection.class);
         doReturn(new ByteArrayInputStream(
                 ("{\"repositories\": [{\"node_id\": \"" + expectedRepositoryId + "\", \"full_name\": \"" + projectPath +
-                 "\", \"html_url\": \"" + expectedHtmlUrl + "\"}]}").getBytes(StandardCharsets.UTF_8))).when(repositoriesUrlConnection).getInputStream();
+                 "\", \"html_url\": \"" + expectedHtmlUrl + "\", \"name\": \"project\", \"owner\": {\"login\": \"owner_name\"}}]}").getBytes(StandardCharsets.UTF_8))).when(repositoriesUrlConnection).getInputStream();
         doReturn(repositoriesUrlConnection).when(urlProvider).createUrlConnection("repositories_url");
 
         doReturn(installationsUrlConnection).when(urlProvider).createUrlConnection(fullUrl);
@@ -165,7 +164,7 @@ public class RestApplicationAuthenticationProviderTest {
             HttpURLConnection repositoriesUrlConnection = mock(HttpURLConnection.class);
             doReturn(new ByteArrayInputStream(
                     ("{\"repositories\": [{\"node_id\": \"" + expectedRepositoryId + (i == 0 ? "a" : "") + "\", \"full_name\": \"" +
-                     projectPath + (i == 0 ? "a" : "") + "\"}]}").getBytes(StandardCharsets.UTF_8))).when(repositoriesUrlConnection).getInputStream();
+                     projectPath + (i == 0 ? "a" : "") + "\", \"name\": \"name\", \"owner\": {\"login\": \"login\"}}]}").getBytes(StandardCharsets.UTF_8))).when(repositoriesUrlConnection).getInputStream();
 
             doReturn(i == 0 ? "a" : null).when(repositoriesUrlConnection).getHeaderField("Link");
             doReturn(repositoriesUrlConnection).when(urlProvider).createUrlConnection(i == 0 ? "repositories_url" : "https://dummy.url/path?param=dummy&page=" + (i + 1));
@@ -274,15 +273,5 @@ public class RestApplicationAuthenticationProviderTest {
                                    "Bearer " + expectedAuthenticationToken),
                      requestPropertyArgumentCaptor.getAllValues());
 
-    }
-
-    @Test
-    public void testDefaultParameters() {
-        Clock clock = Clock.systemDefaultZone();
-        LinkHeaderReader linkHeaderReader = mock(LinkHeaderReader.class);
-        assertThat(new RestApplicationAuthenticationProvider(clock, linkHeaderReader, new DefaultUrlConnectionProvider()))
-                .usingRecursiveComparison()
-                .ignoringFields("objectMapper")
-                .isEqualTo(new RestApplicationAuthenticationProvider(linkHeaderReader));
     }
 }

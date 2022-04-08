@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@ package com.github.mc1arke.sonarqube.plugin.almclient.github;
 
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.GraphqlGithubClient;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.GraphqlProvider;
 import org.sonar.api.ce.ComputeEngineSide;
 import org.sonar.api.config.internal.Settings;
-import org.sonar.api.platform.Server;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -35,13 +35,13 @@ import java.util.Optional;
 public class DefaultGithubClientFactory implements GithubClientFactory {
 
     private final GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider;
-    private final Server server;
     private final Settings settings;
+    private final GraphqlProvider graphqlProvider;
 
-    public DefaultGithubClientFactory(GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider, Server server, Settings settings) {
+    public DefaultGithubClientFactory(GithubApplicationAuthenticationProvider githubApplicationAuthenticationProvider, Settings settings, GraphqlProvider graphqlProvider) {
         this.githubApplicationAuthenticationProvider = githubApplicationAuthenticationProvider;
-        this.server = server;
         this.settings = settings;
+        this.graphqlProvider = graphqlProvider;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class DefaultGithubClientFactory implements GithubClientFactory {
             RepositoryAuthenticationToken repositoryAuthenticationToken =
                     githubApplicationAuthenticationProvider.getInstallationToken(apiUrl, appId, apiPrivateKey, projectPath);
 
-            return new GraphqlGithubClient(repositoryAuthenticationToken, server);
+            return new GraphqlGithubClient(graphqlProvider, apiUrl, repositoryAuthenticationToken);
         } catch (IOException ex) {
             throw new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "Could not create Github client - " + ex.getMessage(), ex);
         }

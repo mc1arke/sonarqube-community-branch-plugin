@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,14 +18,12 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.github;
 
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.model.CheckRunDetails;
 
 import java.io.IOException;
 
 public interface GithubClient {
-    DecorationResult createCheckRun(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
-                        ProjectAlmSettingDto projectAlmSettingDto) throws IOException;
+    String createCheckRun(CheckRunDetails checkRunDetails, boolean postSummaryComment) throws IOException;
+
+    String getRepositoryUrl();
 }

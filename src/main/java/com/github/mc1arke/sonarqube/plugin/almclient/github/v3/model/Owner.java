@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,40 +21,16 @@ package com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Repository {
+public class Owner {
 
-    private final String nodeId;
-    private final String fullName;
-    private final String htmlUrl;
-    private final String name;
-    private final Owner owner;
+    private final String login;
 
     @JsonCreator
-    public Repository(@JsonProperty("node_id") String nodeId, @JsonProperty("full_name") String fullName, @JsonProperty("html_url") String htmlUrl, @JsonProperty("name") String name, @JsonProperty("owner") Owner owner) {
-        this.nodeId = nodeId;
-        this.fullName = fullName;
-        this.htmlUrl = htmlUrl;
-        this.name = name;
-        this.owner = owner;
+    public Owner(@JsonProperty("login") String login) {
+        this.login = login;
     }
 
-    public String getFullName() {
-        return fullName;
-    }
-
-    public String getNodeId() {
-        return nodeId;
-    }
-
-    public String getHtmlUrl() {
-        return htmlUrl;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Owner getOwner() {
-        return owner;
+    public String getLogin() {
+        return login;
     }
 }

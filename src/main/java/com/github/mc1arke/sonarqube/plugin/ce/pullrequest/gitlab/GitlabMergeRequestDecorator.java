@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2022 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,10 +58,10 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     private final GitlabClientFactory gitlabClientFactory;
     private final FormatterFactory formatterFactory;
 
-    public GitlabMergeRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, GitlabClientFactory gitlabClientFactory) {
+    public GitlabMergeRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, GitlabClientFactory gitlabClientFactory, MarkdownFormatterFactory markdownFormatterFactory) {
         super(server, scmInfoRepository);
         this.gitlabClientFactory = gitlabClientFactory;
-        this.formatterFactory = new MarkdownFormatterFactory();
+        this.formatterFactory = markdownFormatterFactory;
     }
 
     @Override
