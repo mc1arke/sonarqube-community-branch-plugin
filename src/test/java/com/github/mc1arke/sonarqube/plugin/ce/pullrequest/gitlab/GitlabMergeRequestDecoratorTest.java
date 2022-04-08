@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,6 +32,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNo
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Note;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.PipelineStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.User;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -94,8 +95,9 @@ public class GitlabMergeRequestDecoratorTest {
     private final User sonarqubeUser = mock(User.class);
     private final PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
     private final DiffRefs diffRefs = mock(DiffRefs.class);
+    private final MarkdownFormatterFactory markdownFormatterFactory = mock(MarkdownFormatterFactory.class);
 
-    private final GitlabMergeRequestDecorator underTest = new GitlabMergeRequestDecorator(server, scmInfoRepository, gitlabClientFactory);
+    private final GitlabMergeRequestDecorator underTest = new GitlabMergeRequestDecorator(server, scmInfoRepository, gitlabClientFactory, markdownFormatterFactory);
 
     @Before
     public void setUp() throws IOException {

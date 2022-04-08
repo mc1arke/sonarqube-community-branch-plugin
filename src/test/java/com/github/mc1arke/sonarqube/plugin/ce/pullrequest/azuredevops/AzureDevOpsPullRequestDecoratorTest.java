@@ -5,6 +5,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDev
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Before;
 import org.junit.Rule;
@@ -73,7 +74,8 @@ public class AzureDevOpsPullRequestDecoratorTest {
     private final ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
     private final Settings settings = mock(Settings.class);
     private final Encryption encryption = mock(Encryption.class);
-    private final AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory(settings));
+    private final MarkdownFormatterFactory markdownFormatterFactory = mock(MarkdownFormatterFactory.class);
+    private final AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory(settings), markdownFormatterFactory);
     private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
 
     private final PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
@@ -510,7 +512,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void testName() {
-        assertThat(new AzureDevOpsPullRequestDecorator(mock(Server.class), mock(ScmInfoRepository.class), mock(AzureDevopsClientFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
+        assertThat(new AzureDevOpsPullRequestDecorator(mock(Server.class), mock(ScmInfoRepository.class), mock(AzureDevopsClientFactory.class), mock(MarkdownFormatterFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
     }
 
     @Test

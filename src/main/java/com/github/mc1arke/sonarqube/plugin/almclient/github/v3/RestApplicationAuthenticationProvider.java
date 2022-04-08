@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -64,11 +64,7 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
     private final UrlConnectionProvider urlProvider;
     private final ObjectMapper objectMapper;
 
-    public RestApplicationAuthenticationProvider(LinkHeaderReader linkHeaderReader) {
-        this(Clock.systemDefaultZone(), linkHeaderReader, new DefaultUrlConnectionProvider());
-    }
-
-    RestApplicationAuthenticationProvider(Clock clock, LinkHeaderReader linkHeaderReader, UrlConnectionProvider urlProvider) {
+    public RestApplicationAuthenticationProvider(Clock clock, LinkHeaderReader linkHeaderReader, UrlConnectionProvider urlProvider) {
         super();
         this.clock = clock;
         this.urlProvider = urlProvider;
@@ -135,7 +131,7 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
                     objectMapper.readerFor(InstallationRepositories.class).readValue(installationRepositoriesReader);
             for (Repository repository : installationRepositories.getRepositories()) {
                 if (projectPath.equals(repository.getFullName())) {
-                    return Optional.of(new RepositoryAuthenticationToken(repository.getNodeId(), appToken.getToken(), repository.getHtmlUrl()));
+                    return Optional.of(new RepositoryAuthenticationToken(repository.getNodeId(), appToken.getToken(), repository.getHtmlUrl(), repository.getName(), repository.getOwner().getLogin()));
                 }
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2022 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,6 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DiscussionAwarePullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -61,12 +60,12 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
 
     private static final Pattern NOTE_MARKDOWN_LEGACY_SEE_LINK_PATTERN = Pattern.compile("^\\[See in SonarQube]\\((.*?)\\)$");
     private final AzureDevopsClientFactory azureDevopsClientFactory;
-    private final FormatterFactory formatterFactory;
+    private final MarkdownFormatterFactory markdownFormatterFactory;
 
-    public AzureDevOpsPullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, AzureDevopsClientFactory azureDevopsClientFactory) {
+    public AzureDevOpsPullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, AzureDevopsClientFactory azureDevopsClientFactory, MarkdownFormatterFactory markdownFormatterFactory) {
         super(server, scmInfoRepository);
         this.azureDevopsClientFactory = azureDevopsClientFactory;
-        this.formatterFactory = new MarkdownFormatterFactory();
+        this.markdownFormatterFactory = markdownFormatterFactory;
     }
 
     @Override
@@ -140,7 +139,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     @Override
     protected void submitCommitNoteForIssue(AzureDevopsClient client, PullRequest pullRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String filePath,
                                             AnalysisDetails analysis) {
-        String issueSummary = analysis.createAnalysisIssueSummary(issue, formatterFactory);
+        String issueSummary = analysis.createAnalysisIssueSummary(issue, markdownFormatterFactory);
         DbIssues.Locations location = issue.getIssue().getLocations();
 
         try {
@@ -166,7 +165,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     @Override
     protected void submitSummaryNote(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis) {
         try {
-            String summaryCommentBody = analysis.createAnalysisSummary(formatterFactory);
+            String summaryCommentBody = analysis.createAnalysisSummary(markdownFormatterFactory);
             CreateCommentRequest comment = new CreateCommentRequest(summaryCommentBody);
             CreateCommentThreadRequest commentThread = new CreateCommentThreadRequest(null, Collections.singletonList(comment), CommentThreadStatus.ACTIVE);
             CommentThread summaryComment = client.createThread(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), commentThread);
