@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -237,7 +237,7 @@ public class AnalysisDetails {
                                          new Paragraph(new Text(String.format("**Project ID:** %s", project.getKey()))),
                                          new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
 
-        return formatterFactory.documentFormatter().format(document, formatterFactory);
+        return formatterFactory.documentFormatter().format(document);
     }
 
     public String createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, FormatterFactory formatterFactory) {
@@ -260,7 +260,7 @@ public class AnalysisDetails {
                 new Paragraph(new Text(String.format("**Project ID:** %s **Issue ID:** %s", project.getKey(), issue.key()))),
                 new Paragraph(new Link(getIssueUrl(issue), new Text("View in SonarQube")))
         );
-        return formatterFactory.documentFormatter().format(document, formatterFactory);
+        return formatterFactory.documentFormatter().format(document);
     }
 
     public String getBaseImageUrl() {
