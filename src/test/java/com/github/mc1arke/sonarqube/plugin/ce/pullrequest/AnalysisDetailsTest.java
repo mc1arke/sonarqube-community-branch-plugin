@@ -301,14 +301,14 @@ public class AnalysisDetailsTest {
                                     project, configuration, "http://localhost:9000", scannerContext);
 
         Formatter<Document> formatter = mock(Formatter.class);
-        doReturn("formatted content").when(formatter).format(any(), any());
+        doReturn("formatted content").when(formatter).format(any());
         FormatterFactory formatterFactory = mock(FormatterFactory.class);
         doReturn(formatter).when(formatterFactory).documentFormatter();
 
         assertEquals("formatted content", testCase.createAnalysisSummary(formatterFactory));
 
         ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
-        verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
+        verify(formatter).format(documentArgumentCaptor.capture());
 
         Document expectedDocument = new Document(new Paragraph(new Image("Failed",
                                                                          "http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/failed.svg?sanitize=true")),
@@ -413,14 +413,14 @@ public class AnalysisDetailsTest {
                                     project, configuration, "http://localhost:9000", scannerContext);
 
         Formatter<Document> formatter = mock(Formatter.class);
-        doReturn("formatted content").when(formatter).format(any(), any());
+        doReturn("formatted content").when(formatter).format(any());
         FormatterFactory formatterFactory = mock(FormatterFactory.class);
         doReturn(formatter).when(formatterFactory).documentFormatter();
 
         assertEquals("formatted content", testCase.createAnalysisSummary(formatterFactory));
 
         ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
-        verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
+        verify(formatter).format(documentArgumentCaptor.capture());
 
         Document expectedDocument = new Document(new Paragraph(new Image("Passed",
                                                                          "http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/passed.svg?sanitize=true")),
@@ -521,14 +521,14 @@ public class AnalysisDetailsTest {
                                     project, configuration, "http://localhost:9000", scannerContext);
 
         Formatter<Document> formatter = mock(Formatter.class);
-        doReturn("formatted content").when(formatter).format(any(), any());
+        doReturn("formatted content").when(formatter).format(any());
         FormatterFactory formatterFactory = mock(FormatterFactory.class);
         doReturn(formatter).when(formatterFactory).documentFormatter();
 
         assertEquals("formatted content", testCase.createAnalysisSummary(formatterFactory));
 
         ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
-        verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
+        verify(formatter).format(documentArgumentCaptor.capture());
 
         Document expectedDocument = new Document(new Paragraph(
                 new Image("Passed", "http://host.name/path/checks/QualityGateBadge/passed.svg?sanitize=true")),
@@ -620,14 +620,14 @@ public class AnalysisDetailsTest {
                                     project, configuration, "http://localhost:9000", scannerContext);
 
         Formatter<Document> formatter = mock(Formatter.class);
-        doReturn("formatted content").when(formatter).format(any(), any());
+        doReturn("formatted content").when(formatter).format(any());
         FormatterFactory formatterFactory = mock(FormatterFactory.class);
         doReturn(formatter).when(formatterFactory).documentFormatter();
 
         assertEquals("formatted content", testCase.createAnalysisSummary(formatterFactory));
 
         ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
-        verify(formatter).format(documentArgumentCaptor.capture(), eq(formatterFactory));
+        verify(formatter).format(documentArgumentCaptor.capture());
 
         Document expectedDocument = new Document(new Paragraph(new Image("Passed",
                                                                          "http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/passed.svg?sanitize=true")),
@@ -841,7 +841,7 @@ public class AnalysisDetailsTest {
 
         ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
         analysisDetails.createAnalysisIssueSummary(componentIssue, formatterFactory);
-        verify(documentFormatter).format(documentArgumentCaptor.capture(), any());
+        verify(documentFormatter).format(documentArgumentCaptor.capture());
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(
                 new Document(

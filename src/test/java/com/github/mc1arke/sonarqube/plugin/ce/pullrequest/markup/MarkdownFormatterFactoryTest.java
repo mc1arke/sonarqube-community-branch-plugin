@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,84 +18,92 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MarkdownFormatterFactoryTest {
+class MarkdownFormatterFactoryTest {
 
     @Test
-    public void testDocumentFormatter() {
+    void testDocumentFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
-        assertEquals("Text", testCase.documentFormatter().format(new Document(new Text("Text")), testCase));
+        assertEquals("# Heading 1" + System.lineSeparator() +
+                "Text" + System.lineSeparator()  + System.lineSeparator() +
+                "- List Item 1"  + System.lineSeparator() +
+                "- [Link](url)"  + System.lineSeparator() + System.lineSeparator() +
+                "![alt](url)", testCase.documentFormatter().format(new Document(new Heading(1, new Text("Heading 1")), new Paragraph(new Text("Text")), new List(List.Style.BULLET, new ListItem(new Text("List Item 1")), new ListItem(new Link("url", new Text("Link")))), new Image("alt", "url"))));
     }
 
     @Test
-    public void testHeadingFormatter() {
+    void testHeadingFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
         assertEquals("## Text" + System.lineSeparator(),
-                     testCase.headingFormatter().format(new Heading(2, new Text("Text")), testCase));
+                     testCase.headingFormatter().format(new Heading(2, new Text("Text"))));
     }
 
     @Test
-    public void testImageFormatter() {
+    void testImageFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
-        assertEquals("![alt](source)", testCase.imageFormatter().format(new Image("alt", "source"), testCase));
+        assertEquals("![alt](source)", testCase.imageFormatter().format(new Image("alt", "source")));
     }
 
     @Test
-    public void testLinkFormatter() {
+    void testLinkFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
-        assertEquals("[Text](http://url)", testCase.linkFormatter().format(new Link("http://url", new Text("Text")), testCase));
-        assertEquals("[http://url](http://url)", testCase.linkFormatter().format(new Link("http://url"), testCase));
+        assertEquals("[Text](http://url)", testCase.linkFormatter().format(new Link("http://url", new Text("Text"))));
+        assertEquals("[http://url](http://url)", testCase.linkFormatter().format(new Link("http://url")));
     }
 
     @Test
-    public void testListFormatter() {
+    void testListFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
         assertEquals("- List Item 1" + System.lineSeparator() + System.lineSeparator(), testCase.listFormatter()
-                .format(new List(List.Style.BULLET, new ListItem(new Text("List Item 1"))), testCase));
+                .format(new List(List.Style.BULLET, new ListItem(new Text("List Item 1")))));
     }
 
     @Test
-    public void testListFormatterInvalidType() {
+    void testListFormatterInvalidType() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
+        List list = new List(null, new ListItem(new Text("List Item 1")));
+        Formatter<List> listFormatter = testCase.listFormatter();
         assertThatThrownBy(
-                () -> testCase.listFormatter().format(new List(null, new ListItem(new Text("List Item 1"))), testCase))
-                .isExactlyInstanceOf(IllegalArgumentException.class).hasMessage("Unknown list type: null");
+                () -> listFormatter.format(list))
+                .isExactlyInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Unknown list type: null");
     }
 
     @Test
-    public void testListItemFormatter() {
+    void testListItemFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
-        assertEquals("Text", testCase.listItemFormatter().format(new ListItem(new Text("Text")), testCase));
+        assertEquals("Text", testCase.listItemFormatter().format(new ListItem(new Text("Text"))));
     }
 
     @Test
-    public void testParagraphFormatter() {
+    void testParagraphFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
         assertEquals("Text" + System.lineSeparator() + System.lineSeparator(),
-                     testCase.paragraphFormatter().format(new Paragraph(new Text("Text")), testCase));
+                     testCase.paragraphFormatter().format(new Paragraph(new Text("Text"))));
     }
 
     @Test
-    public void testTextFormatter() {
+    void testTextFormatter() {
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
-        assertEquals("Text", testCase.textFormatter().format(new Text("Text"), testCase));
+        assertEquals("Text", testCase.textFormatter().format(new Text("Text")));
     }
 
     @Test
-    public void testContentTextFormatterEscapedHtml(){
+    void testContentTextFormatterEscapedHtml(){
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
-        assertEquals("&lt;p&gt; no html allowed", testCase.textFormatter().format(new Text("<p> no html allowed"), testCase));
-        assertEquals("no html &lt;p&gt; allowed", testCase.textFormatter().format(new Text("no html <p> allowed"), testCase));
-        assertEquals("&lt;/i&gt;no html &lt;p&gt; allowed&lt;i&gt;", testCase.textFormatter().format(new Text("</i>no html <p> allowed<i>"), testCase));
+        assertEquals("&lt;p&gt; no html allowed", testCase.textFormatter().format(new Text("<p> no html allowed")));
+        assertEquals("no html &lt;p&gt; allowed", testCase.textFormatter().format(new Text("no html <p> allowed")));
+        assertEquals("&lt;/i&gt;no html &lt;p&gt; allowed&lt;i&gt;", testCase.textFormatter().format(new Text("</i>no html <p> allowed<i>")));
     }
 
     @Test
-    public void testContentTextFormatterTrimWhitespaceAtBeginAndEnd(){
+    void testContentTextFormatterTrimWhitespaceAtBeginAndEnd(){
         MarkdownFormatterFactory testCase = new MarkdownFormatterFactory();
-        assertEquals("", testCase.textFormatter().format(new Text("             "), testCase));
+        assertEquals("", testCase.textFormatter().format(new Text("             ")));
     }
 }
