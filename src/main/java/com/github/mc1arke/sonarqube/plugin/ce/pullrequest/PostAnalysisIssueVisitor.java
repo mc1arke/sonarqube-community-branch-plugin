@@ -25,13 +25,12 @@ import org.sonar.ce.task.projectanalysis.issue.IssueVisitor;
 import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.protobuf.DbIssues;
 
+import javax.annotation.CheckForNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import javax.annotation.CheckForNull;
 
 public class PostAnalysisIssueVisitor extends IssueVisitor {
 
@@ -39,9 +38,7 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
     @Override
     public void onIssue(Component component, DefaultIssue defaultIssue) {
-        collectedIssues.add(new ComponentIssue(component, Optional.ofNullable(defaultIssue)
-                .map(LightIssue::new)
-                .orElse(null)));
+        collectedIssues.add(new ComponentIssue(component, new LightIssue(defaultIssue)));
     }
 
     public List<ComponentIssue> getIssues() {
@@ -65,6 +62,13 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
         public LightIssue getIssue() {
             return issue;
+        }
+
+        public Optional<String> getScmPath() {
+            if (Component.Type.FILE == component.getType()) {
+                return component.getReportAttributes().getScmPath();
+            }
+            return Optional.empty();
         }
     }
 

@@ -345,7 +345,7 @@ class GraphqlGithubClientTest {
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         when(analysisDetails.getScmReportableIssues()).thenReturn(issues);
-        when(analysisDetails.getBranchName()).thenReturn("13579");
+        when(analysisDetails.getPullRequestId()).thenReturn("13579");
         when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
         when(analysisDetails.getAnalysisDate()).thenReturn(new Date());
 

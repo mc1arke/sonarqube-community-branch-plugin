@@ -29,6 +29,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.rule.Severity;
 import org.sonar.db.alm.setting.ALM;
@@ -46,12 +48,14 @@ import java.util.stream.Collectors;
 public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
     private final GithubClientFactory githubClientFactory;
+    private final ReportGenerator reportGenerator;
     private final MarkdownFormatterFactory markdownFormatterFactory;
     private final Clock clock;
 
-    public GithubPullRequestDecorator(GithubClientFactory githubClientFactory,
+    public GithubPullRequestDecorator(GithubClientFactory githubClientFactory, ReportGenerator reportGenerator,
                                       MarkdownFormatterFactory markdownFormatterFactory, Clock clock) {
         this.githubClientFactory = githubClientFactory;
+        this.reportGenerator = reportGenerator;
         this.markdownFormatterFactory = markdownFormatterFactory;
         this.clock = clock;
     }
@@ -59,15 +63,17 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
     @Override
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysisDetails, AlmSettingDto almSettingDto,
                                           ProjectAlmSettingDto projectAlmSettingDto) {
+        AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysisDetails);
+
         CheckRunDetails checkRunDetails = CheckRunDetails.builder()
                 .withAnnotations(analysisDetails.getScmReportableIssues().stream()
-                        .map(issue -> createAnnotation(issue, analysisDetails))
+                        .map(GithubPullRequestDecorator::createAnnotation)
                         .collect(Collectors.toList()))
                 .withCheckConclusionState(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? CheckConclusionState.SUCCESS : CheckConclusionState.FAILURE)
                 .withCommitId(analysisDetails.getCommitSha())
-                .withSummary(analysisDetails.createAnalysisSummary(markdownFormatterFactory))
-                .withDashboardUrl(analysisDetails.getDashboardUrl())
-                .withPullRequestId(Integer.parseInt(analysisDetails.getBranchName()))
+                .withSummary(analysisSummary.format(markdownFormatterFactory))
+                .withDashboardUrl(analysisSummary.getDashboardUrl())
+                .withPullRequestId(Integer.parseInt(analysisDetails.getPullRequestId()))
                 .withStartTime(analysisDetails.getAnalysisDate().toInstant().atZone(ZoneId.of("UTC")))
                 .withEndTime(ZonedDateTime.now(clock))
                 .withExternalId(analysisDetails.getAnalysisId())
@@ -96,10 +102,10 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
         return Collections.singletonList(ALM.GITHUB);
     }
 
-    private static Annotation createAnnotation(PostAnalysisIssueVisitor.ComponentIssue componentIssue, AnalysisDetails analysisDetails) {
+    private static Annotation createAnnotation(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
         return Annotation.builder()
                 .withLine(Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0))
-                .withScmPath(analysisDetails.getSCMPathForIssue(componentIssue).orElseThrow())
+                .withScmPath(componentIssue.getScmPath().orElseThrow())
                 .withMessage(Optional.ofNullable(componentIssue.getIssue().getMessage()).orElseThrow().replace("\\","\\\\").replace("\"", "\\\""))
                 .withSeverity(mapToGithubAnnotationLevel(componentIssue.getIssue().severity()))
                 .build();

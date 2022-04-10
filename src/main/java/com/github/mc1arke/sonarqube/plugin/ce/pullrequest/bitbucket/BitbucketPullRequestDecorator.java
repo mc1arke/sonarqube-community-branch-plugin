@@ -27,13 +27,15 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsight
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.google.common.annotations.VisibleForTesting;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
-import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.utils.log.Logger;
@@ -43,7 +45,6 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -64,9 +65,11 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
     private static final DecorationResult DEFAULT_DECORATION_RESULT = DecorationResult.builder().build();
 
     private final BitbucketClientFactory bitbucketClientFactory;
+    private final ReportGenerator reportGenerator;
 
-    public BitbucketPullRequestDecorator(BitbucketClientFactory bitbucketClientFactory) {
+    public BitbucketPullRequestDecorator(BitbucketClientFactory bitbucketClientFactory, ReportGenerator reportGenerator) {
         this.bitbucketClientFactory = bitbucketClientFactory;
+        this.reportGenerator = reportGenerator;
     }
 
     @Override
@@ -78,12 +81,14 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                 return DEFAULT_DECORATION_RESULT;
             }
 
+            AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysisDetails);
+
             CodeInsightsReport codeInsightsReport = client.createCodeInsightsReport(
-                    toReport(client, analysisDetails),
-                    reportDescription(analysisDetails),
+                    toReport(client, analysisSummary),
+                    reportDescription(analysisDetails, analysisSummary),
                     analysisDetails.getAnalysisDate().toInstant(),
-                    analysisDetails.getDashboardUrl(),
-                    format("%s/common/icon.png", analysisDetails.getBaseImageUrl()),
+                    analysisSummary.getDashboardUrl(),
+                    analysisSummary.getSummaryImageUrl(),
                     analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? ReportStatus.PASSED : ReportStatus.FAILED
             );
 
@@ -102,16 +107,14 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
         return Arrays.asList(ALM.BITBUCKET, ALM.BITBUCKET_CLOUD);
     }
 
-    private List<ReportData> toReport(BitbucketClient client, AnalysisDetails analysisDetails) {
-        Map<RuleType, Long> rules = analysisDetails.countRuleByType();
-
+    private static List<ReportData> toReport(BitbucketClient client, AnalysisSummary analysisSummary) {
         List<ReportData> reportData = new ArrayList<>();
-        reportData.add(reliabilityReport(rules.get(RuleType.BUG)));
-        reportData.add(new ReportData("Code coverage", new DataValue.Percentage(newCoverage(analysisDetails))));
-        reportData.add(securityReport(rules.get(RuleType.VULNERABILITY), rules.get(RuleType.SECURITY_HOTSPOT)));
-        reportData.add(new ReportData("Duplication", new DataValue.Percentage(newDuplication(analysisDetails))));
-        reportData.add(maintainabilityReport(rules.get(RuleType.CODE_SMELL)));
-        reportData.add(new ReportData("Analysis details", client.createLinkDataValue(analysisDetails.getDashboardUrl())));
+        reportData.add(reliabilityReport(analysisSummary.getBugCount()));
+        reportData.add(new ReportData("Code coverage", new DataValue.Percentage(analysisSummary.getNewCoverage())));
+        reportData.add(securityReport(analysisSummary.getVulnerabilityCount(), analysisSummary.getSecurityHotspotCount()));
+        reportData.add(new ReportData("Duplication", new DataValue.Percentage(analysisSummary.getNewDuplications())));
+        reportData.add(maintainabilityReport(analysisSummary.getCodeSmellCount()));
+        reportData.add(new ReportData("Analysis details", client.createLinkDataValue(analysisSummary.getDashboardUrl())));
 
         return reportData;
     }
@@ -128,10 +131,11 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                     .contains(i.getIssue().resolution())))
                 .sorted(Comparator.comparing(a -> Severity.ALL.indexOf(a.getIssue().severity())))
                 .map(componentIssue -> {
-                    String path = componentIssue.getComponent().getReportAttributes().getScmPath().get();
+                    String path = componentIssue.getComponent().getReportAttributes().getScmPath().orElseThrow();
+                    AnalysisIssueSummary analysisIssueSummary = reportGenerator.createAnalysisIssueSummary(componentIssue, analysisDetails);
                     return client.createCodeInsightsAnnotation(componentIssue.getIssue().key(),
                             Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0),
-                            analysisDetails.getIssueUrl(componentIssue.getIssue()),
+                            analysisIssueSummary.getIssueUrl(),
                             componentIssue.getIssue().getMessage(),
                             path,
                             toBitbucketSeverity(componentIssue.getIssue().severity()),
@@ -209,28 +213,11 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
         return new ReportData("Maintainability", new DataValue.Text(format("%d %s", codeSmells, description)));
     }
 
-    private static String reportDescription(AnalysisDetails details) {
+    private static String reportDescription(AnalysisDetails details, AnalysisSummary analysisSummary) {
         String header = details.getQualityGateStatus() == QualityGate.Status.OK ? "Quality Gate passed" : "Quality Gate failed";
-        String body = details.findFailedConditions().stream()
-                .map(AnalysisDetails::format)
+        String body = analysisSummary.getFailedQualityGateConditions().stream()
                 .map(s -> format("- %s", s))
                 .collect(Collectors.joining(System.lineSeparator()));
         return format("%s%n%s", header, body);
-    }
-
-    private static BigDecimal newCoverage(AnalysisDetails details) {
-        return details.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
-                .filter(condition -> condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
-                .map(QualityGate.Condition::getValue)
-                .map(BigDecimal::new)
-                .orElse(BigDecimal.ZERO);
-    }
-
-    private static BigDecimal newDuplication(AnalysisDetails details) {
-        return details.findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
-                .filter(condition -> condition.getStatus() != QualityGate.EvaluationStatus.NO_VALUE)
-                .map(QualityGate.Condition::getValue)
-                .map(BigDecimal::new)
-                .orElse(BigDecimal.ZERO);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,12 +18,15 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.sonar.api.issue.Issue;
-import org.sonar.api.platform.Server;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.AlmSettingDto;
@@ -32,6 +35,8 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,20 +50,16 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
             "This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being being closed automatically. " +
                     "Please manually resolve this discussion once the other comments have been reviewed.";
 
-    private static final List<String> OPEN_ISSUE_STATUSES =
-            Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
-                    .collect(Collectors.toList());
-
     private static final String VIEW_IN_SONARQUBE_LABEL = "View in SonarQube";
     private static final Pattern NOTE_MARKDOWN_VIEW_LINK_PATTERN = Pattern.compile("^\\[" + VIEW_IN_SONARQUBE_LABEL + "]\\((.*?)\\)$");
 
-    private final Server server;
     private final ScmInfoRepository scmInfoRepository;
+    private final ReportGenerator reportGenerator;
 
-    protected DiscussionAwarePullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository) {
+    protected DiscussionAwarePullRequestDecorator(ScmInfoRepository scmInfoRepository, ReportGenerator reportGenerator) {
         super();
-        this.server = server;
         this.scmInfoRepository = scmInfoRepository;
+        this.reportGenerator = reportGenerator;
     }
 
     @Override
@@ -68,14 +69,11 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
         
         P pullRequest = getPullRequest(client, almSettingDto, projectAlmSettingDto, analysis);
         U user = getCurrentUser(client);
-        List<PostAnalysisIssueVisitor.ComponentIssue> openSonarqubeIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream()
-                .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus()))
-                .collect(Collectors.toList());
+        List<PostAnalysisIssueVisitor.ComponentIssue> openSonarqubeIssues = analysis.getScmReportableIssues();
 
-        List<Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>>> currentProjectSonarqueComments = findOpenSonarqubeComments(client,
+        List<Triple<D, N, Optional<ProjectIssueIdentifier>>> currentProjectSonarqueComments = findOpenSonarqubeComments(client,
                 pullRequest,
-                user,
-                analysis)
+                user)
                 .stream()
                 .filter(comment -> isCommentFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
                 .collect(Collectors.toList());
@@ -90,7 +88,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
         List<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> uncommentedIssues = findIssuesWithoutComments(openSonarqubeIssues,
                 commentKeysForOpenComments)
                 .stream()
-                .map(issue -> loadScmPathsForIssues(issue, analysis))
+                .map(DiscussionAwarePullRequestDecorator::loadScmPathsForIssues)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(issue -> isIssueFromCommitInCurrentRequest(issue.getLeft(), commitIds, scmInfoRepository))
@@ -100,9 +98,12 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 pullRequest,
                 issue.getLeft(),
                 issue.getRight(),
-                analysis));
-        submitSummaryNote(client, pullRequest, analysis);
-        submitPipelineStatus(client, pullRequest, analysis, server.getPublicRootUrl());
+                analysis,
+                reportGenerator.createAnalysisIssueSummary(issue.getLeft(), analysis)));
+
+        AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysis);
+        submitSummaryNote(client, pullRequest, analysis, analysisSummary);
+        submitPipelineStatus(client, pullRequest, analysis, analysisSummary);
 
         DecorationResult.Builder builder = DecorationResult.builder();
         createFrontEndUrl(pullRequest, analysis).ifPresent(builder::withPullRequestUrl);
@@ -119,10 +120,10 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
     protected abstract List<String> getCommitIdsForPullRequest(C client, P pullRequest);
 
-    protected abstract void submitPipelineStatus(C client, P pullRequest, AnalysisDetails analysis, String sonarqubeRootUrl);
+    protected abstract void submitPipelineStatus(C client, P pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary);
 
     protected abstract void submitCommitNoteForIssue(C client, P pullRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String filePath,
-                                                     AnalysisDetails analysis);
+                                                     AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary);
 
     protected abstract String getNoteContent(C client, N note);
 
@@ -136,7 +137,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
     protected abstract void resolveDiscussion(C client, D discussion, P pullRequest);
 
-    protected abstract void submitSummaryNote(C client, P pullRequest, AnalysisDetails analysis);
+    protected abstract void submitSummaryNote(C client, P pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary);
 
     protected abstract List<D> getDiscussions(C client, P pullRequest);
 
@@ -150,10 +151,9 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .collect(Collectors.toList());
     }
 
-    private static Optional<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> loadScmPathsForIssues(PostAnalysisIssueVisitor.ComponentIssue componentIssue,
-                                                                                                         AnalysisDetails analysis) {
+    private static Optional<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> loadScmPathsForIssues(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
         return Optional.of(componentIssue)
-                .map(issue -> new ImmutablePair<>(issue, analysis.getSCMPathForIssue(issue)))
+                .map(issue -> new ImmutablePair<>(issue, issue.getScmPath()))
                 .filter(pair -> pair.getRight().isPresent())
                 .map(pair -> new ImmutablePair<>(pair.getLeft(), pair.getRight().get()));
     }
@@ -171,9 +171,8 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .isPresent();
     }
 
-    private List<Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>>> findOpenSonarqubeComments(C client, P pullRequest,
-                                                                           U currentUser,
-                                                                           AnalysisDetails analysisDetails) {
+    private List<Triple<D, N, Optional<ProjectIssueIdentifier>>> findOpenSonarqubeComments(C client, P pullRequest,
+                                                                                           U currentUser) {
         return getDiscussions(client, pullRequest).stream()
                 .map(discussion -> {
                     List<N> commentsForDiscussion = getNotesForDiscussion(client, discussion);
@@ -181,7 +180,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                         .findFirst()
                         .filter(note -> isNoteFromCurrentUser(note, currentUser))
                         .filter(note -> !isResolved(client, discussion, commentsForDiscussion, currentUser))
-                        .map(note -> new ImmutableTriple<>(discussion, note, parseIssueDetails(client, note, analysisDetails)));
+                        .map(note -> new ImmutableTriple<>(discussion, note, parseIssueDetails(client, note)));
                 })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -189,7 +188,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
     }
 
     private List<String> closeOldDiscussionsAndExtractRemainingKeys(C client, U currentUser,
-                                                                    List<Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>>> openSonarqubeComments,
+                                                                    List<Triple<D, N, Optional<ProjectIssueIdentifier>>> openSonarqubeComments,
                                                                     List<PostAnalysisIssueVisitor.ComponentIssue> openIssues,
                                                                     P pullRequest) {
         List<String> openIssueKeys = openIssues.stream()
@@ -198,8 +197,8 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
         List<String> remainingCommentKeys = new ArrayList<>();
 
-        for (Triple<D, N, Optional<AnalysisDetails.ProjectIssueIdentifier>> openSonarqubeComment : openSonarqubeComments) {
-            Optional<AnalysisDetails.ProjectIssueIdentifier> noteIdentifier = openSonarqubeComment.getRight();
+        for (Triple<D, N, Optional<ProjectIssueIdentifier>> openSonarqubeComment : openSonarqubeComments) {
+            Optional<ProjectIssueIdentifier> noteIdentifier = openSonarqubeComment.getRight();
             D discussion = openSonarqubeComment.getLeft();
             if (noteIdentifier.isEmpty()) {
                 continue;
@@ -233,15 +232,15 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
     }
 
-    protected Optional<AnalysisDetails.ProjectIssueIdentifier> parseIssueDetails(C client, N note, AnalysisDetails analysisDetails) {
-        return parseIssueDetails(client, note, analysisDetails, VIEW_IN_SONARQUBE_LABEL, NOTE_MARKDOWN_VIEW_LINK_PATTERN);
+    protected Optional<ProjectIssueIdentifier> parseIssueDetails(C client, N note) {
+        return parseIssueDetails(client, note, VIEW_IN_SONARQUBE_LABEL, NOTE_MARKDOWN_VIEW_LINK_PATTERN);
     }
 
-    protected Optional<AnalysisDetails.ProjectIssueIdentifier> parseIssueDetails(C client, N note, AnalysisDetails analysisDetails, String label, Pattern pattern) {
+    protected Optional<ProjectIssueIdentifier> parseIssueDetails(C client, N note, String label, Pattern pattern) {
         try (BufferedReader reader = new BufferedReader(new StringReader(getNoteContent(client, note)))) {
             return reader.lines()
                     .filter(line -> line.contains(label))
-                    .map(line -> parseIssueLineDetails(line, analysisDetails, pattern))
+                    .map(line -> parseIssueLineDetails(line, pattern))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .findFirst();
@@ -250,18 +249,67 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
         }
     }
 
-    private static Optional<AnalysisDetails.ProjectIssueIdentifier> parseIssueLineDetails(String noteLine, AnalysisDetails analysisDetails, Pattern pattern) {
+    private static Optional<ProjectIssueIdentifier> parseIssueLineDetails(String noteLine, Pattern pattern) {
         Matcher identifierMatcher = pattern.matcher(noteLine);
 
         if (identifierMatcher.matches()) {
-            return analysisDetails.parseIssueIdFromUrl(identifierMatcher.group(1));
+            return parseIssueIdFromUrl(identifierMatcher.group(1));
         } else {
             return Optional.empty();
         }
     }
 
-    private static boolean isCommentFromCurrentProject(Triple<?, ?, Optional<AnalysisDetails.ProjectIssueIdentifier>> comment, String projectId) {
+    private static Optional<ProjectIssueIdentifier> parseIssueIdFromUrl(String issueUrl) {
+        URI url = URI.create(issueUrl);
+        List<NameValuePair> parameters = URLEncodedUtils.parse(url, StandardCharsets.UTF_8);
+        Optional<String> optionalProjectId = parameters.stream()
+                .filter(parameter -> "id".equals(parameter.getName()))
+                .map(NameValuePair::getValue)
+                .findFirst();
+
+        if (optionalProjectId.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String projectId = optionalProjectId.get();
+
+        if (url.getPath().endsWith("/dashboard")) {
+            return Optional.of(new ProjectIssueIdentifier(projectId, "decorator-summary-comment"));
+        } else if (url.getPath().endsWith("security_hotspots")) {
+            return parameters.stream()
+                    .filter(parameter -> "hotspots".equals(parameter.getName()))
+                    .map(NameValuePair::getValue)
+                    .findFirst()
+                    .map(issueId -> new ProjectIssueIdentifier(projectId, issueId));
+        } else {
+            return parameters.stream()
+                    .filter(parameter -> "issues".equals(parameter.getName()))
+                    .map(NameValuePair::getValue)
+                    .findFirst()
+                    .map(issueId -> new ProjectIssueIdentifier(projectId, issueId));
+        }
+    }
+
+    private static boolean isCommentFromCurrentProject(Triple<?, ?, Optional<ProjectIssueIdentifier>> comment, String projectId) {
         return comment.getRight().filter(projectIssueIdentifier -> projectId.equals(projectIssueIdentifier.getProjectKey())).isPresent();
     }
 
+    protected static class ProjectIssueIdentifier {
+
+        private final String projectKey;
+        private final String issueKey;
+
+        private ProjectIssueIdentifier(String projectKey, String issueKey) {
+            this.projectKey = projectKey;
+            this.issueKey = issueKey;
+        }
+
+        public String getProjectKey() {
+            return projectKey;
+        }
+
+        public String getIssueKey() {
+            return issueKey;
+        }
+    }
 }
