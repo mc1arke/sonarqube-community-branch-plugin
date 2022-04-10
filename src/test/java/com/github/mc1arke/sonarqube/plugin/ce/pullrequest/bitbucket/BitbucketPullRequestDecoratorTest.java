@@ -6,13 +6,15 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationU
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
-import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
@@ -22,10 +24,8 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,9 +48,10 @@ class BitbucketPullRequestDecoratorTest {
     private static final String IMAGE_URL = "https://image-url";
 
     private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+    private final ReportGenerator reportGenerator = mock(ReportGenerator.class);
     private final BitbucketClient client = mock(BitbucketClient.class);
     private final BitbucketClientFactory bitbucketClientFactory = mock(BitbucketClientFactory.class);
-    private final BitbucketPullRequestDecorator underTest = new BitbucketPullRequestDecorator(bitbucketClientFactory);
+    private final BitbucketPullRequestDecorator underTest = new BitbucketPullRequestDecorator(bitbucketClientFactory, reportGenerator);
 
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -94,17 +95,7 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisDetails.getCommitSha()).thenReturn(COMMIT);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
 
-        Map<RuleType, Long> ruleCount = new HashMap<>();
-        ruleCount.put(RuleType.CODE_SMELL, 1L);
-        ruleCount.put(RuleType.VULNERABILITY, 2L);
-        ruleCount.put(RuleType.SECURITY_HOTSPOT, 3L);
-        ruleCount.put(RuleType.BUG, 4L);
-
-        when(analysisDetails.countRuleByType()).thenReturn(ruleCount);
-        when(analysisDetails.findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)).thenReturn(Optional.empty());
-        when(analysisDetails.findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)).thenReturn(Optional.empty());
         when(analysisDetails.getAnalysisDate()).thenReturn(Date.from(Instant.now()));
-        when(analysisDetails.getDashboardUrl()).thenReturn(DASHBOARD_URL);
 
         ReportAttributes reportAttributes = mock(ReportAttributes.class);
         when(reportAttributes.getScmPath()).thenReturn(Optional.of(ISSUE_PATH));
@@ -120,14 +111,21 @@ class BitbucketPullRequestDecoratorTest {
         when(defaultIssue.key()).thenReturn(ISSUE_KEY);
         when(defaultIssue.type()).thenReturn(RuleType.BUG);
         when(defaultIssue.getMessage()).thenReturn(ISSUE_MESSAGE);
-        when(analysisDetails.getIssueUrl(defaultIssue)).thenReturn(ISSUE_LINK);
-        when(analysisDetails.getBaseImageUrl()).thenReturn(IMAGE_URL);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
         when(componentIssue.getComponent()).thenReturn(component);
 
-        when(analysisDetails.getScmReportableIssues()).thenReturn(Collections.singletonList(componentIssue));
+        AnalysisIssueSummary analysisIssueSummary = mock(AnalysisIssueSummary.class);
+        when(analysisIssueSummary.getIssueUrl()).thenReturn("https://issue-link");
+        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
+
+        AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
+        when(analysisSummary.getDashboardUrl()).thenReturn("https://dashboard-url");
+        when(analysisSummary.getSummaryImageUrl()).thenReturn("https://image-url/common/icon.png");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        when(analysisDetails.getScmReportableIssues()).thenReturn(List.of(componentIssue));
     }
 
 }

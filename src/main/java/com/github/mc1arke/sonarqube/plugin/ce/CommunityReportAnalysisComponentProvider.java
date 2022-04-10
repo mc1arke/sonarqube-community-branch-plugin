@@ -34,6 +34,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketPul
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabMergeRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.sonar.ce.task.projectanalysis.container.ReportAnalysisComponentProvider;
 
 import java.util.Arrays;
@@ -47,7 +48,7 @@ public class CommunityReportAnalysisComponentProvider implements ReportAnalysisC
     @Override
     public List<Object> getComponents() {
         return Arrays.asList(CommunityBranchLoaderDelegate.class, PullRequestPostAnalysisTask.class,
-                             PostAnalysisIssueVisitor.class, DefaultLinkHeaderReader.class,
+                             PostAnalysisIssueVisitor.class, DefaultLinkHeaderReader.class, ReportGenerator.class,
                              MarkdownFormatterFactory.class, DefaultGraphqlProvider.class, DefaultUrlConnectionProvider.class,
                              DefaultGithubClientFactory.class, RestApplicationAuthenticationProvider.class, GithubPullRequestDecorator.class,
                              HttpClientBuilderFactory.class, DefaultBitbucketClientFactory.class, BitbucketPullRequestDecorator.class,

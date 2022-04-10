@@ -28,6 +28,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -63,15 +65,17 @@ class GithubPullRequestDecoratorTest {
     private final GithubClient githubClient = mock(GithubClient.class);
     private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
     private final GithubClientFactory githubClientFactory = mock(GithubClientFactory.class);
+    private final ReportGenerator reportGenerator = mock(ReportGenerator.class);
     private final MarkdownFormatterFactory markdownFormatterFactory = mock(MarkdownFormatterFactory.class);
     private final Clock clock = Clock.fixed(Instant.ofEpochSecond(102030405), ZoneId.of("UTC"));
-    private final GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(githubClientFactory, markdownFormatterFactory, clock);
+    private final GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(githubClientFactory, reportGenerator, markdownFormatterFactory, clock);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+    private final AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
 
     @BeforeEach
     void setUp() {
-        doReturn("123").when(analysisDetails).getBranchName();
+        doReturn("123").when(analysisDetails).getPullRequestId();
         doReturn(Date.from(clock.instant())).when(analysisDetails).getAnalysisDate();
         doReturn("analysis-id").when(analysisDetails).getAnalysisId();
         doReturn("project-key").when(analysisDetails).getAnalysisProjectKey();
@@ -81,7 +85,7 @@ class GithubPullRequestDecoratorTest {
         doReturn(IntStream.range(0, 20).mapToObj(i -> {
             PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
             Component component = mock(Component.class);
-            doReturn(Optional.of("path" + i)).when(analysisDetails).getSCMPathForIssue(componentIssue);
+            doReturn(Optional.of("path" + i)).when(componentIssue).getScmPath();
             doReturn(component).when(componentIssue).getComponent();
             PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
             doReturn("issue message " + i).when(lightIssue).getMessage();
@@ -91,8 +95,9 @@ class GithubPullRequestDecoratorTest {
             return componentIssue;
         }).collect(Collectors.toList())).when(analysisDetails).getScmReportableIssues();
 
-        doReturn("dashboard-url").when(analysisDetails).getDashboardUrl();
-        doReturn("report summary").when(analysisDetails).createAnalysisSummary(any());
+        doReturn(analysisSummary).when(reportGenerator).createAnalysisSummary(any());
+        doReturn("dashboard-url").when(analysisSummary).getDashboardUrl();
+        doReturn("report summary").when(analysisSummary).format(any());
     }
 
     @Test
