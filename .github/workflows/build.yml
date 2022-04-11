@@ -68,7 +68,7 @@ jobs:
       -
         name: Archive artifact
         if: success() && matrix.java == '11'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: snapshot
           path: build/libs/*.jar
@@ -118,7 +118,7 @@ jobs:
       -
         name: Archive artifact
         if: success()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: release
           path: build/libs/*.jar
