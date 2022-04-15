@@ -103,6 +103,7 @@ public class GitlabMergeRequestDecoratorTest {
         when(analysisDetails.getBranchName()).thenReturn(Long.toString(MERGE_REQUEST_IID));
         when(mergeRequest.getIid()).thenReturn(MERGE_REQUEST_IID);
         when(mergeRequest.getSourceProjectId()).thenReturn(PROJECT_ID);
+        when(mergeRequest.getTargetProjectId()).thenReturn(PROJECT_ID);
         when(mergeRequest.getDiffRefs()).thenReturn(diffRefs);
         when(mergeRequest.getWebUrl()).thenReturn(MERGE_REQUEST_WEB_URL);
         when(diffRefs.getBaseSha()).thenReturn(BASE_SHA);
