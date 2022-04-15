@@ -107,7 +107,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     protected List<String> getCommitIdsForPullRequest(GitlabClient gitlabClient, MergeRequest mergeRequest) {
         try {
-            return gitlabClient.getMergeRequestCommits(mergeRequest.getSourceProjectId(), mergeRequest.getIid()).stream()
+            return gitlabClient.getMergeRequestCommits(mergeRequest.getTargetProjectId(), mergeRequest.getIid()).stream()
                     .map(Commit::getId)
                     .collect(Collectors.toList());
         } catch (IOException ex) {
@@ -137,7 +137,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
                     coverage,
                     pipelineId);
 
-            gitlabClient.setMergeRequestPipelineStatus(mergeRequest.getSourceProjectId(), analysis.getCommitSha(), pipelineStatus);
+            gitlabClient.setMergeRequestPipelineStatus(mergeRequest.getTargetProjectId(), analysis.getCommitSha(), pipelineStatus);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not update pipeline status in Gitlab", ex);
         }
@@ -150,7 +150,8 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
         Integer line = Optional.ofNullable(issue.getIssue().getLine()).orElseThrow(() -> new IllegalStateException("No line is associated with this issue"));
 
         try {
-            client.addMergeRequestDiscussion(mergeRequest.getSourceProjectId(), mergeRequest.getIid(), new CommitNote(issueSummary,
+            client.addMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(),
+                    new CommitNote(issueSummary,
                     mergeRequest.getDiffRefs().getBaseSha(),
                     mergeRequest.getDiffRefs().getStartSha(),
                     mergeRequest.getDiffRefs().getHeadSha(),
@@ -166,11 +167,11 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     protected void submitSummaryNote(GitlabClient client, MergeRequest mergeRequest, AnalysisDetails analysis) {
         try {
             String summaryCommentBody = analysis.createAnalysisSummary(formatterFactory);
-            Discussion summaryComment = client.addMergeRequestDiscussion(mergeRequest.getSourceProjectId(),
+            Discussion summaryComment = client.addMergeRequestDiscussion(mergeRequest.getTargetProjectId(),
                     mergeRequest.getIid(),
                     new MergeRequestNote(summaryCommentBody));
             if (analysis.getQualityGateStatus() == QualityGate.Status.OK) {
-                client.resolveMergeRequestDiscussion(mergeRequest.getSourceProjectId(), mergeRequest.getIid(), summaryComment.getId());
+                client.resolveMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(), summaryComment.getId());
             }
         } catch (IOException ex) {
             throw new IllegalStateException("Could not submit summary comment to Gitlab", ex);
@@ -181,7 +182,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     protected List<Discussion> getDiscussions(GitlabClient client, MergeRequest pullRequest) {
         try {
-            return client.getMergeRequestDiscussions(pullRequest.getSourceProjectId(), pullRequest.getIid());
+            return client.getMergeRequestDiscussions(pullRequest.getTargetProjectId(), pullRequest.getIid());
         } catch (IOException ex) {
             throw new IllegalStateException("Could not retrieve Merge Request discussions", ex);
         }
@@ -218,7 +219,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     protected void addNoteToDiscussion(GitlabClient client, Discussion discussion, MergeRequest pullRequest, String note) {
         try {
-            client.addMergeRequestDiscussionNote(pullRequest.getSourceProjectId(), pullRequest.getIid(), discussion.getId(), note);
+            client.addMergeRequestDiscussionNote(pullRequest.getTargetProjectId(), pullRequest.getIid(), discussion.getId(), note);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not add note to Merge Request discussion", ex);
         }
@@ -227,7 +228,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     protected void resolveDiscussion(GitlabClient client, Discussion discussion, MergeRequest pullRequest) {
         try {
-            client.resolveMergeRequestDiscussion(pullRequest.getSourceProjectId(), pullRequest.getIid(), discussion.getId());
+            client.resolveMergeRequestDiscussion(pullRequest.getTargetProjectId(), pullRequest.getIid(), discussion.getId());
         } catch (IOException ex) {
             throw new IllegalStateException("Could not resolve Merge Request discussion", ex);
         }
