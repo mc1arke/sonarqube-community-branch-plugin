@@ -149,6 +149,7 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + mergeRequestIid)).willReturn(okJson("{\n" +
                 "  \"id\": 15235,\n" +
                 "  \"iid\": " + mergeRequestIid + ",\n" +
+                "  \"target_project_id\": " + sourceProjectId + ",\n" +
                 "  \"web_url\": \"http://gitlab.example.com/my-group/my-project/merge_requests/1\",\n" +
                 "  \"diff_refs\": {\n" +
                 "    \"base_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\",\n" +
