@@ -86,7 +86,8 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
     private static ObjectMapper createObjectMapper() {
         return new ObjectMapper()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .findAndRegisterModules();
     }
 
     private static OkHttpClient.Builder createBaseClientBuilder(HttpClientBuilderFactory httpClientBuilderFactory) {
