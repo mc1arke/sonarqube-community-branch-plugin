@@ -24,8 +24,8 @@ public class BitbucketServerConfiguration extends BitbucketConfiguration {
 
     private final String url;
 
-    public BitbucketServerConfiguration(String almRepo, String almSlug, String url) {
-        super(almRepo, almSlug);
+    public BitbucketServerConfiguration(String project, String repository, String url) {
+        super(project, repository);
         this.url = url;
     }
 

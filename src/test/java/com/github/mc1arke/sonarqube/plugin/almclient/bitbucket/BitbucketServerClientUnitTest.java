@@ -74,7 +74,7 @@ public class BitbucketServerClientUnitTest {
     @Before
     public void before() {
         BitbucketServerConfiguration
-                config = new BitbucketServerConfiguration("repository", "slug", "https://my-server.org");
+                config = new BitbucketServerConfiguration("project", "repository", "https://my-server.org");
         underTest = new BitbucketServerClient(config, mapper, client);
     }
 
@@ -246,7 +246,7 @@ public class BitbucketServerClientUnitTest {
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("PUT", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/slug/repos/repository/commits/commit/reports/reportKey", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey", request.url().toString());
     }
 
     @Test
@@ -329,7 +329,7 @@ public class BitbucketServerClientUnitTest {
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("POST", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/slug/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
 
         try (Buffer bodyContent = new Buffer()) {
             request.body().writeTo(bodyContent);
@@ -367,7 +367,7 @@ public class BitbucketServerClientUnitTest {
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("DELETE", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/slug/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
     }
 
     @Test

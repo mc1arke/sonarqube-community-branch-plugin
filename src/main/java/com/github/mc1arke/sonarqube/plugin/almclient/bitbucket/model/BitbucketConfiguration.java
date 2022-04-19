@@ -23,7 +23,7 @@ public class BitbucketConfiguration {
     private final String repository;
     private final String project;
 
-    public BitbucketConfiguration(String repository, String project) {
+    public BitbucketConfiguration(String project, String repository) {
         this.repository = repository;
         this.project = project;
     }
