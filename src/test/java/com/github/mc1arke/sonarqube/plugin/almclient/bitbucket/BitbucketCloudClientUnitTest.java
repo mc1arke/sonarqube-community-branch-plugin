@@ -68,7 +68,7 @@ public class BitbucketCloudClientUnitTest {
 
     @Before
     public void before() {
-        BitbucketConfiguration bitbucketConfiguration = new BitbucketConfiguration("repository", "project");
+        BitbucketConfiguration bitbucketConfiguration = new BitbucketConfiguration("project", "repository");
         Call call = mock(Call.class);
         when(client.newCall(any())).thenReturn(call);
         underTest = new BitbucketCloudClient(mapper, client, bitbucketConfiguration);
