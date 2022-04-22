@@ -87,7 +87,7 @@ In case you want to try and test the current branch or build it for your develop
 # Using the bitnami AMI image
 
 ### Set up server from bitnami API
-- Spin up an EC2 instance with the bitnami AMI
+- Spin up an EC2 instance with the bitnami AMI (https://aws.amazon.com/marketplace/pp/prodview-zweq32he6zjmw?applicationId=AWSMPContessa#pdp-overview)
 - Set up SSL (process not documented here)
 - Set up DNS (process not documented here)
 - SSH into server (process not documented here)
