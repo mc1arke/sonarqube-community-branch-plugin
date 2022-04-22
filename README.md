@@ -55,12 +55,12 @@ Set all other properties that you can define globally for all of your projects.
 In order to decorate your Pull Request's source branch, you need to analyze your target branch first.
 
 ### Run analysis of branches
-  
+
 The analysis needs the following setting:
 `sonar.branch.name = branch_name (e.g master)`
 
 ### Run analysis of the PR branch
-Carefully read the official SonarQube guide for [pull request decoration](https://docs.sonarqube.org/latest/analysis/pull-request/) 
+Carefully read the official SonarQube guide for [pull request decoration](https://docs.sonarqube.org/latest/analysis/pull-request/)
 
 In there you'll find the following properties that need to be set.
 ```
@@ -72,14 +72,39 @@ sonar.pullrequest.base = target_branch_name (e.g master)
 :warning: There must not be any `sonar.branch` properties like `sonar.branch.name` arguments set when you analyze a
   pull-request. These properties indicate to sonar that a branch is being analyzed rather than a pull-request so no
     pull-request decoration will be executed.
-    
+
 ## Serving images for PR decoration
-By default, images for PR decoration are served as static resources on the SonarQube server as a part of Community Branch Plugin. 
+By default, images for PR decoration are served as static resources on the SonarQube server as a part of Community Branch Plugin.
 
 If you use a SonarQube server behind a firewall and/or PR service (Github, Gitlab etc.) hasn't access to SonarQube server, you should change `Images base URL` property in `General > Pull Request` settings.
 
 Anyone needing to set this value can use the URL `https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/static`, or download the files from this location and host them themself.
- 
+
 # Building the plugin from source
 In case you want to try and test the current branch or build it for your development execute `./gradlew clean build
 ` inside of the project directory. This will put the built jar under `libs/sonarqube-community-branch-plugin*.jar`
+
+# Using the bitnami AMI image
+
+### Set up server from bitnami API
+- Spin up an EC2 instance with the bitnami AMI
+- Set up SSL (process not documented here)
+- Set up DNS (process not documented here)
+- SSH into server (process not documented here)
+
+### Once SSHed into machine
+- `$ sudo su`
+- `$ cd /opt/bitnami/sonarqube/extensions/plugins/`
+- `$ wget https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.11.0/sonarqube-community-branch-plugin-1.11.0.jar`
+-` $ chmod 777 sonarqube-community-branch-plugin-1.11.0.jar`
+- `$ chown bitnami sonarqube-community-branch-plugin-1.11.0.jar`
+- `$ chgrp sonarqube sonarqube-community-branch-plugin-1.11.0.jar`
+- `$ cd /opt/bitnami/sonarqube/conf/`
+- `$ vi sonar.properties`
+    ```
+    <UPDATE AdditionOps paths to the plugin such that the following grep looks the same>
+    ```
+- `$ grep plugins ./sonar.properties`
+    ```
+    sonar.web.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-1.11.0.jar=web
+    sonar.ce.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-1.11.0.jar=ce
