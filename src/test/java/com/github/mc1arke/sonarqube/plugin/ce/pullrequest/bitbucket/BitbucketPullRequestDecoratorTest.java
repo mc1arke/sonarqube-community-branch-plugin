@@ -3,6 +3,8 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.rule.Severity;
@@ -23,11 +26,13 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,6 +61,7 @@ class BitbucketPullRequestDecoratorTest {
 
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+    private final AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
 
     @BeforeEach
     void setUp() {
@@ -69,12 +75,51 @@ class BitbucketPullRequestDecoratorTest {
         when(client.getAnnotationUploadLimit()).thenReturn(uploadLimit);
 
         mockValidAnalysis();
+        when(analysisSummary.getNewDuplications()).thenReturn(BigDecimal.TEN);
+        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.ONE);
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
+        ArgumentCaptor<List<ReportData>> reportDataArgumentCaptor = ArgumentCaptor.forClass(List.class);
         verify(client).createCodeInsightsAnnotation(ISSUE_KEY, ISSUE_LINE, ISSUE_LINK, ISSUE_MESSAGE, ISSUE_PATH, "HIGH", "BUG");
         verify(client).createLinkDataValue(DASHBOARD_URL);
-        verify(client).createCodeInsightsReport(any(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
+        verify(client).createCodeInsightsReport(reportDataArgumentCaptor.capture(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
         verify(client).deleteAnnotations(COMMIT, REPORT_KEY);
+
+        assertThat(reportDataArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(List.of(new ReportData("Reliability", new DataValue.Text("0 Bugs")),
+                        new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ONE)),
+                        new ReportData("Security", new DataValue.Text("0 Vulnerabilities (and 0 Hotspots)")),
+                        new ReportData("Duplication", new DataValue.Percentage(BigDecimal.TEN)),
+                        new ReportData("Maintainability", new DataValue.Text("0 Code Smells")),
+                        new ReportData("Analysis details", null)));
+    }
+
+    @Test
+    void testNullPercentagesReplacedWithZeroValues() throws IOException {
+        when(client.supportsCodeInsights()).thenReturn(true);
+        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(1000, 1000);
+        when(client.getAnnotationUploadLimit()).thenReturn(uploadLimit);
+
+        mockValidAnalysis();
+        when(analysisSummary.getNewCoverage()).thenReturn(null);
+        when(analysisSummary.getNewDuplications()).thenReturn(null);
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        ArgumentCaptor<List<ReportData>> reportDataArgumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(client).createCodeInsightsAnnotation(ISSUE_KEY, ISSUE_LINE, ISSUE_LINK, ISSUE_MESSAGE, ISSUE_PATH, "HIGH", "BUG");
+        verify(client).createLinkDataValue(DASHBOARD_URL);
+        verify(client).createCodeInsightsReport(reportDataArgumentCaptor.capture(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
+        verify(client).deleteAnnotations(COMMIT, REPORT_KEY);
+
+        assertThat(reportDataArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(List.of(new ReportData("Reliability", new DataValue.Text("0 Bugs")),
+                        new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ZERO)),
+                        new ReportData("Security", new DataValue.Text("0 Vulnerabilities (and 0 Hotspots)")),
+                        new ReportData("Duplication", new DataValue.Percentage(BigDecimal.ZERO)),
+                        new ReportData("Maintainability", new DataValue.Text("0 Code Smells")),
+                        new ReportData("Analysis details", null)));
     }
 
     @ParameterizedTest(name = "{arguments}")
@@ -122,7 +167,6 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisIssueSummary.getIssueUrl()).thenReturn("https://issue-link");
         when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
 
-        AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
         when(analysisSummary.getDashboardUrl()).thenReturn("https://dashboard-url");
         when(analysisSummary.getSummaryImageUrl()).thenReturn("https://image-url/common/icon.png");
         when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);

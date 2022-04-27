@@ -45,6 +45,7 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -110,9 +111,9 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
     private static List<ReportData> toReport(BitbucketClient client, AnalysisSummary analysisSummary) {
         List<ReportData> reportData = new ArrayList<>();
         reportData.add(reliabilityReport(analysisSummary.getBugCount()));
-        reportData.add(new ReportData("Code coverage", new DataValue.Percentage(analysisSummary.getNewCoverage())));
+        reportData.add(new ReportData("Code coverage", new DataValue.Percentage(Optional.ofNullable(analysisSummary.getNewCoverage()).orElse(BigDecimal.ZERO))));
         reportData.add(securityReport(analysisSummary.getVulnerabilityCount(), analysisSummary.getSecurityHotspotCount()));
-        reportData.add(new ReportData("Duplication", new DataValue.Percentage(analysisSummary.getNewDuplications())));
+        reportData.add(new ReportData("Duplication", new DataValue.Percentage(Optional.ofNullable(analysisSummary.getNewDuplications()).orElse(BigDecimal.ZERO))));
         reportData.add(maintainabilityReport(analysisSummary.getCodeSmellCount()));
         reportData.add(new ReportData("Analysis details", client.createLinkDataValue(analysisSummary.getDashboardUrl())));
 
