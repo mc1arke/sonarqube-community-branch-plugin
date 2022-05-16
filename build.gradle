@@ -70,7 +70,7 @@ dependencies {
     implementation(files('lib/nodes-0.5.0.jar'))
     runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
-    implementation('org.javassist:javassist:3.28.0-GA')
+    implementation('org.javassist:javassist:3.29.0-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:4.9.3')
     testImplementation(platform('org.junit:junit-bom:5.8.2'))
     testImplementation('org.junit.jupiter:junit-jupiter')
