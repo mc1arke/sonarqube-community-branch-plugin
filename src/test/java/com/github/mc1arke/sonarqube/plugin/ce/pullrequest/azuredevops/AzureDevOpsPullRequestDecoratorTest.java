@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
 public class AzureDevOpsPullRequestDecoratorTest {
 
     @Rule
-    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig());
+    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     private final String azureProject = "azure Project";
     private final String sonarProject = "sonarProject";
@@ -229,7 +229,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                                 "      \"state\": \"wellFormed\"," + System.lineSeparator() +
                                 "      \"revision\": 7" + System.lineSeparator() +
                                 "    }," + System.lineSeparator() +
-                                "    \"remoteUrl\": \"http://localhost:8080/" + azureProject + "/_git/" + azureRepository + "\"" + System.lineSeparator() +
+                                "    \"remoteUrl\": \"" + wireMockRule.baseUrl() + "/" + azureProject + "/_git/" + azureRepository + "\"" + System.lineSeparator() +
                                 "  }," + System.lineSeparator() +
                                 "  \"pullRequestId\": " + pullRequestId + "," + System.lineSeparator() +
                                 "  \"codeReviewId\": " + pullRequestId + "," + System.lineSeparator() +
