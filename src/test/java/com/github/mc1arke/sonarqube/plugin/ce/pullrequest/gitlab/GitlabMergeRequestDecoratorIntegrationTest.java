@@ -66,7 +66,7 @@ import static org.mockito.Mockito.when;
 public class GitlabMergeRequestDecoratorIntegrationTest {
 
     @Rule
-    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig());
+    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     @Test
     public void decorateQualityGateStatusOk() {

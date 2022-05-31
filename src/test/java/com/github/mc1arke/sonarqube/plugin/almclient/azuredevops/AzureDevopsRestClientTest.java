@@ -56,7 +56,7 @@ class AzureDevopsRestClientTest {
 
         assertThat(request.getMethod()).isEqualTo("post");
         assertThat(request.getUri()).isEqualTo(URI.create("http://url.test/api/project/_apis/git/repositories/repo/pullRequests/101/statuses?api-version=4.1-preview"));
-        assertThat(request.getEntity()).usingRecursiveComparison().isEqualTo(new StringEntity("json", StandardCharsets.UTF_8));
+        assertThat(request.getEntity().getContent()).hasContent("json");
     }
 
     @Test
@@ -79,7 +79,7 @@ class AzureDevopsRestClientTest {
 
         assertThat(request.getMethod()).isEqualTo("post");
         assertThat(request.getUri()).isEqualTo(URI.create("http://url.test/api/project%20Id%20With%20Spaces/_apis/git/repositories/repository%20Name%20With%20Spaces/pullRequests/123/statuses?api-version=4.1-preview"));
-        assertThat(request.getEntity()).usingRecursiveComparison().isEqualTo(new StringEntity("json", StandardCharsets.UTF_8));
+        assertThat(request.getEntity().getContent()).hasContent("json");
     }
 
     @Test
@@ -102,7 +102,7 @@ class AzureDevopsRestClientTest {
 
         assertThat(request.getMethod()).isEqualTo("post");
         assertThat(request.getUri()).isEqualTo(URI.create("http://test.url/projectId/_apis/git/repositories/repository%20Name/pullRequests/123/threads/321/comments?api-version=4.1"));
-        assertThat(request.getEntity()).usingRecursiveComparison().isEqualTo(new StringEntity("json", StandardCharsets.UTF_8));
+        assertThat(request.getEntity().getContent()).hasContent("json");
     }
 
     @Test

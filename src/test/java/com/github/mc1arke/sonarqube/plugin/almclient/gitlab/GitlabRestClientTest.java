@@ -56,7 +56,7 @@ class GitlabRestClientTest {
 
         assertThat(request.getRequestLine().getMethod()).isEqualTo("POST");
         assertThat(request.getRequestLine().getUri()).isEqualTo("http://url.test/api/projects/101/merge_requests/99/discussions");
-        assertThat(request.getEntity()).usingRecursiveComparison().isEqualTo(new UrlEncodedFormEntity(List.of(new BasicNameValuePair("body", "note")), StandardCharsets.UTF_8));
+        assertThat(request.getEntity().getContent()).hasContent("body=note");
     }
 
     @Test
@@ -81,7 +81,7 @@ class GitlabRestClientTest {
 
         assertThat(request.getRequestLine().getMethod()).isEqualTo("POST");
         assertThat(request.getRequestLine().getUri()).isEqualTo("http://api.url/projects/123/merge_requests/321/discussions");
-        assertThat(request.getEntity()).usingRecursiveComparison().isEqualTo(new UrlEncodedFormEntity(List.of(new BasicNameValuePair("body", "Merge request note")), StandardCharsets.UTF_8));
+        assertThat(request.getEntity().getContent()).hasContent("body=Merge+request+note");
     }
 
 }
