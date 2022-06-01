@@ -52,7 +52,10 @@ Make sure `sonar.core.serverBaseURL` in SonarQube [/admin/settings](http://local
 Set all other properties that you can define globally for all of your projects.
 
 ## How to decorate the PR
-In order to decorate your Pull Request's source branch, you need to analyze your target branch first.
+
+When using GitLab CI (detected via the `GITLAB_CI`), the plugin will automatically configure itself for PR decoration and no additional steps are necessary.
+
+In other environments, to decorate your Pull Request's source branch, you need to analyze your target branch first.
 
 ### Run analysis of branches
   
