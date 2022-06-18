@@ -44,6 +44,34 @@ The plugin is distributed in the [mc1arke/sonarqube-with-community-branch-plugin
 
 __Note:__ If you're setting the `SONAR_WEB_JAVAADDITIONALOPTS` or `SONAR_CE_JAVAADDITIONALOPTS` environment variables in your container launch then you'll need to add the `javaagent` configuration to your overrides to match what's in the provided Dockerfile.
 
+## Kubernetes with official Helm Chart
+
+When using [Sonarqube official Helm Chart](https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube), you need to add the following settings to your helm values, where `${version}` should be replaced with the plugin version (e.g. `1.11.0`):
+
+```yaml
+plugins:
+  install:
+  - https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-community-branch-plugin-${version}.jar
+  lib:
+  - sonarqube-community-branch-plugin-${version}.jar
+jvmOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=web"
+jvmCeOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=ce"
+```
+
+### Issues with file path  with persistency
+
+If you set `persistence.enabled=true` on SonarQube chart, the plugin might be copied to this path: 
+```
+/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar/sonarqube-community-branch-plugin-${version}.jar
+```
+  
+instead of this:
+```
+/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar
+```
+
+As a workaround either change the paths in the config above, or exec into the container and move file up the directory to match the config.
+
 # Configuration
 ## Global configuration
 Make sure `sonar.core.serverBaseURL` in SonarQube [/admin/settings](http://localhost:9000/admin/settings) is properly
