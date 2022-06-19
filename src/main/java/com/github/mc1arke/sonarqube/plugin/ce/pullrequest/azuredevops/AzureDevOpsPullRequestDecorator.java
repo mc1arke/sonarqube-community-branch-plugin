@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2022 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatt
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.platform.Server;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
@@ -47,6 +49,8 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.protobuf.DbIssues;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -57,6 +61,7 @@ import java.util.stream.Collectors;
 
 public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestDecorator<AzureDevopsClient, PullRequest, Void, CommentThread, Comment> implements PullRequestBuildStatusDecorator {
 
+    private static final Logger logger = Loggers.get(AzureDevOpsPullRequestDecorator.class);
     private static final Pattern NOTE_MARKDOWN_LEGACY_SEE_LINK_PATTERN = Pattern.compile("^\\[See in SonarQube]\\((.*?)\\)$");
     private final AzureDevopsClientFactory azureDevopsClientFactory;
     private final FormatterFactory formatterFactory;
@@ -79,7 +84,14 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
 
     @Override
     protected Optional<String> createFrontEndUrl(PullRequest pullRequest, AnalysisDetails analysisDetails) {
-        return Optional.of(pullRequest.getRepository().getRemoteUrl() + "/pullRequest/" + pullRequest.getId());
+        String targetUri = pullRequest.getRepository().getRemoteUrl();
+        try {
+            URI uri = new URI(targetUri);
+            targetUri = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null).toString();
+        } catch (URISyntaxException ex) {
+            logger.warn("Could not construct normalised URI for Pull Request link. Unparsed URL will be used instead", ex);
+        }
+        return Optional.of(targetUri + "/pullRequest/" + pullRequest.getId());
     }
 
     @Override
