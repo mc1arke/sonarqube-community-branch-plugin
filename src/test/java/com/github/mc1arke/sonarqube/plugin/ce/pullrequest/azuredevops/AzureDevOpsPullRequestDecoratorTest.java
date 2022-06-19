@@ -2,6 +2,8 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
@@ -582,6 +584,26 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
         DecorationResult result = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
         assertThat(result.getPullRequestUrl()).isEqualTo(Optional.of(String.format("%s/%s/_git/%s/pullRequest/%s", wireMockRule.baseUrl(), azureProject, azureRepository, pullRequestId)));
+    }
+
+    @Test
+    public void shouldRemoveUserInfoFromRepositoryUrlForLinking() {
+        ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
+        AzureDevopsClientFactory azureDevopsClientFactory = mock(AzureDevopsClientFactory.class);
+        ReportGenerator reportGenerator = mock(ReportGenerator.class);
+        MarkdownFormatterFactory markdownFormatterFactory = mock(MarkdownFormatterFactory.class);
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+
+        Repository repository = mock(Repository.class);
+        when(repository.getRemoteUrl()).thenReturn("https://user@domain.com/path/to/repo");
+        PullRequest pullRequest = mock(PullRequest.class);
+        when(pullRequest.getRepository()).thenReturn(repository);
+        when(pullRequest.getId()).thenReturn(999);
+
+        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+
+        assertThat(underTest.createFrontEndUrl(pullRequest, analysisDetails)).contains("https://domain.com/path/to/repo/pullRequest/999");
     }
 
 }
