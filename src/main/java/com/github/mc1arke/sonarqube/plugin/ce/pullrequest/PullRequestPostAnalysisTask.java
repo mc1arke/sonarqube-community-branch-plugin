@@ -81,7 +81,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             projectAlmSettingDto.setAlmSettingUuid("AXxy3BubdvWBwkcdvIfk");
             projectAlmSettingDto.setAlmSlug("");
             projectAlmSettingDto.setProjectUuid(projectAnalysis.getProject().getUuid());
-            projectAlmSettingDto.setSummaryCommentEnabled(false);
+            projectAlmSettingDto.setSummaryCommentEnabled(true);
             optionalAlmSettingDto = dbClient.almSettingDao().selectByUuid(dbSession, "AXxy3BubdvWBwkcdvIfk");
 
         }
