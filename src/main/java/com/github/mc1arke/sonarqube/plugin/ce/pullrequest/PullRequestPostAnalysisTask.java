@@ -75,7 +75,6 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         }
         ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto();
         String enablePrDecoration = Optional.ofNullable(System.getenv("PR_DECORATION_ENABLED")).orElse("false");
-        if (enablePrDecoration.equalsIgnoreCase("true")) enablePrDecoration = "true";
         Optional<AlmSettingDto> optionalAlmSettingDto;
         try (DbSession dbSession = dbClient.openSession(false)) {
             projectAlmSettingDto.setAlmRepo(projectAnalysis.getScannerContext().getProperties().getOrDefault(
