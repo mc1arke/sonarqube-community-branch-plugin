@@ -34,6 +34,7 @@ import org.sonar.db.component.BranchDto;
 import org.sonar.db.protobuf.DbProjectBranches;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
@@ -74,7 +75,8 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             return;
         }
         ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto();
-        String enablePrDecoration = Optional.ofNullable(System.getenv("PR_DECORATION_ENABLED")).orElse("false");
+        String enablePrDecoration = projectAnalysis.getScannerContext().getProperties().getOrDefault("sonar.analysis.enableprdecoration", "true");
+        LOGGER.info("PR Decoration is enabled: " + String.valueOf(Boolean.parseBoolean(enablePrDecoration)));
         Optional<AlmSettingDto> optionalAlmSettingDto;
         try (DbSession dbSession = dbClient.openSession(false)) {
             projectAlmSettingDto.setAlmRepo(projectAnalysis.getScannerContext().getProperties().getOrDefault(
