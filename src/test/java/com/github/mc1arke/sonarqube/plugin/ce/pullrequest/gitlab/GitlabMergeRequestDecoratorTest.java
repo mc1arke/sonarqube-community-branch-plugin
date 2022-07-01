@@ -36,8 +36,11 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatt
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
@@ -56,6 +59,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -69,7 +73,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class GitlabMergeRequestDecoratorTest {
+class GitlabMergeRequestDecoratorTest {
 
     private static final long MERGE_REQUEST_IID = 123;
     private static final long PROJECT_ID = 101;
@@ -101,8 +105,8 @@ public class GitlabMergeRequestDecoratorTest {
 
     private final GitlabMergeRequestDecorator underTest = new GitlabMergeRequestDecorator(scmInfoRepository, gitlabClientFactory, reportGenerator, markdownFormatterFactory);
 
-    @Before
-    public void setUp() throws IOException {
+    @BeforeEach
+    void setUp() throws IOException {
         when(analysisSummary.format(any())).thenReturn("Summary Comment");
         when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
         AnalysisIssueSummary analysisIssueSummary = mock(AnalysisIssueSummary.class);
@@ -646,11 +650,15 @@ public class GitlabMergeRequestDecoratorTest {
                         PipelineStatus.State.SUCCESS, "https://sonarqube.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, null, null));
     }
 
-    @Test
-    public void shouldSubmitFailedPipelineStatusAndUnresolvedSummaryCommentOnFailedAnalysis() throws IOException {
+    @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "unused"})
+    @MethodSource
+    @ParameterizedTest  //https://github.com/mc1arke/sonarqube-community-branch-plugin/issues/137
+    void shouldSubmitRequestedPipelineStatusBasedOnPropertiesAndUnresolvedSummaryCommentOnFailedAnalysis(
+            Optional<String> dontFailPipelinePropertyValue, PipelineStatus.State expectedSentPipelineStatus, String description) throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
         when(analysisDetails.getCommitSha()).thenReturn("other sha");
         when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
+        when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.dontFailPipeline")).thenReturn(dontFailPipelinePropertyValue);
 
         when(analysisSummary.format(any())).thenReturn("Different Summary comment");
         when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube2.dummy/dashboard?id=projectKey&pullRequest=123");
@@ -674,40 +682,16 @@ public class GitlabMergeRequestDecoratorTest {
         assertThat(pipelineStatusArgumentCaptor.getValue())
                 .usingRecursiveComparison()
                 .isEqualTo(new PipelineStatus("SonarQube", "SonarQube Status",
-                        PipelineStatus.State.FAILED, "https://sonarqube2.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, BigDecimal.TEN, 11L));
+                        expectedSentPipelineStatus, "https://sonarqube2.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, BigDecimal.TEN, 11L));
     }
 
-    //TODO: Masive duplication - use junit-jupiter-params
-    @Test   //https://github.com/mc1arke/sonarqube-community-branch-plugin/issues/137
-    public void shouldSubmitPassedPipelineStatusIfPipelineFailingIsDisabledAndUnresolvedSummaryCommentOnFailedAnalysis() throws IOException {
-        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
-        when(analysisDetails.getCommitSha()).thenReturn("other sha");
-        when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
-        when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.dontFailPipeline")).thenReturn(Optional.of("true"));
-
-        when(analysisSummary.format(any())).thenReturn("Different Summary comment");
-        when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube2.dummy/dashboard?id=projectKey&pullRequest=123");
-        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.TEN);
-
-        Discussion discussion = mock(Discussion.class);
-        when(discussion.getId()).thenReturn("dicussion id 2");
-        when(gitlabClient.addMergeRequestDiscussion(anyLong(), anyLong(), any())).thenReturn(discussion);
-
-        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
-
-        ArgumentCaptor<MergeRequestNote> mergeRequestNoteArgumentCaptor = ArgumentCaptor.forClass(MergeRequestNote.class);
-        verify(gitlabClient).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), mergeRequestNoteArgumentCaptor.capture());
-        verify(gitlabClient, never()).resolveMergeRequestDiscussion(PROJECT_ID, MERGE_REQUEST_IID, discussion.getId());
-        ArgumentCaptor<PipelineStatus> pipelineStatusArgumentCaptor = ArgumentCaptor.forClass(PipelineStatus.class);
-        verify(gitlabClient).setMergeRequestPipelineStatus(eq(PROJECT_ID), eq("other sha"), pipelineStatusArgumentCaptor.capture());
-
-        assertThat(mergeRequestNoteArgumentCaptor.getValue())
-                .usingRecursiveComparison()
-                .isEqualTo(new MergeRequestNote("Different Summary comment"));
-        assertThat(pipelineStatusArgumentCaptor.getValue())
-                .usingRecursiveComparison()
-                .isEqualTo(new PipelineStatus("SonarQube", "SonarQube Status",
-                        PipelineStatus.State.SUCCESS, "https://sonarqube2.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, BigDecimal.TEN, 11L));
+    @SuppressWarnings("unused") //used by @ParameterizedTest
+    private static Stream<Arguments> shouldSubmitRequestedPipelineStatusBasedOnPropertiesAndUnresolvedSummaryCommentOnFailedAnalysis() {
+        return Stream.of(
+                Arguments.of(Optional.empty(), PipelineStatus.State.FAILED, "dontFailPipeline not defined"),
+                Arguments.of(Optional.of("true"), PipelineStatus.State.SUCCESS, "dontFailPipeline == true"),
+                Arguments.of(Optional.of("false"), PipelineStatus.State.FAILED, "dontFailPipeline == false")
+        );
     }
 
     @Test

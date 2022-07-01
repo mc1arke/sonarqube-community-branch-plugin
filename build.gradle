@@ -74,6 +74,7 @@ dependencies {
     implementation('com.squareup.okhttp3:logging-interceptor:4.10.0')
     testImplementation(platform('org.junit:junit-bom:5.8.2'))
     testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation('org.junit.jupiter:junit-jupiter-params')
     testImplementation('junit:junit:4.13.2')
     testRuntimeOnly('org.junit.vintage:junit-vintage-engine')
 }
