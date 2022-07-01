@@ -136,12 +136,12 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldReturnCorrectDecoratorType() {
+    void shouldReturnCorrectDecoratorType() {
         assertThat(underTest.alm()).containsOnly(ALM.GITLAB);
     }
 
     @Test
-    public void shouldThrowErrorWhenPullRequestKeyNotNumeric() {
+    void shouldThrowErrorWhenPullRequestKeyNotNumeric() {
         when(analysisDetails.getPullRequestId()).thenReturn("non-MR-IID");
 
         assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
@@ -150,7 +150,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldThrowErrorWhenGitlabMergeRequestRetrievalFails() throws IOException {
+    void shouldThrowErrorWhenGitlabMergeRequestRetrievalFails() throws IOException {
         when(gitlabClient.getMergeRequest(any(), anyLong())).thenThrow(new IOException("dummy"));
 
         assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
@@ -159,7 +159,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldThrowErrorWhenGitlabUserRetrievalFails() throws IOException {
+    void shouldThrowErrorWhenGitlabUserRetrievalFails() throws IOException {
         when(gitlabClient.getCurrentUser()).thenThrow(new IOException("dummy"));
 
         assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
@@ -168,7 +168,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldThrowErrorWhenGitlabMergeRequestCommitsRetrievalFails() throws IOException {
+    void shouldThrowErrorWhenGitlabMergeRequestCommitsRetrievalFails() throws IOException {
         when(gitlabClient.getMergeRequestCommits(anyLong(), anyLong())).thenThrow(new IOException("dummy"));
 
         assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
@@ -177,7 +177,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldThrowErrorWhenGitlabMergeRequestDiscussionRetrievalFails() throws IOException {
+    void shouldThrowErrorWhenGitlabMergeRequestDiscussionRetrievalFails() throws IOException {
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenThrow(new IOException("dummy"));
 
         assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
@@ -186,7 +186,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldCloseDiscussionWithSingleResolvableNoteFromSonarqubeUserButNoIssueIdInBody() throws IOException {
+    void shouldCloseDiscussionWithSingleResolvableNoteFromSonarqubeUserButNoIssueIdInBody() throws IOException {
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
         when(note.getBody()).thenReturn("Post with no issue ID");
@@ -207,7 +207,7 @@ class GitlabMergeRequestDecoratorTest {
         assertThat(mergeRequestNoteArgumentCaptor.getValue()).isNotInstanceOf(CommitNote.class);    }
 
     @Test
-    public void shouldNotCloseDiscussionWithSingleNonResolvableNoteFromSonarqubeUserButNoIssueIdInBody() throws IOException {
+    void shouldNotCloseDiscussionWithSingleNonResolvableNoteFromSonarqubeUserButNoIssueIdInBody() throws IOException {
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
         when(note.getBody()).thenReturn("Post with no issue ID");
@@ -225,7 +225,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldNotCloseDiscussionWithMultipleResolvableNotesFromSonarqubeUserButNoId() throws IOException {
+    void shouldNotCloseDiscussionWithMultipleResolvableNotesFromSonarqubeUserButNoId() throws IOException {
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
         when(note.getBody()).thenReturn("Another post with no issue ID\nbut containing a new line");
@@ -253,7 +253,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldCloseDiscussionWithResolvableNoteFromSonarqubeUserAndOnlySystemNoteFromOtherUser() throws IOException {
+    void shouldCloseDiscussionWithResolvableNoteFromSonarqubeUserAndOnlySystemNoteFromOtherUser() throws IOException {
         User otherUser = mock(User.class);
         when(otherUser.getUsername()).thenReturn("other.user@gitlab.dummy");
 
@@ -283,7 +283,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldNotAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndAnotherUserWithNoId() throws IOException {
+    void shouldNotAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndAnotherUserWithNoId() throws IOException {
         User otherUser = mock(User.class);
         when(otherUser.getUsername()).thenReturn("other.user@gitlab.dummy");
 
@@ -314,7 +314,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldNotCommentOrAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndACloseMessageWithNoId() throws IOException {
+    void shouldNotCommentOrAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndACloseMessageWithNoId() throws IOException {
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
         when(note.getBody()).thenReturn("And another post with no issue ID\nNo View in SonarQube link");
@@ -343,7 +343,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldCommentAboutCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndAnotherUserWithIssuedId() throws IOException {
+    void shouldCommentAboutCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndAnotherUserWithIssuedId() throws IOException {
         User otherUser = mock(User.class);
         when(otherUser.getUsername()).thenReturn("other.user@gitlab.dummy");
 
@@ -375,7 +375,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldThrowErrorIfUnableToCleanUpDiscussionOnGitlab() throws IOException {
+    void shouldThrowErrorIfUnableToCleanUpDiscussionOnGitlab() throws IOException {
         User otherUser = mock(User.class);
         when(otherUser.getUsername()).thenReturn("other.user@gitlab.dummy");
 
@@ -410,7 +410,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldNotCommentOrAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndACloseMessageWithIssueId() throws IOException {
+    void shouldNotCommentOrAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeUserAndACloseMessageWithIssueId() throws IOException {
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
         when(note.getBody()).thenReturn("And another post with an issue ID\n[View in SonarQube](url)");
@@ -439,7 +439,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldNotCommentOrAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeWithOtherProjectId() throws IOException {
+    void shouldNotCommentOrAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeWithOtherProjectId() throws IOException {
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
         when(note.getBody()).thenReturn("And another post with an issue ID\n[View in SonarQube](url)");
@@ -468,7 +468,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldThrowErrorIfSubmittingNewIssueToGitlabFails() throws IOException {
+    void shouldThrowErrorIfSubmittingNewIssueToGitlabFails() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
@@ -510,7 +510,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldStartNewDiscussionForNewIssueFromCommitInMergeRequest() throws IOException {
+    void shouldStartNewDiscussionForNewIssueFromCommitInMergeRequest() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
@@ -549,7 +549,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldNotStartNewDiscussionForIssueWithExistingCommentFromCommitInMergeRequest() throws IOException {
+    void shouldNotStartNewDiscussionForIssueWithExistingCommentFromCommitInMergeRequest() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
@@ -594,7 +594,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldNotCreateCommentsForIssuesWithNoLineNumbers() throws IOException {
+    void shouldNotCreateCommentsForIssuesWithNoLineNumbers() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
@@ -622,7 +622,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldSubmitSuccessfulPipelineStatusAndResolvedSummaryCommentOnSuccessAnalysis() throws IOException {
+    void shouldSubmitSuccessfulPipelineStatusAndResolvedSummaryCommentOnSuccessAnalysis() throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
         when(analysisDetails.getCommitSha()).thenReturn("commitsha");
 
@@ -695,7 +695,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldThrowErrorWhenSubmitPipelineStatusToGitlabFails() throws IOException {
+    void shouldThrowErrorWhenSubmitPipelineStatusToGitlabFails() throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
         when(analysisDetails.getCommitSha()).thenReturn("other sha");
         when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
@@ -729,7 +729,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldThrowErrorWhenSubmitAnalysisToGitlabFails() throws IOException {
+    void shouldThrowErrorWhenSubmitAnalysisToGitlabFails() throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
         when(analysisDetails.getCommitSha()).thenReturn("other sha");
         when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
@@ -756,14 +756,14 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldReturnWebUrlFromMergeRequestIfScannerPropertyNotSet() {
+    void shouldReturnWebUrlFromMergeRequestIfScannerPropertyNotSet() {
         assertThat(underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .usingRecursiveComparison()
                 .isEqualTo(DecorationResult.builder().withPullRequestUrl(MERGE_REQUEST_WEB_URL).build());
     }
 
     @Test
-    public void shouldReturnWebUrlFromScannerPropertyIfSet() {
+    void shouldReturnWebUrlFromScannerPropertyIfSet() {
         when(analysisDetails.getScannerProperty("sonar.pullrequest.gitlab.projectUrl")).thenReturn(Optional.of(MERGE_REQUEST_WEB_URL + "/additional"));
         assertThat(underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .usingRecursiveComparison()
