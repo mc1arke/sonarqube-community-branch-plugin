@@ -677,6 +677,39 @@ public class GitlabMergeRequestDecoratorTest {
                         PipelineStatus.State.FAILED, "https://sonarqube2.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, BigDecimal.TEN, 11L));
     }
 
+    //TODO: Masive duplication - use junit-jupiter-params
+    @Test   //https://github.com/mc1arke/sonarqube-community-branch-plugin/issues/137
+    public void shouldSubmitPassedPipelineStatusIfPipelineFailingIsDisabledAndUnresolvedSummaryCommentOnFailedAnalysis() throws IOException {
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
+        when(analysisDetails.getCommitSha()).thenReturn("other sha");
+        when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
+        when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.dontFailPipeline")).thenReturn(Optional.of("true"));
+
+        when(analysisSummary.format(any())).thenReturn("Different Summary comment");
+        when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube2.dummy/dashboard?id=projectKey&pullRequest=123");
+        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.TEN);
+
+        Discussion discussion = mock(Discussion.class);
+        when(discussion.getId()).thenReturn("dicussion id 2");
+        when(gitlabClient.addMergeRequestDiscussion(anyLong(), anyLong(), any())).thenReturn(discussion);
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        ArgumentCaptor<MergeRequestNote> mergeRequestNoteArgumentCaptor = ArgumentCaptor.forClass(MergeRequestNote.class);
+        verify(gitlabClient).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), mergeRequestNoteArgumentCaptor.capture());
+        verify(gitlabClient, never()).resolveMergeRequestDiscussion(PROJECT_ID, MERGE_REQUEST_IID, discussion.getId());
+        ArgumentCaptor<PipelineStatus> pipelineStatusArgumentCaptor = ArgumentCaptor.forClass(PipelineStatus.class);
+        verify(gitlabClient).setMergeRequestPipelineStatus(eq(PROJECT_ID), eq("other sha"), pipelineStatusArgumentCaptor.capture());
+
+        assertThat(mergeRequestNoteArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(new MergeRequestNote("Different Summary comment"));
+        assertThat(pipelineStatusArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(new PipelineStatus("SonarQube", "SonarQube Status",
+                        PipelineStatus.State.SUCCESS, "https://sonarqube2.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, BigDecimal.TEN, 11L));
+    }
+
     @Test
     public void shouldThrowErrorWhenSubmitPipelineStatusToGitlabFails() throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
