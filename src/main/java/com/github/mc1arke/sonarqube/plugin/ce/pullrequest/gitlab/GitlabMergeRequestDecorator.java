@@ -53,7 +53,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     public static final String PULLREQUEST_GITLAB_PIPELINE_ID =
             "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId";
     public static final String PULLREQUEST_GITLAB_DONT_FAIL_PIPELINE =
-            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.dontFailPipeline";
+            "sonar.analysis.com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.dontFailPipeline";
 
     private final GitlabClientFactory gitlabClientFactory;
     private final MarkdownFormatterFactory formatterFactory;

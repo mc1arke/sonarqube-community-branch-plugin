@@ -658,7 +658,7 @@ class GitlabMergeRequestDecoratorTest {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
         when(analysisDetails.getCommitSha()).thenReturn("other sha");
         when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
-        when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.dontFailPipeline")).thenReturn(dontFailPipelinePropertyValue);
+        when(analysisDetails.getScannerProperty("sonar.analysis.com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.dontFailPipeline")).thenReturn(dontFailPipelinePropertyValue);
 
         when(analysisSummary.format(any())).thenReturn("Different Summary comment");
         when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube2.dummy/dashboard?id=projectKey&pullRequest=123");
