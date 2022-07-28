@@ -98,7 +98,7 @@ public class CommunityBranchPluginTest {
         testCase.load(context);
 
         final ArgumentCaptor<Class> argumentCaptor = ArgumentCaptor.forClass(Class.class);
-        verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
+        verify(context, times(7)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
 
         assertEquals(Collections.singletonList(CommunityReportAnalysisComponentProvider.class),
@@ -116,9 +116,9 @@ public class CommunityBranchPluginTest {
         testCase.load(context);
 
         final ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
+        verify(context, times(7)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
-        assertEquals(25, argumentCaptor.getAllValues().size());
+        assertEquals(30, argumentCaptor.getAllValues().size());
 
         assertEquals(Arrays.asList(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class),
                      argumentCaptor.getAllValues().subList(0, 2));

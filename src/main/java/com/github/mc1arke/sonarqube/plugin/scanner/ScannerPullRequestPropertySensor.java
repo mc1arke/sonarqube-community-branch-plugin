@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabMergeRequestDecorator;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
@@ -54,6 +55,15 @@ public class ScannerPullRequestPropertySensor implements Sensor {
         Optional.ofNullable(system2.property(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID)).ifPresent(
                 v -> sensorContext.addContextProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID, v));
 
+        // Handle new project configuration options to allow disabling of issue and/or summary discussion creation
+        toContextPropertyIfPresent(sensorContext, CommunityBranchPlugin.PR_MINIMUM_ISSUE_SEVERITY);
+        toContextPropertyIfPresent(sensorContext, CommunityBranchPlugin.PR_ISSUE_DISCUSSION_THRESHOLD);
+        toContextPropertyIfPresent(sensorContext, CommunityBranchPlugin.PR_DISABLE_ANALYSIS_SUMMARY);
+        toContextPropertyIfPresent(sensorContext, CommunityBranchPlugin.PR_DELETE_RESOLVED_DISCUSSIONS);
+        toContextPropertyIfPresent(sensorContext, CommunityBranchPlugin.PR_DISABLE_ANALYSIS_PIPELINE_STATUS);
     }
 
+    private static void toContextPropertyIfPresent(final SensorContext context, final String propertyName) {
+        context.config().get(propertyName).ifPresent(p -> context.addContextProperty(propertyName, p));
+    }
 }

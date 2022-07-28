@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.sonar.api.rule.Severity;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.AlmSettingDto;
@@ -38,11 +40,13 @@ import java.io.StringReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> implements PullRequestBuildStatusDecorator {
 
@@ -78,11 +82,28 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .filter(comment -> isCommentFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
                 .collect(Collectors.toList());
 
+        String minimumIssueSeverity = analysis.getScannerProperty(CommunityBranchPlugin.PR_MINIMUM_ISSUE_SEVERITY)
+                .orElse(Severity.INFO);
+        Long issueDiscussionThreshold = analysis.getScannerProperty(CommunityBranchPlugin.PR_ISSUE_DISCUSSION_THRESHOLD)
+                .map(Long::parseLong)
+                .orElse(CommunityBranchPlugin.PR_ISSUE_DISCUSSION_THRESHOLD_UNLIMITED);
+        Boolean disableSummary = analysis.getScannerProperty(CommunityBranchPlugin.PR_DISABLE_ANALYSIS_SUMMARY)
+                .map(Boolean::parseBoolean)
+                .orElse(Boolean.FALSE);
+        Boolean deleteResolved = analysis.getScannerProperty(CommunityBranchPlugin.PR_DELETE_RESOLVED_DISCUSSIONS)
+                .map(Boolean::parseBoolean)
+                .orElse(Boolean.FALSE);
+        Boolean disableAnalysisPipelineStatus = analysis.getScannerProperty(
+                CommunityBranchPlugin.PR_DISABLE_ANALYSIS_PIPELINE_STATUS)
+                .map(Boolean::parseBoolean)
+                .orElse(Boolean.FALSE);
+
         List<String> commentKeysForOpenComments = closeOldDiscussionsAndExtractRemainingKeys(client,
                 user,
                 currentProjectSonarqueComments,
                 openSonarqubeIssues,
-                pullRequest);
+                pullRequest,
+                deleteResolved);
 
         List<String> commitIds = getCommitIdsForPullRequest(client, pullRequest);
         List<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> uncommentedIssues = findIssuesWithoutComments(openSonarqubeIssues,
@@ -94,16 +115,40 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .filter(issue -> isIssueFromCommitInCurrentRequest(issue.getLeft(), commitIds, scmInfoRepository))
                 .collect(Collectors.toList());
 
-        uncommentedIssues.forEach(issue -> submitCommitNoteForIssue(client,
-                pullRequest,
-                issue.getLeft(),
-                issue.getRight(),
-                analysis,
-                reportGenerator.createAnalysisIssueSummary(issue.getLeft(), analysis)));
+        if (!issueDiscussionThreshold.equals(CommunityBranchPlugin.PR_ISSUE_DISCUSSION_THRESHOLD_NONE)) {
+            Stream<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> uncommentedIssuesStream = uncommentedIssues.stream();
+            if (!minimumIssueSeverity.equals(Severity.INFO)) {
+                int minimumSeverityIndex = CommunityBranchPlugin.PR_SEVERITIES_LIST.indexOf(minimumIssueSeverity);
+                uncommentedIssuesStream = uncommentedIssuesStream.filter(issue -> {
+                    String issueSeverity = issue.getLeft().getIssue().severity();
+                    int issueSeverityIndex = CommunityBranchPlugin.PR_SEVERITIES_LIST.indexOf(issueSeverity);
+                    return issueSeverityIndex >= minimumSeverityIndex;
+                });
+            }
+            if (!issueDiscussionThreshold.equals(CommunityBranchPlugin.PR_ISSUE_DISCUSSION_THRESHOLD_UNLIMITED)
+                    || !minimumIssueSeverity.equals(Severity.INFO)) {
+                uncommentedIssuesStream = uncommentedIssuesStream.sorted(Comparator.comparingInt(
+                        issue -> -1 * CommunityBranchPlugin.PR_SEVERITIES_LIST.indexOf(
+                                issue.getLeft().getIssue().severity())));
+            }
+            if (!issueDiscussionThreshold.equals(CommunityBranchPlugin.PR_ISSUE_DISCUSSION_THRESHOLD_UNLIMITED)) {
+                uncommentedIssuesStream = uncommentedIssuesStream.limit(issueDiscussionThreshold);
+            }
+            uncommentedIssuesStream.collect(Collectors.toList()).forEach(issue -> submitCommitNoteForIssue(client,
+                    pullRequest,
+                    issue.getLeft(),
+                    issue.getRight(),
+                    analysis,
+                    reportGenerator.createAnalysisIssueSummary(issue.getLeft(), analysis)));
+        }
 
         AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysis);
-        submitSummaryNote(client, pullRequest, analysis, analysisSummary);
-        submitPipelineStatus(client, pullRequest, analysis, analysisSummary);
+        if (!disableSummary) {
+            submitSummaryNote(client, pullRequest, analysis, analysisSummary);
+        }
+        if (!disableAnalysisPipelineStatus) {
+            submitPipelineStatus(client, pullRequest, analysis, analysisSummary);
+        }
 
         DecorationResult.Builder builder = DecorationResult.builder();
         createFrontEndUrl(pullRequest, analysis).ifPresent(builder::withPullRequestUrl);
@@ -134,6 +179,8 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
     protected abstract boolean isUserNote(N note);
 
     protected abstract void addNoteToDiscussion(C client, D discussion, P pullRequest, String note);
+
+    protected abstract void deleteDiscussionNote(C client, D discussion, P pullRequest, N note);
 
     protected abstract void resolveDiscussion(C client, D discussion, P pullRequest);
 
@@ -190,7 +237,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
     private List<String> closeOldDiscussionsAndExtractRemainingKeys(C client, U currentUser,
                                                                     List<Triple<D, N, Optional<ProjectIssueIdentifier>>> openSonarqubeComments,
                                                                     List<PostAnalysisIssueVisitor.ComponentIssue> openIssues,
-                                                                    P pullRequest) {
+                                                                    P pullRequest, Boolean deleteResolved) {
         List<String> openIssueKeys = openIssues.stream()
                 .map(issue -> issue.getIssue().key())
                 .collect(Collectors.toList());
@@ -206,7 +253,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
             String issueKey = noteIdentifier.get().getIssueKey();
             if (!openIssueKeys.contains(issueKey)) {
-                resolveOrPlaceFinalCommentOnDiscussion(client, currentUser, discussion, pullRequest);
+                resolveOrPlaceFinalCommentOnDiscussion(client, currentUser, discussion, pullRequest, deleteResolved);
             } else {
                 remainingCommentKeys.add(issueKey);
             }
@@ -221,13 +268,20 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .anyMatch(message -> RESOLVED_ISSUE_NEEDING_CLOSED_MESSAGE.equals(getNoteContent(client, message)));
     }
 
-    private void resolveOrPlaceFinalCommentOnDiscussion(C client, U currentUser, D discussion, P pullRequest) {
+    private void resolveOrPlaceFinalCommentOnDiscussion(C client, U currentUser, D discussion, P pullRequest, Boolean deleteResolved) {
         if (getNotesForDiscussion(client, discussion).stream()
                 .filter(this::isUserNote)
                 .anyMatch(note -> !isNoteFromCurrentUser(note, currentUser))) {
             addNoteToDiscussion(client, discussion, pullRequest, RESOLVED_ISSUE_NEEDING_CLOSED_MESSAGE);
         } else {
-            resolveDiscussion(client, discussion, pullRequest);
+            if (deleteResolved) {
+                List<N> commentsForDiscussion = getNotesForDiscussion(client, discussion);
+                commentsForDiscussion.stream().filter(note -> isNoteFromCurrentUser(note, currentUser)).forEach(
+                        note -> deleteDiscussionNote(client, discussion, pullRequest, note)
+                );
+            } else {
+                resolveDiscussion(client, discussion, pullRequest);
+            }
         }
 
     }

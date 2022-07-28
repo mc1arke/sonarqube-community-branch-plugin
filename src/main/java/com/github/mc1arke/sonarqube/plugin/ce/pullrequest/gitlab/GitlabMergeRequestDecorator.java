@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
@@ -212,6 +213,15 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
             client.addMergeRequestDiscussionNote(pullRequest.getTargetProjectId(), pullRequest.getIid(), discussion.getId(), note);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not add note to Merge Request discussion", ex);
+        }
+    }
+
+    @Override
+    protected void deleteDiscussionNote(GitlabClient client, Discussion discussion, MergeRequest pullRequest, Note note) {
+        try {
+            client.deleteMergeRequestDiscussionNote(pullRequest.getTargetProjectId(), pullRequest.getIid(), discussion.getId(), note.getId());
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not delete note from Merge Request discussion", ex);
         }
     }
 

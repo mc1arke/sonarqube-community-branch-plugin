@@ -228,6 +228,11 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     }
 
     @Override
+    protected void deleteDiscussionNote(AzureDevopsClient client, CommentThread discussion, PullRequest pullRequest, Comment note) {
+
+    }
+
+    @Override
     protected void resolveDiscussion(AzureDevopsClient client, CommentThread discussion, PullRequest pullRequest) {
         try {
             client.resolvePullRequestThread(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), discussion.getId());

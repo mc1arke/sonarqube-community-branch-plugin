@@ -60,15 +60,35 @@ import org.sonar.api.PropertyType;
 import org.sonar.api.SonarQubeSide;
 import org.sonar.api.config.PropertyDefinition;
 import org.sonar.api.resources.Qualifiers;
+import org.sonar.api.rule.Severity;
 import org.sonar.core.config.PurgeConstants;
 import org.sonar.core.extension.CoreExtension;
+
+import java.util.List;
 
 /**
  * @author Michael Clarke
  */
 public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
+    public static final String SUBCATEGORY_BRANCH = "Branch";
+
     public static final String IMAGE_URL_BASE = "com.github.mc1arke.sonarqube.plugin.branch.image-url-base";
+
+    public static final String PR_MINIMUM_ISSUE_SEVERITY =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.minimumIssueSeverity";
+    public static final String PR_ISSUE_DISCUSSION_THRESHOLD =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.issueDiscussionThreshold";
+    public static final String PR_DISABLE_ANALYSIS_SUMMARY =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.disableAnalysisSummary";
+    public static final String PR_DELETE_RESOLVED_DISCUSSIONS =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.deleteResolvedDiscussions";
+    public static final String PR_DISABLE_ANALYSIS_PIPELINE_STATUS =
+            "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.disableAnalysisPipelineStatus";
+    public static final List<String> PR_SEVERITIES_LIST = List.of(
+            Severity.INFO, Severity.MINOR, Severity.MAJOR, Severity.CRITICAL, Severity.BLOCKER);
+    public static final Long PR_ISSUE_DISCUSSION_THRESHOLD_UNLIMITED = -1L;
+    public static final Long PR_ISSUE_DISCUSSION_THRESHOLD_NONE = 0L;
 
     @Override
     public String getName() {
@@ -148,6 +168,64 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .description("Base URL used to load the images for the PR comments (please use this only if images are not displayed properly).")
                                           .type(PropertyType.STRING)
                                           .build());
+
+            context.addExtensions(PropertyDefinition.builder(PR_MINIMUM_ISSUE_SEVERITY)
+                    .category(CoreProperties.CATEGORY_GENERAL)
+                    .subCategory(SUBCATEGORY_BRANCH)
+                    .onQualifiers(Qualifiers.PROJECT)
+                    .name("Minimum issue severity for comment")
+                    .description("Minimum level of severity required for issue discussion thread creation (Gitlab and Azure DevOps only).")
+                    .type(PropertyType.SINGLE_SELECT_LIST)
+                    .options(PR_SEVERITIES_LIST)
+                    .defaultValue(Severity.INFO)
+                    .index(1)
+                    .build());
+
+            context.addExtensions(PropertyDefinition.builder(PR_ISSUE_DISCUSSION_THRESHOLD)
+                    .category(CoreProperties.CATEGORY_GENERAL)
+                    .subCategory(SUBCATEGORY_BRANCH)
+                    .onQualifiers(Qualifiers.PROJECT)
+                    .name("Maximum number of issue comments")
+                    .description("Maximum number of issues for which discussion threads will be created ("
+                            + PR_ISSUE_DISCUSSION_THRESHOLD_UNLIMITED + ": unlimited, "
+                            + PR_ISSUE_DISCUSSION_THRESHOLD_NONE + ": none) (Gitlab and Azure DevOps only).")
+                    .type(PropertyType.INTEGER)
+                    .defaultValue(String.valueOf(PR_ISSUE_DISCUSSION_THRESHOLD_UNLIMITED))
+                    .index(2)
+                    .build());
+
+            context.addExtensions(PropertyDefinition.builder(PR_DISABLE_ANALYSIS_SUMMARY)
+                    .category(CoreProperties.CATEGORY_GENERAL)
+                    .subCategory(SUBCATEGORY_BRANCH)
+                    .onQualifiers(Qualifiers.PROJECT)
+                    .name("Disable analysis summary")
+                    .description("Disable analysis summary discussion thread creation (Gitlab and Azure DevOps only).")
+                    .type(PropertyType.BOOLEAN)
+                    .defaultValue(String.valueOf(false))
+                    .index(3)
+                    .build());
+
+            context.addExtensions(PropertyDefinition.builder(PR_DELETE_RESOLVED_DISCUSSIONS)
+                    .category(CoreProperties.CATEGORY_GENERAL)
+                    .subCategory(SUBCATEGORY_BRANCH)
+                    .onQualifiers(Qualifiers.PROJECT)
+                    .name("Delete issues/summary")
+                    .description("Delete issues/summary discussion threads instead of resolving them (Gitlab only).")
+                    .type(PropertyType.BOOLEAN)
+                    .defaultValue(String.valueOf(false))
+                    .index(4)
+                    .build());
+
+            context.addExtensions(PropertyDefinition.builder(PR_DISABLE_ANALYSIS_PIPELINE_STATUS)
+                    .category(CoreProperties.CATEGORY_GENERAL)
+                    .subCategory(SUBCATEGORY_BRANCH)
+                    .onQualifiers(Qualifiers.PROJECT)
+                    .name("Disable analysis pipeline status")
+                    .description("Disable analysis pipeline status creation (Gitlab and Azure DevOps only).")
+                    .type(PropertyType.BOOLEAN)
+                    .defaultValue(String.valueOf(false))
+                    .index(5)
+                    .build());
 
         }
     }
