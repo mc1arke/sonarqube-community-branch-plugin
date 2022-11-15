@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,8 +18,8 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Branch;
@@ -27,11 +27,6 @@ import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.ce.posttask.ScannerContext;
-import org.sonar.api.config.Configuration;
-import org.sonar.api.platform.Server;
-import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
-import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
-import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.ALM;
@@ -62,42 +57,36 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class PullRequestPostAnalysisTaskTest {
+class PullRequestPostAnalysisTaskTest {
 
-    private PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-    private Branch branch = mock(Branch.class);
-    private ScannerContext scannerContext = mock(ScannerContext.class);
+    private final PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
+    private final Branch branch = mock(Branch.class);
+    private final ScannerContext scannerContext = mock(ScannerContext.class);
 
-    private Server server = mock(Server.class);
-    private List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-    private PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-    private MetricRepository metricRepository = mock(MetricRepository.class);
-    private MeasureRepository measureRepository = mock(MeasureRepository.class);
-    private TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
-    private PostProjectAnalysisTask.Context context = mock(PostProjectAnalysisTask.Context.class);
-    private DbClient dbClient = mock(DbClient.class);
-    private Project project = mock(Project.class);
-    private Configuration configuration = mock(Configuration.class);
+    private final List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
+    private final PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
+    private final PostProjectAnalysisTask.Context context = mock(PostProjectAnalysisTask.Context.class);
+    private final DbClient dbClient = mock(DbClient.class);
+    private final Project project = mock(Project.class);
+    private final List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = List.of(mock(PostAnalysisIssueVisitor.ComponentIssue.class));
 
-    private PullRequestPostAnalysisTask testCase =
-            new PullRequestPostAnalysisTask(server, pullRequestBuildStatusDecorators,
-                    postAnalysisIssueVisitor, metricRepository, measureRepository,
-                    treeRootHolder, configuration, dbClient);
+    private final PullRequestPostAnalysisTask testCase =
+            new PullRequestPostAnalysisTask(pullRequestBuildStatusDecorators,
+                    postAnalysisIssueVisitor, dbClient);
 
-    @Before
-    public void init() {
+    @BeforeEach
+    void init() {
         doReturn(Optional.of(branch)).when(projectAnalysis).getBranch();
         doReturn(scannerContext).when(projectAnalysis).getScannerContext();
         doReturn(new HashMap<>()).when(scannerContext).getProperties();
         doReturn(projectAnalysis).when(context).getProjectAnalysis();
         doReturn(project).when(projectAnalysis).getProject();
         doReturn("uuid").when(project).getUuid();
-
-
+        doReturn(componentIssues).when(postAnalysisIssueVisitor).getIssues();
     }
 
     @Test
-    public void testFinishedNonPullRequest() {
+    void testFinishedNonPullRequest() {
         doReturn(Branch.Type.BRANCH).when(branch).getType();
 
         testCase.finished(context);
@@ -107,7 +96,7 @@ public class PullRequestPostAnalysisTaskTest {
     }
 
     @Test
-    public void testFinishedNoBranchName() {
+    void testFinishedNoBranchName() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.empty()).when(branch).getName();
 
@@ -117,7 +106,7 @@ public class PullRequestPostAnalysisTaskTest {
     }
 
     @Test
-    public void testFinishedNoProviderSet() {
+    void testFinishedNoProviderSet() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("branchName")).when(branch).getName();
 
@@ -145,7 +134,7 @@ public class PullRequestPostAnalysisTaskTest {
     }
 
     @Test
-    public void testFinishedNoProviderMatchingName() {
+    void testFinishedNoProviderMatchingName() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("branchName")).when(branch).getName();
 
@@ -181,7 +170,7 @@ public class PullRequestPostAnalysisTaskTest {
     }
 
     @Test
-    public void testFinishedNoAnalysis() {
+    void testFinishedNoAnalysis() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
@@ -219,7 +208,7 @@ public class PullRequestPostAnalysisTaskTest {
 
 
     @Test
-    public void testFinishedAnalysisWithNoRevision() {
+    void testFinishedAnalysisWithNoRevision() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
@@ -259,7 +248,7 @@ public class PullRequestPostAnalysisTaskTest {
     }
 
     @Test
-    public void testFinishedAnalysisWithNoQualityGate() {
+    void testFinishedAnalysisWithNoQualityGate() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
@@ -302,7 +291,7 @@ public class PullRequestPostAnalysisTaskTest {
     }
 
     @Test
-    public void testFinishedAnalysisDecorationRequest() {
+    void testFinishedAnalysisDecorationRequest() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
@@ -357,16 +346,12 @@ public class PullRequestPostAnalysisTaskTest {
         verify(decorator2).decorateQualityGateStatus(analysisDetailsArgumentCaptor.capture(), eq(almSettingDto), eq(projectAlmSettingDto));
 
         AnalysisDetails analysisDetails =
-                new AnalysisDetails(new AnalysisDetails.BranchDetails("pull-request", "revision"),
-                                    postAnalysisIssueVisitor, qualityGate,
-                                    new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
-                                                                       treeRootHolder), analysis, project,
-                                    configuration ,null, scannerContext);
+                new AnalysisDetails("pull-request", "revision", componentIssues, qualityGate, projectAnalysis);
         assertThat(analysisDetailsArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(analysisDetails);
     }
 
     @Test
-    public void testFinishedAnalysisDecorationRequestPullRequestLinkSaved() {
+    void testFinishedAnalysisDecorationRequestPullRequestLinkSaved() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
@@ -404,10 +389,10 @@ public class PullRequestPostAnalysisTaskTest {
         doReturn(DbProjectBranches.PullRequestData.newBuilder().build()).when(branchDto).getPullRequestData();
 
         ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
-        doReturn(Optional.of(projectAlmSettingDto)).when(projectAlmSettingDao).selectByProject(eq(dbSession), eq("uuid"));
+        doReturn(Optional.of(projectAlmSettingDto)).when(projectAlmSettingDao).selectByProject(dbSession, "uuid");
         doReturn("setting-uuid").when(projectAlmSettingDto).getAlmSettingUuid();
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
-        doReturn(Optional.of(almSettingDto)).when(almSettingDao).selectByUuid(eq(dbSession), eq("setting-uuid"));
+        doReturn(Optional.of(almSettingDto)).when(almSettingDao).selectByUuid(dbSession, "setting-uuid");
 
         doReturn(projectAlmSettingDao).when(dbClient).projectAlmSettingDao();
         doReturn(almSettingDao).when(dbClient).almSettingDao();
@@ -417,9 +402,9 @@ public class PullRequestPostAnalysisTaskTest {
         ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis).getQualityGate();
-        verify(dbClient, times(2)).openSession(eq(false));
+        verify(dbClient, times(2)).openSession(false);
         verify(dbClient).branchDao();
-        verify(branchDao).selectByPullRequestKey(eq(dbSession), eq("uuid"), eq("pull-request"));
+        verify(branchDao).selectByPullRequestKey(dbSession, "uuid", "pull-request");
         verify(decorator2).decorateQualityGateStatus(analysisDetailsArgumentCaptor.capture(), eq(almSettingDto), eq(projectAlmSettingDto));
 
         ArgumentCaptor<DbProjectBranches.PullRequestData> pullRequestDataArgumentCaptor = ArgumentCaptor.forClass(
@@ -428,19 +413,16 @@ public class PullRequestPostAnalysisTaskTest {
         assertThat(pullRequestDataArgumentCaptor.getValue().getUrl()).isEqualTo("pullRequestUrl");
 
         verify(dbSession).commit();
-        verify(branchDao).upsert(eq(dbSession), eq(branchDto));
+        verify(branchDao).upsert(dbSession, branchDto);
 
         AnalysisDetails analysisDetails =
-                new AnalysisDetails(new AnalysisDetails.BranchDetails("pull-request", "revision"),
-                                    postAnalysisIssueVisitor, qualityGate,
-                                    new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
-                                                                       treeRootHolder), analysis, project,
-                                    configuration ,null, scannerContext);
+                new AnalysisDetails("pull-request", "revision",
+                                    componentIssues, qualityGate, projectAnalysis);
         assertThat(analysisDetailsArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(analysisDetails);
     }
 
     @Test
-    public void testFinishedAnalysisDecorationRequestPullRequestLinkNotSavedIfBranchDtoMissing() {
+    void testFinishedAnalysisDecorationRequestPullRequestLinkNotSavedIfBranchDtoMissing() {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
@@ -497,9 +479,9 @@ public class PullRequestPostAnalysisTaskTest {
 
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis).getQualityGate();
-        verify(dbClient, times(2)).openSession(eq(false));
+        verify(dbClient, times(2)).openSession(false);
         verify(dbClient).branchDao();
-        verify(branchDao).selectByPullRequestKey(eq(dbSession), eq("uuid"), eq("pull-request"));
+        verify(branchDao).selectByPullRequestKey(dbSession, "uuid", "pull-request");
         verify(decorator1).decorateQualityGateStatus(analysisDetailsArgumentCaptor.capture(),
                                                      almSettingDtoArgumentCaptor.capture(),
                                                      projectAlmSettingDtoArgumentCaptor.capture());
@@ -511,16 +493,13 @@ public class PullRequestPostAnalysisTaskTest {
         verify(branchDao, never()).upsert(any(), any());
 
         AnalysisDetails analysisDetails =
-                new AnalysisDetails(new AnalysisDetails.BranchDetails("pull-request", "revision"),
-                                    postAnalysisIssueVisitor, qualityGate,
-                                    new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
-                                                                       treeRootHolder), analysis, project,
-                                    configuration ,null, scannerContext);
+                new AnalysisDetails("pull-request", "revision",
+                                    componentIssues, qualityGate, projectAnalysis);
         assertThat(analysisDetailsArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(analysisDetails);
     }
 
     @Test
-    public void testCorrectDescriptionReturnedForTask() {
+    void testCorrectDescriptionReturnedForTask() {
         assertThat(testCase.getDescription()).isEqualTo("Pull Request Decoration");
     }
 }

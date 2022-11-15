@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2022 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,9 +22,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
-import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.cloud.BitbucketCloudConfiguration;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.BitbucketServerConfiguration;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.ce.ComputeEngineSide;
@@ -37,7 +38,8 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.util.Optional;
-import java.util.function.Supplier;
+
+import static java.lang.String.format;
 
 @ServerSide
 @ComputeEngineSide
@@ -45,15 +47,11 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
 
     private static final Logger LOGGER = Loggers.get(DefaultBitbucketClientFactory.class);
 
-    private final Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier;
+    private final HttpClientBuilderFactory httpClientBuilderFactory;
     private final Settings settings;
 
-    public DefaultBitbucketClientFactory(Settings settings) {
-        this(settings, OkHttpClient.Builder::new);
-    }
-
-    DefaultBitbucketClientFactory(Settings settings, Supplier<OkHttpClient.Builder> okHttpClientBuilderSupplier) {
-        this.okHttpClientBuilderSupplier = okHttpClientBuilderSupplier;
+    public DefaultBitbucketClientFactory(Settings settings, HttpClientBuilderFactory httpClientBuilderFactory) {
+        this.httpClientBuilderFactory = httpClientBuilderFactory;
         this.settings = settings;
     }
 
@@ -61,6 +59,10 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
     public BitbucketClient createClient(ProjectAlmSettingDto projectAlmSettingDto, AlmSettingDto almSettingDto) {
         String almRepo = Optional.ofNullable(StringUtils.trimToNull(projectAlmSettingDto.getAlmRepo()))
                 .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "ALM Repo must be set in configuration"));
+
+        ObjectMapper objectMapper = createObjectMapper();
+        OkHttpClient.Builder clientBuilder = createBaseClientBuilder(httpClientBuilderFactory);
+
         if (almSettingDto.getAlm() == ALM.BITBUCKET_CLOUD) {
             String appId = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getAppId()))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "App ID must be set in configuration"));
@@ -68,7 +70,8 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client ID must be set in configuration"));
             String clientSecret = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getDecryptedClientSecret(settings.getEncryption())))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client Secret must be set in configuration"));
-            return new BitbucketCloudClient(new BitbucketCloudConfiguration(appId, almRepo, clientId, clientSecret), createObjectMapper(), createBaseClientBuilder(okHttpClientBuilderSupplier));
+            String bearerToken = BitbucketCloudClient.negotiateBearerToken(clientId, clientSecret, objectMapper, clientBuilder.build());
+            return new BitbucketCloudClient(objectMapper, createAuthorisingClient(clientBuilder, bearerToken), new BitbucketConfiguration(appId, almRepo));
         } else {
             String almSlug = Optional.ofNullable(StringUtils.trimToNull(projectAlmSettingDto.getAlmSlug()))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "ALM slug must be set in configuration"));
@@ -76,19 +79,30 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "URL must be set in configuration"));
             String personalAccessToken = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption())))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "Personal access token must be set in configuration"));
-            return new BitbucketServerClient(new BitbucketServerConfiguration(almRepo, almSlug, url, personalAccessToken), createObjectMapper(), createBaseClientBuilder(okHttpClientBuilderSupplier));
+            return new BitbucketServerClient(new BitbucketServerConfiguration(almRepo, almSlug, url), objectMapper, createAuthorisingClient(clientBuilder, personalAccessToken));
         }
     }
 
     private static ObjectMapper createObjectMapper() {
         return new ObjectMapper()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .findAndRegisterModules();
     }
 
-    private static OkHttpClient.Builder createBaseClientBuilder(Supplier<OkHttpClient.Builder> builderSupplier) {
+    private static OkHttpClient.Builder createBaseClientBuilder(HttpClientBuilderFactory httpClientBuilderFactory) {
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(LOGGER::debug);
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-        return builderSupplier.get().addInterceptor(httpLoggingInterceptor);
+        return httpClientBuilderFactory.createClientBuilder().addInterceptor(httpLoggingInterceptor);
+    }
+
+    private static OkHttpClient createAuthorisingClient(OkHttpClient.Builder clientBuilder, String bearerToken) {
+        return clientBuilder.addInterceptor(chain -> {
+                    Request newRequest = chain.request().newBuilder()
+                            .addHeader("Authorization", format("Bearer %s", bearerToken))
+                            .addHeader("Accept", "application/json")
+                            .build();
+                    return chain.proceed(newRequest);
+                }).build();
     }
 }

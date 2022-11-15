@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,19 +23,13 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketCo
 public class BitbucketServerConfiguration extends BitbucketConfiguration {
 
     private final String url;
-    private final String personalAccessToken;
 
-    public BitbucketServerConfiguration(String almRepo, String almSlug, String url, String personalAccessToken) {
-        super(almRepo, almSlug);
+    public BitbucketServerConfiguration(String project, String repository, String url) {
+        super(project, repository);
         this.url = url;
-        this.personalAccessToken = personalAccessToken;
     }
 
     public String getUrl() {
         return url;
-    }
-
-    public String getPersonalAccessToken() {
-        return personalAccessToken;
     }
 }

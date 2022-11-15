@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,12 +25,12 @@ import org.sonar.ce.task.projectanalysis.issue.IssueVisitor;
 import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.protobuf.DbIssues;
 
+import javax.annotation.CheckForNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-
-import javax.annotation.CheckForNull;
+import java.util.Optional;
 
 public class PostAnalysisIssueVisitor extends IssueVisitor {
 
@@ -38,7 +38,7 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
     @Override
     public void onIssue(Component component, DefaultIssue defaultIssue) {
-        collectedIssues.add(new ComponentIssue(component, defaultIssue));
+        collectedIssues.add(new ComponentIssue(component, new LightIssue(defaultIssue)));
     }
 
     public List<ComponentIssue> getIssues() {
@@ -50,11 +50,10 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
         private final Component component;
         private final LightIssue issue;
 
-        ComponentIssue(Component component, DefaultIssue issue) {
+        ComponentIssue(Component component, LightIssue issue) {
             super();
             this.component = component;
-            this.issue = (issue != null) ? new LightIssue(issue) : null;
-            // the null test is to please PostAnalysisIssueVisitorTest.checkAllIssuesCollected()
+            this.issue = issue;
         }
 
         public Component getComponent() {
@@ -63,6 +62,13 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
         public LightIssue getIssue() {
             return issue;
+        }
+
+        public Optional<String> getScmPath() {
+            if (Component.Type.FILE == component.getType()) {
+                return component.getReportAttributes().getScmPath();
+            }
+            return Optional.empty();
         }
     }
 
@@ -85,7 +91,7 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
         private final DbIssues.Locations locations;
         private final RuleKey ruleKey;
 
-        private LightIssue(DefaultIssue issue) {
+        LightIssue(DefaultIssue issue) {
             this.effortInMinutes = issue.effortInMinutes();
             this.key = issue.key();
             this.line = issue.getLine();

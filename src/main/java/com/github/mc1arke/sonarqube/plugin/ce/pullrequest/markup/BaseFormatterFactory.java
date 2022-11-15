@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,31 +18,31 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-abstract class BaseFormatter<N extends Node> implements Formatter<N> {
+abstract class BaseFormatterFactory implements FormatterFactory {
 
-    String childContents(Node node, FormatterFactory formatterFactory) {
+    protected String childContents(Node node) {
         StringBuilder output = new StringBuilder();
-        node.getChildren().forEach(n -> output.append(formatterFor(formatterFactory, n).format(n, formatterFactory)));
+        node.getChildren().forEach(n -> output.append(format(n)));
         return output.toString();
     }
 
-    private static <N extends Node> Formatter<N> formatterFor(FormatterFactory formatterFactory, N node) {
+    protected String format(Node node) {
         if (node instanceof Document) {
-            return (Formatter<N>) formatterFactory.documentFormatter();
+            return documentFormatter().format((Document) node);
         } else if (node instanceof Heading) {
-            return (Formatter<N>) formatterFactory.headingFormatter();
+            return headingFormatter().format((Heading) node);
         } else if (node instanceof Image) {
-            return (Formatter<N>) formatterFactory.imageFormatter();
+            return imageFormatter().format((Image) node);
         } else if (node instanceof List) {
-            return (Formatter<N>) formatterFactory.listFormatter();
+            return listFormatter().format((List) node);
         } else if (node instanceof ListItem) {
-            return (Formatter<N>) formatterFactory.listItemFormatter();
+            return listItemFormatter().format((ListItem) node);
         } else if (node instanceof Paragraph) {
-            return (Formatter<N>) formatterFactory.paragraphFormatter();
+            return paragraphFormatter().format((Paragraph) node);
         } else if (node instanceof Text) {
-            return (Formatter<N>) formatterFactory.textFormatter();
+            return textFormatter().format((Text) node);
         } else if (node instanceof Link) {
-            return (Formatter<N>) formatterFactory.linkFormatter();
+            return linkFormatter().format((Link) node);
         } else {
             throw new IllegalArgumentException("Unknown node type: " + node.getClass().getName());
         }

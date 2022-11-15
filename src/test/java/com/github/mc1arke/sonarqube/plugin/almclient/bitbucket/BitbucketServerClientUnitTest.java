@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +24,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationU
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.Annotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.BitbucketServerConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.CreateReportRequest;
@@ -43,7 +44,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.sonar.api.ce.posttask.QualityGate;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -74,7 +74,7 @@ public class BitbucketServerClientUnitTest {
     @Before
     public void before() {
         BitbucketServerConfiguration
-                config = new BitbucketServerConfiguration("repo", "slug", "https://my-server.org", "token");
+                config = new BitbucketServerConfiguration("project", "repository", "https://my-server.org");
         underTest = new BitbucketServerClient(config, mapper, client);
     }
 
@@ -240,13 +240,13 @@ public class BitbucketServerClientUnitTest {
         when(mapper.writeValueAsString(report)).thenReturn("{payload}");
 
         // when
-        underTest.uploadReport("project", "repository", "commit", report);
+        underTest.uploadReport("commit", report, "reportKey");
 
         // then
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("PUT", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/com.github.mc1arke.sonarqube", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey", request.url().toString());
     }
 
     @Test
@@ -264,7 +264,7 @@ public class BitbucketServerClientUnitTest {
         when(mapper.writeValueAsString(report)).thenReturn("{payload}");
 
         // when,then
-        assertThatThrownBy(() -> underTest.uploadReport("project", "repository", "commit", report))
+        assertThatThrownBy(() -> underTest.uploadReport("commit", report, "reportKey"))
                 .isInstanceOf(BitbucketException.class);
     }
 
@@ -295,7 +295,7 @@ public class BitbucketServerClientUnitTest {
 
 
         // when,then
-        assertThatThrownBy(() -> underTest.uploadReport("project", "repository", "commit", report))
+        assertThatThrownBy(() -> underTest.uploadReport("commit", report, "reportKey"))
                 .isInstanceOf(BitbucketException.class)
                 .hasMessage("error!")
                 .extracting(e -> ((BitbucketException) e).isError(400))
@@ -323,13 +323,13 @@ public class BitbucketServerClientUnitTest {
         when(response.isSuccessful()).thenReturn(true);
 
         // when
-        underTest.uploadAnnotations("project", "repository", "commit", annotations);
+        underTest.uploadAnnotations("commit", annotations, "reportKey");
 
         // then
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("POST", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/com.github.mc1arke.sonarqube/annotations", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
 
         try (Buffer bodyContent = new Buffer()) {
             request.body().writeTo(bodyContent);
@@ -343,7 +343,7 @@ public class BitbucketServerClientUnitTest {
         Set<CodeInsightsAnnotation> annotations = Sets.newHashSet();
 
         // when
-        underTest.uploadAnnotations("project", "repository", "commit", annotations);
+        underTest.uploadAnnotations("commit", annotations, "reportKey");
 
         // then
         verify(client, never()).newCall(any());
@@ -361,13 +361,13 @@ public class BitbucketServerClientUnitTest {
         when(response.isSuccessful()).thenReturn(true);
 
         // when
-        underTest.deleteAnnotations("project", "repository", "commit");
+        underTest.deleteAnnotations("commit", "reportKey");
 
         // then
         verify(client).newCall(captor.capture());
         Request request = captor.getValue();
         assertEquals("DELETE", request.method());
-        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/com.github.mc1arke.sonarqube/annotations", request.url().toString());
+        assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
     }
 
     @Test
@@ -413,7 +413,7 @@ public class BitbucketServerClientUnitTest {
         // given
 
         // when
-        CodeInsightsReport result = underTest.createCodeInsightsReport(new ArrayList<>(), "reportDescription", Instant.now(), "dashboardUrl", "logoUrl", QualityGate.Status.ERROR);
+        CodeInsightsReport result = underTest.createCodeInsightsReport(new ArrayList<>(), "reportDescription", Instant.now(), "dashboardUrl", "logoUrl", ReportStatus.FAILED);
 
         // then
         assertTrue(result instanceof CreateReportRequest);

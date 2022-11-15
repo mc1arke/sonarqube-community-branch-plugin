@@ -2,9 +2,15 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Before;
 import org.junit.Rule;
@@ -13,7 +19,6 @@ import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.internal.Encryption;
 import org.sonar.api.config.internal.Settings;
 import org.sonar.api.issue.Issue;
-import org.sonar.api.platform.Server;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
@@ -26,6 +31,7 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.protobuf.DbIssues;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -47,7 +53,7 @@ import static org.mockito.Mockito.when;
 public class AzureDevOpsPullRequestDecoratorTest {
 
     @Rule
-    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig());
+    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     private final String azureProject = "azure Project";
     private final String sonarProject = "sonarProject";
@@ -59,8 +65,6 @@ public class AzureDevOpsPullRequestDecoratorTest {
     private final String issueKeyVal = "issueKeyVal";
     private final String ruleKeyVal = "ruleKeyVal";
     private final String threadId = "1468";
-    private final String issueUrl = "http://sonar:9000/sonar/project/issues?id=sonarProject&pullRequest=8513&issues=issueKeyVal&open=issueKeyVal";
-    private final String ruleUrl = "http://sonar:9000/sonar/coding_rules?open=ruleKeyVal&rule_key=ruleKeyVal";
     private final int lineNumber = 5;
     private final String token = "token";
     private final String authHeader = "Basic OnRva2Vu";
@@ -69,14 +73,14 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-    private final Server server = mock(Server.class);
     private final ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
     private final Settings settings = mock(Settings.class);
     private final Encryption encryption = mock(Encryption.class);
-    private final AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(server, scmInfoRepository, new DefaultAzureDevopsClientFactory(settings));
+    private final ReportGenerator reportGenerator = mock(ReportGenerator.class);
+    private final MarkdownFormatterFactory formatterFactory = mock(MarkdownFormatterFactory.class);
+    private final AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(scmInfoRepository, new DefaultAzureDevopsClientFactory(settings), reportGenerator, formatterFactory);
     private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
 
-    private final PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
     private final PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
     private final PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
     private final Component component = mock(Component.class);
@@ -84,6 +88,8 @@ public class AzureDevOpsPullRequestDecoratorTest {
     @Before
     public void setUp() {
         when(settings.getEncryption()).thenReturn(encryption);
+        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(mock(AnalysisIssueSummary.class));
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(mock(AnalysisSummary.class));
     }
 
     private void configureTestDefaults() {
@@ -93,22 +99,23 @@ public class AzureDevOpsPullRequestDecoratorTest {
         when(analysisDetails.getAnalysisProjectName()).thenReturn(projectName);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(sonarProject);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
-        when(analysisDetails.getBranchName()).thenReturn(pullRequestId);
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(issueVisitor);
-        when(analysisDetails.getRuleUrlWithRuleKey(ruleKeyVal)).thenReturn(ruleUrl);
-        when(analysisDetails.getIssueUrl(defaultIssue)).thenReturn(issueUrl);
-        when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of(filePath));
-        when(analysisDetails.parseIssueIdFromUrl(any())).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier("projectKey", "issueid")));
-        when(issueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
+        when(analysisDetails.getPullRequestId()).thenReturn(pullRequestId);
+        when(analysisDetails.getIssues()).thenReturn(List.of(componentIssue));
 
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("analysis summary");
-        when(analysisDetails.createAnalysisIssueSummary(any(), any())).thenReturn("issue summary");
+        AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
+        when(analysisSummary.format(any())).thenReturn("analysis summary");
+        when(analysisSummary.getDashboardUrl()).thenReturn("http://sonar:9000/sonar/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId);
+        AnalysisIssueSummary analysisIssueSummary = mock(AnalysisIssueSummary.class);
+
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
 
         DbIssues.Locations locate = DbIssues.Locations.newBuilder().build();
         RuleType rule = RuleType.CODE_SMELL;
         RuleKey ruleKey = mock(RuleKey.class);
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
         when(componentIssue.getComponent()).thenReturn(component);
+        when(componentIssue.getScmPath()).thenReturn(Optional.of("scmPath"));
         when(defaultIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
         when(defaultIssue.getLine()).thenReturn(lineNumber);
         when(defaultIssue.getLocations()).thenReturn(locate);
@@ -116,7 +123,6 @@ public class AzureDevOpsPullRequestDecoratorTest {
         when(defaultIssue.getMessage()).thenReturn(issueMessage);
         when(defaultIssue.getRuleKey()).thenReturn(ruleKey);
         when(defaultIssue.key()).thenReturn(issueKeyVal);
-        when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of("scmPath"));
         Changeset changeset = mock(Changeset.class);
         when(changeset.getRevision()).thenReturn("revisionId");
         ScmInfo scmInfo = mock(ScmInfo.class);
@@ -124,7 +130,6 @@ public class AzureDevOpsPullRequestDecoratorTest {
         when(scmInfo.getChangesetForLine(anyInt())).thenReturn(changeset);
         when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
         when(ruleKey.toString()).thenReturn(ruleKeyVal);
-        when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
 
         when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
@@ -226,7 +231,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                                 "      \"state\": \"wellFormed\"," + System.lineSeparator() +
                                 "      \"revision\": 7" + System.lineSeparator() +
                                 "    }," + System.lineSeparator() +
-                                "    \"remoteUrl\": \"http://localhost:8080/" + azureProject + "/_git/" + azureRepository + "\"" + System.lineSeparator() +
+                                "    \"remoteUrl\": \"" + wireMockRule.baseUrl() + "/" + azureProject + "/_git/" + azureRepository + "\"" + System.lineSeparator() +
                                 "  }," + System.lineSeparator() +
                                 "  \"pullRequestId\": " + pullRequestId + "," + System.lineSeparator() +
                                 "  \"codeReviewId\": " + pullRequestId + "," + System.lineSeparator() +
@@ -510,14 +515,14 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void testName() {
-        assertThat(new AzureDevOpsPullRequestDecorator(mock(Server.class), mock(ScmInfoRepository.class), mock(AzureDevopsClientFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
+        assertThat(new AzureDevOpsPullRequestDecorator(mock(ScmInfoRepository.class), mock(AzureDevopsClientFactory.class), mock(ReportGenerator.class), mock(MarkdownFormatterFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
     }
 
     @Test
     public void testDecorateQualityGateRepoNameException() {
         when(almSettingDto.getUrl()).thenReturn("almUrl");
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("personalAccessToken");
-        when(analysisDetails.getBranchName()).thenReturn("123");
+        when(analysisDetails.getPullRequestId()).thenReturn("123");
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("prj");
 
         assertThatThrownBy(() -> pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
@@ -529,7 +534,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     public void testDecorateQualityGateRepoSlugException() {
         when(almSettingDto.getUrl()).thenReturn("almUrl");
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("personalAccessToken");
-        when(analysisDetails.getBranchName()).thenReturn("123");
+        when(analysisDetails.getPullRequestId()).thenReturn("123");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
 
         assertThatThrownBy(() -> pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
@@ -553,7 +558,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     public void testDecorateQualityGatePRBranchException() {
         when(almSettingDto.getUrl()).thenReturn("almUrl");
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("personalAccessToken");
-        when(analysisDetails.getBranchName()).thenReturn("NON-NUMERIC");
+        when(analysisDetails.getPullRequestId()).thenReturn("NON-NUMERIC");
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("prj");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
 
@@ -579,6 +584,26 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
         DecorationResult result = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
         assertThat(result.getPullRequestUrl()).isEqualTo(Optional.of(String.format("%s/%s/_git/%s/pullRequest/%s", wireMockRule.baseUrl(), azureProject, azureRepository, pullRequestId)));
+    }
+
+    @Test
+    public void shouldRemoveUserInfoFromRepositoryUrlForLinking() {
+        ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
+        AzureDevopsClientFactory azureDevopsClientFactory = mock(AzureDevopsClientFactory.class);
+        ReportGenerator reportGenerator = mock(ReportGenerator.class);
+        MarkdownFormatterFactory markdownFormatterFactory = mock(MarkdownFormatterFactory.class);
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+
+        Repository repository = mock(Repository.class);
+        when(repository.getRemoteUrl()).thenReturn("https://user@domain.com/path/to/repo");
+        PullRequest pullRequest = mock(PullRequest.class);
+        when(pullRequest.getRepository()).thenReturn(repository);
+        when(pullRequest.getId()).thenReturn(999);
+
+        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+
+        assertThat(underTest.createFrontEndUrl(pullRequest, analysisDetails)).contains("https://domain.com/path/to/repo/pullRequest/999");
     }
 
 }

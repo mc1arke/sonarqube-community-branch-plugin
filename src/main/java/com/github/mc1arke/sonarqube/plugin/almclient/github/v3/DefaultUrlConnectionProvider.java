@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,10 +18,15 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.github.v3;
 
+import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.server.ServerSide;
+
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
+@ComputeEngineSide
+@ServerSide
 public final class DefaultUrlConnectionProvider implements UrlConnectionProvider {
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,12 +21,12 @@ package com.github.mc1arke.sonarqube.plugin.almclient.github;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAuthenticationProvider;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.GraphqlGithubClient;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.GraphqlProvider;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.config.internal.Encryption;
 import org.sonar.api.config.internal.Settings;
-import org.sonar.api.platform.Server;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
@@ -43,8 +43,8 @@ class DefaultGithubClientFactoryTest {
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
     private final RestApplicationAuthenticationProvider restApplicationAuthenticationProvider = mock(RestApplicationAuthenticationProvider.class);
-    private final Server server = mock(Server.class);
     private final Settings settings = mock(Settings.class);
+    private final GraphqlProvider graphqlProvider = mock(GraphqlProvider.class);
 
     @BeforeEach
     public void setUp() {
@@ -58,7 +58,7 @@ class DefaultGithubClientFactoryTest {
     @Test
     void testExceptionThrownIfUrlMissing() {
         when(almSettingDto.getUrl()).thenReturn(null);
-        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, server, settings);
+        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, settings, graphqlProvider);
         assertThatThrownBy(() -> underTest.createClient(projectAlmSettingDto, almSettingDto))
                 .isInstanceOf(InvalidConfigurationException.class)
                 .hasMessage("No URL has been set for Github connections")
@@ -68,7 +68,7 @@ class DefaultGithubClientFactoryTest {
     @Test
     void testExceptionThrownIfPrivateKeyMissing() {
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn(null);
-        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, server, settings);
+        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, settings, graphqlProvider);
         assertThatThrownBy(() -> underTest.createClient(projectAlmSettingDto, almSettingDto))
                 .isInstanceOf(InvalidConfigurationException.class)
                 .hasMessage("No private key has been set for Github connections")
@@ -78,7 +78,7 @@ class DefaultGithubClientFactoryTest {
     @Test
     void testExceptionThrownIfAlmRepoMissing() {
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(null);
-        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, server, settings);
+        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, settings, graphqlProvider);
         assertThatThrownBy(() -> underTest.createClient(projectAlmSettingDto, almSettingDto))
                 .isInstanceOf(InvalidConfigurationException.class)
                 .hasMessage("No repository name has been set for Github connections")
@@ -88,7 +88,7 @@ class DefaultGithubClientFactoryTest {
     @Test
     void testExceptionThrownIfAppIdMissing() {
         when(almSettingDto.getAppId()).thenReturn(null);
-        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, server, settings);
+        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, settings, graphqlProvider);
         assertThatThrownBy(() -> underTest.createClient(projectAlmSettingDto, almSettingDto))
                 .isInstanceOf(InvalidConfigurationException.class)
                 .hasMessage("No App ID has been set for Github connections")
@@ -97,7 +97,7 @@ class DefaultGithubClientFactoryTest {
 
     @Test
     void testExceptionThrownIfAuthenticationProviderThrowsException() throws IOException {
-        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, server, settings);
+        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, settings, graphqlProvider);
         when(restApplicationAuthenticationProvider.getInstallationToken(any(), any(), any(), any())).thenThrow(new IOException("dummy"));
         assertThatThrownBy(() -> underTest.createClient(projectAlmSettingDto, almSettingDto))
                 .isInstanceOf(InvalidConfigurationException.class)
@@ -107,10 +107,11 @@ class DefaultGithubClientFactoryTest {
 
     @Test
     void testHappyPath() throws IOException {
-        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, server, settings);
+        DefaultGithubClientFactory underTest = new DefaultGithubClientFactory(restApplicationAuthenticationProvider, settings, graphqlProvider);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("alm/slug");
 
         RepositoryAuthenticationToken repositoryAuthenticationToken = mock(RepositoryAuthenticationToken.class);
         when(restApplicationAuthenticationProvider.getInstallationToken(any(), any(), any(), any())).thenReturn(repositoryAuthenticationToken);
-        assertThat(underTest.createClient(projectAlmSettingDto, almSettingDto)).usingRecursiveComparison().isEqualTo(new GraphqlGithubClient(repositoryAuthenticationToken, server));
+        assertThat(underTest.createClient(projectAlmSettingDto, almSettingDto)).usingRecursiveComparison().isEqualTo(new GraphqlGithubClient(graphqlProvider, "url", repositoryAuthenticationToken));
     }
 }

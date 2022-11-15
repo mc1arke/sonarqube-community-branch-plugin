@@ -24,15 +24,18 @@ public class MergeRequest {
     private final long iid;
     private final DiffRefs diffRefs;
     private final long sourceProjectId;
+    private final long targetProjectId;
     private final String webUrl;
 
     public MergeRequest(@JsonProperty("iid") long iid, @JsonProperty("diff_refs") DiffRefs diffRefs,
                         @JsonProperty("source_project_id") long sourceProjectId,
+                        @JsonProperty("target_project_id") long targetProjectId,
                         @JsonProperty("web_url") String webUrl) {
         this.iid = iid;
         this.diffRefs = diffRefs;
         this.sourceProjectId = sourceProjectId;
         this.webUrl = webUrl;
+        this.targetProjectId = targetProjectId;
     }
 
     public long getIid() {
@@ -45,6 +48,10 @@ public class MergeRequest {
 
     public long getSourceProjectId() {
         return sourceProjectId;
+    }
+
+    public long getTargetProjectId() {
+        return targetProjectId;
     }
 
     public String getWebUrl() {

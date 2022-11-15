@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,7 @@ public class CommunityReportAnalysisComponentProviderTest {
     @Test
     public void testGetComponents() {
         List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(13, result.size());
+        assertEquals(18, result.size());
         assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,26 +16,21 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.cloud;
+package com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model;
 
-import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class BitbucketCloudConfiguration extends BitbucketConfiguration {
+public class Owner {
 
-    private final String clientId;
-    private final String secret;
+    private final String login;
 
-    public BitbucketCloudConfiguration(String repository, String project, String clientId, String secret) {
-        super(repository, project);
-        this.clientId = clientId;
-        this.secret = secret;
+    @JsonCreator
+    public Owner(@JsonProperty("login") String login) {
+        this.login = login;
     }
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getSecret() {
-        return secret;
+    public String getLogin() {
+        return login;
     }
 }

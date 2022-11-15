@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2022 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,11 +37,14 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DiscussionAwarePullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.platform.Server;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
@@ -49,8 +52,8 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.db.protobuf.DbIssues;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -59,14 +62,17 @@ import java.util.stream.Collectors;
 
 public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestDecorator<AzureDevopsClient, PullRequest, Void, CommentThread, Comment> implements PullRequestBuildStatusDecorator {
 
+    private static final Logger logger = Loggers.get(AzureDevOpsPullRequestDecorator.class);
     private static final Pattern NOTE_MARKDOWN_LEGACY_SEE_LINK_PATTERN = Pattern.compile("^\\[See in SonarQube]\\((.*?)\\)$");
     private final AzureDevopsClientFactory azureDevopsClientFactory;
-    private final FormatterFactory formatterFactory;
+    private final MarkdownFormatterFactory markdownFormatterFactory;
 
-    public AzureDevOpsPullRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, AzureDevopsClientFactory azureDevopsClientFactory) {
-        super(server, scmInfoRepository);
+    public AzureDevOpsPullRequestDecorator(ScmInfoRepository scmInfoRepository,
+                                           AzureDevopsClientFactory azureDevopsClientFactory,
+                                           ReportGenerator reportGenerator, MarkdownFormatterFactory markdownFormatterFactory) {
+        super(scmInfoRepository, reportGenerator);
         this.azureDevopsClientFactory = azureDevopsClientFactory;
-        this.formatterFactory = new MarkdownFormatterFactory();
+        this.markdownFormatterFactory = markdownFormatterFactory;
     }
 
     @Override
@@ -81,14 +87,21 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
 
     @Override
     protected Optional<String> createFrontEndUrl(PullRequest pullRequest, AnalysisDetails analysisDetails) {
-        return Optional.of(pullRequest.getRepository().getRemoteUrl() + "/pullRequest/" + pullRequest.getId());
+        String targetUri = pullRequest.getRepository().getRemoteUrl();
+        try {
+            URI uri = new URI(targetUri);
+            targetUri = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null).toString();
+        } catch (URISyntaxException ex) {
+            logger.warn("Could not construct normalised URI for Pull Request link. Unparsed URL will be used instead", ex);
+        }
+        return Optional.of(targetUri + "/pullRequest/" + pullRequest.getId());
     }
 
     @Override
     protected PullRequest getPullRequest(AzureDevopsClient client, AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto, AnalysisDetails analysis) {
         int pullRequestId;
         try {
-            pullRequestId = Integer.parseInt(analysis.getBranchName());
+            pullRequestId = Integer.parseInt(analysis.getPullRequestId());
         } catch (NumberFormatException ex) {
             throw new IllegalStateException("Could not parse Pull Request Key", ex);
         }
@@ -118,17 +131,13 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     }
 
     @Override
-    protected void submitPipelineStatus(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis, String sonarqubeRootUrl) {
+    protected void submitPipelineStatus(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary) {
         try {
             GitPullRequestStatus gitPullRequestStatus = new GitPullRequestStatus(
                     GitStatusStateMapper.toGitStatusState(analysis.getQualityGateStatus()),
                     String.format("SonarQube Quality Gate - %s (%s)", analysis.getAnalysisProjectName(), analysis.getAnalysisProjectKey()),
                     new GitStatusContext("sonarqube/qualitygate", analysis.getAnalysisProjectKey()),
-                    String.format("%s/dashboard?id=%s&pullRequest=%s",
-                            sonarqubeRootUrl,
-                            URLEncoder.encode(analysis.getAnalysisProjectKey(), StandardCharsets.UTF_8.name()),
-                            URLEncoder.encode(analysis.getBranchName(), StandardCharsets.UTF_8.name())
-                    )
+                    analysisSummary.getDashboardUrl()
             );
 
             client.submitPullRequestStatus(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), gitPullRequestStatus);
@@ -139,12 +148,11 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
 
     @Override
     protected void submitCommitNoteForIssue(AzureDevopsClient client, PullRequest pullRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String filePath,
-                                            AnalysisDetails analysis) {
-        String issueSummary = analysis.createAnalysisIssueSummary(issue, formatterFactory);
+                                            AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary) {
         DbIssues.Locations location = issue.getIssue().getLocations();
 
         try {
-            CreateCommentRequest comment = new CreateCommentRequest(issueSummary);
+            CreateCommentRequest comment = new CreateCommentRequest(analysisIssueSummary.format(markdownFormatterFactory));
             CommentPosition fileStart = new CommentPosition(
                     location.getTextRange().getEndLine(),
                     location.getTextRange().getEndOffset() + 1
@@ -164,10 +172,9 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
 
 
     @Override
-    protected void submitSummaryNote(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis) {
+    protected void submitSummaryNote(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary) {
         try {
-            String summaryCommentBody = analysis.createAnalysisSummary(formatterFactory);
-            CreateCommentRequest comment = new CreateCommentRequest(summaryCommentBody);
+            CreateCommentRequest comment = new CreateCommentRequest(analysisSummary.format(markdownFormatterFactory));
             CreateCommentThreadRequest commentThread = new CreateCommentThreadRequest(null, Collections.singletonList(comment), CommentThreadStatus.ACTIVE);
             CommentThread summaryComment = client.createThread(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), commentThread);
             if (analysis.getQualityGateStatus() == QualityGate.Status.OK) {
@@ -230,12 +237,12 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     }
 
     @Override
-    protected Optional<AnalysisDetails.ProjectIssueIdentifier> parseIssueDetails(AzureDevopsClient client, Comment note, AnalysisDetails analysisDetails) {
-        Optional<AnalysisDetails.ProjectIssueIdentifier> issueIdentifier = super.parseIssueDetails(client, note, analysisDetails);
+    protected Optional<ProjectIssueIdentifier> parseIssueDetails(AzureDevopsClient client, Comment note) {
+        Optional<ProjectIssueIdentifier> issueIdentifier = super.parseIssueDetails(client, note);
         if (issueIdentifier.isPresent()) {
             return issueIdentifier;
         }
-        return parseIssueDetails(client, note, analysisDetails, "See in SonarQube", NOTE_MARKDOWN_LEGACY_SEE_LINK_PATTERN);
+        return parseIssueDetails(client, note, "See in SonarQube", NOTE_MARKDOWN_LEGACY_SEE_LINK_PATTERN);
     }
 
 }

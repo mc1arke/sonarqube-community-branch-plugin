@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,98 +21,62 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 import java.util.stream.IntStream;
 import static com.google.common.html.HtmlEscapers.htmlEscaper;
 
-public final class MarkdownFormatterFactory implements FormatterFactory {
+public final class MarkdownFormatterFactory extends BaseFormatterFactory {
 
     @Override
     public Formatter<Document> documentFormatter() {
-        return new BaseFormatter<>() {
-            @Override
-            public String format(Document node, FormatterFactory formatterFactory) {
-                return childContents(node, formatterFactory);
-            }
-        };
+        return this::childContents;
     }
 
     @Override
     public Formatter<Heading> headingFormatter() {
-        return new BaseFormatter<>() {
-            @Override
-            public String format(Heading node, FormatterFactory formatterFactory) {
-                StringBuilder output = new StringBuilder();
-                IntStream.range(0, node.getLevel()).forEach(i -> output.append("#"));
-                return output.append(" ").append(childContents(node, formatterFactory)).append(System.lineSeparator())
-                        .toString();
-            }
+        return node -> {
+            StringBuilder output = new StringBuilder();
+            IntStream.range(0, node.getLevel()).forEach(i -> output.append("#"));
+            return output.append(" ").append(childContents(node)).append(System.lineSeparator())
+                    .toString();
         };
     }
 
     @Override
     public Formatter<Image> imageFormatter() {
-        return new BaseFormatter<>() {
-            @Override
-            public String format(Image node, FormatterFactory formatterFactory) {
-                return String.format("![%s](%s)", node.getAltText(), node.getSource());
-            }
-        };
+        return node -> String.format("![%s](%s)", node.getAltText(), node.getSource());
     }
 
     @Override
     public Formatter<Link> linkFormatter() {
-        return new BaseFormatter<>() {
-            @Override
-            public String format(Link node, FormatterFactory formatterFactory) {
-                return String.format("[%s](%s)", node.getChildren().isEmpty() ? node.getUrl() : childContents(node, formatterFactory), node.getUrl());
-            }
-        };
+        return node -> String.format("[%s](%s)", node.getChildren().isEmpty() ? node.getUrl() : childContents(node), node.getUrl());
     }
 
     @Override
     public Formatter<List> listFormatter() {
-        return new BaseFormatter<>() {
-            @Override
-            public String format(List node, FormatterFactory formatterFactory) {
-                StringBuilder output = new StringBuilder();
-                node.getChildren().forEach(i -> {
-                    if (node.getStyle() == List.Style.BULLET) {
-                        output.append("- ").append(listItemFormatter().format((ListItem) i, formatterFactory));
-                    } else {
-                        throw new IllegalArgumentException("Unknown list type: " + node.getStyle());
-                    }
-                    output.append(System.lineSeparator());
-                });
+        return node -> {
+            StringBuilder output = new StringBuilder();
+            node.getChildren().forEach(i -> {
+                if (node.getStyle() == List.Style.BULLET) {
+                    output.append("- ").append(format(i));
+                } else {
+                    throw new IllegalArgumentException("Unknown list type: " + node.getStyle());
+                }
                 output.append(System.lineSeparator());
-                return output.toString();
-            }
+            });
+            output.append(System.lineSeparator());
+            return output.toString();
         };
     }
 
     @Override
     public Formatter<ListItem> listItemFormatter() {
-        return new BaseFormatter<>() {
-            @Override
-            public String format(ListItem node, FormatterFactory formatterFactory) {
-                return childContents(node, formatterFactory);
-            }
-        };
+        return this::childContents;
     }
 
     @Override
     public Formatter<Paragraph> paragraphFormatter() {
-        return new BaseFormatter<>() {
-            @Override
-            public String format(Paragraph node, FormatterFactory formatterFactory) {
-                return childContents(node, formatterFactory) + System.lineSeparator() + System.lineSeparator();
-            }
-        };
+        return node -> childContents(node) + System.lineSeparator() + System.lineSeparator();
     }
 
     @Override
     public Formatter<Text> textFormatter() {
-        return new BaseFormatter<>() {
-            @Override
-            public String format(Text node, FormatterFactory formatterFactory) {
-                return htmlEscaper().escape(node.getContent()).trim();
-            }
-        };
+        return node -> htmlEscaper().escape(node.getContent());
     }
 }

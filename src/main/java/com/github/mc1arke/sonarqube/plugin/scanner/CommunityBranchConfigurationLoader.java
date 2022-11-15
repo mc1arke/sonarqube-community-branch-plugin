@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,26 +18,27 @@
  */
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
+import org.apache.commons.lang.StringUtils;
 import org.sonar.api.notifications.AnalysisWarnings;
+import org.sonar.api.utils.MessageException;
 import org.sonar.api.utils.System2;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.core.config.ScannerProperties;
 import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.BranchConfigurationLoader;
-import org.sonar.scanner.scan.branch.BranchInfo;
-import org.sonar.scanner.scan.branch.BranchType;
 import org.sonar.scanner.scan.branch.DefaultBranchConfiguration;
 import org.sonar.scanner.scan.branch.ProjectBranches;
 import org.sonar.scanner.scan.branch.ProjectPullRequests;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Michael Clarke
@@ -55,89 +56,67 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
 
     private final System2 system2;
     private final AnalysisWarnings analysisWarnings;
+    private final BranchConfigurationFactory branchConfigurationFactory;
+    private final List<BranchAutoConfigurer> autoConfigurers;
 
-    public CommunityBranchConfigurationLoader(System2 system2, AnalysisWarnings analysisWarnings) {
+    public CommunityBranchConfigurationLoader(System2 system2, AnalysisWarnings analysisWarnings,
+                                              BranchConfigurationFactory branchConfigurationFactory,
+                                              List<BranchAutoConfigurer> autoConfigurers) {
         super();
         this.system2 = system2;
         this.analysisWarnings = analysisWarnings;
+        this.branchConfigurationFactory = branchConfigurationFactory;
+        this.autoConfigurers = autoConfigurers;
     }
 
     @Override
     public BranchConfiguration load(Map<String, String> localSettings, ProjectBranches projectBranches,
                                     ProjectPullRequests pullRequests) {
-        localSettings = autoConfigure(localSettings);
+        List<String> nonEmptyParameters = localSettings.entrySet().stream()
+                .filter(e -> StringUtils.isNotEmpty(e.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+        boolean hasBranchParameters = BRANCH_ANALYSIS_PARAMETERS.stream()
+                .anyMatch(nonEmptyParameters::contains);
+        boolean hasPullRequestParameters = PULL_REQUEST_ANALYSIS_PARAMETERS.stream()
+                .anyMatch(nonEmptyParameters::contains);
+
+        if (hasPullRequestParameters && hasBranchParameters) {
+            throw MessageException.of("sonar.pullrequest and sonar.branch parameters should not be specified in the same scan");
+        }
+
+        if (!hasBranchParameters && !hasPullRequestParameters) {
+            for (BranchAutoConfigurer branchAutoConfigurer : autoConfigurers) {
+                Optional<BranchConfiguration> optionalBranchConfiguration = branchAutoConfigurer.detectConfiguration(system2, projectBranches);
+                if (optionalBranchConfiguration.isPresent()) {
+                    BranchConfiguration branchConfiguration = optionalBranchConfiguration.get();
+                    LOGGER.info("Auto detected {} configuration with source {} using {}", branchConfiguration.branchType(), branchConfiguration.branchName(), branchAutoConfigurer.getClass().getName());
+                    return branchConfiguration;
+                }
+            }
+        }
 
         if (null != localSettings.get(ScannerProperties.BRANCH_TARGET)) { //NOSONAR - purposefully checking for a deprecated parameter
             String warning = String.format("Property '%s' is no longer supported", ScannerProperties.BRANCH_TARGET); //NOSONAR - reporting use of deprecated parameter
             analysisWarnings.addUnique(warning);
             LOGGER.warn(warning);
         }
-        if (BRANCH_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey)) {
-            return createBranchConfiguration(localSettings.get(ScannerProperties.BRANCH_NAME),
-                                             projectBranches);
-        } else if (PULL_REQUEST_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey)) {
-            return createPullRequestConfiguration(localSettings.get(ScannerProperties.PULL_REQUEST_KEY),
-                                                  localSettings.get(ScannerProperties.PULL_REQUEST_BRANCH),
-                                                  localSettings.get(ScannerProperties.PULL_REQUEST_BASE),
-                                                  projectBranches);
+
+        if (hasBranchParameters) {
+            String branch = StringUtils.trimToNull(localSettings.get(ScannerProperties.BRANCH_NAME));
+            return branchConfigurationFactory.createBranchConfiguration(branch, projectBranches);
+        }
+
+        if (hasPullRequestParameters) {
+            String key = Optional.ofNullable(StringUtils.trimToNull(localSettings.get(ScannerProperties.PULL_REQUEST_KEY)))
+                    .orElseThrow(() -> MessageException.of(ScannerProperties.PULL_REQUEST_KEY + " is required for a pull request analysis"));
+            String branch = Optional.ofNullable(StringUtils.trimToNull(localSettings.get(ScannerProperties.PULL_REQUEST_BRANCH)))
+                    .orElseThrow(() -> MessageException.of(ScannerProperties.PULL_REQUEST_BRANCH + " is required for a pull request analysis"));
+            String target = StringUtils.trimToNull(localSettings.get(ScannerProperties.PULL_REQUEST_BASE));
+            return branchConfigurationFactory.createPullRequestConfiguration(key, branch, target, projectBranches);
         }
 
         return new DefaultBranchConfiguration();
-    }
-
-    private Map<String, String> autoConfigure(Map<String, String> localSettings) {
-        Map<String, String> mutableLocalSettings = new HashMap<>(localSettings);
-        if (Boolean.parseBoolean(system2.envVariable("GITLAB_CI"))) {
-            //GitLab CI auto configuration
-            if (system2.envVariable("CI_MERGE_REQUEST_IID") != null) {
-                // we are inside a merge request
-                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_IID")).ifPresent(
-                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_KEY, v));
-                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME")).ifPresent(
-                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BRANCH, v));
-                Optional.ofNullable(system2.envVariable("CI_MERGE_REQUEST_TARGET_BRANCH_NAME")).ifPresent(
-                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BASE, v));
-            } else {
-                // branch or tag
-                Optional.ofNullable(system2.envVariable("CI_COMMIT_REF_NAME")).ifPresent(
-                        v -> mutableLocalSettings.putIfAbsent(ScannerProperties.BRANCH_NAME, v));
-            }
-        }
-        if (Boolean.parseBoolean(system2.envVariable("TF_BUILD"))) {
-            Optional.ofNullable(system2.envVariable("SYSTEM_PULLREQUEST_PULLREQUESTID")).ifPresent(
-                    v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_KEY, v));
-            Optional.ofNullable(system2.envVariable("SYSTEM_PULLREQUEST_SOURCEBRANCH")).ifPresent(
-                    v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BRANCH, v));
-            Optional.ofNullable(system2.envVariable("SYSTEM_PULLREQUEST_TARGETBRANCH")).ifPresent(
-                    v -> mutableLocalSettings.putIfAbsent(ScannerProperties.PULL_REQUEST_BASE, v));
-
-        }
-        return Collections.unmodifiableMap(mutableLocalSettings);
-    }
-
-    private static BranchConfiguration createBranchConfiguration(String branchName, ProjectBranches branches) {
-        BranchInfo existingBranch = branches.get(branchName);
-
-        if (null == existingBranch) {
-            return new CommunityBranchConfiguration(branchName, BranchType.BRANCH, branches.defaultBranchName(), null, null);
-        }
-
-        return new CommunityBranchConfiguration(branchName, existingBranch.type(), existingBranch.name(), null, null);
-    }
-
-    private static BranchConfiguration createPullRequestConfiguration(String pullRequestKey, String pullRequestBranch,
-                                                                      String pullRequestBase,
-                                                                      ProjectBranches branches) {
-        if (null == pullRequestBase || pullRequestBase.isEmpty()) {
-            return new CommunityBranchConfiguration(pullRequestBranch, BranchType.PULL_REQUEST, branches.defaultBranchName(),
-                                                    branches.defaultBranchName(), pullRequestKey);
-        } else {
-            return new CommunityBranchConfiguration(pullRequestBranch, BranchType.PULL_REQUEST,
-                                                    Optional.ofNullable(branches.get(pullRequestBase))
-                                                            .map(b -> pullRequestBase)
-                                                            .orElse(null),
-                                                    pullRequestBase, pullRequestKey);
-        }
     }
 
 }

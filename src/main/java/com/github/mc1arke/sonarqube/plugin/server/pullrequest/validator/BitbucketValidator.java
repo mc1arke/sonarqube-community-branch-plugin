@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,7 +56,7 @@ public class BitbucketValidator implements Validator {
             throw new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "Could not create Bitbucket client - " + ex.getMessage(), ex);
         }
         try {
-            bitbucketClient.retrieveRepository(bitbucketClient.resolveProject(almSettingDto, projectAlmSettingDto), bitbucketClient.resolveRepository(almSettingDto, projectAlmSettingDto));
+            bitbucketClient.retrieveRepository();
         } catch (IOException | RuntimeException ex) {
             throw new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "Could not retrieve repository details from Bitbucket - " + ex.getMessage(), ex);
         }

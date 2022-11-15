@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021 Markus Heberling, Michael Clarke
+ * Copyright (C) 2019-2022 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,10 @@ import com.github.mc1arke.sonarqube.plugin.almclient.LinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,7 +33,6 @@ import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.internal.Encryption;
 import org.sonar.api.config.internal.Settings;
 import org.sonar.api.issue.Issue;
-import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
@@ -63,7 +66,7 @@ import static org.mockito.Mockito.when;
 public class GitlabMergeRequestDecoratorIntegrationTest {
 
     @Rule
-    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig());
+    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     @Test
     public void decorateQualityGateStatusOk() {
@@ -99,10 +102,8 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
         when(analysisDetails.getQualityGateStatus()).thenReturn(status);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
-        when(analysisDetails.getBranchName()).thenReturn(Long.toString(mergeRequestIid));
+        when(analysisDetails.getPullRequestId()).thenReturn(Long.toString(mergeRequestIid));
         when(analysisDetails.getCommitSha()).thenReturn(commitSHA);
-        when(analysisDetails.getCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
-        PostAnalysisIssueVisitor issueVisitor = mock(PostAnalysisIssueVisitor.class);
 
         ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
 
@@ -116,7 +117,7 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
             when(componentIssue.getIssue()).thenReturn(defaultIssue);
             Component component = mock(Component.class);
             when(componentIssue.getComponent()).thenReturn(component);
-            when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of(filePath));
+            when(componentIssue.getScmPath()).thenReturn(Optional.of(filePath));
 
             ScmInfo scmInfo = mock(ScmInfo.class);
             when(scmInfo.hasChangesetForLine(anyInt())).thenReturn(true);
@@ -128,11 +129,18 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
 
             issues.add(componentIssue);
         }
-        when(issueVisitor.getIssues()).thenReturn(issues);
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(issueVisitor);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("summary commént\n\n[link text]");
-        when(analysisDetails.createAnalysisIssueSummary(any(), any())).thenReturn("issué");
-        when(analysisDetails.parseIssueIdFromUrl(any())).thenCallRealMethod();
+        when(analysisDetails.getScmReportableIssues()).thenReturn(issues);
+
+        ReportGenerator reportGenerator = mock(ReportGenerator.class);
+        AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
+        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.TEN);
+        when(analysisSummary.getDashboardUrl()).thenReturn(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + mergeRequestIid);
+        when(analysisSummary.format(any())).thenReturn("summary commént\n\n[link text]");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        AnalysisIssueSummary analysisIssueSummary = mock(AnalysisIssueSummary.class);
+        when(analysisIssueSummary.format(any())).thenReturn("issué");
+        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
 
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/user")).withHeader("PRIVATE-TOKEN", equalTo("token")).willReturn(okJson("{\n" +
                 "  \"id\": 1,\n" +
@@ -141,6 +149,7 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + mergeRequestIid)).willReturn(okJson("{\n" +
                 "  \"id\": 15235,\n" +
                 "  \"iid\": " + mergeRequestIid + ",\n" +
+                "  \"target_project_id\": " + sourceProjectId + ",\n" +
                 "  \"web_url\": \"http://gitlab.example.com/my-group/my-project/merge_requests/1\",\n" +
                 "  \"diff_refs\": {\n" +
                 "    \"base_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\",\n" +
@@ -227,13 +236,11 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         );
 
         LinkHeaderReader linkHeaderReader = mock(LinkHeaderReader.class);
-        Server server = mock(Server.class);
-        when(server.getPublicRootUrl()).thenReturn(sonarRootUrl);
         Settings settings = mock(Settings.class);
         Encryption encryption = mock(Encryption.class);
         when(settings.getEncryption()).thenReturn(encryption);
         GitlabMergeRequestDecorator pullRequestDecorator =
-                new GitlabMergeRequestDecorator(server, scmInfoRepository, new DefaultGitlabClientFactory(linkHeaderReader, settings));
+                new GitlabMergeRequestDecorator(scmInfoRepository, new DefaultGitlabClientFactory(linkHeaderReader, settings), reportGenerator, mock(MarkdownFormatterFactory.class));
 
 
         assertThat(pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto).getPullRequestUrl()).isEqualTo(Optional.of("http://gitlab.example.com/my-group/my-project/merge_requests/1"));

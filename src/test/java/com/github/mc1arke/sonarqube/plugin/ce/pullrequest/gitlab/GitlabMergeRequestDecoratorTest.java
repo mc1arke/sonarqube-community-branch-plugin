@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.DiffRefs;
@@ -32,12 +29,18 @@ import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNo
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Note;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.PipelineStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.User;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
-import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.scm.Changeset;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
@@ -85,26 +88,33 @@ public class GitlabMergeRequestDecoratorTest {
 
     private final GitlabClient gitlabClient = mock(GitlabClient.class);
     private final GitlabClientFactory gitlabClientFactory = mock(GitlabClientFactory.class);
-    private final Server server = mock(Server.class);
     private final ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
     private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
     private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
     private final MergeRequest mergeRequest = mock(MergeRequest.class);
     private final User sonarqubeUser = mock(User.class);
-    private final PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
     private final DiffRefs diffRefs = mock(DiffRefs.class);
+    private final ReportGenerator reportGenerator = mock(ReportGenerator.class);
+    private final MarkdownFormatterFactory markdownFormatterFactory = mock(MarkdownFormatterFactory.class);
+    private final AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
 
-    private final GitlabMergeRequestDecorator underTest = new GitlabMergeRequestDecorator(server, scmInfoRepository, gitlabClientFactory);
+    private final GitlabMergeRequestDecorator underTest = new GitlabMergeRequestDecorator(scmInfoRepository, gitlabClientFactory, reportGenerator, markdownFormatterFactory);
 
     @Before
     public void setUp() throws IOException {
+        when(analysisSummary.format(any())).thenReturn("Summary Comment");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+        AnalysisIssueSummary analysisIssueSummary = mock(AnalysisIssueSummary.class);
+        when(analysisIssueSummary.format(any())).thenReturn("Issue Summary");
+        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
         when(gitlabClientFactory.createClient(any(), any())).thenReturn(gitlabClient);
         when(almSettingDto.getUrl()).thenReturn("http://gitlab.dummy");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(PROJECT_PATH);
-        when(analysisDetails.getBranchName()).thenReturn(Long.toString(MERGE_REQUEST_IID));
+        when(analysisDetails.getPullRequestId()).thenReturn(Long.toString(MERGE_REQUEST_IID));
         when(mergeRequest.getIid()).thenReturn(MERGE_REQUEST_IID);
         when(mergeRequest.getSourceProjectId()).thenReturn(PROJECT_ID);
+        when(mergeRequest.getTargetProjectId()).thenReturn(PROJECT_ID);
         when(mergeRequest.getDiffRefs()).thenReturn(diffRefs);
         when(mergeRequest.getWebUrl()).thenReturn(MERGE_REQUEST_WEB_URL);
         when(diffRefs.getBaseSha()).thenReturn(BASE_SHA);
@@ -116,10 +126,9 @@ public class GitlabMergeRequestDecoratorTest {
                 .collect(Collectors.toList()));
         when(sonarqubeUser.getUsername()).thenReturn(SONARQUBE_USERNAME);
         when(gitlabClient.getCurrentUser()).thenReturn(sonarqubeUser);
-        when(analysisDetails.getPostAnalysisIssueVisitor()).thenReturn(postAnalysisIssueVisitor);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(PROJECT_KEY);
         when(analysisDetails.getAnalysisId()).thenReturn(ANALYSIS_UUID);
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(new ArrayList<>());
+        when(analysisDetails.getScmReportableIssues()).thenReturn(new ArrayList<>());
     }
 
     @Test
@@ -129,7 +138,7 @@ public class GitlabMergeRequestDecoratorTest {
 
     @Test
     public void shouldThrowErrorWhenPullRequestKeyNotNumeric() {
-        when(analysisDetails.getBranchName()).thenReturn("non-MR-IID");
+        when(analysisDetails.getPullRequestId()).thenReturn("non-MR-IID");
 
         assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .isInstanceOf(IllegalStateException.class)
@@ -246,7 +255,7 @@ public class GitlabMergeRequestDecoratorTest {
 
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
-        when(note.getBody()).thenReturn("[View in SonarQube](url)");
+        when(note.getBody()).thenReturn("[View in SonarQube](http://host.domain/issue?issues=issueId&id=" + PROJECT_KEY + ")");
         when(note.isResolvable()).thenReturn(true);
 
         Note note2 = mock(Note.class);
@@ -259,7 +268,6 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId2");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2));
 
-        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -337,7 +345,7 @@ public class GitlabMergeRequestDecoratorTest {
 
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
-        when(note.getBody()).thenReturn("Sonarqube reported issue\n[View in SonarQube](https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded)");
+        when(note.getBody()).thenReturn("Sonarqube reported issue\n[View in SonarQube](https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded&issues=new-issue&id=" + PROJECT_KEY + ")");
         when(note.isResolvable()).thenReturn(true);
 
         Note note2 = mock(Note.class);
@@ -349,7 +357,6 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId5");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2));
 
-        when(analysisDetails.parseIssueIdFromUrl("https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "new-issue")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -370,7 +377,7 @@ public class GitlabMergeRequestDecoratorTest {
 
         Note note = mock(Note.class);
         when(note.getAuthor()).thenReturn(sonarqubeUser);
-        when(note.getBody()).thenReturn("Sonarqube reported issue\n[View in SonarQube](https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded)");
+        when(note.getBody()).thenReturn("Sonarqube reported issue\n[View in SonarQube](https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded&issues=issuedId&id=" + PROJECT_KEY + ")");
         when(note.isResolvable()).thenReturn(true);
 
         Note note2 = mock(Note.class);
@@ -382,7 +389,6 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId5");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2));
 
-        when(analysisDetails.parseIssueIdFromUrl("https://dummy.url.with.subdomain/path/to/sonarqube?paramters=many&values=complex%20and+encoded")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
         doThrow(new IOException("dummy")).when(gitlabClient).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
 
@@ -420,7 +426,6 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId6");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2, note3));
 
-        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueId")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -450,7 +455,6 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussionId6");
         when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2, note3));
 
-        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier("otherProjectKey", "issueId")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -471,11 +475,10 @@ public class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue.getIssue()).thenReturn(lightIssue);
         when(componentIssue.getComponent()).thenReturn(component);
+        when(componentIssue.getScmPath()).thenReturn(Optional.of("path-to-file"));
 
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
+        when(analysisDetails.getScmReportableIssues()).thenReturn(Collections.singletonList(componentIssue));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(new ArrayList<>());
-        when(analysisDetails.createAnalysisIssueSummary(eq(componentIssue), any())).thenReturn("Issue Summary");
-        when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of("path-to-file"));
 
         Changeset changeset = mock(Changeset.class);
         when(changeset.getRevision()).thenReturn("DEF");
@@ -497,7 +500,9 @@ public class GitlabMergeRequestDecoratorTest {
         ArgumentCaptor<MergeRequestNote> mergeRequestNoteArgumentCaptor = ArgumentCaptor.forClass(MergeRequestNote.class);
         verify(gitlabClient).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), mergeRequestNoteArgumentCaptor.capture());
 
-        assertThat(mergeRequestNoteArgumentCaptor.getValue()).isEqualToComparingFieldByField(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
+        assertThat(mergeRequestNoteArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
     }
 
     @Test
@@ -512,11 +517,10 @@ public class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue.getIssue()).thenReturn(lightIssue);
         when(componentIssue.getComponent()).thenReturn(component);
+        when(componentIssue.getScmPath()).thenReturn(Optional.of("path-to-file"));
 
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
+        when(analysisDetails.getScmReportableIssues()).thenReturn(Collections.singletonList(componentIssue));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(new ArrayList<>());
-        when(analysisDetails.createAnalysisIssueSummary(eq(componentIssue), any())).thenReturn("Issue Summary");
-        when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of("path-to-file"));
 
         Changeset changeset = mock(Changeset.class);
         when(changeset.getRevision()).thenReturn("DEF");
@@ -534,7 +538,9 @@ public class GitlabMergeRequestDecoratorTest {
         ArgumentCaptor<MergeRequestNote> mergeRequestNoteArgumentCaptor = ArgumentCaptor.forClass(MergeRequestNote.class);
         verify(gitlabClient, times(2)).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), mergeRequestNoteArgumentCaptor.capture());
 
-        assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(0)).isEqualToComparingFieldByField(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
+        assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(0))
+                .usingRecursiveComparison()
+                .isEqualTo(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
         assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(1)).isNotInstanceOf(CommitNote.class);
     }
 
@@ -550,9 +556,10 @@ public class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
         when(componentIssue.getIssue()).thenReturn(lightIssue);
         when(componentIssue.getComponent()).thenReturn(component);
+        when(componentIssue.getScmPath()).thenReturn(Optional.of("path-to-file"));
 
         Note note = mock(Note.class);
-        when(note.getBody()).thenReturn("Reported issue\n[View in SonarQube](url)");
+        when(note.getBody()).thenReturn("Reported issue\n[View in SonarQube](http://domain.url/sonar/issue?issues=issueKey1&id=" + PROJECT_KEY + ")");
         when(note.getAuthor()).thenReturn(sonarqubeUser);
         when(note.isResolvable()).thenReturn(true);
 
@@ -560,11 +567,8 @@ public class GitlabMergeRequestDecoratorTest {
         when(discussion.getId()).thenReturn("discussion-id");
         when(discussion.getNotes()).thenReturn(Collections.singletonList(note));
 
-        when(analysisDetails.parseIssueIdFromUrl("url")).thenReturn(Optional.of(new AnalysisDetails.ProjectIssueIdentifier(PROJECT_KEY, "issueKey1")));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
-        when(analysisDetails.createAnalysisIssueSummary(eq(componentIssue), any())).thenReturn("Issue Summary");
-        when(analysisDetails.getSCMPathForIssue(componentIssue)).thenReturn(Optional.of("path-to-file"));
+        when(analysisDetails.getScmReportableIssues()).thenReturn(Collections.singletonList(componentIssue));
 
         Changeset changeset = mock(Changeset.class);
         when(changeset.getRevision()).thenReturn("DEF");
@@ -598,9 +602,8 @@ public class GitlabMergeRequestDecoratorTest {
         when(componentIssue.getIssue()).thenReturn(lightIssue);
         when(componentIssue.getComponent()).thenReturn(component);
 
-        when(postAnalysisIssueVisitor.getIssues()).thenReturn(Collections.singletonList(componentIssue));
+        when(analysisDetails.getScmReportableIssues()).thenReturn(Collections.singletonList(componentIssue));
         when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(new ArrayList<>());
-        when(analysisDetails.createAnalysisIssueSummary(eq(componentIssue), any())).thenReturn("Issue Summary");
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
@@ -617,10 +620,10 @@ public class GitlabMergeRequestDecoratorTest {
     @Test
     public void shouldSubmitSuccessfulPipelineStatusAndResolvedSummaryCommentOnSuccessAnalysis() throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("Summary comment");
         when(analysisDetails.getCommitSha()).thenReturn("commitsha");
 
-        when(server.getPublicRootUrl()).thenReturn("https://sonarqube.dummy");
+        when(analysisSummary.format(any())).thenReturn("Summary comment");
+        when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube.dummy/dashboard?id=projectKey&pullRequest=123");
 
         Discussion discussion = mock(Discussion.class);
         when(discussion.getId()).thenReturn("dicussion id");
@@ -634,21 +637,24 @@ public class GitlabMergeRequestDecoratorTest {
         ArgumentCaptor<PipelineStatus> pipelineStatusArgumentCaptor = ArgumentCaptor.forClass(PipelineStatus.class);
         verify(gitlabClient).setMergeRequestPipelineStatus(eq(PROJECT_ID), eq("commitsha"), pipelineStatusArgumentCaptor.capture());
 
-        assertThat(mergeRequestNoteArgumentCaptor.getValue()).isEqualToComparingFieldByField(new MergeRequestNote("Summary comment"));
+        assertThat(mergeRequestNoteArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(new MergeRequestNote("Summary comment"));
         assertThat(pipelineStatusArgumentCaptor.getValue())
-                .isEqualToComparingFieldByField(new PipelineStatus("SonarQube", "SonarQube Status",
+                .usingRecursiveComparison()
+                .isEqualTo(new PipelineStatus("SonarQube", "SonarQube Status",
                         PipelineStatus.State.SUCCESS, "https://sonarqube.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, null, null));
     }
 
     @Test
     public void shouldSubmitFailedPipelineStatusAndUnresolvedSummaryCommentOnFailedAnalysis() throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("Different Summary comment");
         when(analysisDetails.getCommitSha()).thenReturn("other sha");
-        when(analysisDetails.getCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
         when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
 
-        when(server.getPublicRootUrl()).thenReturn("https://sonarqube2.dummy");
+        when(analysisSummary.format(any())).thenReturn("Different Summary comment");
+        when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube2.dummy/dashboard?id=projectKey&pullRequest=123");
+        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.TEN);
 
         Discussion discussion = mock(Discussion.class);
         when(discussion.getId()).thenReturn("dicussion id 2");
@@ -662,21 +668,24 @@ public class GitlabMergeRequestDecoratorTest {
         ArgumentCaptor<PipelineStatus> pipelineStatusArgumentCaptor = ArgumentCaptor.forClass(PipelineStatus.class);
         verify(gitlabClient).setMergeRequestPipelineStatus(eq(PROJECT_ID), eq("other sha"), pipelineStatusArgumentCaptor.capture());
 
-        assertThat(mergeRequestNoteArgumentCaptor.getValue()).isEqualToComparingFieldByField(new MergeRequestNote("Different Summary comment"));
+        assertThat(mergeRequestNoteArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(new MergeRequestNote("Different Summary comment"));
         assertThat(pipelineStatusArgumentCaptor.getValue())
-                .isEqualToComparingFieldByField(new PipelineStatus("SonarQube", "SonarQube Status",
+                .usingRecursiveComparison()
+                .isEqualTo(new PipelineStatus("SonarQube", "SonarQube Status",
                         PipelineStatus.State.FAILED, "https://sonarqube2.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, BigDecimal.TEN, 11L));
     }
 
     @Test
     public void shouldThrowErrorWhenSubmitPipelineStatusToGitlabFails() throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("Different Summary comment");
         when(analysisDetails.getCommitSha()).thenReturn("other sha");
-        when(analysisDetails.getCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
         when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
 
-        when(server.getPublicRootUrl()).thenReturn("https://sonarqube2.dummy");
+        when(analysisSummary.format(any())).thenReturn("Different Summary comment");
+        when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube2.dummy/dashboard?id=projectKey&pullRequest=123");
+        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.TEN);
 
         Discussion discussion = mock(Discussion.class);
         when(discussion.getId()).thenReturn("dicussion id 2");
@@ -693,21 +702,22 @@ public class GitlabMergeRequestDecoratorTest {
         ArgumentCaptor<PipelineStatus> pipelineStatusArgumentCaptor = ArgumentCaptor.forClass(PipelineStatus.class);
         verify(gitlabClient).setMergeRequestPipelineStatus(eq(PROJECT_ID), eq("other sha"), pipelineStatusArgumentCaptor.capture());
 
-        assertThat(mergeRequestNoteArgumentCaptor.getValue()).isEqualToComparingFieldByField(new MergeRequestNote("Different Summary comment"));
+        assertThat(mergeRequestNoteArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(new MergeRequestNote("Different Summary comment"));
         assertThat(pipelineStatusArgumentCaptor.getValue())
-                .isEqualToComparingFieldByField(new PipelineStatus("SonarQube", "SonarQube Status",
+                .usingRecursiveComparison()
+                .isEqualTo(new PipelineStatus("SonarQube", "SonarQube Status",
                         PipelineStatus.State.FAILED, "https://sonarqube2.dummy/dashboard?id=" + PROJECT_KEY + "&pullRequest=" + MERGE_REQUEST_IID, BigDecimal.TEN, 11L));
     }
 
     @Test
     public void shouldThrowErrorWhenSubmitAnalysisToGitlabFails() throws IOException {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
-        when(analysisDetails.createAnalysisSummary(any())).thenReturn("Different Summary comment");
         when(analysisDetails.getCommitSha()).thenReturn("other sha");
-        when(analysisDetails.getCoverage()).thenReturn(Optional.of(BigDecimal.TEN));
         when(analysisDetails.getScannerProperty("com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId")).thenReturn(Optional.of("11"));
 
-        when(server.getPublicRootUrl()).thenReturn("https://sonarqube2.dummy");
+        when(analysisSummary.format(any())).thenReturn("Different Summary comment");
 
         Discussion discussion = mock(Discussion.class);
         when(discussion.getId()).thenReturn("dicussion id 2");
@@ -723,19 +733,23 @@ public class GitlabMergeRequestDecoratorTest {
         verify(gitlabClient, never()).resolveMergeRequestDiscussion(PROJECT_ID, MERGE_REQUEST_IID, discussion.getId());
         verify(gitlabClient, never()).setMergeRequestPipelineStatus(anyLong(), any(), any());
 
-        assertThat(mergeRequestNoteArgumentCaptor.getValue()).isEqualToComparingFieldByField(new MergeRequestNote("Different Summary comment"));
+        assertThat(mergeRequestNoteArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(new MergeRequestNote("Different Summary comment"));
     }
 
     @Test
     public void shouldReturnWebUrlFromMergeRequestIfScannerPropertyNotSet() {
         assertThat(underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
-                .isEqualToComparingFieldByField(DecorationResult.builder().withPullRequestUrl(MERGE_REQUEST_WEB_URL).build());
+                .usingRecursiveComparison()
+                .isEqualTo(DecorationResult.builder().withPullRequestUrl(MERGE_REQUEST_WEB_URL).build());
     }
 
     @Test
     public void shouldReturnWebUrlFromScannerPropertyIfSet() {
         when(analysisDetails.getScannerProperty("sonar.pullrequest.gitlab.projectUrl")).thenReturn(Optional.of(MERGE_REQUEST_WEB_URL + "/additional"));
         assertThat(underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
-                .isEqualToComparingFieldByField(DecorationResult.builder().withPullRequestUrl(MERGE_REQUEST_WEB_URL + "/additional/merge_requests/" + MERGE_REQUEST_IID).build());
+                .usingRecursiveComparison()
+                .isEqualTo(DecorationResult.builder().withPullRequestUrl(MERGE_REQUEST_WEB_URL + "/additional/merge_requests/" + MERGE_REQUEST_IID).build());
     }
 }

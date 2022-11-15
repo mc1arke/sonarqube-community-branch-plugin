@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,13 +22,8 @@ import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Branch;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.config.Configuration;
-import org.sonar.api.platform.Server;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
-import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
-import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
-import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.ALM;
@@ -46,27 +41,14 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
     private static final Logger LOGGER = Loggers.get(PullRequestPostAnalysisTask.class);
 
     private final List<PullRequestBuildStatusDecorator> pullRequestDecorators;
-    private final Server server;
     private final PostAnalysisIssueVisitor postAnalysisIssueVisitor;
-    private final MetricRepository metricRepository;
-    private final MeasureRepository measureRepository;
-    private final TreeRootHolder treeRootHolder;
-    private final Configuration configuration;
     private final DbClient dbClient;
 
-    public PullRequestPostAnalysisTask(Server server,
-                                       List<PullRequestBuildStatusDecorator> pullRequestDecorators,
-                                       PostAnalysisIssueVisitor postAnalysisIssueVisitor,
-                                       MetricRepository metricRepository, MeasureRepository measureRepository,
-                                       TreeRootHolder treeRootHolder, Configuration configuration, DbClient dbClient) {
+    public PullRequestPostAnalysisTask(List<PullRequestBuildStatusDecorator> pullRequestDecorators,
+                                       PostAnalysisIssueVisitor postAnalysisIssueVisitor, DbClient dbClient) {
         super();
-        this.server = server;
         this.pullRequestDecorators = pullRequestDecorators;
         this.postAnalysisIssueVisitor = postAnalysisIssueVisitor;
-        this.metricRepository = metricRepository;
-        this.measureRepository = measureRepository;
-        this.treeRootHolder = treeRootHolder;
-        this.configuration = configuration;
         this.dbClient = dbClient;
     }
 
@@ -78,7 +60,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
     @Override
     public void finished(Context context) {
         ProjectAnalysis projectAnalysis = context.getProjectAnalysis();
-        LOGGER.debug("found " + pullRequestDecorators.size() + " pull request decorators");
+        LOGGER.debug("Found " + pullRequestDecorators.size() + " pull request decorators");
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
         if (optionalPullRequest.isEmpty()) {
@@ -86,9 +68,9 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             return;
         }
 
-        Optional<String> optionalBranchName = optionalPullRequest.get().getName();
-        if (optionalBranchName.isEmpty()) {
-            LOGGER.warn("No branch name has been submitted with the Pull Request. Analysis will be skipped");
+        Optional<String> optionalPullRequestId = optionalPullRequest.get().getName();
+        if (optionalPullRequestId.isEmpty()) {
+            LOGGER.warn("No pull request ID has been submitted with the Pull Request. Analysis will be skipped");
             return;
         }
 
@@ -148,18 +130,14 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
         String commitId = revision.get();
 
         AnalysisDetails analysisDetails =
-                new AnalysisDetails(new AnalysisDetails.BranchDetails(optionalBranchName.get(), commitId),
-                                    postAnalysisIssueVisitor, qualityGate,
-                                    new AnalysisDetails.MeasuresHolder(metricRepository, measureRepository,
-                                                                       treeRootHolder), analysis,
-                                    projectAnalysis.getProject(), configuration, server.getPublicRootUrl(),
-                                    projectAnalysis.getScannerContext());
+                new AnalysisDetails(optionalPullRequestId.get(), commitId,
+                                    postAnalysisIssueVisitor.getIssues(), qualityGate, projectAnalysis);
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
-        LOGGER.info("using pull request decorator " + pullRequestDecorator.getClass().getName());
+        LOGGER.info("Using pull request decorator " + pullRequestDecorator.getClass().getName());
         DecorationResult decorationResult = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        decorationResult.getPullRequestUrl().ifPresent(pullRequestUrl -> persistPullRequestUrl(pullRequestUrl, projectAnalysis, optionalBranchName.get()));
+        decorationResult.getPullRequestUrl().ifPresent(pullRequestUrl -> persistPullRequestUrl(pullRequestUrl, projectAnalysis, optionalPullRequestId.get()));
     }
 
 

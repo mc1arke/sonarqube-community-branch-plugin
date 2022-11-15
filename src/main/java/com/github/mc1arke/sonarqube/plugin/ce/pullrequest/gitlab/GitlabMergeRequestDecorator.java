@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2022 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,19 +31,17 @@ import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.User;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DiscussionAwarePullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.platform.Server;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -56,12 +54,12 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
             "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId";
 
     private final GitlabClientFactory gitlabClientFactory;
-    private final FormatterFactory formatterFactory;
+    private final MarkdownFormatterFactory formatterFactory;
 
-    public GitlabMergeRequestDecorator(Server server, ScmInfoRepository scmInfoRepository, GitlabClientFactory gitlabClientFactory) {
-        super(server, scmInfoRepository);
+    public GitlabMergeRequestDecorator(ScmInfoRepository scmInfoRepository, GitlabClientFactory gitlabClientFactory, ReportGenerator reportGenerator, MarkdownFormatterFactory formatterFactory) {
+        super(scmInfoRepository, reportGenerator);
         this.gitlabClientFactory = gitlabClientFactory;
-        this.formatterFactory = new MarkdownFormatterFactory();
+        this.formatterFactory = formatterFactory;
     }
 
     @Override
@@ -86,7 +84,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
         String projectId = projectAlmSettingDto.getAlmRepo();
         long mergeRequestIid;
         try {
-            mergeRequestIid = Long.parseLong(analysis.getBranchName());
+            mergeRequestIid = Long.parseLong(analysis.getPullRequestId());
         } catch (NumberFormatException ex) {
             throw new IllegalStateException("Could not parse Merge Request ID", ex);
         }
@@ -109,7 +107,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     protected List<String> getCommitIdsForPullRequest(GitlabClient gitlabClient, MergeRequest mergeRequest) {
         try {
-            return gitlabClient.getMergeRequestCommits(mergeRequest.getSourceProjectId(), mergeRequest.getIid()).stream()
+            return gitlabClient.getMergeRequestCommits(mergeRequest.getTargetProjectId(), mergeRequest.getIid()).stream()
                     .map(Commit::getId)
                     .collect(Collectors.toList());
         } catch (IOException ex) {
@@ -118,41 +116,33 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     }
 
     @Override
-    protected void submitPipelineStatus(GitlabClient gitlabClient, MergeRequest mergeRequest, AnalysisDetails analysis, String sonarqubeRootUrl) {
+    protected void submitPipelineStatus(GitlabClient gitlabClient, MergeRequest mergeRequest, AnalysisDetails analysis,
+                                        AnalysisSummary analysisSummary) {
         Long pipelineId = analysis.getScannerProperty(PULLREQUEST_GITLAB_PIPELINE_ID)
                 .map(Long::parseLong)
                 .orElse(null);
 
-        BigDecimal coverage = analysis.getCoverage().orElse(null);
-
         try {
-            String dashboardUrl = String.format(
-                "%s/dashboard?id=%s&pullRequest=%s",
-                sonarqubeRootUrl,
-                URLEncoder.encode(analysis.getAnalysisProjectKey(), StandardCharsets.UTF_8.name()),
-                URLEncoder.encode(analysis.getBranchName(), StandardCharsets.UTF_8.name()));
-
             PipelineStatus pipelineStatus = new PipelineStatus("SonarQube",
                     "SonarQube Status",
                     analysis.getQualityGateStatus() == QualityGate.Status.OK ? PipelineStatus.State.SUCCESS : PipelineStatus.State.FAILED,
-                    dashboardUrl,
-                    coverage,
+                    analysisSummary.getDashboardUrl(),
+                    analysisSummary.getNewCoverage(),
                     pipelineId);
 
-            gitlabClient.setMergeRequestPipelineStatus(mergeRequest.getSourceProjectId(), analysis.getCommitSha(), pipelineStatus);
+            gitlabClient.setMergeRequestPipelineStatus(mergeRequest.getTargetProjectId(), analysis.getCommitSha(), pipelineStatus);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not update pipeline status in Gitlab", ex);
         }
     }
 
     @Override
-    protected void submitCommitNoteForIssue(GitlabClient client, MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String path, AnalysisDetails analysis) {
-        String issueSummary = analysis.createAnalysisIssueSummary(issue, formatterFactory);
-
+    protected void submitCommitNoteForIssue(GitlabClient client, MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String path, AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary) {
         Integer line = Optional.ofNullable(issue.getIssue().getLine()).orElseThrow(() -> new IllegalStateException("No line is associated with this issue"));
 
         try {
-            client.addMergeRequestDiscussion(mergeRequest.getSourceProjectId(), mergeRequest.getIid(), new CommitNote(issueSummary,
+            client.addMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(),
+                    new CommitNote(analysisIssueSummary.format(formatterFactory),
                     mergeRequest.getDiffRefs().getBaseSha(),
                     mergeRequest.getDiffRefs().getStartSha(),
                     mergeRequest.getDiffRefs().getHeadSha(),
@@ -165,14 +155,13 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     }
 
     @Override
-    protected void submitSummaryNote(GitlabClient client, MergeRequest mergeRequest, AnalysisDetails analysis) {
+    protected void submitSummaryNote(GitlabClient client, MergeRequest mergeRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary) {
         try {
-            String summaryCommentBody = analysis.createAnalysisSummary(formatterFactory);
-            Discussion summaryComment = client.addMergeRequestDiscussion(mergeRequest.getSourceProjectId(),
+            Discussion summaryComment = client.addMergeRequestDiscussion(mergeRequest.getTargetProjectId(),
                     mergeRequest.getIid(),
-                    new MergeRequestNote(summaryCommentBody));
+                    new MergeRequestNote(analysisSummary.format(formatterFactory)));
             if (analysis.getQualityGateStatus() == QualityGate.Status.OK) {
-                client.resolveMergeRequestDiscussion(mergeRequest.getSourceProjectId(), mergeRequest.getIid(), summaryComment.getId());
+                client.resolveMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(), summaryComment.getId());
             }
         } catch (IOException ex) {
             throw new IllegalStateException("Could not submit summary comment to Gitlab", ex);
@@ -183,7 +172,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     protected List<Discussion> getDiscussions(GitlabClient client, MergeRequest pullRequest) {
         try {
-            return client.getMergeRequestDiscussions(pullRequest.getSourceProjectId(), pullRequest.getIid());
+            return client.getMergeRequestDiscussions(pullRequest.getTargetProjectId(), pullRequest.getIid());
         } catch (IOException ex) {
             throw new IllegalStateException("Could not retrieve Merge Request discussions", ex);
         }
@@ -220,7 +209,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     protected void addNoteToDiscussion(GitlabClient client, Discussion discussion, MergeRequest pullRequest, String note) {
         try {
-            client.addMergeRequestDiscussionNote(pullRequest.getSourceProjectId(), pullRequest.getIid(), discussion.getId(), note);
+            client.addMergeRequestDiscussionNote(pullRequest.getTargetProjectId(), pullRequest.getIid(), discussion.getId(), note);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not add note to Merge Request discussion", ex);
         }
@@ -229,7 +218,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     protected void resolveDiscussion(GitlabClient client, Discussion discussion, MergeRequest pullRequest) {
         try {
-            client.resolveMergeRequestDiscussion(pullRequest.getSourceProjectId(), pullRequest.getIid(), discussion.getId());
+            client.resolveMergeRequestDiscussion(pullRequest.getTargetProjectId(), pullRequest.getIid(), discussion.getId());
         } catch (IOException ex) {
             throw new IllegalStateException("Could not resolve Merge Request discussion", ex);
         }

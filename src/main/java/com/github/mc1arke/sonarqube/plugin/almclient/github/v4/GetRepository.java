@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Julien Roy
+ * Copyright (C) 2021-2022 Julien Roy, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,7 +24,7 @@ import io.aexp.nodes.graphql.annotations.GraphQLArgument;
 import io.aexp.nodes.graphql.annotations.GraphQLProperty;
 
 @GraphQLProperty(name = "repository", arguments = {@GraphQLArgument(name = "owner"), @GraphQLArgument(name = "name")})
-public class GetPullRequest {
+public class GetRepository {
 
     private final String url;
 
@@ -32,7 +32,7 @@ public class GetPullRequest {
     private final PullRequest pullRequest;
 
     @JsonCreator
-    public GetPullRequest(@JsonProperty("url") String url, @JsonProperty("pullRequest") PullRequest pullRequest) {
+    public GetRepository(@JsonProperty("url") String url, @JsonProperty("pullRequest") PullRequest pullRequest) {
         this.url = url;
         this.pullRequest = pullRequest;
     }

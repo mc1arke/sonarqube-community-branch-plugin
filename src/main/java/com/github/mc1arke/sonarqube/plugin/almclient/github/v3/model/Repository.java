@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,12 +26,16 @@ public class Repository {
     private final String nodeId;
     private final String fullName;
     private final String htmlUrl;
+    private final String name;
+    private final Owner owner;
 
     @JsonCreator
-    public Repository(@JsonProperty("node_id") String nodeId, @JsonProperty("full_name") String fullName, @JsonProperty("html_url") String htmlUrl) {
+    public Repository(@JsonProperty("node_id") String nodeId, @JsonProperty("full_name") String fullName, @JsonProperty("html_url") String htmlUrl, @JsonProperty("name") String name, @JsonProperty("owner") Owner owner) {
         this.nodeId = nodeId;
         this.fullName = fullName;
         this.htmlUrl = htmlUrl;
+        this.name = name;
+        this.owner = owner;
     }
 
     public String getFullName() {
@@ -44,5 +48,13 @@ public class Repository {
 
     public String getHtmlUrl() {
         return htmlUrl;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Owner getOwner() {
+        return owner;
     }
 }
