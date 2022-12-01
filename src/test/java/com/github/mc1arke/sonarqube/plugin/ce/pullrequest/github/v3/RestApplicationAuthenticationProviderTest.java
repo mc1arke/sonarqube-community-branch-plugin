@@ -18,8 +18,12 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.LinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.RepositoryAuthenticationToken;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.model.AppInstallation;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -45,6 +49,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class RestApplicationAuthenticationProviderTest {
 
@@ -138,6 +143,32 @@ public class RestApplicationAuthenticationProviderTest {
         assertEquals(Arrays.asList("Accept", "application/vnd.github.machine-man-preview+json", "Authorization",
                                    "Bearer " + expectedAuthenticationToken),
                      requestPropertyArgumentCaptor.getAllValues());
+    }
+
+    @Test
+    public void testAppInstallationsPagination() throws IOException {
+
+        UrlConnectionProvider urlProvider = mock(UrlConnectionProvider.class);
+        Clock clock = Clock.fixed(Instant.ofEpochMilli(123456789L), ZoneId.of("UTC"));
+
+        String apiUrl = "apiUrl";
+
+        int pages=4;
+
+        for(int i=1; i<=pages;i++) {
+            HttpURLConnection installationsUrlConnection = mock(HttpURLConnection.class);
+            doReturn(installationsUrlConnection).when(urlProvider).createUrlConnection(eq(apiUrl + "/app/installations?page=" + i));
+            when(installationsUrlConnection.getInputStream()).thenReturn(new ByteArrayInputStream(
+                "[{\"repositories_url\": \"repositories_url\", \"access_tokens_url\": \"tokens_url\"}]"
+                    .getBytes(StandardCharsets.UTF_8)));
+            when(installationsUrlConnection.getHeaderField("Link")).thenReturn(i == pages ? null:  apiUrl + "/app/installations?page=" + (i+1) );
+        }
+
+        RestApplicationAuthenticationProvider testCase = new RestApplicationAuthenticationProvider(clock, Optional::ofNullable, urlProvider);
+        ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        List<AppInstallation> token = testCase.getAppInstallations(objectMapper, apiUrl + "/app/installations?page=1", "token");
+        assertThat(token).hasSize(pages);
+
     }
 
     @Test

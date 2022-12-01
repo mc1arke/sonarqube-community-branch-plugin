@@ -27,8 +27,12 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.model.AppIns
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.model.AppToken;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.model.InstallationRepositories;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.v3.model.Repository;
+import com.google.common.annotations.VisibleForTesting;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultJwtBuilder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
@@ -69,6 +73,27 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
         this.linkHeaderReader = linkHeaderReader;
     }
 
+    @VisibleForTesting
+    protected List<AppInstallation> getAppInstallations(ObjectMapper objectMapper, String apiUrl, String jwtToken) throws IOException {
+
+        List<AppInstallation> appInstallations = new ArrayList<>();
+
+        URLConnection appConnection = urlProvider.createUrlConnection(apiUrl);
+        appConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
+        appConnection.setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
+
+        try (Reader reader = new InputStreamReader(appConnection.getInputStream())) {
+            appInstallations.addAll(Arrays.asList(objectMapper.readerFor(AppInstallation[].class).readValue(reader)));
+        }
+
+        Optional<String> nextLink = linkHeaderReader.findNextLink(appConnection.getHeaderField("Link"));
+        if (nextLink.isPresent()) {
+            appInstallations.addAll(getAppInstallations(objectMapper, nextLink.get(), jwtToken));
+        }
+
+        return appInstallations;
+    }
+
     @Override
     public RepositoryAuthenticationToken getInstallationToken(String apiUrl, String appId, String apiPrivateKey,
                                                               String projectPath) throws IOException {
@@ -80,15 +105,7 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
 
         ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-        URLConnection appConnection = urlProvider.createUrlConnection(getV3Url(apiUrl) + "/app/installations");
-        appConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
-        appConnection.setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
-
-        AppInstallation[] appInstallations;
-        try (Reader reader = new InputStreamReader(appConnection.getInputStream())) {
-            appInstallations = objectMapper.readerFor(AppInstallation[].class).readValue(reader);
-        }
-
+        List<AppInstallation> appInstallations = getAppInstallations(objectMapper, getV3Url(apiUrl) + "/app/installations", jwtToken);
 
         for (AppInstallation installation : appInstallations) {
             URLConnection accessTokenConnection = urlProvider.createUrlConnection(installation.getAccessTokensUrl());
