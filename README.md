@@ -53,6 +53,7 @@ or [download a compatible release version of the plugin JAR](https://github.com/
 2. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web` to
    the `sonar.web.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
    e.g. `sonar.web.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web`
+   where ${version} is the version of the plugin being worked with. e.g `1.8.0`
 3. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce` to
    the `sonar.ce.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
    e.g. `sonar.ce.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce`
