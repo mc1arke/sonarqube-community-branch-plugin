@@ -18,11 +18,8 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce;
 
-import org.apache.commons.lang.StringUtils;
 import org.sonar.ce.task.projectanalysis.analysis.Branch;
-import org.sonar.core.component.ComponentKeys;
 import org.sonar.db.component.BranchType;
-import org.sonar.db.component.ComponentDto;
 
 /**
  * @author Michael Clarke
@@ -81,26 +78,19 @@ public class CommunityBranch implements Branch {
     }
 
     @Override
-    public String generateKey(String projectKey, String fileOrDirPath) {
-        String effectiveKey;
-        if (null == fileOrDirPath) {
-            effectiveKey = projectKey;
-        } else {
-            effectiveKey = ComponentKeys.createEffectiveKey(projectKey, StringUtils.trimToNull(fileOrDirPath));
-        }
-
-        if (main) {
-            return effectiveKey;
-        } else if (BranchType.PULL_REQUEST == branchType) {
-            return ComponentDto.generatePullRequestKey(effectiveKey, pullRequestKey);
-        } else {
-            return ComponentDto.generateBranchKey(effectiveKey, name);
-        }
-    }
-
-    @Override
     public String getTargetBranchName() {
         return targetBranchName;
     }
 
+    @Override
+    public String toString() {
+        return "CommunityBranch{" +
+                "name='" + name + '\'' +
+                ", branchType=" + branchType +
+                ", main=" + main +
+                ", referenceBranchUuid='" + referenceBranchUuid + '\'' +
+                ", pullRequestKey='" + pullRequestKey + '\'' +
+                ", targetBranchName='" + targetBranchName + '\'' +
+                '}';
+    }
 }

@@ -47,13 +47,27 @@ public class CommunityReportAnalysisComponentProvider implements ReportAnalysisC
 
     @Override
     public List<Object> getComponents() {
-        return Arrays.asList(CommunityBranchLoaderDelegate.class, PullRequestPostAnalysisTask.class,
-                             PostAnalysisIssueVisitor.class, DefaultLinkHeaderReader.class, ReportGenerator.class,
-                             MarkdownFormatterFactory.class, DefaultGraphqlProvider.class, DefaultUrlConnectionProvider.class,
-                             DefaultGithubClientFactory.class, RestApplicationAuthenticationProvider.class, GithubPullRequestDecorator.class,
-                             HttpClientBuilderFactory.class, DefaultBitbucketClientFactory.class, BitbucketPullRequestDecorator.class,
-                             DefaultGitlabClientFactory.class, GitlabMergeRequestDecorator.class,
-                             DefaultAzureDevopsClientFactory.class, AzureDevOpsPullRequestDecorator.class);
+        return Arrays.asList(
+                CommunityBranchLoaderDelegate.class,
+                CommunityBranchPersister.class,
+                PullRequestPostAnalysisTask.class,
+                PostAnalysisIssueVisitor.class,
+                DefaultLinkHeaderReader.class,
+                ReportGenerator.class,
+                MarkdownFormatterFactory.class,
+                DefaultGraphqlProvider.class,
+                DefaultUrlConnectionProvider.class,
+                DefaultGithubClientFactory.class,
+                RestApplicationAuthenticationProvider.class,
+                GithubPullRequestDecorator.class,
+                HttpClientBuilderFactory.class,
+                DefaultBitbucketClientFactory.class,
+                BitbucketPullRequestDecorator.class,
+                DefaultGitlabClientFactory.class,
+                GitlabMergeRequestDecorator.class,
+                DefaultAzureDevopsClientFactory.class,
+                AzureDevOpsPullRequestDecorator.class
+        );
     }
 
 }

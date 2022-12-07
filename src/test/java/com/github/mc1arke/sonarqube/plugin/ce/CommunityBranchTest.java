@@ -39,43 +39,6 @@ public class CommunityBranchTest {
     }
 
     @Test
-    public void testGenerateKeyMainBranchNullFileOfPath() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
-
-        assertEquals("projectKey", testCase.generateKey("projectKey", null));
-    }
-
-    @Test
-    public void testGenerateKeyMainBranchNonNullFileOfPathHolder() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
-
-        assertEquals("projectKey", testCase.generateKey("projectKey", ""));
-    }
-
-    @Test
-    public void testGenerateKeyMainBranchNonNullFileOfPathContent() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
-
-        assertEquals("projectKey:path", testCase.generateKey("projectKey", "path"));
-    }
-
-    @Test
-    public void testGenerateKeyNonMainBranchNonNullFileOfPathContentPullRequest() {
-        CommunityBranch testCase =
-                new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "pullRequestKey", null);
-
-        assertEquals("projectKey:path:PULL_REQUEST:pullRequestKey", testCase.generateKey("projectKey", "path"));
-    }
-
-    @Test
-    public void testGenerateKeyNonMainBranchNonNullFileOfPathContentBranch() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.BRANCH, false, null, null, null);
-
-        assertEquals("projectKey:path:BRANCH:name", testCase.generateKey("projectKey", "path"));
-    }
-
-
-    @Test
     public void testGetPulRequestKey() {
         assertEquals("prKey", new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "prKey", null)
                 .getPullRequestKey());

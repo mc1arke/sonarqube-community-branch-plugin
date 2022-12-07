@@ -1,5 +1,9 @@
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pr;
+
 /*
- * Copyright (C) 2019 Michael Clarke
+ * SonarQube
+ * Copyright (C) 2009-2022 SonarSource SA
+ * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,27 +18,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
  */
-package com.github.mc1arke.sonarqube.plugin.server;
 
-import org.junit.Test;
+import org.sonar.core.platform.Module;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
-
-/**
- * @author Michael Clarke
- */
-public class CommunityBranchFeatureExtensionTest {
-
-    @Test
-    public void testGetName() {
-        assertThat(new CommunityBranchFeatureExtension().getName()).isEqualTo("branch-support");
-    }
-
-    @Test
-    public void testEnabled() {
-        assertTrue(new CommunityBranchFeatureExtension().isEnabled());
+public class PullRequestWsModule extends Module {
+    @Override
+    protected void configureModule() {
+        add(ListAction.class, DeleteAction.class, PullRequestsWs.class);
     }
 }
+

@@ -54,6 +54,10 @@ import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBitbu
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetGithubBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetGitlabBindingAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.ValidateBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pr.DeleteAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pr.ListAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pr.PullRequestWsModule;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pr.PullRequestsWs;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.Plugin;
 import org.sonar.api.PropertyType;
@@ -80,14 +84,22 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
         if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityReportAnalysisComponentProvider.class);
         } else if (SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
-            context.addExtensions(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class,
-                                  DeleteBindingAction.class,
-                                  SetGithubBindingAction.class,
-                                  SetAzureBindingAction.class,
-                                  SetBitbucketBindingAction.class,
-                                  SetBitbucketCloudBindingAction.class,
-                                  SetGitlabBindingAction.class,
+            context.addExtensions(
+                    CommunityBranchFeatureExtension.class,
+                    CommunityBranchSupportDelegate.class,
+
+                    DeleteBindingAction.class,
+                    SetGithubBindingAction.class,
+                    SetAzureBindingAction.class,
+                    SetBitbucketBindingAction.class,
+                    SetBitbucketCloudBindingAction.class,
+                    SetGitlabBindingAction.class,
                     ValidateBindingAction.class,
+
+                    new PullRequestWsModule(),
+                    DeleteAction.class,
+                    ListAction.class,
+                    PullRequestsWs.class,
 
                     GithubValidator.class,
                     DefaultGraphqlProvider.class,
@@ -106,48 +118,48 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                 /* org.sonar.db.purge.PurgeConfiguration uses the value for the this property if it's configured, so it only
                 needs to be specified here, but doesn't need any additional classes to perform the relevant purge/cleanup
                 */
-                                  PropertyDefinition
-                                          .builder(PurgeConstants.DAYS_BEFORE_DELETING_INACTIVE_BRANCHES_AND_PRS)
-                                          .name("Number of days before purging inactive branches and pull requests")
-                                          .description(
-                                                  "Branches and pull requests are permanently deleted when there has been no analysis for the configured number of days.")
-                                          .category(CoreProperties.CATEGORY_HOUSEKEEPING)
-                                          .subCategory(CoreProperties.SUBCATEGORY_BRANCHES_AND_PULL_REQUESTS).defaultValue("30")
-                                          .type(PropertyType.INTEGER)
-                                          .index(1)
-                                          .build()
-                                  ,
+                    PropertyDefinition
+                            .builder(PurgeConstants.DAYS_BEFORE_DELETING_INACTIVE_BRANCHES_AND_PRS)
+                            .name("Number of days before purging inactive branches and pull requests")
+                            .description(
+                                    "Branches and pull requests are permanently deleted when there has been no analysis for the configured number of days.")
+                            .category(CoreProperties.CATEGORY_HOUSEKEEPING)
+                            .subCategory(CoreProperties.SUBCATEGORY_BRANCHES_AND_PULL_REQUESTS).defaultValue("30")
+                            .type(PropertyType.INTEGER)
+                            .index(1)
+                            .build()
+                    ,
 
-                                  PropertyDefinition
-                                          .builder(PurgeConstants.BRANCHES_TO_KEEP_WHEN_INACTIVE)
-                                          .name("Branches to keep when inactive")
-                                          .description("By default, branches and pull requests are automatically deleted when inactive. This setting allows you "
-                                                + "to protect branches (but not pull requests) from this deletion. When a branch is created with a name that "
-                                                + "matches any of the regular expressions on the list of values of this setting, the branch will not be deleted "
-                                                + "automatically even when it becomes inactive. Example:"
-                                                + "<ul><li>develop</li><li>release-.*</li></ul>")
-                                          .category(CoreProperties.CATEGORY_HOUSEKEEPING)
-                                          .subCategory(CoreProperties.SUBCATEGORY_BRANCHES_AND_PULL_REQUESTS)
-                                          .multiValues(true)
-                                          .defaultValue("master,develop,trunk")
-                                          .onQualifiers(Qualifiers.PROJECT)
-                                          .index(2)
-                                          .build()
+                    PropertyDefinition
+                            .builder(PurgeConstants.BRANCHES_TO_KEEP_WHEN_INACTIVE)
+                            .name("Branches to keep when inactive")
+                            .description("By default, branches and pull requests are automatically deleted when inactive. This setting allows you "
+                                    + "to protect branches (but not pull requests) from this deletion. When a branch is created with a name that "
+                                    + "matches any of the regular expressions on the list of values of this setting, the branch will not be deleted "
+                                    + "automatically even when it becomes inactive. Example:"
+                                    + "<ul><li>develop</li><li>release-.*</li></ul>")
+                            .category(CoreProperties.CATEGORY_HOUSEKEEPING)
+                            .subCategory(CoreProperties.SUBCATEGORY_BRANCHES_AND_PULL_REQUESTS)
+                            .multiValues(true)
+                            .defaultValue("master,develop,trunk")
+                            .onQualifiers(Qualifiers.PROJECT)
+                            .index(2)
+                            .build()
 
-                                 );
+            );
 
         }
 
         if (SonarQubeSide.COMPUTE_ENGINE == context.getRuntime().getSonarQubeSide() ||
-            SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
+                SonarQubeSide.SERVER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(PropertyDefinition.builder(IMAGE_URL_BASE)
-                                          .category(CoreProperties.CATEGORY_GENERAL)
-                                          .subCategory(CoreProperties.SUBCATEGORY_GENERAL)
-                                          .onQualifiers(Qualifiers.APP)
-                                          .name("Images base URL")
-                                          .description("Base URL used to load the images for the PR comments (please use this only if images are not displayed properly).")
-                                          .type(PropertyType.STRING)
-                                          .build());
+                    .category(CoreProperties.CATEGORY_GENERAL)
+                    .subCategory(CoreProperties.SUBCATEGORY_GENERAL)
+                    .onQualifiers(Qualifiers.APP)
+                    .name("Images base URL")
+                    .description("Base URL used to load the images for the PR comments (please use this only if images are not displayed properly).")
+                    .type(PropertyType.STRING)
+                    .build());
 
         }
     }
@@ -156,12 +168,12 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
     public void define(Plugin.Context context) {
         if (SonarQubeSide.SCANNER == context.getRuntime().getSonarQubeSide()) {
             context.addExtensions(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
-                                  CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class,
-                                  ScannerPullRequestPropertySensor.class, BranchConfigurationFactory.class,
-                                  AzureDevopsAutoConfigurer.class, BitbucketPipelinesAutoConfigurer.class,
-                                  CirrusCiAutoConfigurer.class, CodeMagicAutoConfigurer.class,
-                                  GithubActionsAutoConfigurer.class, GitlabCiAutoConfigurer.class,
-                                  JenkinsAutoConfigurer.class);
+                    CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class,
+                    ScannerPullRequestPropertySensor.class, BranchConfigurationFactory.class,
+                    AzureDevopsAutoConfigurer.class, BitbucketPipelinesAutoConfigurer.class,
+                    CirrusCiAutoConfigurer.class, CodeMagicAutoConfigurer.class,
+                    GithubActionsAutoConfigurer.class, GitlabCiAutoConfigurer.class,
+                    JenkinsAutoConfigurer.class);
         }
     }
 }

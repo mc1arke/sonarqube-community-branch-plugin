@@ -71,13 +71,11 @@ public class CommunityBranchSupportDelegateTest {
                 new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
                         .createComponentKey("yyy", params);
 
-        assertEquals("yyy:BRANCH:release-1.1", componentKey.getDbKey());
         assertEquals("yyy", componentKey.getKey());
         assertFalse(componentKey.getPullRequestKey().isPresent());
         assertFalse(componentKey.isMainBranch());
         assertTrue(componentKey.getBranchName().isPresent());
         assertEquals("release-1.1", componentKey.getBranchName().get());
-        assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
     }
 
     @Test
@@ -88,15 +86,11 @@ public class CommunityBranchSupportDelegateTest {
         CommunityComponentKey componentKey =
                 new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
                         .createComponentKey("yyy", params);
-        assertEquals("yyy:PULL_REQUEST:pullrequestkey", componentKey.getDbKey());
         assertEquals("yyy", componentKey.getKey());
         assertTrue(componentKey.getPullRequestKey().isPresent());
         assertEquals("pullrequestkey", componentKey.getPullRequestKey().get());
         assertFalse(componentKey.isMainBranch());
         assertFalse(componentKey.getBranchName().isPresent());
-        assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
-        CommunityComponentKey mainBranchComponentKey = componentKey.getMainBranchComponentKey();
-        assertSame(mainBranchComponentKey, mainBranchComponentKey.getMainBranchComponentKey());
     }
 
 
@@ -144,7 +138,6 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
-        when(componentKey.getDbKey()).thenReturn("dbKey");
         when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
@@ -183,7 +176,6 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
-        when(componentKey.getDbKey()).thenReturn("dbKey");
         when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
@@ -207,12 +199,11 @@ public class CommunityBranchSupportDelegateTest {
 
         verify(componentDao).insert(dbSession, copyComponentDto);
         verify(copyComponentDto).setUuid("uuid0");
-        verify(copyComponentDto).setProjectUuid("uuid0");
+        verify(copyComponentDto).setBranchUuid("uuid0");
         verify(copyComponentDto).setRootUuid("uuid0");
         verify(copyComponentDto).setUuidPath(".");
         verify(copyComponentDto).setModuleUuidPath(".uuid0.");
         verify(copyComponentDto).setMainBranchProjectUuid("componentUuid");
-        verify(copyComponentDto).setDbKey(componentKey.getDbKey());
         verify(copyComponentDto).setCreatedAt(new Date(12345678901234L));
 
         assertSame(copyComponentDto, result);
@@ -241,7 +232,6 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
-        when(componentKey.getDbKey()).thenReturn("dbKey");
         when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
@@ -280,7 +270,6 @@ public class CommunityBranchSupportDelegateTest {
 
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
-        when(componentKey.getDbKey()).thenReturn("dbKey");
         when(componentKey.getBranchName()).thenReturn(Optional.empty());
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
@@ -296,12 +285,11 @@ public class CommunityBranchSupportDelegateTest {
 
         verify(componentDao).insert(dbSession, copyComponentDto);
         verify(copyComponentDto).setUuid("1");
-        verify(copyComponentDto).setProjectUuid("1");
+        verify(copyComponentDto).setBranchUuid("1");
         verify(copyComponentDto).setRootUuid("1");
         verify(copyComponentDto).setUuidPath(".");
         verify(copyComponentDto).setModuleUuidPath(".1.");
         verify(copyComponentDto).setMainBranchProjectUuid("componentUuid");
-        verify(copyComponentDto).setDbKey(componentKey.getDbKey());
         verify(copyComponentDto).setCreatedAt(new Date(1234567890123L));
 
         assertSame(copyComponentDto, result);

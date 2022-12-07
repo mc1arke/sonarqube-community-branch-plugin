@@ -21,12 +21,14 @@ package com.github.mc1arke.sonarqube.plugin;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.sonar.api.SonarRuntime;
 import org.sonar.core.platform.EditionProvider;
 import org.sonar.core.platform.PlatformEditionProvider;
 import org.sonar.db.DbClient;
 import org.sonar.db.newcodeperiod.NewCodePeriodDao;
-import org.sonar.server.almsettings.MultipleAlmFeatureProvider;
+import org.sonar.server.almsettings.MultipleAlmFeature;
 import org.sonar.server.component.ComponentFinder;
+import org.sonar.server.feature.SonarQubeFeature;
 import org.sonar.server.newcodeperiod.ws.SetAction;
 import org.sonar.server.newcodeperiod.ws.UnsetAction;
 import org.sonar.server.user.UserSession;
@@ -42,9 +44,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 public class CommunityBranchAgentTest {
 
@@ -63,21 +63,20 @@ public class CommunityBranchAgentTest {
         CommunityBranchAgent.premain("web", instrumentation);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
-        verify(instrumentation).retransformClasses(MultipleAlmFeatureProvider.class);
+        verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
-        try (InputStream inputStream = MultipleAlmFeatureProvider.class.getResourceAsStream(MultipleAlmFeatureProvider.class.getSimpleName())) {
+        try (InputStream inputStream = MultipleAlmFeature.class.getResourceAsStream(MultipleAlmFeature.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
-            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(classLoader, MultipleAlmFeatureProvider.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
-            Class<?> redefined = classLoader.loadClass(MultipleAlmFeatureProvider.class.getName(), result);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(classLoader, MultipleAlmFeature.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
-            PlatformEditionProvider platformEditionProvider = mock(PlatformEditionProvider.class);
+            Class<SonarQubeFeature> multipleAlmFeatureClass = (Class<SonarQubeFeature>) classLoader.loadClass(MultipleAlmFeature.class.getName(), result);
 
-            Object multipleAlmFeatureProvider = redefined.getConstructor(PlatformEditionProvider.class).newInstance(platformEditionProvider);
-            Field editionProviderField = redefined.getDeclaredField("editionProvider");
-            editionProviderField.setAccessible(true);
+            SonarRuntime sonarRuntime = mock(SonarRuntime.class);
 
-            assertThat(((EditionProvider) editionProviderField.get(multipleAlmFeatureProvider)).get()).isEqualTo(Optional.of(EditionProvider.Edition.ENTERPRISE));
+            SonarQubeFeature multipleAlmFeature = multipleAlmFeatureClass.getConstructor(SonarRuntime.class).newInstance(sonarRuntime);
+
+            assertThat(multipleAlmFeature.isEnabled()).isEqualTo(true);
         }
     }
 
@@ -92,7 +91,7 @@ public class CommunityBranchAgentTest {
         verify(instrumentation).retransformClasses(SetAction.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
-        try (InputStream inputStream = SetAction.class.getResourceAsStream(SetAction.class.getSimpleName())) {
+        try (InputStream inputStream = SetAction.class.getResourceAsStream(SetAction.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
             byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(1).transform(classLoader, SetAction.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
@@ -124,7 +123,7 @@ public class CommunityBranchAgentTest {
         verify(instrumentation).retransformClasses(UnsetAction.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
-        try (InputStream inputStream = SetAction.class.getResourceAsStream(SetAction.class.getSimpleName())) {
+        try (InputStream inputStream = UnsetAction.class.getResourceAsStream(UnsetAction.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
             byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(2).transform(classLoader, UnsetAction.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
@@ -151,7 +150,7 @@ public class CommunityBranchAgentTest {
         CommunityBranchAgent.premain("web", instrumentation);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
-        verify(instrumentation).retransformClasses(MultipleAlmFeatureProvider.class);
+        verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
         byte[] input = new byte[]{1, 2, 3, 4, 5, 6};
@@ -168,7 +167,7 @@ public class CommunityBranchAgentTest {
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(PlatformEditionProvider.class);
-        verify(instrumentation).addTransformer(classFileTransformerArgumentCaptor.capture());
+        verify(instrumentation, times(2)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
         byte[] input = new byte[]{1, 2, 3, 4, 5, 6};
         byte[] result = classFileTransformerArgumentCaptor.getValue().transform(getClass().getClassLoader(), "com/github/mc1arke/Dummy", getClass(), getClass().getProtectionDomain(), input);
@@ -178,14 +177,14 @@ public class CommunityBranchAgentTest {
 
 
     @Test
-    public void checkRedefineForCeLaunchRedefinesTargetClass() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
+    public void checkRedefineForCeLaunchRedefinesPlatformEditionProviderClass() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
         Instrumentation instrumentation = mock(Instrumentation.class);
 
         CommunityBranchAgent.premain("ce", instrumentation);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(PlatformEditionProvider.class);
-        verify(instrumentation).addTransformer(classFileTransformerArgumentCaptor.capture());
+        verify(instrumentation, times(2)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
         try (InputStream inputStream = PlatformEditionProvider.class.getResourceAsStream(PlatformEditionProvider.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
@@ -204,6 +203,5 @@ public class CommunityBranchAgentTest {
             return defineClass(name, value, 0, value.length);
         }
 
-    };
-
+    }
 }

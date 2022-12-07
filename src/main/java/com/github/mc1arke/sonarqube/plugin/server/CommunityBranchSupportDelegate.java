@@ -38,7 +38,6 @@ import java.util.Optional;
  * @author Michael Clarke
  */
 public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
-
     private final UuidFactory uuidFactory;
     private final DbClient dbClient;
     private final Clock clock;
@@ -58,12 +57,10 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
             String pullRequest = StringUtils.trimToNull(characteristics.get(CeTaskCharacteristicDto.PULL_REQUEST));
             if (null == pullRequest) {
                 throw new IllegalArgumentException(String.format("One of '%s' or '%s' parameters must be specified",
-                                                                 CeTaskCharacteristicDto.BRANCH_TYPE_KEY,
-                                                                 CeTaskCharacteristicDto.PULL_REQUEST));
+                        CeTaskCharacteristicDto.BRANCH_TYPE_KEY,
+                        CeTaskCharacteristicDto.PULL_REQUEST));
             } else {
-                return new CommunityComponentKey(projectKey,
-                                                 ComponentDto.generatePullRequestKey(projectKey, pullRequest), null,
-                                                 pullRequest);
+                return new CommunityComponentKey(projectKey, null, pullRequest);
             }
         }
 
@@ -71,7 +68,7 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
 
         try {
             BranchType.valueOf(branchTypeParam);
-            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch), branch, null);
+            return new CommunityComponentKey(projectKey, branch, null);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(String.format("Unsupported branch type '%s'", branchTypeParam), ex);
         }
@@ -95,14 +92,15 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
         // borrowed from https://github.com/SonarSource/sonarqube/blob/e80c0f3d1e5cd459f88b7e0c41a2d9a7519e260f/server/sonar-ce-task-projectanalysis/src/main/java/org/sonar/ce/task/projectanalysis/component/BranchPersisterImpl.java
         ComponentDto branchDto = mainComponentDto.copy();
         branchDto.setUuid(branchUuid);
-        branchDto.setProjectUuid(branchUuid);
+        branchDto.setBranchUuid(branchUuid);
         branchDto.setRootUuid(branchUuid);
         branchDto.setUuidPath(ComponentDto.UUID_PATH_OF_ROOT);
         branchDto.setModuleUuidPath(ComponentDto.UUID_PATH_SEPARATOR + branchUuid + ComponentDto.UUID_PATH_SEPARATOR);
         branchDto.setMainBranchProjectUuid(mainComponentDto.uuid());
-        branchDto.setDbKey(componentKey.getDbKey());
+        branchDto.setKey(componentKey.getKey());
         branchDto.setCreatedAt(new Date(clock.millis()));
         dbClient.componentDao().insert(dbSession, branchDto);
+
         return branchDto;
     }
 

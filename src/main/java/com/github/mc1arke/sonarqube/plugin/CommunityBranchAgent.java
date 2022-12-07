@@ -38,7 +38,6 @@ import java.util.Locale;
 import java.util.Optional;
 
 public final class CommunityBranchAgent {
-
     private static final Logger LOGGER = Loggers.get(CommunityBranchAgent.class);
 
     private CommunityBranchAgent() {
@@ -48,12 +47,14 @@ public final class CommunityBranchAgent {
     public static void premain(String args, Instrumentation instrumentation) throws UnmodifiableClassException, ClassNotFoundException {
         LOGGER.info("Loading agent");
 
+        LOGGER.info(args);
         Component component = Component.fromString(args).orElseThrow(() -> new IllegalArgumentException("Invalid/missing agent argument"));
 
+        // needed both CE and WEB
+        redefineEdition(instrumentation, "org.sonar.server.almsettings.MultipleAlmFeature", redefineMultipleAlmFeatureIsEnabledMethod());
         if (component == Component.CE) {
             redefineEdition(instrumentation, "org.sonar.core.platform.PlatformEditionProvider", redefineOptionalEditionGetMethod());
         } else if (component == Component.WEB) {
-            redefineEdition(instrumentation, "org.sonar.server.almsettings.MultipleAlmFeatureProvider", redefineConstructorEditionProviderField(EditionProvider.Edition.ENTERPRISE));
             redefineEdition(instrumentation, "org.sonar.server.newcodeperiod.ws.SetAction", redefineConstructorEditionProviderField(EditionProvider.Edition.DEVELOPER));
             redefineEdition(instrumentation, "org.sonar.server.newcodeperiod.ws.UnsetAction", redefineConstructorEditionProviderField(EditionProvider.Edition.DEVELOPER));
         }
@@ -101,6 +102,14 @@ public final class CommunityBranchAgent {
         };
     }
 
+    private static Redefiner redefineMultipleAlmFeatureIsEnabledMethod() {
+        return ctClass -> {
+            CtMethod ctMethod = ctClass.getDeclaredMethod("isEnabled");
+            ctMethod.setBody("{ return true; }");
+        };
+    }
+
+
     private static Redefiner redefineConstructorEditionProviderField(EditionProvider.Edition edition) {
         return ctClass -> {
             CtConstructor ctConstructor = ctClass.getDeclaredConstructors()[0];
@@ -120,5 +129,4 @@ public final class CommunityBranchAgent {
     private interface Redefiner {
         void redefine(CtClass ctClass) throws CannotCompileException, NotFoundException;
     }
-
 }
