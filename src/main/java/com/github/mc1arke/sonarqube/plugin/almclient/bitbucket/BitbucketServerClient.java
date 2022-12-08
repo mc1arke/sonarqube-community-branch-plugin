@@ -39,6 +39,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -95,7 +96,7 @@ class BitbucketServerClient implements BitbucketClient {
     public void deleteAnnotations(String commit, String reportKey) throws IOException {
         Request req = new Request.Builder()
                 .delete()
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", StringUtils.replaceAll(config.getUrl(), "/$", ""), config.getProject(), config.getRepository(), commit, reportKey))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
@@ -111,7 +112,7 @@ class BitbucketServerClient implements BitbucketClient {
         CreateAnnotationsRequest request = new CreateAnnotationsRequest(annotationSet);
         Request req = new Request.Builder()
                 .post(RequestBody.create(objectMapper.writeValueAsString(request), APPLICATION_JSON_MEDIA_TYPE))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", StringUtils.replaceAll(config.getUrl(), "/$", ""), config.getProject(), config.getRepository(), commit, reportKey))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
@@ -128,7 +129,7 @@ class BitbucketServerClient implements BitbucketClient {
         String body = objectMapper.writeValueAsString(codeInsightReport);
         Request req = new Request.Builder()
                 .put(RequestBody.create(body, APPLICATION_JSON_MEDIA_TYPE))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", StringUtils.replaceAll(config.getUrl(), "/$", ""), config.getProject(), config.getRepository(), commit, reportKey))
                 .build();
 
         try (Response response = okHttpClient.newCall(req).execute()) {
@@ -163,7 +164,7 @@ class BitbucketServerClient implements BitbucketClient {
     public Repository retrieveRepository() throws IOException {
         Request req = new Request.Builder()
                 .get()
-                .url(format("%s/rest/api/1.0/projects/%s/repos/%s", config.getUrl(), config.getProject(), config.getRepository()))
+                .url(format("%s/rest/api/1.0/projects/%s/repos/%s", StringUtils.replaceAll(config.getUrl(), "/$", ""), config.getProject(), config.getRepository()))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
@@ -178,7 +179,7 @@ class BitbucketServerClient implements BitbucketClient {
     public ServerProperties getServerProperties() throws IOException {
         Request req = new Request.Builder()
                 .get()
-                .url(format("%s/rest/api/1.0/application-properties", config.getUrl()))
+                .url(format("%s/rest/api/1.0/application-properties", StringUtils.replaceAll(config.getUrl(), "/$", "")))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
