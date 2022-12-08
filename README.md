@@ -137,7 +137,7 @@ sonar.pullrequest.base = target_branch_name (e.g master)
 Unless your CI support auto-configuration you will also need to specify the commitId of the head below (without which Pull Request decoration does not work properly)
 
 ```
--Dsonar.scm.revision=45e58a75db561ab47734dfa2c01ea5847646566e
+sonar.scm.revision=45e58a75db561ab47734dfa2c01ea5847646566e
 ```
 
 :warning: There must not be any `sonar.branch` properties like `sonar.branch.name` arguments set when you analyze a
