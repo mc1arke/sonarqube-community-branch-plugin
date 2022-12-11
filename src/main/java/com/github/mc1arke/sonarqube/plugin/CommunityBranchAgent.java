@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,8 +52,9 @@ public final class CommunityBranchAgent {
 
         if (component == Component.CE) {
             redefineEdition(instrumentation, "org.sonar.core.platform.PlatformEditionProvider", redefineOptionalEditionGetMethod());
+            redefineEdition(instrumentation, "org.sonar.server.almsettings.MultipleAlmFeature", redefineIsEnabledFlag());
         } else if (component == Component.WEB) {
-            redefineEdition(instrumentation, "org.sonar.server.almsettings.MultipleAlmFeatureProvider", redefineConstructorEditionProviderField(EditionProvider.Edition.ENTERPRISE));
+            redefineEdition(instrumentation, "org.sonar.server.almsettings.MultipleAlmFeature", redefineIsEnabledFlag());
             redefineEdition(instrumentation, "org.sonar.server.newcodeperiod.ws.SetAction", redefineConstructorEditionProviderField(EditionProvider.Edition.DEVELOPER));
             redefineEdition(instrumentation, "org.sonar.server.newcodeperiod.ws.UnsetAction", redefineConstructorEditionProviderField(EditionProvider.Edition.DEVELOPER));
         }
@@ -98,6 +99,13 @@ public final class CommunityBranchAgent {
         return ctClass -> {
             CtMethod ctMethod = ctClass.getDeclaredMethod("get");
             ctMethod.setBody("return java.util.Optional.of(org.sonar.core.platform.EditionProvider.Edition.DEVELOPER);");
+        };
+    }
+
+    private static Redefiner redefineIsEnabledFlag() {
+        return ctClass -> {
+            CtMethod ctMethod = ctClass.getDeclaredMethod("isEnabled");
+            ctMethod.setBody("return true;");
         };
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,17 +18,24 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchFeatureExtensionTest {
+class CommunityBranchFeatureExtensionTest {
+
+    private final CommunityBranchFeatureExtension underTest = new CommunityBranchFeatureExtension();
 
     @Test
-    public void testEnabled() {
-        assertTrue(new CommunityBranchFeatureExtension().isEnabled());
+    void shouldReturnNameThatFrontEndLooksFor() {
+        assertThat(underTest.getName()).isEqualTo("branch-support");
+    }
+
+    @Test
+    void shouldReturnEnabledForFeature() {
+        assertThat(underTest.isEnabled()).isTrue();
     }
 }

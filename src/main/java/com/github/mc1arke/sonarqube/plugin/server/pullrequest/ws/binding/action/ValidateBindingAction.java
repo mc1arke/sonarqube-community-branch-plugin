@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.Validator;
@@ -41,7 +41,7 @@ public class ValidateBindingAction extends ProjectWsAction {
     private final List<Validator> validators;
 
     public ValidateBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, List<Validator> validators) {
-        super("validate_binding", dbClient, componentFinder, userSession, true, UserRole.USER);
+        super("validate_binding", dbClient, componentFinder, userSession, UserRole.USER);
         this.validators = validators;
     }
 

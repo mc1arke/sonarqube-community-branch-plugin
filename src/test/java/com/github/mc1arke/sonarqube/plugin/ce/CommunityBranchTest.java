@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,76 +18,50 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce;
 
-import org.hamcrest.core.IsEqual;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.sonar.db.component.BranchType;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.sonar.db.component.BranchType;
 
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchTest {
-
-    private final ExpectedException expectedException = ExpectedException.none();
-
-    @Rule
-    public ExpectedException expectedException() {
-        return expectedException;
-    }
+class CommunityBranchTest {
 
     @Test
-    public void testGenerateKeyMainBranchNullFileOfPath() {
+    void testGenerateKeyMainBranchNullFileOfPath() {
         CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
 
-        assertEquals("projectKey", testCase.generateKey("projectKey", null));
+        assertThat(testCase.generateKey("projectKey", null)).isEqualTo("projectKey");
     }
 
     @Test
-    public void testGenerateKeyMainBranchNonNullFileOfPathHolder() {
+    void testGenerateKeyMainBranchNonNullFileOfPathHolder() {
         CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
 
-        assertEquals("projectKey", testCase.generateKey("projectKey", ""));
+        assertThat(testCase.generateKey("projectKey", "")).isEqualTo("projectKey");
     }
 
     @Test
-    public void testGenerateKeyMainBranchNonNullFileOfPathContent() {
+    void testGenerateKeyMainBranchNonNullFileOfPathContent() {
         CommunityBranch testCase = new CommunityBranch("name", BranchType.PULL_REQUEST, true, null, null, null);
 
-        assertEquals("projectKey:path", testCase.generateKey("projectKey", "path"));
+        assertThat(testCase.generateKey("projectKey", "path")).isEqualTo("projectKey:path");
     }
 
     @Test
-    public void testGenerateKeyNonMainBranchNonNullFileOfPathContentPullRequest() {
-        CommunityBranch testCase =
-                new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "pullRequestKey", null);
-
-        assertEquals("projectKey:path:PULL_REQUEST:pullRequestKey", testCase.generateKey("projectKey", "path"));
+    void testGetPulRequestKey() {
+        assertThat(new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "prKey", null)
+                .getPullRequestKey()).isEqualTo("prKey");
     }
 
     @Test
-    public void testGenerateKeyNonMainBranchNonNullFileOfPathContentBranch() {
-        CommunityBranch testCase = new CommunityBranch("name", BranchType.BRANCH, false, null, null, null);
-
-        assertEquals("projectKey:path:BRANCH:name", testCase.generateKey("projectKey", "path"));
-    }
-
-
-    @Test
-    public void testGetPulRequestKey() {
-        assertEquals("prKey", new CommunityBranch("name", BranchType.PULL_REQUEST, false, null, "prKey", null)
-                .getPullRequestKey());
-    }
-
-    @Test
-    public void testGetPulRequestKeyNonPullRequest() {
-        expectedException
-                .expectMessage(IsEqual.equalTo("Only a branch of type PULL_REQUEST can have a pull request ID"));
-        expectedException.expect(IllegalStateException.class);
-
-        new CommunityBranch("name", BranchType.BRANCH, false, null, "prKey", null).getPullRequestKey();
+    void testGetPulRequestKeyNonPullRequest() {
+        CommunityBranch underTest = new CommunityBranch("name", BranchType.BRANCH, false, null, "prKey", null);
+        assertThatThrownBy(underTest::getPullRequestKey)
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Only a branch of type PULL_REQUEST can have a pull request ID");
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.WebService;
@@ -25,27 +25,31 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 
-public class SetGitlabBindingAction extends SetBindingAction {
-    private static final String REPOSITORY_PARAMETER = "repository";
+public class SetBitbucketBindingAction extends SetBindingAction {
 
-    public SetGitlabBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
-        super(dbClient, componentFinder, userSession, "set_gitlab_binding");
+    private static final String REPOSITORY_PARAMETER = "repository";
+    private static final String SLUG_PARAMETER = "slug";
+
+    public SetBitbucketBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
+        super(dbClient, componentFinder, userSession, "set_bitbucket_binding");
     }
 
     @Override
     protected void configureAction(WebService.NewAction action) {
         super.configureAction(action);
-        action.createParam(REPOSITORY_PARAMETER);
+        action.createParam(REPOSITORY_PARAMETER).setRequired(true);
+        action.createParam(SLUG_PARAMETER).setRequired(true);
     }
 
     @Override
     protected ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid,
-                                                              Request request) {
+                                                              boolean monoRepo, Request request) {
         return new ProjectAlmSettingDto()
                 .setProjectUuid(projectUuid)
                 .setAlmSettingUuid(settingsUuid)
-                .setAlmRepo(request.param(REPOSITORY_PARAMETER))
-                .setMonorepo(false);
+                .setAlmRepo(request.mandatoryParam(REPOSITORY_PARAMETER))
+                .setAlmSlug(request.mandatoryParam(SLUG_PARAMETER))
+                .setMonorepo(monoRepo);
     }
 
 }

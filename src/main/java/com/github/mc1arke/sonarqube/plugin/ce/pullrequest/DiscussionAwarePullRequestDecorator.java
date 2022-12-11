@@ -71,16 +71,16 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
         U user = getCurrentUser(client);
         List<PostAnalysisIssueVisitor.ComponentIssue> openSonarqubeIssues = analysis.getScmReportableIssues();
 
-        List<Triple<D, N, Optional<ProjectIssueIdentifier>>> currentProjectSonarqueComments = findOpenSonarqubeComments(client,
+        List<Triple<D, N, Optional<ProjectIssueIdentifier>>> currentProjectSonarqubeComments = findOpenSonarqubeComments(client,
                 pullRequest,
                 user)
                 .stream()
-                .filter(comment -> isCommentFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
+                .filter(comment -> !projectAlmSettingDto.getMonorepo() || isCommentFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
                 .collect(Collectors.toList());
 
         List<String> commentKeysForOpenComments = closeOldDiscussionsAndExtractRemainingKeys(client,
                 user,
-                currentProjectSonarqueComments,
+                currentProjectSonarqubeComments,
                 openSonarqubeIssues,
                 pullRequest);
 
