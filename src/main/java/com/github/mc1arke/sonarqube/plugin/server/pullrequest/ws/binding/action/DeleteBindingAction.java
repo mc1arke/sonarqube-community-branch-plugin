@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
@@ -32,14 +32,14 @@ public class DeleteBindingAction extends ProjectWsAction {
     private final DbClient dbClient;
 
     public DeleteBindingAction(DbClient dbClient, UserSession userSession, ComponentFinder componentFinder) {
-        super("delete_binding", dbClient, componentFinder, userSession, true);
+        super("delete_binding", dbClient, componentFinder, userSession);
         this.dbClient = dbClient;
     }
 
 
     @Override
     protected void configureAction(WebService.NewAction action) {
-        //no-op
+        action.setPost(true);
     }
 
     @Override

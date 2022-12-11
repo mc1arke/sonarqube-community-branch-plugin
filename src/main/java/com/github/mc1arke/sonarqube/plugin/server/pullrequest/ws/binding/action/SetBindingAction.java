@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
@@ -35,23 +35,27 @@ import static java.lang.String.format;
 public abstract class SetBindingAction extends ProjectWsAction {
 
     private static final String ALM_SETTING_PARAMETER = "almSetting";
+    private static final String MONOREPO_PARAMETER = "monorepo";
 
     protected SetBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, String actionName) {
-        super(actionName, dbClient, componentFinder, userSession, true);
+        super(actionName, dbClient, componentFinder, userSession);
     }
 
     @Override
     protected void configureAction(WebService.NewAction action) {
-        action.createParam(ALM_SETTING_PARAMETER).setRequired(true);
+        action.setPost(true)
+            .createParam(ALM_SETTING_PARAMETER).setRequired(true);
+        action.createParam(MONOREPO_PARAMETER).setRequired(true).setBooleanPossibleValues();
     }
 
     @Override
     protected void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
         String almSetting = request.mandatoryParam(ALM_SETTING_PARAMETER);
+        boolean monoRepo = request.mandatoryParamAsBoolean(MONOREPO_PARAMETER);
 
         DbClient dbClient = getDbClient();
         AlmSettingDto almSettingDto = getAlmSetting(dbClient, dbSession, almSetting);
-        dbClient.projectAlmSettingDao().insertOrUpdate(dbSession, createProjectAlmSettingDto(project.getUuid(), almSettingDto.getUuid(), request), almSettingDto.getUuid(), project.getName(), project.getKey());
+        dbClient.projectAlmSettingDao().insertOrUpdate(dbSession, createProjectAlmSettingDto(project.getUuid(), almSettingDto.getUuid(), monoRepo, request), almSettingDto.getUuid(), project.getName(), project.getKey());
         dbSession.commit();
 
         response.noContent();
@@ -63,6 +67,6 @@ public abstract class SetBindingAction extends ProjectWsAction {
     }
 
 
-    protected abstract ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid, Request request);
+    protected abstract ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid, boolean monoRepo, Request request);
 
 }

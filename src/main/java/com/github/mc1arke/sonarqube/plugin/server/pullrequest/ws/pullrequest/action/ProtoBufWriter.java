@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,27 +14,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
  */
-package com.github.mc1arke.sonarqube.plugin.server;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action;
 
-import org.sonar.server.branch.BranchFeatureExtension;
+import org.sonar.api.server.ws.Request;
+import org.sonar.api.server.ws.Response;
 
-/**
- * Enables branch management in SonarQube.
- *
- * @author Michael Clarke
- */
-public class CommunityBranchFeatureExtension implements BranchFeatureExtension {
+import com.google.protobuf.Message;
 
-    @Override
-    public String getName() {
-        return "branch-support";
-    }
+@FunctionalInterface
+interface ProtoBufWriter {
 
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
+    void write(Message message, Request request, Response response);
 
 }

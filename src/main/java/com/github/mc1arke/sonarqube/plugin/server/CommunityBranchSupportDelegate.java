@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,15 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server;
 
+import java.time.Clock;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 import org.apache.commons.lang.StringUtils;
+import org.sonar.api.config.Configuration;
+import org.sonar.core.config.PurgeConstants;
 import org.sonar.core.util.UuidFactory;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
@@ -28,11 +36,7 @@ import org.sonar.db.component.BranchType;
 import org.sonar.db.component.ComponentDto;
 import org.sonar.server.ce.queue.BranchSupport;
 import org.sonar.server.ce.queue.BranchSupportDelegate;
-
-import java.time.Clock;
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
+import org.sonar.server.setting.ProjectConfigurationLoader;
 
 /**
  * @author Michael Clarke
@@ -42,12 +46,15 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
     private final UuidFactory uuidFactory;
     private final DbClient dbClient;
     private final Clock clock;
+    private final ProjectConfigurationLoader projectConfigurationLoader;
 
-    public CommunityBranchSupportDelegate(UuidFactory uuidFactory, DbClient dbClient, Clock clock) {
+    public CommunityBranchSupportDelegate(UuidFactory uuidFactory, DbClient dbClient, Clock clock,
+                                          ProjectConfigurationLoader projectConfigurationLoader) {
         super();
         this.uuidFactory = uuidFactory;
         this.dbClient = dbClient;
         this.clock = clock;
+        this.projectConfigurationLoader = projectConfigurationLoader;
     }
 
     @Override
@@ -61,9 +68,7 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
                                                                  CeTaskCharacteristicDto.BRANCH_TYPE_KEY,
                                                                  CeTaskCharacteristicDto.PULL_REQUEST));
             } else {
-                return new CommunityComponentKey(projectKey,
-                                                 ComponentDto.generatePullRequestKey(projectKey, pullRequest), null,
-                                                 pullRequest);
+                return new CommunityComponentKey(projectKey, null, pullRequest);
             }
         }
 
@@ -71,7 +76,7 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
 
         try {
             BranchType.valueOf(branchTypeParam);
-            return new CommunityComponentKey(projectKey, ComponentDto.generateBranchKey(projectKey, branch), branch, null);
+            return new CommunityComponentKey(projectKey, branch, null);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(String.format("Unsupported branch type '%s'", branchTypeParam), ex);
         }
@@ -85,25 +90,37 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
             throw new IllegalStateException("Component Key and Main Component Key do not match");
         }
 
-        Optional<String> branchOptional = componentKey.getBranchName();
-        if (branchOptional.isPresent() && branchOptional.get().equals(mainComponentBranchDto.getKey())) {
-            return mainComponentDto;
-        }
-
         String branchUuid = uuidFactory.create();
 
-        // borrowed from https://github.com/SonarSource/sonarqube/blob/e80c0f3d1e5cd459f88b7e0c41a2d9a7519e260f/server/sonar-ce-task-projectanalysis/src/main/java/org/sonar/ce/task/projectanalysis/component/BranchPersisterImpl.java
-        ComponentDto branchDto = mainComponentDto.copy();
-        branchDto.setUuid(branchUuid);
-        branchDto.setProjectUuid(branchUuid);
-        branchDto.setRootUuid(branchUuid);
-        branchDto.setUuidPath(ComponentDto.UUID_PATH_OF_ROOT);
-        branchDto.setModuleUuidPath(ComponentDto.UUID_PATH_SEPARATOR + branchUuid + ComponentDto.UUID_PATH_SEPARATOR);
-        branchDto.setMainBranchProjectUuid(mainComponentDto.uuid());
-        branchDto.setDbKey(componentKey.getDbKey());
-        branchDto.setCreatedAt(new Date(clock.millis()));
-        dbClient.componentDao().insert(dbSession, branchDto);
-        return branchDto;
+        ComponentDto componentDto = mainComponentDto.copy()
+            .setUuid(branchUuid)
+            .setRootUuid(branchUuid)
+            .setBranchUuid(branchUuid)
+            .setUuidPath(ComponentDto.UUID_PATH_OF_ROOT)
+            .setModuleUuidPath(ComponentDto.UUID_PATH_SEPARATOR + branchUuid + ComponentDto.UUID_PATH_SEPARATOR)
+            .setMainBranchProjectUuid(mainComponentDto.uuid())
+            .setCreatedAt(new Date(clock.millis()));
+        dbClient.componentDao().insert(dbSession, componentDto);
+
+        BranchDto branchDto = new BranchDto()
+            .setProjectUuid(mainComponentDto.uuid())
+            .setUuid(branchUuid);
+        componentKey.getPullRequestKey().ifPresent(pullRequestKey -> branchDto.setBranchType(BranchType.PULL_REQUEST)
+            .setExcludeFromPurge(false)
+            .setKey(pullRequestKey));
+        componentKey.getBranchName().ifPresent(branchName -> branchDto.setBranchType(BranchType.BRANCH)
+            .setExcludeFromPurge(isBranchExcludedFromPurge(projectConfigurationLoader.loadProjectConfiguration(dbSession, mainComponentDto), branchName))
+            .setKey(branchName));
+        dbClient.branchDao().insert(dbSession, branchDto);
+
+        return componentDto;
+    }
+
+    private static boolean isBranchExcludedFromPurge(Configuration projectConfiguration, String branchName) {
+        return Arrays.stream(projectConfiguration.getStringArray(PurgeConstants.BRANCHES_TO_KEEP_WHEN_INACTIVE))
+            .map(Pattern::compile)
+            .map(Pattern::asMatchPredicate)
+            .anyMatch(p -> p.test(branchName));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,13 +28,11 @@ import java.util.Optional;
 /*package*/ class CommunityComponentKey extends BranchSupport.ComponentKey {
 
     private final String key;
-    private final String dbKey;
     private final String branchName;
     private final String pullRequestKey;
 
-    /*package*/ CommunityComponentKey(String key, String dbKey, String branchName, String pullRequestKey) {
+    /*package*/ CommunityComponentKey(String key, String branchName, String pullRequestKey) {
         this.key = key;
-        this.dbKey = dbKey;
         this.branchName = branchName;
         this.pullRequestKey = pullRequestKey;
     }
@@ -45,24 +43,13 @@ import java.util.Optional;
     }
 
     @Override
-    public String getDbKey() {
-        return dbKey;
-    }
-
-    @Override
     public Optional<String> getBranchName() {
         return Optional.ofNullable(branchName);
     }
+
     @Override
     public Optional<String> getPullRequestKey() {
         return Optional.ofNullable(pullRequestKey);
     }
 
-    @Override
-    public CommunityComponentKey getMainBranchComponentKey() {
-        if (key.equals(dbKey)) {
-            return this;
-        }
-        return new CommunityComponentKey(key, key, null, null);
-    }
 }

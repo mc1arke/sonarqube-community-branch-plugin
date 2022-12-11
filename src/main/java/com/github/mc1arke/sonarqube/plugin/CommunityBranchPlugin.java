@@ -43,17 +43,22 @@ import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.GitlabCiAut
 import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.JenkinsAutoConfigurer;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
+import com.github.mc1arke.sonarqube.plugin.server.MonoRepoFeature;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.AzureDevopsValidator;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.BitbucketValidator;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.GithubValidator;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.GitlabValidator;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.DeleteBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetAzureBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBitbucketBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetBitbucketCloudBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetGithubBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.SetGitlabBindingAction;
-import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action.ValidateBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.DeleteBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.SetAzureBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.SetBitbucketBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.SetBitbucketCloudBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.SetGithubBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.SetGitlabBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.ValidateBindingAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.PullRequestWs;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.DeleteAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.ListAction;
+
 import org.sonar.api.CoreProperties;
 import org.sonar.api.Plugin;
 import org.sonar.api.PropertyType;
@@ -88,6 +93,9 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                   SetBitbucketCloudBindingAction.class,
                                   SetGitlabBindingAction.class,
                     ValidateBindingAction.class,
+                    DeleteAction.class,
+                    ListAction.class,
+                    PullRequestWs.class,
 
                     GithubValidator.class,
                     DefaultGraphqlProvider.class,
@@ -147,7 +155,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .name("Images base URL")
                                           .description("Base URL used to load the images for the PR comments (please use this only if images are not displayed properly).")
                                           .type(PropertyType.STRING)
-                                          .build());
+                                          .build(),
+                MonoRepoFeature.class);
 
         }
     }
