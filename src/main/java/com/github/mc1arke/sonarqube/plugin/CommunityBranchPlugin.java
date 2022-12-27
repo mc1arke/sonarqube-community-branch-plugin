@@ -32,7 +32,6 @@ import com.github.mc1arke.sonarqube.plugin.scanner.BranchConfigurationFactory;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
-import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectPullRequestsLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.ScannerPullRequestPropertySensor;
 import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.AzureDevopsAutoConfigurer;
 import com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration.BitbucketPipelinesAutoConfigurer;
@@ -137,7 +136,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .category(CoreProperties.CATEGORY_HOUSEKEEPING)
                                           .subCategory(CoreProperties.SUBCATEGORY_BRANCHES_AND_PULL_REQUESTS)
                                           .multiValues(true)
-                                          .defaultValue("master,develop,trunk")
+                                          .defaultValue("main,master,develop,trunk")
                                           .onQualifiers(Qualifiers.PROJECT)
                                           .index(2)
                                           .build()
@@ -164,7 +163,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
     @Override
     public void define(Plugin.Context context) {
         if (SonarQubeSide.SCANNER == context.getRuntime().getSonarQubeSide()) {
-            context.addExtensions(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
+            context.addExtensions(CommunityProjectBranchesLoader.class,
                                   CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class,
                                   ScannerPullRequestPropertySensor.class, BranchConfigurationFactory.class,
                                   AzureDevopsAutoConfigurer.class, BitbucketPipelinesAutoConfigurer.class,

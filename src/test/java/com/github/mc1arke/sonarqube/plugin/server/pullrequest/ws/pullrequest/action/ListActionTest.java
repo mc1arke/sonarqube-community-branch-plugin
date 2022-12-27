@@ -27,7 +27,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -44,11 +43,8 @@ import org.sonar.db.measure.LiveMeasureDao;
 import org.sonar.db.measure.LiveMeasureDto;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.db.protobuf.DbProjectBranches;
-import org.sonar.scanner.protocol.output.ScannerReport;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.exceptions.ForbiddenException;
-import org.sonar.server.issue.index.IssueIndex;
-import org.sonar.server.issue.index.PrStatistics;
 import org.sonar.server.user.UserSession;
 import org.sonarqube.ws.ProjectPullRequests;
 
@@ -57,9 +53,8 @@ class ListActionTest {
     private final DbClient dbClient = mock(DbClient.class);
     private final UserSession userSession = mock(UserSession.class);
     private final ComponentFinder componentFinder = mock(ComponentFinder.class);
-    private final IssueIndex issueIndex = mock(IssueIndex.class);
     private final ProtoBufWriter protoBufWriter = mock(ProtoBufWriter.class);
-    private final ListAction underTest = new ListAction(dbClient, componentFinder, userSession, issueIndex, protoBufWriter);
+    private final ListAction underTest = new ListAction(dbClient, componentFinder, userSession, protoBufWriter);
 
     @Test
     void shouldDefineEndpointWithProjectParameter() {
@@ -139,9 +134,6 @@ class ListActionTest {
         when(dbClient.snapshotDao()).thenReturn(snapshotDao);
         when(snapshotDao.selectLastAnalysesByRootComponentUuids(any(), any())).thenReturn(List.of(new SnapshotDto().setComponentUuid("componentUuid").setCreatedAt(1234L)));
 
-        when(issueIndex.searchBranchStatistics(any(), any())).thenReturn(List.of(new PrStatistics("uuid1", Map.of(ScannerReport.IssueType.BUG.name(), 11L, ScannerReport.IssueType.CODE_SMELL.name(), 22L, ScannerReport.IssueType.VULNERABILITY.name(), 33L)),
-            new PrStatistics("uuid4", Map.of(ScannerReport.IssueType.BUG.name(), 1L, ScannerReport.IssueType.CODE_SMELL.name(), 2L, ScannerReport.IssueType.VULNERABILITY.name(), 3L))));
-
         Response response = mock(Response.class);
 
         ProjectPullRequests.ListWsResponse expected = ProjectPullRequests.ListWsResponse.newBuilder()
@@ -152,9 +144,6 @@ class ListActionTest {
                 .setBase("branch2Key")
                 .setStatus(ProjectPullRequests.Status.newBuilder()
                     .setQualityGateStatus("live measure")
-                    .setBugs(11)
-                    .setVulnerabilities(33)
-                    .setCodeSmells(22)
                     .build())
                 .setUrl("url")
                 .setTarget("target")
@@ -164,9 +153,6 @@ class ListActionTest {
                 .setTitle("title2")
                 .setBranch("prBranch2")
                 .setStatus(ProjectPullRequests.Status.newBuilder()
-                    .setBugs(0)
-                    .setCodeSmells(0)
-                    .setVulnerabilities(0)
                     .build())
                 .setIsOrphan(true)
                 .setUrl("url2"))
@@ -176,9 +162,6 @@ class ListActionTest {
                 .setBranch("prBranch2")
                 .setBase("branch2Key")
                 .setStatus(ProjectPullRequests.Status.newBuilder()
-                    .setBugs(1)
-                    .setVulnerabilities(3)
-                    .setCodeSmells(2)
                     .build())
                 .setUrl("url3")
                 .setTarget("branch2Key")
