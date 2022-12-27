@@ -40,7 +40,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentPr
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
-import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectPullRequestsLoader;
+import com.github.mc1arke.sonarqube.plugin.scanner.ScannerPullRequestPropertySensor;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
 import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
 
@@ -63,8 +63,8 @@ class CommunityBranchPluginTest {
                 .addExtensions(argumentCaptor.capture(), argumentCaptor.capture(), argumentCaptor.capture());
 
 
-        assertThat(argumentCaptor.getAllValues().subList(0, 4)).isEqualTo(Arrays.asList(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
-                                   CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class));
+        assertThat(argumentCaptor.getAllValues().subList(0, 4)).isEqualTo(Arrays.asList(CommunityProjectBranchesLoader.class,
+                                   CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class, ScannerPullRequestPropertySensor.class));
     }
 
     @Test

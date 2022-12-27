@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -47,8 +46,6 @@ import org.sonar.db.permission.GlobalPermission;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.db.protobuf.DbProjectBranches;
 import org.sonar.server.component.ComponentFinder;
-import org.sonar.server.issue.index.IssueIndex;
-import org.sonar.server.issue.index.PrStatistics;
 import org.sonar.server.user.UserSession;
 import org.sonar.server.ws.WsUtils;
 import org.sonarqube.ws.ProjectPullRequests;
@@ -59,18 +56,16 @@ import com.google.common.base.Strings;
 public class ListAction extends ProjectWsAction {
 
     private final UserSession userSession;
-    private final IssueIndex issueIndex;
     private final ProtoBufWriter protoBufWriter;
 
     @Autowired
-    public ListAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, IssueIndex issueIndex) {
-        this(dbClient, componentFinder, userSession, issueIndex, WsUtils::writeProtobuf);
+    public ListAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
+        this(dbClient, componentFinder, userSession, WsUtils::writeProtobuf);
     }
 
-    ListAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, IssueIndex issueIndex, ProtoBufWriter protoBufWriter) {
+    ListAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, ProtoBufWriter protoBufWriter) {
         super("list", dbClient, componentFinder);
         this.userSession = userSession;
-        this.issueIndex = issueIndex;
         this.protoBufWriter = protoBufWriter;
     }
 
@@ -96,8 +91,6 @@ public class ListAction extends ProjectWsAction {
                 .collect(Collectors.toList()))
             .stream().collect(MoreCollectors.uniqueIndex(BranchDto::getUuid));
 
-        Map<String, PrStatistics> branchStatisticsByBranchUuid = issueIndex.searchBranchStatistics(project.getUuid(), pullRequestUuids).stream()
-            .collect(MoreCollectors.uniqueIndex(PrStatistics::getBranchUuid, Function.identity()));
         Map<String, LiveMeasureDto> qualityGateMeasuresByComponentUuids = getDbClient().liveMeasureDao()
             .selectByComponentUuidsAndMetricKeys(dbSession, pullRequestUuids, List.of(CoreMetrics.ALERT_STATUS_KEY)).stream()
             .collect(MoreCollectors.uniqueIndex(LiveMeasureDto::getComponentUuid));
@@ -106,7 +99,7 @@ public class ListAction extends ProjectWsAction {
 
         ProjectPullRequests.ListWsResponse.Builder protobufResponse = ProjectPullRequests.ListWsResponse.newBuilder();
         pullRequests
-            .forEach(b -> addPullRequest(protobufResponse, b, mergeBranchesByUuid, qualityGateMeasuresByComponentUuids.get(b.getUuid()), branchStatisticsByBranchUuid.get(b.getUuid()),
+            .forEach(b -> addPullRequest(protobufResponse, b, mergeBranchesByUuid, qualityGateMeasuresByComponentUuids.get(b.getUuid()),
                 analysisDateByBranchUuid.get(b.getUuid())));
         protoBufWriter.write(protobufResponse.build(), request, response);
     }
@@ -121,7 +114,7 @@ public class ListAction extends ProjectWsAction {
     }
 
     private static void addPullRequest(ProjectPullRequests.ListWsResponse.Builder response, BranchDto branch, Map<String, BranchDto> mergeBranchesByUuid,
-                                       @Nullable LiveMeasureDto qualityGateMeasure, PrStatistics prStatistics, @Nullable String analysisDate) {
+                                       @Nullable LiveMeasureDto qualityGateMeasure, @Nullable String analysisDate) {
         Optional<BranchDto> mergeBranch = Optional.ofNullable(mergeBranchesByUuid.get(branch.getMergeBranchUuid()));
 
         ProjectPullRequests.PullRequest.Builder builder = ProjectPullRequests.PullRequest.newBuilder();
@@ -146,18 +139,15 @@ public class ListAction extends ProjectWsAction {
         }
 
         Optional.ofNullable(analysisDate).ifPresent(builder::setAnalysisDate);
-        setQualityGate(builder, qualityGateMeasure, prStatistics);
+        setQualityGate(builder, qualityGateMeasure);
         response.addPullRequests(builder);
     }
 
-    private static void setQualityGate(ProjectPullRequests.PullRequest.Builder builder, @Nullable LiveMeasureDto qualityGateMeasure, @Nullable PrStatistics prStatistics) {
+    private static void setQualityGate(ProjectPullRequests.PullRequest.Builder builder, @Nullable LiveMeasureDto qualityGateMeasure) {
         ProjectPullRequests.Status.Builder statusBuilder = ProjectPullRequests.Status.newBuilder();
         if (qualityGateMeasure != null) {
             Optional.ofNullable(qualityGateMeasure.getDataAsString()).ifPresent(statusBuilder::setQualityGateStatus);
         }
-        statusBuilder.setBugs(prStatistics == null ? 0L : prStatistics.getBugs());
-        statusBuilder.setVulnerabilities(prStatistics == null ? 0L : prStatistics.getVulnerabilities());
-        statusBuilder.setCodeSmells(prStatistics == null ? 0L : prStatistics.getCodeSmells());
         builder.setStatus(statusBuilder);
     }
 }

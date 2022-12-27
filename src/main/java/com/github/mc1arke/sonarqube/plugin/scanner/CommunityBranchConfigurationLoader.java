@@ -29,7 +29,6 @@ import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.BranchConfigurationLoader;
 import org.sonar.scanner.scan.branch.DefaultBranchConfiguration;
 import org.sonar.scanner.scan.branch.ProjectBranches;
-import org.sonar.scanner.scan.branch.ProjectPullRequests;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,8 +69,7 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
     }
 
     @Override
-    public BranchConfiguration load(Map<String, String> localSettings, ProjectBranches projectBranches,
-                                    ProjectPullRequests pullRequests) {
+    public BranchConfiguration load(Map<String, String> localSettings, ProjectBranches projectBranches) {
         List<String> nonEmptyParameters = localSettings.entrySet().stream()
                 .filter(e -> StringUtils.isNotEmpty(e.getValue()))
                 .map(Map.Entry::getKey)
