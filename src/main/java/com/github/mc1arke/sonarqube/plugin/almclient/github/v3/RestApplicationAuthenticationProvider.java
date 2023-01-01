@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,9 +28,14 @@ import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model.AppInstalla
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model.AppToken;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model.InstallationRepositories;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model.Repository;
-import com.google.common.annotations.VisibleForTesting;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultJwtBuilder;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.server.ServerSide;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -41,16 +46,8 @@ import java.security.PrivateKey;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.sonar.api.ce.ComputeEngineSide;
-import org.sonar.api.server.ServerSide;
 
 @ServerSide
 @ComputeEngineSide
@@ -75,27 +72,6 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
         this.objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
-    @VisibleForTesting
-    protected List<AppInstallation> getAppInstallations(ObjectMapper objectMapper, String apiUrl, String jwtToken) throws IOException {
-
-        List<AppInstallation> appInstallations = new ArrayList<>();
-
-        URLConnection appConnection = urlProvider.createUrlConnection(apiUrl);
-        appConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
-        appConnection.setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
-
-        try (Reader reader = new InputStreamReader(appConnection.getInputStream())) {
-            appInstallations.addAll(Arrays.asList(objectMapper.readerFor(AppInstallation[].class).readValue(reader)));
-        }
-
-        Optional<String> nextLink = linkHeaderReader.findNextLink(appConnection.getHeaderField("Link"));
-        if (nextLink.isPresent()) {
-            appInstallations.addAll(getAppInstallations(objectMapper, nextLink.get(), jwtToken));
-        }
-
-        return appInstallations;
-    }
-
     @Override
     public RepositoryAuthenticationToken getInstallationToken(String apiUrl, String appId, String apiPrivateKey,
                                                               String projectPath) throws IOException {
@@ -105,38 +81,61 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
         String jwtToken = new DefaultJwtBuilder().setIssuedAt(Date.from(issued)).setExpiration(Date.from(expiry))
                 .claim("iss", appId).signWith(createPrivateKey(apiPrivateKey), SignatureAlgorithm.RS256).compact();
 
-        ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        Optional<RepositoryAuthenticationToken> repositoryAuthenticationToken = findTokenFromAppInstallationList(getV3Url(apiUrl) + "/app/installations", jwtToken, projectPath);
 
-        List<AppInstallation> appInstallations = getAppInstallations(objectMapper, getV3Url(apiUrl) + "/app/installations", jwtToken);
+        return repositoryAuthenticationToken.orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT,
+            "No token could be found with access to the requested repository using the given application ID and key"));
+    }
 
-        for (AppInstallation installation : appInstallations) {
-            URLConnection accessTokenConnection = urlProvider.createUrlConnection(installation.getAccessTokensUrl());
-            ((HttpURLConnection) accessTokenConnection).setRequestMethod("POST");
-            accessTokenConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
-            accessTokenConnection
-                    .setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
+    private Optional<RepositoryAuthenticationToken> findTokenFromAppInstallationList(String apiUrl, String jwtToken, String projectPath) throws IOException {
+        URLConnection appConnection = urlProvider.createUrlConnection(apiUrl);
+        appConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
+        appConnection.setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
 
+        try (Reader reader = new InputStreamReader(appConnection.getInputStream())) {
+            AppInstallation[] appInstallations = objectMapper.readerFor(AppInstallation[].class).readValue(reader);
+            for (AppInstallation appInstallation : appInstallations) {
+                Optional<RepositoryAuthenticationToken> repositoryAuthenticationToken = findAppTokenFromAppInstallation(appInstallation, jwtToken, projectPath);
 
-            try (Reader reader = new InputStreamReader(accessTokenConnection.getInputStream())) {
-                AppToken appToken = objectMapper.readerFor(AppToken.class).readValue(reader);
-
-                String targetUrl = installation.getRepositoriesUrl();
-
-                Optional<RepositoryAuthenticationToken> potentialRepositoryAuthenticationToken = findRepositoryAuthenticationToken(appToken, targetUrl, projectPath, objectMapper);
-
-                if (potentialRepositoryAuthenticationToken.isPresent()) {
-                    return potentialRepositoryAuthenticationToken.get();
+                if (repositoryAuthenticationToken.isPresent()) {
+                    return repositoryAuthenticationToken;
                 }
-
             }
         }
 
-        throw new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT,
-                "No token could be found with access to the requested repository using the given application ID and key");
+        Optional<String> nextLink = linkHeaderReader.findNextLink(appConnection.getHeaderField("Link"));
+        if (nextLink.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return findTokenFromAppInstallationList(nextLink.get(), jwtToken, projectPath);
+    }
+
+    private Optional<RepositoryAuthenticationToken> findAppTokenFromAppInstallation(AppInstallation installation, String jwtToken, String projectPath) throws IOException {
+        URLConnection accessTokenConnection = urlProvider.createUrlConnection(installation.getAccessTokensUrl());
+        ((HttpURLConnection) accessTokenConnection).setRequestMethod("POST");
+        accessTokenConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
+        accessTokenConnection
+                .setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
+
+        try (Reader reader = new InputStreamReader(accessTokenConnection.getInputStream())) {
+            AppToken appToken = objectMapper.readerFor(AppToken.class).readValue(reader);
+
+            String targetUrl = installation.getRepositoriesUrl();
+
+            Optional<RepositoryAuthenticationToken> potentialRepositoryAuthenticationToken = findRepositoryAuthenticationToken(appToken, targetUrl, projectPath);
+
+            if (potentialRepositoryAuthenticationToken.isPresent()) {
+                return potentialRepositoryAuthenticationToken;
+            }
+
+        }
+
+        return Optional.empty();
     }
 
     private Optional<RepositoryAuthenticationToken> findRepositoryAuthenticationToken(AppToken appToken, String targetUrl,
-                                                                                      String projectPath, ObjectMapper objectMapper) throws IOException {
+                                                                                      String projectPath) throws IOException {
         URLConnection installationRepositoriesConnection = urlProvider.createUrlConnection(targetUrl);
         ((HttpURLConnection) installationRepositoriesConnection).setRequestMethod("GET");
         installationRepositoriesConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
@@ -161,7 +160,7 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
             return Optional.empty();
         }
 
-        return findRepositoryAuthenticationToken(appToken, nextLink.get(), projectPath, objectMapper);
+        return findRepositoryAuthenticationToken(appToken, nextLink.get(), projectPath);
     }
 
     private static String getV3Url(String apiUrl) {
