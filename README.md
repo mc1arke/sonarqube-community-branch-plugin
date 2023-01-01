@@ -1,5 +1,5 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=mc1arke_sonarqube-community-branch-plugin&metric=alert_status)](https://sonarcloud.io/dashboard?id=mc1arke_sonarqube-community-branch-plugin)
-[![Build Status](https://img.shields.io/github/workflow/status/mc1arke/sonarqube-community-branch-plugin/build?label=build&logo=github)](https://github.com/mc1arke/sonarqube-community-branch-plugin?workflow=build)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/mc1arke/sonarqube-community-branch-plugin/.github/workflows/build.yml?branch=master&logo=github)](https://github.com/mc1arke/sonarqube-community-branch-plugin?workflow=build)
 
 # Sonarqube Community Branch Plugin
 
@@ -23,9 +23,11 @@ Use the following table to find the correct plugin version for each SonarQube ve
 
 SonarQube Version | Plugin Version
 ------------------|---------------
-9.1+              | 1.12.0
+9.8+              | 1.14.0
+9.7               | 1.13.0
+9.1 - 9.6         | 1.12.0
 9.0               | 1.9.0
-8.9               | 1.8.2
+8.9               | 1.8.3
 8.7 - 8.8         | 1.7.0
 8.5 - 8.6         | 1.6.0
 8.2 - 8.4         | 1.5.0
