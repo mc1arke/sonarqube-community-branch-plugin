@@ -108,7 +108,7 @@ class CommunityBranchPluginTest {
         final ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
-        assertThat(argumentCaptor.getAllValues()).hasSize(29);
+        assertThat(argumentCaptor.getAllValues()).hasSize(30);
 
         assertThat(argumentCaptor.getAllValues().subList(0, 2)).isEqualTo(List.of(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class));
     }

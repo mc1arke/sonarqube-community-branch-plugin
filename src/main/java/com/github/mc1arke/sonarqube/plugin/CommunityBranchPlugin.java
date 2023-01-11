@@ -73,6 +73,7 @@ import org.sonar.core.extension.CoreExtension;
 public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
     public static final String IMAGE_URL_BASE = "com.github.mc1arke.sonarqube.plugin.branch.image-url-base";
+    public static final String IMAGE_USE_PNG = "com.github.mc1arke.sonarqube.plugin.branch.image-use-png";
 
     @Override
     public String getName() {
@@ -155,7 +156,15 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .description("Base URL used to load the images for the PR comments (please use this only if images are not displayed properly).")
                                           .type(PropertyType.STRING)
                                           .build(),
-                MonoRepoFeature.class);
+                                 PropertyDefinition.builder(IMAGE_USE_PNG)
+                                          .category(CoreProperties.CATEGORY_GENERAL)
+                                          .subCategory(CoreProperties.SUBCATEGORY_GENERAL)
+                                          .onQualifiers(Qualifiers.APP)
+                                          .name("Use png images")
+                                          .description("Use PNG images instead of SVGs for the PR comments (please use this only if images are not displayed properly).")
+                                          .type(PropertyType.BOOLEAN)
+                                          .build(),
+                                 MonoRepoFeature.class);
 
         }
     }

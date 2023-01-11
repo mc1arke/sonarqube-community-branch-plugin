@@ -153,6 +153,9 @@ Anyone needing to set this value can use the
 URL `https://raw.githubusercontent.com/mc1arke/sonarqube-community-branch-plugin/master/src/main/resources/static`, or
 download the files from this location and host them themself.
 
+SVG images are hidden in Gmail because of security reasons. To use PNG images instead, set `Use png images` to True
+in `General > Pull Request` settings. See: [Issue #558](https://github.com/mc1arke/sonarqube-community-branch-plugin/issues/558)
+
 # Building the plugin from source
 
 If you want to try and test the current branch or build it for your development execute `./gradlew clean build`

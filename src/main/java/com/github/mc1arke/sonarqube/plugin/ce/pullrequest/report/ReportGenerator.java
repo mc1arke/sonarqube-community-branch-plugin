@@ -81,6 +81,7 @@ public class ReportGenerator {
         final PostAnalysisIssueVisitor.LightIssue issue = componentIssue.getIssue();
 
         String baseImageUrl = getBaseImageUrl();
+        String imageExtension = getImageExtension();
 
         return AnalysisIssueSummary.builder()
                 .withEffortInMinutes(issue.effortInMinutes())
@@ -90,9 +91,9 @@ public class ReportGenerator {
                 .withProjectKey(analysisDetails.getAnalysisProjectKey())
                 .withResolution(issue.resolution())
                 .withSeverity(issue.severity())
-                .withSeverityImageUrl(String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase()))
+                .withSeverityImageUrl(String.format("%s/checks/Severity/%s.%s?sanitize=true", baseImageUrl, issue.severity().toLowerCase(), imageExtension))
                 .withType(issue.type().name())
-                .withTypeImageUrl(String.format("%s/checks/IssueType/%s.svg?sanitize=true", baseImageUrl, issue.type().name().toLowerCase()))
+                .withTypeImageUrl(String.format("%s/checks/IssueType/%s.%s?sanitize=true", baseImageUrl, issue.type().name().toLowerCase(), imageExtension))
                 .build();
     }
 
@@ -125,32 +126,33 @@ public class ReportGenerator {
         List<QualityGate.Condition> failedConditions = analysisDetails.findFailedQualityGateConditions();
 
         String baseImageUrl = getBaseImageUrl();
+        String imageExtension = getImageExtension();
 
         return AnalysisSummary.builder()
                 .withProjectKey(analysisDetails.getAnalysisProjectKey())
                 .withSummaryImageUrl(baseImageUrl + "/common/icon.png")
                 .withBugCount(issueCounts.get(RuleType.BUG))
-                .withBugImageUrl(baseImageUrl + "/common/bug.svg?sanitize=true")
+                .withBugImageUrl(String.format("%s/common/bug.%s?sanitize=true", baseImageUrl, imageExtension))
                 .withCodeSmellCount(issueCounts.get(RuleType.CODE_SMELL))
-                .withCodeSmellImageUrl(baseImageUrl + "/common/code_smell.svg?sanitize=true")
+                .withCodeSmellImageUrl(String.format("%s/common/code_smell.%s?sanitize=true", baseImageUrl, imageExtension))
                 .withCoverage(coverage)
                 .withNewCoverage(newCoverage)
-                .withCoverageImageUrl(createCoverageImage(newCoverage, baseImageUrl))
+                .withCoverageImageUrl(createCoverageImage(newCoverage, baseImageUrl, imageExtension))
                 .withDashboardUrl(getDashboardUrl(analysisDetails))
                 .withDuplications(duplications)
-                .withDuplicationsImageUrl(createDuplicateImage(newDuplications, baseImageUrl))
+                .withDuplicationsImageUrl(createDuplicateImage(newDuplications, baseImageUrl, imageExtension))
                 .withNewDuplications(newDuplications)
                 .withFailedQualityGateConditions(failedConditions.stream()
                         .map(ReportGenerator::formatQualityGateCondition)
                         .collect(Collectors.toList()))
                 .withStatusDescription(QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ? "Passed" : "Failed")
                 .withStatusImageUrl(QualityGate.Status.OK == analysisDetails.getQualityGateStatus()
-                        ? baseImageUrl + "/checks/QualityGateBadge/passed.svg?sanitize=true"
-                        : baseImageUrl + "/checks/QualityGateBadge/failed.svg?sanitize=true")
+                        ? String.format("%s/checks/QualityGateBadge/passed.%s?sanitize=true", baseImageUrl, imageExtension)
+                        : String.format("%s/checks/QualityGateBadge/failed.%s?sanitize=true", baseImageUrl, imageExtension))
                 .withTotalIssueCount(issueTotal)
                 .withVulnerabilityCount(issueCounts.get(RuleType.VULNERABILITY))
                 .withSecurityHotspotCount(issueCounts.get(RuleType.SECURITY_HOTSPOT))
-                .withVulnerabilityImageUrl(baseImageUrl + "/common/vulnerability.svg?sanitize=true")
+                .withVulnerabilityImageUrl(String.format("%s/common/vulnerability.%s?sanitize=true", baseImageUrl, imageExtension))
                 .build();
     }
 
@@ -158,6 +160,10 @@ public class ReportGenerator {
         return configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE)
                 .orElse(server.getPublicRootUrl() + "/static/communityBranchPlugin")
                 .replaceAll("/*$", "");
+    }
+
+    private String getImageExtension(){
+        return configuration.getBoolean(CommunityBranchPlugin.IMAGE_USE_PNG).orElse(false)? "png": "svg";
     }
 
     private String getIssueUrl(PostAnalysisIssueVisitor.LightIssue issue, AnalysisDetails analysisDetails) {
@@ -176,9 +182,9 @@ public class ReportGenerator {
         return server.getPublicRootUrl() + "/dashboard?id=" + URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8) + "&pullRequest=" + analysisDetails.getPullRequestId();
     }
 
-    private static String createCoverageImage(BigDecimal coverage, String baseImageUrl) {
+    private static String createCoverageImage(BigDecimal coverage, String baseImageUrl, String imageExtension) {
         if (null == coverage) {
-            return baseImageUrl + "/checks/CoverageChart/NoCoverageInfo.svg?sanitize=true";
+            return String.format("%s/checks/CoverageChart/NoCoverageInfo.%s?sanitize=true", baseImageUrl, imageExtension);
         }
         BigDecimal matchedLevel = BigDecimal.ZERO;
         for (BigDecimal level : COVERAGE_LEVELS) {
@@ -187,12 +193,12 @@ public class ReportGenerator {
                 break;
             }
         }
-        return baseImageUrl + "/checks/CoverageChart/" + matchedLevel + ".svg?sanitize=true";
+        return String.format("%s/checks/CoverageChart/%s.%s?sanitize=true", baseImageUrl, matchedLevel, imageExtension);
     }
 
-    private static String createDuplicateImage(BigDecimal duplications, String baseImageUrl) {
+    private static String createDuplicateImage(BigDecimal duplications, String baseImageUrl, String imageExtension) {
         if (null == duplications) {
-            return baseImageUrl + "/checks/Duplications/NoDuplicationInfo.svg?sanitize=true";
+            return String.format("%s/checks/Duplications/NoDuplicationInfo.%s?sanitize=true", baseImageUrl, imageExtension);
         }
         String matchedLevel = "20plus";
         for (DuplicationMapping level : DUPLICATION_LEVELS) {
@@ -201,7 +207,7 @@ public class ReportGenerator {
                 break;
             }
         }
-        return baseImageUrl + "/checks/Duplications/" + matchedLevel + ".svg?sanitize=true";
+        return String.format("%s/checks/Duplications/%s.%s?sanitize=true", baseImageUrl, matchedLevel, imageExtension);
     }
 
     private static String formatQualityGateCondition(QualityGate.Condition condition) {

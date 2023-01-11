@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -253,6 +254,78 @@ class ReportGeneratorTest {
         assertThat(underTest.createAnalysisIssueSummary(componentIssue, analysisDetails))
                 .usingRecursiveComparison()
                 .isEqualTo(expected);
+    }
+
+    @CsvSource({"SECURITY_HOTSPOT","BUG"})
+    @ParameterizedTest
+    void shouldReturnSvgImages(RuleType ruleType) {
+        MeasureRepository measureRepository = mock(MeasureRepository.class);
+        MetricRepository metricRepository = mock(MetricRepository.class);
+        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
+
+        Server server = mock(Server.class);
+        doReturn("http://localhost:9000").when(server).getPublicRootUrl();
+
+        Configuration configuration = mock(Configuration.class);
+        doReturn(Optional.of(false)).when(configuration).getBoolean(CommunityBranchPlugin.IMAGE_USE_PNG);
+        ReportGenerator underTest = new ReportGenerator(server, configuration, measureRepository, metricRepository, treeRootHolder);
+
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        doReturn("issue-key").when(lightIssue).key();
+        doReturn("CRITICAL").when(lightIssue).severity();
+        doReturn("message").when(lightIssue).getMessage();
+        doReturn("FIXED").when(lightIssue).resolution();
+        doReturn(ruleType).when(lightIssue).type();
+        doReturn(18L).when(lightIssue).effortInMinutes();
+
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+        doReturn(lightIssue).when(componentIssue).getIssue();
+
+        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+        doReturn("project-key").when(analysisDetails).getAnalysisProjectKey();
+        AnalysisIssueSummary summary =  underTest.createAnalysisIssueSummary(componentIssue, analysisDetails);
+
+        assertThat(summary.getSeverityImageUrl())
+                .isEqualTo("http://localhost:9000/static/communityBranchPlugin/checks/Severity/critical.svg?sanitize=true");
+        assertThat(summary.getTypeImageUrl())
+                .isEqualTo("http://localhost:9000/static/communityBranchPlugin/checks/IssueType/" + ruleType.name().toLowerCase(Locale.ENGLISH) + ".svg?sanitize=true");
+    }
+
+    @CsvSource({"SECURITY_HOTSPOT","BUG"})
+    @ParameterizedTest
+    void shouldReturnPngImages(RuleType ruleType) {
+        MeasureRepository measureRepository = mock(MeasureRepository.class);
+        MetricRepository metricRepository = mock(MetricRepository.class);
+        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
+
+        Server server = mock(Server.class);
+        doReturn("http://localhost:9000").when(server).getPublicRootUrl();
+
+        Configuration configuration = mock(Configuration.class);
+        doReturn(Optional.of(true)).when(configuration).getBoolean(CommunityBranchPlugin.IMAGE_USE_PNG);
+
+        ReportGenerator underTest = new ReportGenerator(server, configuration, measureRepository, metricRepository, treeRootHolder);
+
+
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        doReturn("issue-key").when(lightIssue).key();
+        doReturn("CRITICAL").when(lightIssue).severity();
+        doReturn("message").when(lightIssue).getMessage();
+        doReturn("FIXED").when(lightIssue).resolution();
+        doReturn(ruleType).when(lightIssue).type();
+        doReturn(18L).when(lightIssue).effortInMinutes();
+
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+        doReturn(lightIssue).when(componentIssue).getIssue();
+
+        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+        doReturn("project-key").when(analysisDetails).getAnalysisProjectKey();
+        AnalysisIssueSummary summary =  underTest.createAnalysisIssueSummary(componentIssue, analysisDetails);
+
+        assertThat(summary.getSeverityImageUrl())
+                .isEqualTo("http://localhost:9000/static/communityBranchPlugin/checks/Severity/critical.png?sanitize=true");
+        assertThat(summary.getTypeImageUrl())
+                .isEqualTo("http://localhost:9000/static/communityBranchPlugin/checks/IssueType/" + ruleType.name().toLowerCase(Locale.ENGLISH) + ".png?sanitize=true");
     }
 
 }
