@@ -76,7 +76,9 @@ provided Dockerfile.
 When using
 [Sonarqube official Helm Chart](https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube),
 you need to add the following settings to your helm values, where `${version}` should be replaced with the plugin
-version (e.g. `1.11.0`):
+version (e.g. `1.11.0`). Beware of the changes made in helm chart version [6.1.0](https://github.com/SonarSource/helm-chart-sonarqube/blob/master/charts/sonarqube/CHANGELOG.md#610):
+
+### helm chart version < 6.1.0
 
 ```yaml
 plugins:
@@ -88,18 +90,28 @@ jvmOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin
 jvmCeOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=ce"
 ```
 
-### Issues with file path  with persistency
+### helm chart version >= 6.1.0
 
-If you set `persistence.enabled=true` on SonarQube chart, the plugin might be copied to this path:
+```yaml
+plugins:
+  install:
+    - https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-community-branch-plugin-${version}.jar
+jvmOpts: "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web"
+jvmCeOpts: "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce"
+```
+
+### Issues with file path with persistency
+
+If you set `persistence.enabled=true` on SonarQube chart, the plugin might be copied to this path, based on the helm chart version, mentioned above (`${plugin-path}` equals `lib/common` or `extensions/plugins`):
 
 ```
-/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar/sonarqube-community-branch-plugin-${version}.jar
+/opt/sonarqube/${plugin-path}/sonarqube-community-branch-plugin-${version}.jar/sonarqube-community-branch-plugin-${version}.jar
 ```
 
 instead of this:
 
 ```
-/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar
+/opt/sonarqube/${plugin-path}/sonarqube-community-branch-plugin-${version}.jar
 ```
 
 As a workaround either change the paths in the config above, or exec into the container and move file up the directory
