@@ -84,26 +84,9 @@ plugins:
     - https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-community-branch-plugin-${version}.jar
   lib:
     - sonarqube-community-branch-plugin-${version}.jar
-jvmOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=web"
-jvmCeOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=ce"
+jvmOpts: "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web"
+jvmCeOpts: "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce"
 ```
-
-### Issues with file path  with persistency
-
-If you set `persistence.enabled=true` on SonarQube chart, the plugin might be copied to this path:
-
-```
-/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar/sonarqube-community-branch-plugin-${version}.jar
-```
-
-instead of this:
-
-```
-/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar
-```
-
-As a workaround either change the paths in the config above, or exec into the container and move file up the directory
-to match the config.
 
 # Configuration
 
