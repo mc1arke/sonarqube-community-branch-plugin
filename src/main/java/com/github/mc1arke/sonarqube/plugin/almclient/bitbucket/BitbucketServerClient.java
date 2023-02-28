@@ -52,6 +52,7 @@ import static java.lang.String.format;
 class BitbucketServerClient implements BitbucketClient {
     private static final Logger LOGGER = Loggers.get(BitbucketServerClient.class);
     private static final MediaType APPLICATION_JSON_MEDIA_TYPE = MediaType.get("application/json");
+    private static final String REPORT_KEY = "com.github.mc1arke.sonarqube";
     private static final String TITLE = "SonarQube";
     private static final String REPORTER = "SonarQube";
     private static final String LINK_TEXT = "Go to SonarQube";
@@ -95,7 +96,7 @@ class BitbucketServerClient implements BitbucketClient {
     public void deleteAnnotations(String commit, String reportKey) throws IOException {
         Request req = new Request.Builder()
                 .delete()
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, REPORT_KEY))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
@@ -111,7 +112,7 @@ class BitbucketServerClient implements BitbucketClient {
         CreateAnnotationsRequest request = new CreateAnnotationsRequest(annotationSet);
         Request req = new Request.Builder()
                 .post(RequestBody.create(objectMapper.writeValueAsString(request), APPLICATION_JSON_MEDIA_TYPE))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, REPORT_KEY))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
@@ -128,7 +129,7 @@ class BitbucketServerClient implements BitbucketClient {
         String body = objectMapper.writeValueAsString(codeInsightReport);
         Request req = new Request.Builder()
                 .put(RequestBody.create(body, APPLICATION_JSON_MEDIA_TYPE))
-                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
+                .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", config.getUrl(), config.getProject(), config.getRepository(), commit, REPORT_KEY))
                 .build();
 
         try (Response response = okHttpClient.newCall(req).execute()) {
