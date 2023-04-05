@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2022 Michael Clarke
+ * Copyright (C) 2021-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,7 +76,7 @@ class CommunityBranchAgentTest {
             SonarRuntime sonarRuntime = mock(SonarRuntime.class);
 
             SonarQubeFeature multipleAlmFeatureProvider = redefined.getConstructor(SonarRuntime.class).newInstance(sonarRuntime);
-            assertThat(multipleAlmFeatureProvider.isEnabled()).isTrue();
+            assertThat(multipleAlmFeatureProvider.isAvailable()).isTrue();
         }
     }
 
@@ -207,7 +207,7 @@ class CommunityBranchAgentTest {
 
             Class<MultipleAlmFeature> redefined = (Class<MultipleAlmFeature>) classLoader.loadClass(MultipleAlmFeature.class.getName(), result);
             SonarQubeFeature multipleAlmFeatureProvider = redefined.getConstructor(SonarRuntime.class).newInstance(sonarRuntime);
-            assertThat(multipleAlmFeatureProvider.isEnabled()).isTrue();
+            assertThat(multipleAlmFeatureProvider.isAvailable()).isTrue();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -94,10 +94,8 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
 
         ComponentDto componentDto = mainComponentDto.copy()
             .setUuid(branchUuid)
-            .setRootUuid(branchUuid)
             .setBranchUuid(branchUuid)
             .setUuidPath(ComponentDto.UUID_PATH_OF_ROOT)
-            .setModuleUuidPath(ComponentDto.UUID_PATH_SEPARATOR + branchUuid + ComponentDto.UUID_PATH_SEPARATOR)
             .setMainBranchProjectUuid(mainComponentDto.uuid())
             .setCreatedAt(new Date(clock.millis()));
         dbClient.componentDao().insert(dbSession, componentDto);
