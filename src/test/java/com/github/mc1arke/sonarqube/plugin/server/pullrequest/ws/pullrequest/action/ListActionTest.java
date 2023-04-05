@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -132,7 +132,7 @@ class ListActionTest {
 
         SnapshotDao snapshotDao = mock(SnapshotDao.class);
         when(dbClient.snapshotDao()).thenReturn(snapshotDao);
-        when(snapshotDao.selectLastAnalysesByRootComponentUuids(any(), any())).thenReturn(List.of(new SnapshotDto().setComponentUuid("componentUuid").setCreatedAt(1234L)));
+        when(snapshotDao.selectLastAnalysesByRootComponentUuids(any(), any())).thenReturn(List.of(new SnapshotDto().setUuid("componentUuid").setCreatedAt(1234L)));
 
         Response response = mock(Response.class);
 

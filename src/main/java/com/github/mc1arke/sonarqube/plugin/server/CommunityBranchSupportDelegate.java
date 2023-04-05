@@ -96,12 +96,11 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
             .setUuid(branchUuid)
             .setBranchUuid(branchUuid)
             .setUuidPath(ComponentDto.UUID_PATH_OF_ROOT)
-            .setMainBranchProjectUuid(mainComponentDto.uuid())
             .setCreatedAt(new Date(clock.millis()));
         dbClient.componentDao().insert(dbSession, componentDto, false);
 
         BranchDto branchDto = new BranchDto()
-            .setProjectUuid(mainComponentDto.uuid())
+            .setProjectUuid(mainComponentBranchDto.getProjectUuid())
             .setUuid(branchUuid);
         componentKey.getPullRequestKey().ifPresent(pullRequestKey -> branchDto.setBranchType(BranchType.PULL_REQUEST)
             .setExcludeFromPurge(false)

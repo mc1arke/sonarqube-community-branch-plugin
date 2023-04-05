@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -119,7 +119,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
 
     private static Optional<BranchDto> findBranchByUuid(String projectUuid, DbClient dbClient) {
         try (DbSession dbSession = dbClient.openSession(false)) {
-            return dbClient.branchDao().selectByUuid(dbSession, projectUuid);
+            return dbClient.branchDao().selectMainBranchByProjectUuid(dbSession, projectUuid);
         }
     }
 
