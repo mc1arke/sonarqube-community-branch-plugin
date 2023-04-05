@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.sonar.api.notifications.AnalysisWarnings;
 import org.sonar.api.utils.System2;
 import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.BranchConfigurationLoader;
@@ -43,11 +42,10 @@ import org.sonar.scanner.scan.branch.ProjectBranches;
  */
 class CommunityBranchConfigurationLoaderTest {
 
-    private final AnalysisWarnings analysisWarnings = mock(AnalysisWarnings.class);
     private final System2 system2 = mock(System2.class);
     private final BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
     private final BranchAutoConfigurer branchAutoConfigurer = mock(BranchAutoConfigurer.class);
-    private final BranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(system2, analysisWarnings, branchConfigurationFactory, List.of(branchAutoConfigurer));
+    private final BranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(system2, branchConfigurationFactory, List.of(branchAutoConfigurer));
 
     @Test
     void shouldReturnResultFromAutoConfigurerIfPresentAndNoParametersSpecified() {
@@ -87,7 +85,6 @@ class CommunityBranchConfigurationLoaderTest {
         assertThat(actual).isSameAs(branchConfiguration);
         verify(branchConfigurationFactory).createBranchConfiguration("branch", projectBranches);
         verifyNoInteractions(branchAutoConfigurer);
-        verify(analysisWarnings).addUnique("Property 'sonar.branch.target' is no longer supported");
     }
 
     @Test
@@ -101,7 +98,6 @@ class CommunityBranchConfigurationLoaderTest {
         assertThat(actual).isSameAs(branchConfiguration);
         verify(branchConfigurationFactory).createPullRequestConfiguration("key", "source", "target", projectBranches);
         verifyNoInteractions(branchAutoConfigurer);
-        verifyNoInteractions(analysisWarnings);
     }
 
     @Test

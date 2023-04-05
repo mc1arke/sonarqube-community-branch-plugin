@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,8 +18,16 @@
  */
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
-import org.sonar.api.notifications.AnalysisWarnings;
 import org.sonar.api.utils.MessageException;
 import org.sonar.api.utils.System2;
 import org.sonar.api.utils.log.Logger;
@@ -29,15 +37,6 @@ import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.BranchConfigurationLoader;
 import org.sonar.scanner.scan.branch.DefaultBranchConfiguration;
 import org.sonar.scanner.scan.branch.ProjectBranches;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Michael Clarke
@@ -54,16 +53,13 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
                           ScannerProperties.PULL_REQUEST_BASE));
 
     private final System2 system2;
-    private final AnalysisWarnings analysisWarnings;
     private final BranchConfigurationFactory branchConfigurationFactory;
     private final List<BranchAutoConfigurer> autoConfigurers;
 
-    public CommunityBranchConfigurationLoader(System2 system2, AnalysisWarnings analysisWarnings,
-                                              BranchConfigurationFactory branchConfigurationFactory,
+    public CommunityBranchConfigurationLoader(System2 system2, BranchConfigurationFactory branchConfigurationFactory,
                                               List<BranchAutoConfigurer> autoConfigurers) {
         super();
         this.system2 = system2;
-        this.analysisWarnings = analysisWarnings;
         this.branchConfigurationFactory = branchConfigurationFactory;
         this.autoConfigurers = autoConfigurers;
     }
@@ -92,12 +88,6 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
                     return branchConfiguration;
                 }
             }
-        }
-
-        if (null != localSettings.get(ScannerProperties.BRANCH_TARGET)) { //NOSONAR - purposefully checking for a deprecated parameter
-            String warning = String.format("Property '%s' is no longer supported", ScannerProperties.BRANCH_TARGET); //NOSONAR - reporting use of deprecated parameter
-            analysisWarnings.addUnique(warning);
-            LOGGER.warn(warning);
         }
 
         if (hasBranchParameters) {
