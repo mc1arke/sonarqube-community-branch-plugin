@@ -68,7 +68,7 @@ dependencies {
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
     implementation('org.bouncycastle:bcpkix-jdk15on:1.70')
     implementation(files('lib/nodes-0.5.0.jar'))
-    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2')
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
     implementation('org.javassist:javassist:3.29.2-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:4.10.0')
