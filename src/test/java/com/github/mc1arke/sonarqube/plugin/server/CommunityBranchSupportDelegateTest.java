@@ -183,7 +183,7 @@ class CommunityBranchSupportDelegateTest {
 
         ComponentDto result = underTest.createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
-        verify(componentDao).insert(dbSession, copyComponentDto);
+        verify(componentDao).insert(dbSession, copyComponentDto, false);
         verify(copyComponentDto).setUuid("uuid0");
         verify(copyComponentDto).setUuidPath(".");
         verify(copyComponentDto).setMainBranchProjectUuid("componentUuid");
@@ -199,7 +199,8 @@ class CommunityBranchSupportDelegateTest {
             .setExcludeFromPurge(excludedFromPurge)
             .setProjectUuid("componentUuid")
             .setKey(branchType == BranchType.BRANCH ? branchName : pullRequestKey)
-            .setUuid("uuid0"));
+            .setUuid("uuid0")
+            .setIsMain(false));
     }
 
 }

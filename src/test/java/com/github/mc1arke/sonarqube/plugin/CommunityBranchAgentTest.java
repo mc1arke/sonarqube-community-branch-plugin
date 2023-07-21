@@ -37,6 +37,8 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.SonarRuntime;
+import org.sonar.core.documentation.DefaultDocumentationLinkGenerator;
+import org.sonar.core.documentation.DocumentationLinkGenerator;
 import org.sonar.core.platform.EditionProvider;
 import org.sonar.core.platform.PlatformEditionProvider;
 import org.sonar.db.DbClient;
@@ -85,6 +87,7 @@ class CommunityBranchAgentTest {
     void shouldRedefineSetActionClassForWebLaunch() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
         CustomClassloader classLoader = new CustomClassloader();
         Instrumentation instrumentation = mock(Instrumentation.class);
+        DocumentationLinkGenerator documentationLinkGenerator = mock(DefaultDocumentationLinkGenerator.class);
 
         CommunityBranchAgent.premain("web", instrumentation);
 
@@ -104,8 +107,8 @@ class CommunityBranchAgentTest {
             PlatformEditionProvider platformEditionProvider = mock(PlatformEditionProvider.class);
             NewCodePeriodDao newCodePeriodDao = mock(NewCodePeriodDao.class);
 
-            Object setAction = setActionClass.getConstructor(DbClient.class, UserSession.class, ComponentFinder.class, PlatformEditionProvider.class, NewCodePeriodDao.class)
-                    .newInstance(dbClient, userSession, componentFinder, platformEditionProvider, newCodePeriodDao);
+            Object setAction = setActionClass.getConstructor(DbClient.class, UserSession.class, ComponentFinder.class, PlatformEditionProvider.class, NewCodePeriodDao.class, DocumentationLinkGenerator.class)
+                    .newInstance(dbClient, userSession, componentFinder, platformEditionProvider, newCodePeriodDao, documentationLinkGenerator);
 
             Field editionProviderField = setActionClass.getDeclaredField("editionProvider");
             editionProviderField.setAccessible(true);
@@ -119,6 +122,7 @@ class CommunityBranchAgentTest {
 
         Instrumentation instrumentation = mock(Instrumentation.class);
         CommunityBranchAgent.premain("web", instrumentation);
+        DocumentationLinkGenerator documentationLinkGenerator = mock(DefaultDocumentationLinkGenerator.class);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(UnsetAction.class);
@@ -135,8 +139,8 @@ class CommunityBranchAgentTest {
             PlatformEditionProvider platformEditionProvider = mock(PlatformEditionProvider.class);
             NewCodePeriodDao newCodePeriodDao = mock(NewCodePeriodDao.class);
 
-            Object setAction = unsetActionClass.getConstructor(DbClient.class, UserSession.class, ComponentFinder.class, PlatformEditionProvider.class, NewCodePeriodDao.class)
-                    .newInstance(dbClient, userSession, componentFinder, platformEditionProvider, newCodePeriodDao);
+            Object setAction = unsetActionClass.getConstructor(DbClient.class, UserSession.class, ComponentFinder.class, PlatformEditionProvider.class, NewCodePeriodDao.class, DocumentationLinkGenerator.class)
+                    .newInstance(dbClient, userSession, componentFinder, platformEditionProvider, newCodePeriodDao, documentationLinkGenerator);
 
             Field editionProviderField = unsetActionClass.getDeclaredField("editionProvider");
             editionProviderField.setAccessible(true);
