@@ -98,17 +98,19 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
             .setUuidPath(ComponentDto.UUID_PATH_OF_ROOT)
             .setMainBranchProjectUuid(mainComponentDto.uuid())
             .setCreatedAt(new Date(clock.millis()));
-        dbClient.componentDao().insert(dbSession, componentDto);
+        dbClient.componentDao().insert(dbSession, componentDto, false);
 
         BranchDto branchDto = new BranchDto()
             .setProjectUuid(mainComponentDto.uuid())
             .setUuid(branchUuid);
         componentKey.getPullRequestKey().ifPresent(pullRequestKey -> branchDto.setBranchType(BranchType.PULL_REQUEST)
             .setExcludeFromPurge(false)
-            .setKey(pullRequestKey));
+            .setKey(pullRequestKey)
+            .setIsMain(false));
         componentKey.getBranchName().ifPresent(branchName -> branchDto.setBranchType(BranchType.BRANCH)
-            .setExcludeFromPurge(isBranchExcludedFromPurge(projectConfigurationLoader.loadProjectConfiguration(dbSession, mainComponentDto), branchName))
-            .setKey(branchName));
+            .setExcludeFromPurge(isBranchExcludedFromPurge(projectConfigurationLoader.loadProjectConfiguration(dbSession, branchDto.getProjectUuid()), branchName))
+            .setKey(branchName)
+            .setIsMain(false));
         dbClient.branchDao().insert(dbSession, branchDto);
 
         return componentDto;
