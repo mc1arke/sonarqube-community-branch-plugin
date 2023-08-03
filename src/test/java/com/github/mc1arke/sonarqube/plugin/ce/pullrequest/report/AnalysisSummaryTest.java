@@ -48,13 +48,17 @@ class AnalysisSummaryTest {
                 .withSummaryImageUrl("summaryImageUrl")
                 .withProjectKey("projectKey")
                 .withBugCount(911)
+                .withBugUrl("bugUrl")
                 .withBugImageUrl("bugImageUrl")
                 .withCodeSmellCount(1)
                 .withCoverage(BigDecimal.valueOf(303))
+                .withCodeSmellUrl("codeSmellUrl")
                 .withCodeSmellImageUrl("codeSmellImageUrl")
+                .withCoverageUrl("codeCoverageUrl")
                 .withCoverageImageUrl("codeCoverageImageUrl")
                 .withDashboardUrl("dashboardUrl")
                 .withDuplications(BigDecimal.valueOf(66))
+                .withDuplicationsUrl("duplicationsUrl")
                 .withDuplicationsImageUrl("duplicationsImageUrl")
                 .withFailedQualityGateConditions(java.util.List.of("issuea", "issueb", "issuec"))
                 .withNewCoverage(BigDecimal.valueOf(99))
@@ -63,6 +67,7 @@ class AnalysisSummaryTest {
                 .withStatusImageUrl("statusImageUrl")
                 .withTotalIssueCount(666)
                 .withVulnerabilityCount(96)
+                .withVulnerabilityUrl("vulnerabilityUrl")
                 .withVulnerabilityImageUrl("vulnerabilityImageUrl")
                 .build();
 
@@ -85,25 +90,25 @@ class AnalysisSummaryTest {
                 new Heading(2, new Text("666 Issues")),
                 new List(List.Style.BULLET,
                     new ListItem(
-                        new Image("Bug","bugImageUrl"),
+                        new Link("bugUrl", new Image("Bug","bugImageUrl")),
                         new Text(" "),
                         new Text("911 Bugs")),
                 new ListItem(
-                        new Image("Vulnerability","vulnerabilityImageUrl"),
+                        new Link("vulnerabilityUrl", new Image("Vulnerability","vulnerabilityImageUrl")),
                         new Text(" "),
                         new Text("165 Vulnerabilities")),
                 new ListItem(
-                        new Image("Code Smell", "codeSmellImageUrl"),
+                        new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
                         new Text(" "),
                         new Text("1 Code Smell"))),
                 new Heading(2, new Text("Coverage and Duplications")),
                 new List(List.Style.BULLET,
                         new ListItem(
-                            new Image("Coverage", "codeCoverageImageUrl"),
+                            new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl")),
                             new Text(" "),
                             new Text("99.00% Coverage (303.00% Estimated after merge)")),
                         new ListItem(
-                                new Image("Duplications", "duplicationsImageUrl"),
+                                new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl")),
                                 new Text(" "),
                                 new Text("199.00% Duplicated Code (66.00% Estimated after merge)"))),
                 new Paragraph(new Text("**Project ID:** projectKey")),
