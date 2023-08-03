@@ -30,4 +30,8 @@ public interface PullRequestBuildStatusDecorator {
                                    ProjectAlmSettingDto projectAlmSettingDto);
 
     List<ALM> alm();
+
+    default boolean isEditSummaryNoteEnabled(AnalysisDetails analysisDetails) {
+        return false;
+    }
 }

@@ -73,6 +73,7 @@ import org.sonar.core.extension.CoreExtension;
 public class CommunityBranchPlugin implements Plugin, CoreExtension {
 
     public static final String IMAGE_URL_BASE = "com.github.mc1arke.sonarqube.plugin.branch.image-url-base";
+    public static final String PR_SUMMARY_NOTE_EDIT = "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.summary.edit";
 
     @Override
     public String getName() {
@@ -157,6 +158,15 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .build(),
                 MonoRepoFeature.class);
 
+            context.addExtensions(PropertyDefinition.builder(PR_SUMMARY_NOTE_EDIT)
+                    .category(getName())
+                    .subCategory("Merge Request Decoration")
+                    .onQualifiers(Qualifiers.PROJECT)
+                    .name("Edit summary note")
+                    .description("Edit summary discussion thread instead of resolving it and creating a new one (Gitlab only).")
+                    .type(PropertyType.BOOLEAN)
+                    .defaultValue(String.valueOf(false))
+                    .build());
         }
     }
 

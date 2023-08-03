@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabMergeRequestDecorator;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
@@ -54,6 +55,8 @@ public class ScannerPullRequestPropertySensor implements Sensor {
         Optional.ofNullable(system2.property(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID)).ifPresent(
                 v -> sensorContext.addContextProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID, v));
 
+        sensorContext.config().get(CommunityBranchPlugin.PR_SUMMARY_NOTE_EDIT)
+                .ifPresent(p -> sensorContext.addContextProperty(CommunityBranchPlugin.PR_SUMMARY_NOTE_EDIT, p));
     }
 
 }

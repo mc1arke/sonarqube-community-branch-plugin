@@ -127,6 +127,15 @@ class GitlabRestClient implements GitlabClient {
     }
 
     @Override
+    public void editMergeRequestDisscussionNote(long projectId, long mergeRequestIid, String discussionId, long noteId, String noteContent) throws IOException {
+        String targetUrl = String.format("%s/projects/%s/merge_requests/%s/discussions/%s/notes/%s", baseGitlabApiUrl, projectId, mergeRequestIid, discussionId, noteId);
+
+        HttpPut httpPut = new HttpPut(targetUrl);
+        httpPut.setEntity(new UrlEncodedFormEntity(Collections.singletonList(new BasicNameValuePair("body", noteContent)), StandardCharsets.UTF_8));
+        entity(httpPut, null);
+    }
+
+    @Override
     public void resolveMergeRequestDiscussion(long projectId, long mergeRequestIid, String discussionId) throws IOException {
         String discussionIdUrl = String.format("%s/projects/%s/merge_requests/%s/discussions/%s?resolved=true", baseGitlabApiUrl, projectId, mergeRequestIid, discussionId);
 

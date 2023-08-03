@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
@@ -60,6 +61,13 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
         super(scmInfoRepository, reportGenerator);
         this.gitlabClientFactory = gitlabClientFactory;
         this.formatterFactory = formatterFactory;
+    }
+
+    @Override
+    public boolean isEditSummaryNoteEnabled(AnalysisDetails analysis) {
+        return analysis.getScannerProperty(CommunityBranchPlugin.PR_SUMMARY_NOTE_EDIT)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
     }
 
     @Override
@@ -167,6 +175,22 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
             throw new IllegalStateException("Could not submit summary comment to Gitlab", ex);
         }
 
+    }
+
+    @Override
+    protected void editSummaryNote(GitlabClient client, MergeRequest mergeRequest, Discussion discussion, AnalysisDetails analysis, AnalysisSummary analysisSummary) {
+        try {
+            client.editMergeRequestDisscussionNote(mergeRequest.getTargetProjectId(),
+                    mergeRequest.getIid(),
+                    discussion.getId(),
+                    discussion.getNotes().get(0).getId(),
+                    analysisSummary.format(formatterFactory));
+            if (!isClosed(discussion, discussion.getNotes()) && analysis.getQualityGateStatus() == QualityGate.Status.OK) {
+                client.resolveMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(), discussion.getId());
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not edit summary comment to Gitlab", ex);
+        }
     }
 
     @Override
