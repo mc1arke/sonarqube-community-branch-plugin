@@ -130,14 +130,18 @@ public class ReportGenerator {
                 .withProjectKey(analysisDetails.getAnalysisProjectKey())
                 .withSummaryImageUrl(baseImageUrl + "/common/icon.png")
                 .withBugCount(issueCounts.get(RuleType.BUG))
+                .withBugUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.BUG))
                 .withBugImageUrl(baseImageUrl + "/common/bug.svg?sanitize=true")
                 .withCodeSmellCount(issueCounts.get(RuleType.CODE_SMELL))
+                .withCodeSmellUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.CODE_SMELL))
                 .withCodeSmellImageUrl(baseImageUrl + "/common/code_smell.svg?sanitize=true")
                 .withCoverage(coverage)
                 .withNewCoverage(newCoverage)
+                .withCoverageUrl(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_COVERAGE_KEY))
                 .withCoverageImageUrl(createCoverageImage(newCoverage, baseImageUrl))
                 .withDashboardUrl(getDashboardUrl(analysisDetails))
                 .withDuplications(duplications)
+                .withDuplicationsUrl(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY))
                 .withDuplicationsImageUrl(createDuplicateImage(newDuplications, baseImageUrl))
                 .withNewDuplications(newDuplications)
                 .withFailedQualityGateConditions(failedConditions.stream()
@@ -148,10 +152,29 @@ public class ReportGenerator {
                         ? baseImageUrl + "/checks/QualityGateBadge/passed.svg?sanitize=true"
                         : baseImageUrl + "/checks/QualityGateBadge/failed.svg?sanitize=true")
                 .withTotalIssueCount(issueTotal)
-                .withVulnerabilityCount(issueCounts.get(RuleType.VULNERABILITY))
                 .withSecurityHotspotCount(issueCounts.get(RuleType.SECURITY_HOTSPOT))
+                .withVulnerabilityCount(issueCounts.get(RuleType.VULNERABILITY))
+                .withVulnerabilityUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.VULNERABILITY))
                 .withVulnerabilityImageUrl(baseImageUrl + "/common/vulnerability.svg?sanitize=true")
                 .build();
+    }
+
+    private String getIssuesUrlForRuleType(AnalysisDetails analysisDetails, RuleType ruleType) {
+        // https://my-server:port/project/issues?pullRequest=341&resolved=false&types=BUG&inNewCodePeriod=true&id=some-key
+        return server.getPublicRootUrl() +
+                "/project/issues?pullRequest=" + analysisDetails.getPullRequestId() +
+                "&resolved=false&types=" + ruleType.name() +
+                "&inNewCodePeriod=true" +
+                "&id=" + URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8);
+    }
+
+    private String getComponentMeasuresUrlForCodeMetrics(AnalysisDetails analysisDetails, String codeMetricsKey) {
+        // https://my-server:port/component_measures?id=some-key&metric=new_coverage&pullRequest=341&view=list
+        return server.getPublicRootUrl() +
+                "/component_measures?id=" + URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8) +
+                "&metric=" + codeMetricsKey +
+                "&pullRequest=" + analysisDetails.getPullRequestId() +
+                "&view=list";
     }
 
     private String getBaseImageUrl() {

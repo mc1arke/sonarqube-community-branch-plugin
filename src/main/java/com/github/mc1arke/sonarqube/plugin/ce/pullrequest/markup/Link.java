@@ -18,14 +18,17 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
+import java.util.Set;
+
 public final class Link extends Node {
 
+    private static final Set<Class<? extends Node>> SUPPORTED_CHILDREN = Set.of(Text.class, Image.class);
     private final String url;
 
     public Link(String url, Node... children) {
         super(children);
-        this.url=url;
-      }
+        this.url = url;
+    }
 
     public String getUrl() {
         return url;
@@ -33,6 +36,6 @@ public final class Link extends Node {
 
     @Override
     boolean isValidChild(Node child) {
-        return child instanceof Text;
+        return child != null && SUPPORTED_CHILDREN.contains(child.getClass());
     }
 }

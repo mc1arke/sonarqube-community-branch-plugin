@@ -47,22 +47,27 @@ public final class AnalysisSummary {
 
     private final BigDecimal newCoverage;
     private final BigDecimal coverage;
+    private final String coverageUrl;
     private final String coverageImageUrl;
 
     private final BigDecimal newDuplications;
     private final BigDecimal duplications;
+    private final String duplicationsUrl;
     private final String duplicationsImageUrl;
 
     private final long totalIssueCount;
 
     private final long bugCount;
+    private final String bugUrl;
     private final String bugImageUrl;
 
     private final long securityHotspotCount;
     private final long vulnerabilityCount;
+    private final String vulnerabilityUrl;
     private final String vulnerabilityImageUrl;
 
     private final long codeSmellCount;
+    private final String codeSmellUrl;
     private final String codeSmellImageUrl;
 
     private AnalysisSummary(Builder builder) {
@@ -74,17 +79,22 @@ public final class AnalysisSummary {
         this.dashboardUrl = builder.dashboardUrl;
         this.newCoverage = builder.newCoverage;
         this.coverage = builder.coverage;
+        this.coverageUrl = builder.coverageUrl;
         this.coverageImageUrl = builder.coverageImageUrl;
         this.newDuplications = builder.newDuplications;
         this.duplications = builder.duplications;
+        this.duplicationsUrl = builder.duplicationsUrl;
         this.duplicationsImageUrl = builder.duplicationsImageUrl;
         this.totalIssueCount = builder.totalIssueCount;
         this.bugCount = builder.bugCount;
+        this.bugUrl = builder.bugUrl;
         this.bugImageUrl = builder.bugImageUrl;
         this.securityHotspotCount = builder.securityHotspotCount;
         this.vulnerabilityCount = builder.vulnerabilityCount;
+        this.vulnerabilityUrl = builder.vulnerabilityUrl;
         this.vulnerabilityImageUrl = builder.vulnerabilityImageUrl;
         this.codeSmellCount = builder.codeSmellCount;
+        this.codeSmellUrl = builder.codeSmellUrl;
         this.codeSmellImageUrl = builder.codeSmellImageUrl;
     }
 
@@ -120,6 +130,10 @@ public final class AnalysisSummary {
         return coverage;
     }
 
+    public String getCoverageUrl() {
+        return coverageUrl;
+    }
+
     public String getCoverageImageUrl() {
         return coverageImageUrl;
     }
@@ -130,6 +144,10 @@ public final class AnalysisSummary {
 
     public BigDecimal getDuplications() {
         return duplications;
+    }
+
+    public String getDuplicationsUrl() {
+        return duplicationsUrl;
     }
 
     public String getDuplicationsImageUrl() {
@@ -144,6 +162,10 @@ public final class AnalysisSummary {
         return bugCount;
     }
 
+    public String getBugUrl() {
+        return bugUrl;
+    }
+
     public String getBugImageUrl() {
         return bugImageUrl;
     }
@@ -156,12 +178,20 @@ public final class AnalysisSummary {
         return vulnerabilityCount;
     }
 
+    public String getVulnerabilityUrl() {
+        return vulnerabilityUrl;
+    }
+
     public String getVulnerabilityImageUrl() {
         return vulnerabilityImageUrl;
     }
 
     public long getCodeSmellCount() {
         return codeSmellCount;
+    }
+
+    public String getCodeSmellUrl() {
+        return codeSmellUrl;
     }
 
     public String getCodeSmellImageUrl() {
@@ -185,26 +215,26 @@ public final class AnalysisSummary {
                 new Heading(2, new Text(pluralOf(getTotalIssueCount(), "Issue", "Issues"))),
                 new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
                         com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
-                        new ListItem(new Image("Bug", getBugImageUrl()),
+                        new ListItem(new Link(getBugUrl(), new Image("Bug", getBugImageUrl())),
                                 new Text(" "),
                                 new Text(pluralOf(getBugCount(), "Bug", "Bugs"))),
-                        new ListItem(new Image("Vulnerability", getVulnerabilityImageUrl()),
+                        new ListItem(new Link(getVulnerabilityUrl(), new Image("Vulnerability", getVulnerabilityImageUrl())),
                                 new Text(" "),
                                 new Text(pluralOf(getVulnerabilityCount() + getSecurityHotspotCount(), "Vulnerability", "Vulnerabilities"))),
-                        new ListItem(new Image("Code Smell", getCodeSmellImageUrl()),
+                        new ListItem(new Link(getCodeSmellUrl(), new Image("Code Smell", getCodeSmellImageUrl())),
                                 new Text(" "),
                                 new Text(pluralOf(getCodeSmellCount(), "Code Smell", "Code Smells")))),
                 new Heading(2, new Text("Coverage and Duplications")),
                 new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
                         com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
-                        new ListItem(new Image("Coverage", getCoverageImageUrl()),
+                        new ListItem(new Link(getCoverageUrl(), new Image("Coverage", getCoverageImageUrl())),
                                 new Text(" "), new Text(
                                 Optional.ofNullable(getNewCoverage())
                                         .map(decimalFormat::format)
                                         .map(i -> i + "% Coverage")
                                         .orElse("No coverage information") + " (" +
                                         decimalFormat.format(Optional.ofNullable(getCoverage()).orElse(BigDecimal.valueOf(0))) + "% Estimated after merge)")),
-                        new ListItem(new Image("Duplications", getDuplicationsImageUrl()),
+                        new ListItem(new Link(getDuplicationsUrl(), new Image("Duplications", getDuplicationsImageUrl())),
                                 new Text(" "),
                                 new Text(Optional.ofNullable(getNewDuplications())
                                         .map(decimalFormat::format)
@@ -236,22 +266,27 @@ public final class AnalysisSummary {
 
         private BigDecimal newCoverage;
         private BigDecimal coverage;
+        private String coverageUrl;
         private String coverageImageUrl;
 
         private BigDecimal newDuplications;
         private BigDecimal duplications;
+        private String duplicationsUrl;
         private String duplicationsImageUrl;
 
         private long totalIssueCount;
 
         private long bugCount;
+        private String bugUrl;
         private String bugImageUrl;
 
         private long securityHotspotCount;
         private long vulnerabilityCount;
+        private String vulnerabilityUrl;
         private String vulnerabilityImageUrl;
 
         private long codeSmellCount;
+        private String codeSmellUrl;
         private String codeSmellImageUrl;
 
         private Builder() {
@@ -298,6 +333,11 @@ public final class AnalysisSummary {
             return this;
         }
 
+        public Builder withCoverageUrl(String coverageUrl) {
+            this.coverageUrl = coverageUrl;
+            return this;
+        }
+
         public Builder withCoverageImageUrl(String coverageImageUrl) {
             this.coverageImageUrl = coverageImageUrl;
             return this;
@@ -310,6 +350,11 @@ public final class AnalysisSummary {
 
         public Builder withDuplications(BigDecimal duplications) {
             this.duplications = duplications;
+            return this;
+        }
+
+        public Builder withDuplicationsUrl(String duplicationsUrl) {
+            this.duplicationsUrl = duplicationsUrl;
             return this;
         }
 
@@ -328,6 +373,11 @@ public final class AnalysisSummary {
             return this;
         }
 
+        public Builder withBugUrl(String bugUrl) {
+            this.bugUrl = bugUrl;
+            return this;
+        }
+
         public Builder withBugImageUrl(String bugImageUrl) {
             this.bugImageUrl = bugImageUrl;
             return this;
@@ -343,6 +393,11 @@ public final class AnalysisSummary {
             return this;
         }
 
+        public Builder withVulnerabilityUrl(String vulnerabilityUrl) {
+            this.vulnerabilityUrl = vulnerabilityUrl;
+            return this;
+        }
+
         public Builder withVulnerabilityImageUrl(String vulnerabilityImageUrl) {
             this.vulnerabilityImageUrl = vulnerabilityImageUrl;
             return this;
@@ -350,6 +405,11 @@ public final class AnalysisSummary {
 
         public Builder withCodeSmellCount(long codeSmellCount) {
             this.codeSmellCount = codeSmellCount;
+            return this;
+        }
+
+        public Builder withCodeSmellUrl(String codeSmellUrl) {
+            this.codeSmellUrl = codeSmellUrl;
             return this;
         }
 
