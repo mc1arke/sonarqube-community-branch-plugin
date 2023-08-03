@@ -18,28 +18,62 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Named.named;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-public class LinkTest {
+class LinkTest {
 
-    @Test
-    public void correctParametersReturned() {
-        Link image = new Link("url", new Text("Text"));
-        assertThat(image).extracting(Link::getUrl).isEqualTo("url");
+    private final String testUrl = "url";
+    private final Link link = new Link(testUrl, new Text("Text"));
+
+    @Nested
+    class Constructor {
+        @Test
+        void shouldCorrectlyAssignParameters() {
+            // given link under test
+
+            // when
+            String url = link.getUrl();
+
+            // then
+            assertThat(url).isEqualTo(testUrl);
+        }
     }
 
-    @Test
-    public void testIsValidChildInvalidChild() {
-        assertFalse(new Link("url", new Text("Text")).isValidChild(new Paragraph()));
-    }
+    @Nested
+    @TestInstance(PER_CLASS)
+    class IsValid {
 
-    @Test
-    public void testIsValidChildValidChildText() {
-        assertTrue(new Link("url", new Text("Text")).isValidChild(new Text("")));
-    }
+        @MethodSource("childNodes")
+        @ParameterizedTest(name = "child type: {0} => {1}")
+        void shouldReturnTrueForSupportedChildren(Node child, boolean expectedResult) {
+            // given link under test and parameters
 
+            // when
+            boolean validChild = link.isValidChild(child);
+
+            // then
+            assertThat(validChild).isEqualTo(expectedResult);
+        }
+
+        private Stream<Arguments> childNodes() {
+            return Stream.of(
+                    arguments(named(Text.class.getSimpleName(), new Text("")), true),
+                    arguments(named(Image.class.getSimpleName(), new Image("alt", "source")), true),
+                    arguments(named(Paragraph.class.getSimpleName(), new Paragraph()), false),
+                    arguments(named("null", null), false)
+            );
+        }
+    }
 }
