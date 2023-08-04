@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -30,4 +31,10 @@ public interface PullRequestBuildStatusDecorator {
                                    ProjectAlmSettingDto projectAlmSettingDto);
 
     List<ALM> alm();
+
+    default boolean isSummaryNoteFirstEnabled(AnalysisDetails analysisDetails) {
+        return analysisDetails.getScannerProperty(CommunityBranchPlugin.PR_SUMMARY_NOTE_FIRST)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+    }
 }
