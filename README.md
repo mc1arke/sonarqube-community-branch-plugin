@@ -23,9 +23,9 @@ Use the following table to find the correct plugin version for each SonarQube ve
 
 SonarQube Version | Plugin Version
 ------------------|---------------
-9.1+              | 1.11.0
+9.1+              | 1.12.0
 9.0               | 1.9.0
-8.9               | 1.8.1
+8.9               | 1.8.2
 8.7 - 8.8         | 1.7.0
 8.5 - 8.6         | 1.6.0
 8.2 - 8.4         | 1.5.0
@@ -52,10 +52,11 @@ or [download a compatible release version of the plugin JAR](https://github.com/
 1. Copy the plugin JAR file to the `extensions/plugins/` directory of your SonarQube instance
 2. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web` to
    the `sonar.web.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
-   e.g. `sonar.web.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-1.8.0.jar=web`
+   e.g. `sonar.web.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web`
+   where ${version} is the version of the plugin being worked with. e.g `1.8.0`
 3. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce` to
    the `sonar.ce.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
-   e.g. `sonar.ce.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-1.8.0.jar=ce`
+   e.g. `sonar.ce.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce`
 4. Start Sonarqube, and accept the warning about using third-party plugins
 
 ## Docker

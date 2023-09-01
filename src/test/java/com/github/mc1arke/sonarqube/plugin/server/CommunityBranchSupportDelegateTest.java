@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,114 +18,91 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server;
 
-import org.hamcrest.core.IsEqual;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.sonar.core.util.SequenceUuidFactory;
-import org.sonar.core.util.UuidFactory;
-import org.sonar.db.DbClient;
-import org.sonar.db.DbSession;
-import org.sonar.db.component.BranchDto;
-import org.sonar.db.component.BranchType;
-import org.sonar.db.component.ComponentDao;
-import org.sonar.db.component.ComponentDto;
-import org.sonar.server.ce.queue.BranchSupport;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import org.sonar.api.config.Configuration;
+import org.sonar.core.util.SequenceUuidFactory;
+import org.sonar.db.DbClient;
+import org.sonar.db.DbSession;
+import org.sonar.db.component.BranchDao;
+import org.sonar.db.component.BranchDto;
+import org.sonar.db.component.BranchType;
+import org.sonar.db.component.ComponentDao;
+import org.sonar.db.component.ComponentDto;
+import org.sonar.server.ce.queue.BranchSupport;
+import org.sonar.server.setting.ProjectConfigurationLoader;
 
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchSupportDelegateTest {
+class CommunityBranchSupportDelegateTest {
 
-    private final ExpectedException expectedException = ExpectedException.none();
-
-    @Rule
-    public ExpectedException expectedException() {
-        return expectedException;
-    }
+    private final Clock clock = mock(Clock.class);
+    private final SequenceUuidFactory sequenceUuidFactory = mock(SequenceUuidFactory.class);
+    private final DbClient dbClient = mock(DbClient.class);
+    private final ProjectConfigurationLoader projectConfigurationLoader = mock(ProjectConfigurationLoader.class);
+    private final CommunityBranchSupportDelegate underTest = new CommunityBranchSupportDelegate(sequenceUuidFactory, dbClient, clock, projectConfigurationLoader);
 
     @Test
-    public void testCreateComponentKeyBranchType() {
+    void shouldReturnValidComponentKeyForBranchParameters() {
         Map<String, String> params = new HashMap<>();
         params.put("branch", "release-1.1");
         params.put("branchType", "BRANCH");
 
-        BranchSupport.ComponentKey componentKey =
-                new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
-                        .createComponentKey("yyy", params);
+        BranchSupport.ComponentKey componentKey = underTest.createComponentKey("yyy", params);
 
-        assertEquals("yyy:BRANCH:release-1.1", componentKey.getDbKey());
-        assertEquals("yyy", componentKey.getKey());
-        assertFalse(componentKey.getPullRequestKey().isPresent());
-        assertFalse(componentKey.isMainBranch());
-        assertTrue(componentKey.getBranchName().isPresent());
-        assertEquals("release-1.1", componentKey.getBranchName().get());
-        assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
+        assertThat(componentKey).usingRecursiveComparison().isEqualTo(new CommunityComponentKey("yyy", "release-1.1", null));
     }
 
     @Test
-    public void testCreateComponentKeyPullRequest() {
+    void shouldReturnValidComponentKeyForPullRequestParameters() {
         Map<String, String> params = new HashMap<>();
         params.put("pullRequest", "pullrequestkey");
 
-        CommunityComponentKey componentKey =
-                new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
-                        .createComponentKey("yyy", params);
-        assertEquals("yyy:PULL_REQUEST:pullrequestkey", componentKey.getDbKey());
-        assertEquals("yyy", componentKey.getKey());
-        assertTrue(componentKey.getPullRequestKey().isPresent());
-        assertEquals("pullrequestkey", componentKey.getPullRequestKey().get());
-        assertFalse(componentKey.isMainBranch());
-        assertFalse(componentKey.getBranchName().isPresent());
-        assertTrue(componentKey.getMainBranchComponentKey().isMainBranch());
-        CommunityComponentKey mainBranchComponentKey = componentKey.getMainBranchComponentKey();
-        assertSame(mainBranchComponentKey, mainBranchComponentKey.getMainBranchComponentKey());
+        CommunityComponentKey componentKey = underTest.createComponentKey("aaa", params);
+
+        assertThat(componentKey).usingRecursiveComparison().isEqualTo(new CommunityComponentKey("aaa", null, "pullrequestkey"));
     }
 
 
     @Test
-    public void testCreateComponentKeyMissingBranchTypeAndPullParameters() {
+    void shouldThrowExceptionOnCreateComponentKeyMissingBranchTypeAndPullParameters() {
         Map<String, String> params = new HashMap<>();
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException
-                .expectMessage(IsEqual.equalTo("One of 'branchType' or 'pullRequest' parameters must be specified"));
-
-        new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
-                .createComponentKey("xxx", params);
+        assertThatThrownBy(() -> underTest.createComponentKey("xxx", params)).isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("One of 'branchType' or 'pullRequest' parameters must be specified");
     }
 
     @Test
-    public void testCreateComponentKeyInvalidBranchTypeParameter() {
+    void shouldThrowExceptoinOnCreateComponentKeyInvalidBranchTypeParameter() {
         Map<String, String> params = new HashMap<>();
         params.put("branchType", "abc");
-
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Unsupported branch type 'abc'"));
-
-        new CommunityBranchSupportDelegate(new SequenceUuidFactory(), mock(DbClient.class), mock(Clock.class))
-                .createComponentKey("xxx", params);
+        
+        assertThatThrownBy(() -> underTest.createComponentKey("xxx", params)).isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Unsupported branch type 'abc'");
     }
 
     @Test
-    public void testCreateBranchComponentComponentKeyComponentDtoKeyMismatch() {
+    void shouldThrowExceptionIfBranchAndComponentKeysMismatch() {
         DbSession dbSession = mock(DbSession.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
@@ -139,128 +116,34 @@ public class CommunityBranchSupportDelegateTest {
         when(branchDto.getUuid()).thenReturn("componentUuid");
         when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
 
-        Clock clock = mock(Clock.class);
         when(clock.millis()).thenReturn(12345678901234L);
 
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
-        when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
-        when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
-
-        ComponentDao componentDao = spy(mock(ComponentDao.class));
-
-        DbClient dbClient = mock(DbClient.class);
-        when(dbClient.componentDao()).thenReturn(componentDao);
-
-        UuidFactory uuidFactory = new SequenceUuidFactory();
-
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Component Key and Main Component Key do not match"));
-
-        new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
-
-    }
-
-    @Test
-    public void testCreateBranchComponent() {
-        DbSession dbSession = mock(DbSession.class);
-
-        ComponentDto componentDto = mock(ComponentDto.class);
-        when(componentDto.getKey()).thenReturn("componentKey");
-        when(componentDto.uuid()).thenReturn("componentUuid");
-
-        ComponentDto copyComponentDto = spy(ComponentDto.class);
-        when(componentDto.copy()).thenReturn(copyComponentDto);
-
-        BranchDto branchDto = mock(BranchDto.class);
-        when(branchDto.getUuid()).thenReturn("componentUuid");
-        when(branchDto.getKey()).thenReturn("nonDummy");
-
-        Clock clock = mock(Clock.class);
-        when(clock.millis()).thenReturn(12345678901234L);
-
-        BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
-        when(componentKey.getKey()).thenReturn("componentKey");
-        when(componentKey.getDbKey()).thenReturn("dbKey");
         when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
         when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
 
         ComponentDao componentDao = mock(ComponentDao.class);
 
-        DbClient dbClient = mock(DbClient.class);
         when(dbClient.componentDao()).thenReturn(componentDao);
 
-        UuidFactory uuidFactory = mock(UuidFactory.class);
-        when(uuidFactory.create()).then(new Answer<String>() {
-            private int i = 0;
-
-            @Override
-            public String answer(InvocationOnMock invocationOnMock) {
-                return "uuid" + (i++);
-            }
-        });
-
-        ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
-
-        verify(componentDao).insert(dbSession, copyComponentDto);
-        verify(copyComponentDto).setUuid("uuid0");
-        verify(copyComponentDto).setProjectUuid("uuid0");
-        verify(copyComponentDto).setRootUuid("uuid0");
-        verify(copyComponentDto).setUuidPath(".");
-        verify(copyComponentDto).setModuleUuidPath(".uuid0.");
-        verify(copyComponentDto).setMainBranchProjectUuid("componentUuid");
-        verify(copyComponentDto).setDbKey(componentKey.getDbKey());
-        verify(copyComponentDto).setCreatedAt(new Date(12345678901234L));
-
-        assertSame(copyComponentDto, result);
-
+        assertThatThrownBy(() -> underTest.createBranchComponent(dbSession, componentKey, componentDto, branchDto)).isInstanceOf(IllegalStateException.class)
+            .hasMessage("Component Key and Main Component Key do not match");
 
     }
 
-    @Test
-    public void testCreateBranchComponentUseExistingDto() {
-        DbSession dbSession = mock(DbSession.class);
-
-        ComponentDto componentDto = mock(ComponentDto.class);
-        when(componentDto.getKey()).thenReturn("componentKey");
-        when(componentDto.uuid()).thenReturn("componentUuid");
-
-        ComponentDto copyComponentDto = spy(ComponentDto.class);
-        when(componentDto.copy()).thenReturn(copyComponentDto);
-
-        BranchDto branchDto = mock(BranchDto.class);
-        when(branchDto.getUuid()).thenReturn("componentUuid");
-        when(branchDto.getKey()).thenReturn("dummy");
-        when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
-
-        Clock clock = mock(Clock.class);
-        when(clock.millis()).thenReturn(1234567890123L);
-
-        BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
-        when(componentKey.getKey()).thenReturn("componentKey");
-        when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranchName()).thenReturn(Optional.of("dummy"));
-        when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
-
-        ComponentDao componentDao = spy(mock(ComponentDao.class));
-
-        DbClient dbClient = mock(DbClient.class);
-        when(dbClient.componentDao()).thenReturn(componentDao);
-
-        UuidFactory uuidFactory = new SequenceUuidFactory();
-
-        ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
-
-        assertSame(componentDto, result);
-
+    static Stream<Arguments> shouldCreateComponentAndBranchDtoIfValidationPassesData() {
+       return Stream.of(
+           Arguments.of("branchName", null, BranchType.BRANCH, new String[0], false),
+           Arguments.of(null, "pullRequestKey", BranchType.PULL_REQUEST, new String[0], false),
+           Arguments.of("complex-name", null, BranchType.BRANCH, new String[]{"abc", "def", "comp.*"}, true)
+       );
     }
 
-    @Test
-    public void testCreateBranchComponentUseExistingDto2() {
+    @MethodSource("shouldCreateComponentAndBranchDtoIfValidationPassesData")
+    @ParameterizedTest
+    void shouldCreateComponentAndBranchDtoIfValidationPasses(String branchName, String pullRequestKey, BranchType branchType,
+                                                             String[] retainBranchesConfiguration, boolean excludedFromPurge) {
         DbSession dbSession = mock(DbSession.class);
 
         ComponentDto componentDto = mock(ComponentDto.class);
@@ -269,44 +152,58 @@ public class CommunityBranchSupportDelegateTest {
 
         ComponentDto copyComponentDto = mock(ComponentDto.class);
         when(componentDto.copy()).thenReturn(copyComponentDto);
+        when(copyComponentDto.setBranchUuid(any())).thenReturn(copyComponentDto);
+        when(copyComponentDto.setKey(any())).thenReturn(copyComponentDto);
+        when(copyComponentDto.setRootUuid(any())).thenReturn(copyComponentDto);
+        when(copyComponentDto.setUuidPath(any())).thenReturn(copyComponentDto);
+        when(copyComponentDto.setModuleUuidPath(any())).thenReturn(copyComponentDto);
+        when(copyComponentDto.setUuid(any())).thenReturn(copyComponentDto);
+        when(copyComponentDto.setMainBranchProjectUuid(any())).thenReturn(copyComponentDto);
+        when(copyComponentDto.setCreatedAt(any())).thenReturn(copyComponentDto);
 
         BranchDto branchDto = mock(BranchDto.class);
         when(branchDto.getUuid()).thenReturn("componentUuid");
-        when(branchDto.getKey()).thenReturn("dummy");
-        when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
+        when(branchDto.getKey()).thenReturn("nonDummy");
 
-        Clock clock = mock(Clock.class);
-        when(clock.millis()).thenReturn(1234567890123L);
+        when(clock.millis()).thenReturn(12345678901234L);
 
         BranchSupport.ComponentKey componentKey = mock(BranchSupport.ComponentKey.class);
         when(componentKey.getKey()).thenReturn("componentKey");
-        when(componentKey.getDbKey()).thenReturn("dbKey");
-        when(componentKey.getBranchName()).thenReturn(Optional.empty());
-        when(componentKey.getPullRequestKey()).thenReturn(Optional.empty());
+        when(componentKey.getBranchName()).thenReturn(Optional.ofNullable(branchName));
+        when(componentKey.getPullRequestKey()).thenReturn(Optional.ofNullable(pullRequestKey));
 
+        BranchDao branchDao = mock(BranchDao.class);
         ComponentDao componentDao = mock(ComponentDao.class);
-
-        DbClient dbClient = mock(DbClient.class);
         when(dbClient.componentDao()).thenReturn(componentDao);
+        when(dbClient.branchDao()).thenReturn(branchDao);
 
-        UuidFactory uuidFactory = new SequenceUuidFactory();
+        when(sequenceUuidFactory.create()).thenReturn("uuid0");
 
-        ComponentDto result = new CommunityBranchSupportDelegate(uuidFactory, dbClient, clock)
-                .createBranchComponent(dbSession, componentKey, componentDto, branchDto);
+        Configuration configuration = mock(Configuration.class);
+        when(configuration.getStringArray(any())).thenReturn(retainBranchesConfiguration);
+        when(projectConfigurationLoader.loadProjectConfiguration(any(), any())).thenReturn(configuration);
+
+        ComponentDto result = underTest.createBranchComponent(dbSession, componentKey, componentDto, branchDto);
 
         verify(componentDao).insert(dbSession, copyComponentDto);
-        verify(copyComponentDto).setUuid("1");
-        verify(copyComponentDto).setProjectUuid("1");
-        verify(copyComponentDto).setRootUuid("1");
+        verify(copyComponentDto).setUuid("uuid0");
+        verify(copyComponentDto).setRootUuid("uuid0");
         verify(copyComponentDto).setUuidPath(".");
-        verify(copyComponentDto).setModuleUuidPath(".1.");
+        verify(copyComponentDto).setModuleUuidPath(".uuid0.");
         verify(copyComponentDto).setMainBranchProjectUuid("componentUuid");
-        verify(copyComponentDto).setDbKey(componentKey.getDbKey());
-        verify(copyComponentDto).setCreatedAt(new Date(1234567890123L));
+        verify(copyComponentDto).setCreatedAt(new Date(12345678901234L));
 
-        assertSame(copyComponentDto, result);
+        assertThat(result).isSameAs(copyComponentDto);
 
+        ArgumentCaptor<BranchDto> branchDtoArgumentCaptor = ArgumentCaptor.forClass(BranchDto.class);
+        verify(branchDao).insert(eq(dbSession), branchDtoArgumentCaptor.capture());
+
+        assertThat(branchDtoArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(new BranchDto()
+            .setBranchType(branchType)
+            .setExcludeFromPurge(excludedFromPurge)
+            .setProjectUuid("componentUuid")
+            .setKey(branchType == BranchType.BRANCH ? branchName : pullRequestKey)
+            .setUuid("uuid0"));
     }
-
 
 }

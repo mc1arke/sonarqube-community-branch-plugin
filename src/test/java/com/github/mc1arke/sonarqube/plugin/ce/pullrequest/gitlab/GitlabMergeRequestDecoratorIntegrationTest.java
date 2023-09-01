@@ -95,11 +95,11 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("token");
         when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl()+"/api/v4");
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl()+"/api/v4");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
+        when(projectAlmSettingDto.getMonorepo()).thenReturn(true);
         when(analysisDetails.getQualityGateStatus()).thenReturn(status);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
         when(analysisDetails.getPullRequestId()).thenReturn(Long.toString(mergeRequestIid));

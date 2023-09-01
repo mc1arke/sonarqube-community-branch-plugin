@@ -59,7 +59,7 @@ class ReportGeneratorTest {
             "98, 90.svg?sanitize=true, 1, 3.svg?sanitize=true",
             ",NoCoverageInfo.svg?sanitize=true,,NoDuplicationInfo.svg?sanitize=true"})
     @ParameterizedTest
-    void shouldProduceCorrectAnlysisSummary(String coverage, String coverageImage, String duplications, String duplicationsImage) {
+    void shouldProduceCorrectAnalysisSummary(String coverage, String coverageImage, String duplications, String duplicationsImage) {
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
         doReturn("5").when(analysisDetails).getPullRequestId();
         doReturn("projectKey").when(analysisDetails).getAnalysisProjectKey();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,23 +18,21 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server;
 
-import org.sonar.server.branch.BranchFeatureExtension;
+import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.server.ServerSide;
+import org.sonar.server.feature.SonarQubeFeature;
 
-/**
- * Enables branch management in SonarQube.
- *
- * @author Michael Clarke
- */
-public class CommunityBranchFeatureExtension implements BranchFeatureExtension {
+@ServerSide
+@ComputeEngineSide
+public class MonoRepoFeature implements SonarQubeFeature {
 
     @Override
     public String getName() {
-        return "branch-support";
+        return "monorepo";
     }
 
     @Override
     public boolean isEnabled() {
         return true;
     }
-
 }

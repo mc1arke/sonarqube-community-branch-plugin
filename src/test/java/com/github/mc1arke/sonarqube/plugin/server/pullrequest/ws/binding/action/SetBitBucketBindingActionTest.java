@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,9 +16,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
@@ -33,15 +33,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SetBitBucketCloudBindingActionTest {
+class SetBitBucketBindingActionTest {
 
     @Test
-    public void testConfigureAction() {
+    void shouldDefineActionWithRequiredParameters() {
         DbClient dbClient = mock(DbClient.class);
         UserSession userSession = mock(UserSession.class);
         ComponentFinder componentFinder = mock(ComponentFinder.class);
 
         WebService.NewAction newAction = mock(WebService.NewAction.class);
+        when(newAction.setPost(anyBoolean())).thenReturn(newAction);
+
+        WebService.NewParam slugParameter = mock(WebService.NewParam.class);
+        when(slugParameter.setMaximumLength(any(Integer.class))).thenReturn(slugParameter);
+        when(slugParameter.setRequired(anyBoolean())).thenReturn(slugParameter);
+        when(newAction.createParam("slug")).thenReturn(slugParameter);
 
         WebService.NewParam repositoryParameter = mock(WebService.NewParam.class);
         when(repositoryParameter.setMaximumLength(any(Integer.class))).thenReturn(repositoryParameter);
@@ -53,27 +59,38 @@ public class SetBitBucketCloudBindingActionTest {
         when(almSettingParameter.setRequired(anyBoolean())).thenReturn(almSettingParameter);
         when(newAction.createParam("almSetting")).thenReturn(almSettingParameter);
 
-        SetBitbucketCloudBindingAction testCase = new SetBitbucketCloudBindingAction(dbClient, componentFinder, userSession);
+        WebService.NewParam monoRepoParameter = mock(WebService.NewParam.class);
+        when(monoRepoParameter.setRequired(anyBoolean())).thenReturn(monoRepoParameter);
+        when(newAction.createParam("monorepo")).thenReturn(monoRepoParameter);
+
+        SetBitbucketBindingAction testCase = new SetBitbucketBindingAction(dbClient, componentFinder, userSession);
         testCase.configureAction(newAction);
+
+        verify(newAction).setPost(true);
+        verify(slugParameter).setRequired(true);
 
         verify(repositoryParameter).setRequired(true);
 
         verify(almSettingParameter).setRequired(true);
+
+        verify(monoRepoParameter).setRequired(true);
+        verify(monoRepoParameter).setBooleanPossibleValues();
     }
 
     @Test
-    public void testCreateProjectAlmSettingDto() {
+    void shouldHandleRequestWithRequiredParameters() {
         DbClient dbClient = mock(DbClient.class);
         UserSession userSession = mock(UserSession.class);
         ComponentFinder componentFinder = mock(ComponentFinder.class);
 
         Request request = mock(Request.class);
+        when(request.mandatoryParam("slug")).thenReturn("slug");
         when(request.mandatoryParam("repository")).thenReturn("repository");
 
-        SetBitbucketCloudBindingAction testCase = new SetBitbucketCloudBindingAction(dbClient, componentFinder, userSession);
-        ProjectAlmSettingDto result = testCase.createProjectAlmSettingDto("projectUuid", "settingsUuid", request);
+        SetBitbucketBindingAction testCase = new SetBitbucketBindingAction(dbClient, componentFinder, userSession);
+        ProjectAlmSettingDto result = testCase.createProjectAlmSettingDto("projectUuid", "settingsUuid", true, request);
 
-        assertThat(result).isEqualToComparingFieldByField(new ProjectAlmSettingDto().setProjectUuid("projectUuid").setAlmSettingUuid("settingsUuid").setAlmRepo("repository").setMonorepo(false));
+        assertThat(result).usingRecursiveComparison().isEqualTo(new ProjectAlmSettingDto().setProjectUuid("projectUuid").setAlmSettingUuid("settingsUuid").setAlmRepo("repository").setAlmSlug("slug").setMonorepo(true));
 
     }
 }

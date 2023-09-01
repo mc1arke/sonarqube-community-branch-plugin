@@ -28,7 +28,7 @@ jobs:
         run: |
           VERSION=$(grep "version" gradle.properties | cut -d'=' -f2)
           echo ::set-output name=version::${VERSION}
-          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(-[a-zA-Z0-9]+)?$ ]]; then
             echo ::set-output name=release::true
           else
             echo ::set-output name=release::false

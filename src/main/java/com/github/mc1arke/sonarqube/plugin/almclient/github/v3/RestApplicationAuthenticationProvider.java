@@ -28,14 +28,9 @@ import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model.AppInstalla
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model.AppToken;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model.InstallationRepositories;
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.model.Repository;
+import com.google.common.annotations.VisibleForTesting;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultJwtBuilder;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.sonar.api.ce.ComputeEngineSide;
-import org.sonar.api.server.ServerSide;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -46,8 +41,16 @@ import java.security.PrivateKey;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.server.ServerSide;
 
 @ServerSide
 @ComputeEngineSide
@@ -72,6 +75,27 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
         this.objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
+    @VisibleForTesting
+    protected List<AppInstallation> getAppInstallations(ObjectMapper objectMapper, String apiUrl, String jwtToken) throws IOException {
+
+        List<AppInstallation> appInstallations = new ArrayList<>();
+
+        URLConnection appConnection = urlProvider.createUrlConnection(apiUrl);
+        appConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
+        appConnection.setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
+
+        try (Reader reader = new InputStreamReader(appConnection.getInputStream())) {
+            appInstallations.addAll(Arrays.asList(objectMapper.readerFor(AppInstallation[].class).readValue(reader)));
+        }
+
+        Optional<String> nextLink = linkHeaderReader.findNextLink(appConnection.getHeaderField("Link"));
+        if (nextLink.isPresent()) {
+            appInstallations.addAll(getAppInstallations(objectMapper, nextLink.get(), jwtToken));
+        }
+
+        return appInstallations;
+    }
+
     @Override
     public RepositoryAuthenticationToken getInstallationToken(String apiUrl, String appId, String apiPrivateKey,
                                                               String projectPath) throws IOException {
@@ -81,15 +105,9 @@ public class RestApplicationAuthenticationProvider implements GithubApplicationA
         String jwtToken = new DefaultJwtBuilder().setIssuedAt(Date.from(issued)).setExpiration(Date.from(expiry))
                 .claim("iss", appId).signWith(createPrivateKey(apiPrivateKey), SignatureAlgorithm.RS256).compact();
 
-        URLConnection appConnection = urlProvider.createUrlConnection(getV3Url(apiUrl) + "/app/installations");
-        appConnection.setRequestProperty(ACCEPT_HEADER, APP_PREVIEW_ACCEPT_HEADER);
-        appConnection.setRequestProperty(AUTHORIZATION_HEADER, BEARER_AUTHORIZATION_HEADER_PREFIX + jwtToken);
+        ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-        AppInstallation[] appInstallations;
-        try (Reader reader = new InputStreamReader(appConnection.getInputStream())) {
-            appInstallations = objectMapper.readerFor(AppInstallation[].class).readValue(reader);
-        }
-
+        List<AppInstallation> appInstallations = getAppInstallations(objectMapper, getV3Url(apiUrl) + "/app/installations", jwtToken);
 
         for (AppInstallation installation : appInstallations) {
             URLConnection accessTokenConnection = urlProvider.createUrlConnection(installation.getAccessTokensUrl());

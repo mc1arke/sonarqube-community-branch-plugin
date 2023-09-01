@@ -18,26 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
-import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
-import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
-import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
-import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
-import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectPullRequestsLoader;
-import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
-import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.sonar.api.Plugin;
-import org.sonar.api.SonarQubeSide;
-import org.sonar.core.extension.CoreExtension;
-
-import java.util.Arrays;
-import java.util.Collections;
-
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -45,20 +26,31 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.sonar.api.Plugin;
+import org.sonar.api.SonarQubeSide;
+import org.sonar.core.extension.CoreExtension;
+
+import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
+import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
+import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
+import com.github.mc1arke.sonarqube.plugin.scanner.CommunityProjectBranchesLoader;
+import com.github.mc1arke.sonarqube.plugin.scanner.ScannerPullRequestPropertySensor;
+import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchFeatureExtension;
+import com.github.mc1arke.sonarqube.plugin.server.CommunityBranchSupportDelegate;
+
 /**
  * @author Michael Clarke
  */
-public class CommunityBranchPluginTest {
-
-    private final ExpectedException expectedException = ExpectedException.none();
-
-    @Rule
-    public ExpectedException expectedException() {
-        return expectedException;
-    }
+class CommunityBranchPluginTest {
 
     @Test
-    public void testScannerSideDefine() {
+    void shouldDefineClassesForScannerSide() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
         final Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
@@ -71,13 +63,12 @@ public class CommunityBranchPluginTest {
                 .addExtensions(argumentCaptor.capture(), argumentCaptor.capture(), argumentCaptor.capture());
 
 
-        assertEquals(Arrays.asList(CommunityProjectBranchesLoader.class, CommunityProjectPullRequestsLoader.class,
-                                   CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class),
-                     argumentCaptor.getAllValues().subList(0, 4));
+        assertThat(argumentCaptor.getAllValues().subList(0, 4)).isEqualTo(Arrays.asList(CommunityProjectBranchesLoader.class,
+                                   CommunityBranchConfigurationLoader.class, CommunityBranchParamsValidator.class, ScannerPullRequestPropertySensor.class));
     }
 
     @Test
-    public void testNonScannerSideDefine() {
+    void shouldDefineClassesForServerSide() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
         final Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
@@ -89,7 +80,7 @@ public class CommunityBranchPluginTest {
     }
 
     @Test
-    public void testComputeEngineSideLoad() {
+    void shouldDefineClassesForComputeEngineSide() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
         final CoreExtension.Context context = mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS);
@@ -97,17 +88,16 @@ public class CommunityBranchPluginTest {
 
         testCase.load(context);
 
-        final ArgumentCaptor<Class> argumentCaptor = ArgumentCaptor.forClass(Class.class);
+        final ArgumentCaptor<Class<?>> argumentCaptor = ArgumentCaptor.forClass(Class.class);
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
 
-        assertEquals(Collections.singletonList(CommunityReportAnalysisComponentProvider.class),
-                     argumentCaptor.getAllValues().subList(0, 1));
+        assertThat(argumentCaptor.getAllValues().subList(0, 1)).isEqualTo(List.of(CommunityReportAnalysisComponentProvider.class));
     }
 
 
     @Test
-    public void testServerSideLoad() {
+    void shouldAddExtensionsForServerSideLoad() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
         final CoreExtension.Context context = mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS);
@@ -118,14 +108,13 @@ public class CommunityBranchPluginTest {
         final ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
         verify(context, times(2)).addExtensions(argumentCaptor.capture(), argumentCaptor.capture());
 
-        assertEquals(25, argumentCaptor.getAllValues().size());
+        assertThat(argumentCaptor.getAllValues()).hasSize(29);
 
-        assertEquals(Arrays.asList(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class),
-                     argumentCaptor.getAllValues().subList(0, 2));
+        assertThat(argumentCaptor.getAllValues().subList(0, 2)).isEqualTo(List.of(CommunityBranchFeatureExtension.class, CommunityBranchSupportDelegate.class));
     }
 
     @Test
-    public void testLoad() {
+    void shouldNotAddAnyExtensionsForScannerSideLoad() {
         final CommunityBranchPlugin testCase = new CommunityBranchPlugin();
 
         final CoreExtension.Context context = mock(CoreExtension.Context.class, Mockito.RETURNS_DEEP_STUBS);
@@ -137,7 +126,7 @@ public class CommunityBranchPluginTest {
     }
 
     @Test
-    public void testGetName() {
-        assertEquals("Community Branch Plugin", new CommunityBranchPlugin().getName());
+    void shouldReturnPluginNameForGetName() {
+        assertThat(new CommunityBranchPlugin().getName()).isEqualTo("Community Branch Plugin");
     }
 }

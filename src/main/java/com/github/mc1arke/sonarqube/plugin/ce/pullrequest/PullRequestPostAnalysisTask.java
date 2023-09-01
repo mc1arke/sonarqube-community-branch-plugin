@@ -73,22 +73,20 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             LOGGER.warn("No pull request ID has been submitted with the Pull Request. Analysis will be skipped");
             return;
         }
+        ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto();
 
-        ProjectAlmSettingDto projectAlmSettingDto;
+        String enablePrDecoration = Optional.ofNullable(System.getenv("ENABLE_PR_DECORATION"))
+                .orElse(projectAnalysis.getScannerContext().getProperties().getOrDefault("sonar.analysis.enableprdecoration", "true"));
+        LOGGER.info("sonar.analysis.enableprdecoration: {}", enablePrDecoration);
         Optional<AlmSettingDto> optionalAlmSettingDto;
         try (DbSession dbSession = dbClient.openSession(false)) {
-
-            Optional<ProjectAlmSettingDto> optionalProjectAlmSettingDto =
-                    dbClient.projectAlmSettingDao().selectByProject(dbSession, projectAnalysis.getProject().getUuid());
-
-            if (optionalProjectAlmSettingDto.isEmpty()) {
-                LOGGER.debug("No ALM has been set on the current project");
-                return;
-            }
-
-            projectAlmSettingDto = optionalProjectAlmSettingDto.get();
-            String almSettingUuid = projectAlmSettingDto.getAlmSettingUuid();
-            optionalAlmSettingDto = dbClient.almSettingDao().selectByUuid(dbSession, almSettingUuid);
+            projectAlmSettingDto.setAlmRepo(projectAnalysis.getScannerContext().getProperties().getOrDefault(
+					"sonar.pullrequest.github.repository", "Pay-Baymax/" + projectAnalysis.getProject().getKey()));
+            projectAlmSettingDto.setAlmSettingUuid("AXxy3BubdvWBwkcdvIfk");
+            projectAlmSettingDto.setAlmSlug("");
+            projectAlmSettingDto.setProjectUuid(projectAnalysis.getProject().getUuid());
+            projectAlmSettingDto.setSummaryCommentEnabled(Boolean.parseBoolean(enablePrDecoration));
+            optionalAlmSettingDto = dbClient.almSettingDao().selectByUuid(dbSession, "AXxy3BubdvWBwkcdvIfk");
 
         }
 

@@ -1,6 +1,35 @@
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
+/*
+ * Copyright (C) 2020-2022 Michael Clarke
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
@@ -14,21 +43,10 @@ import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-public class SetBindingActionTest {
+class SetBindingActionTest {
 
     @Test
-    public void testDefine() {
+    void shouldDefineActionWithRequiredParameters() {
         DbClient dbClient = mock(DbClient.class);
         ComponentFinder componentFinder = mock(ComponentFinder.class);
         UserSession userSession = mock(UserSession.class);
@@ -36,7 +54,7 @@ public class SetBindingActionTest {
         SetBindingAction testCase = new SetBindingAction(dbClient, componentFinder, userSession, "dummy") {
 
             @Override
-            protected ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid, Request request) {
+            protected ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid, boolean monoRepo, Request request) {
                 return projectAlmSettingDto;
             }
         };
@@ -46,37 +64,40 @@ public class SetBindingActionTest {
         WebService.NewController newController = mock(WebService.NewController.class);
         WebService.NewAction newAction = mock(WebService.NewAction.class);
         when(newController.createAction(any())).thenReturn(newAction);
-        when(newAction.setPost(eq(true))).thenReturn(newAction);
-        when(newAction.setHandler(eq(testCase))).thenReturn(newAction);
+        when(newAction.setPost(true)).thenReturn(newAction);
+        when(newAction.setHandler(testCase)).thenReturn(newAction);
         when(newAction.createParam(any())).then(i -> {
             WebService.NewParam newParam = mock(WebService.NewParam.class);
             paramMap.put(i.getArgument(0), newParam);
+            when(newParam.setRequired(anyBoolean())).thenReturn(newParam);
             return newParam;
         });
         testCase.define(newController);
 
-        verify(newAction).createParam(eq("project"));
-        verify(newAction).createParam(eq("almSetting"));
+        verify(newAction).createParam("project");
+        verify(newAction).createParam("almSetting");
         verify(paramMap.get("project")).setRequired(true);
         verify(paramMap.get("almSetting")).setRequired(true);
+        verify(paramMap.get("monorepo")).setRequired(true);
+        verify(paramMap.get("monorepo")).setBooleanPossibleValues();
     }
 
     @Test
-    public void testHandle() {
+    void shouldHandleRequestWithRequiredParameters() {
         DbClient dbClient = mock(DbClient.class);
         DbSession dbSession = mock(DbSession.class);
-        when(dbClient.openSession(eq(false))).thenReturn(dbSession);
+        when(dbClient.openSession(false)).thenReturn(dbSession);
         AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getUuid()).thenReturn("almSettingsUuid");
-        when(almSettingDao.selectByKey(eq(dbSession), eq("almSetting"))).thenReturn(Optional.of(almSettingDto));
+        when(almSettingDao.selectByKey(dbSession, "almSetting")).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
         ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
         ComponentFinder componentFinder = mock(ComponentFinder.class);
         ProjectDto componentDto = mock(ProjectDto.class);
         when(componentDto.getUuid()).thenReturn("projectUuid");
-        when(componentFinder.getProjectByKey(eq(dbSession), eq("project"))).thenReturn(componentDto);
+        when(componentFinder.getProjectByKey(dbSession, "project")).thenReturn(componentDto);
         UserSession userSession = mock(UserSession.class);
         ThreadLocal<WebService.NewAction> capturedAction = new ThreadLocal<>();
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -88,7 +109,7 @@ public class SetBindingActionTest {
             }
 
             @Override
-            protected ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid, Request request) {
+            protected ProjectAlmSettingDto createProjectAlmSettingDto(String projectUuid, String settingsUuid, boolean monoRepo, Request request) {
                 assertThat(projectUuid).isEqualTo("projectUuid");
                 assertThat(settingsUuid).isEqualTo("almSettingsUuid");
                 return projectAlmSettingDto;
@@ -99,7 +120,7 @@ public class SetBindingActionTest {
         Response response = mock(Response.class);
 
         when(request.mandatoryParam("almSetting")).thenReturn("almSetting");
-        when(request.param("project")).thenReturn("project");
+        when(request.mandatoryParam("project")).thenReturn("project");
 
         testCase.handle(request, response);
 

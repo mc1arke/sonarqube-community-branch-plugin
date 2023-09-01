@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,25 +16,27 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest;
 
-import org.sonar.server.branch.BranchFeatureExtension;
+import org.sonar.api.server.ws.WebService;
 
-/**
- * Enables branch management in SonarQube.
- *
- * @author Michael Clarke
- */
-public class CommunityBranchFeatureExtension implements BranchFeatureExtension {
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.PullRequestWsAction;
 
-    @Override
-    public String getName() {
-        return "branch-support";
+public class PullRequestWs implements WebService {
+
+    private final PullRequestWsAction[] actions;
+
+    public PullRequestWs(PullRequestWsAction... actions) {
+        this.actions = actions;
     }
 
     @Override
-    public boolean isEnabled() {
-        return true;
+    public void define(Context context) {
+        NewController controller = context.createController("api/project_pull_requests");
+        for (PullRequestWsAction action : actions) {
+            action.define(controller);
+        }
+        controller.done();
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.action;
+package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
@@ -29,8 +29,6 @@ import org.sonar.server.almsettings.ws.AlmSettingsWsAction;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
 
-import java.util.Optional;
-
 public abstract class ProjectWsAction implements AlmSettingsWsAction {
 
     private static final String PROJECT_PARAMETER = "project";
@@ -39,27 +37,25 @@ public abstract class ProjectWsAction implements AlmSettingsWsAction {
     private final DbClient dbClient;
     private final ComponentFinder componentFinder;
     private final UserSession userSession;
-    private final boolean projectParameterRequired;
     private final String permission;
 
-    protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, boolean projectParameterRequired) {
-        this(actionName, dbClient, componentFinder, userSession, projectParameterRequired, UserRole.ADMIN);
+    protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
+        this(actionName, dbClient, componentFinder, userSession, UserRole.ADMIN);
     }
 
-    protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, boolean projectParameterRequired, String permission) {
+    protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, String permission) {
         super();
         this.actionName = actionName;
         this.dbClient = dbClient;
         this.componentFinder = componentFinder;
         this.userSession = userSession;
-        this.projectParameterRequired = projectParameterRequired;
         this.permission = permission;
     }
 
     @Override
     public void define(WebService.NewController context) {
         WebService.NewAction action = context.createAction(actionName).setHandler(this);
-        action.createParam(PROJECT_PARAMETER).setRequired(projectParameterRequired);
+        action.createParam(PROJECT_PARAMETER).setRequired(true);
 
         configureAction(action);
     }
@@ -69,20 +65,11 @@ public abstract class ProjectWsAction implements AlmSettingsWsAction {
 
     @Override
     public void handle(Request request, Response response) {
-        Optional<String> projectKey = Optional.ofNullable(request.param(PROJECT_PARAMETER));
+        String projectKey = request.mandatoryParam(PROJECT_PARAMETER);
 
         try (DbSession dbSession = dbClient.openSession(false)) {
-            ProjectDto project;
-            if (projectKey.isPresent()) {
-                project = componentFinder.getProjectByKey(dbSession, projectKey.get());
-                userSession.checkProjectPermission(permission, project);
-            } else {
-                if (projectParameterRequired) {
-                    throw new IllegalArgumentException("The 'project' parameter is missing");
-                } else {
-                    project = null;
-                }
-            }
+            ProjectDto project = componentFinder.getProjectByKey(dbSession, projectKey);
+            userSession.checkProjectPermission(permission, project);
             handleProjectRequest(project, request, response, dbSession);
         }
     }

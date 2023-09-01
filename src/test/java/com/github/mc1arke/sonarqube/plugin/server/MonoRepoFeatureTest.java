@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2022 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,23 +18,22 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server;
 
-import org.sonar.server.branch.BranchFeatureExtension;
+import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Enables branch management in SonarQube.
- *
- * @author Michael Clarke
- */
-public class CommunityBranchFeatureExtension implements BranchFeatureExtension {
+import org.junit.jupiter.api.Test;
 
-    @Override
-    public String getName() {
-        return "branch-support";
+class MonoRepoFeatureTest {
+
+    private final MonoRepoFeature underTest = new MonoRepoFeature();
+
+    @Test
+    void shouldMatchNameRequiredByFrontEnd() {
+        assertThat(underTest.getName()).isEqualTo("monorepo");
     }
 
-    @Override
-    public boolean isEnabled() {
-        return true;
+    @Test
+    void shouldSetFeatureAsEnabled() {
+        assertThat(underTest.isEnabled()).isTrue();
     }
 
 }

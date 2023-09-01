@@ -132,7 +132,7 @@ class GithubPullRequestDecoratorTest {
                 .usingRecursiveComparison()
                         .isEqualTo(CheckRunDetails.builder()
                                 .withTitle("Quality Gate success")
-                                .withName("Project Name Sonarqube Results")
+                                .withName("SonarQube Results")
                                 .withExternalId("analysis-id")
                                 .withPullRequestId(123)
                                 .withStartTime(clock.instant().atZone(ZoneId.of("UTC")))
