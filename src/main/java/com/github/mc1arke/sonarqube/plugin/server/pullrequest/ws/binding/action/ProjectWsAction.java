@@ -69,7 +69,7 @@ public abstract class ProjectWsAction implements AlmSettingsWsAction {
 
         try (DbSession dbSession = dbClient.openSession(false)) {
             ProjectDto project = componentFinder.getProjectByKey(dbSession, projectKey);
-            userSession.checkProjectPermission(permission, project);
+            userSession.checkChildProjectsPermission(permission, project);
             handleProjectRequest(project, request, response, dbSession);
         }
     }

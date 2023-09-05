@@ -19,6 +19,7 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.ac
 
 import static org.sonar.server.user.AbstractUserSession.insufficientPrivilegesException;
 
+import com.github.mc1arke.sonarqube.plugin.util.CommunityMoreCollectors;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -89,13 +90,13 @@ public class ListAction extends ProjectWsAction {
                 .map(BranchDto::getMergeBranchUuid)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()))
-            .stream().collect(MoreCollectors.uniqueIndex(BranchDto::getUuid));
+            .stream().collect(CommunityMoreCollectors.uniqueIndex(BranchDto::getUuid));
 
         Map<String, LiveMeasureDto> qualityGateMeasuresByComponentUuids = getDbClient().liveMeasureDao()
             .selectByComponentUuidsAndMetricKeys(dbSession, pullRequestUuids, List.of(CoreMetrics.ALERT_STATUS_KEY)).stream()
-            .collect(MoreCollectors.uniqueIndex(LiveMeasureDto::getComponentUuid));
+            .collect(CommunityMoreCollectors.uniqueIndex(LiveMeasureDto::getComponentUuid));
         Map<String, String> analysisDateByBranchUuid = getDbClient().snapshotDao().selectLastAnalysesByRootComponentUuids(dbSession, pullRequestUuids).stream()
-            .collect(MoreCollectors.uniqueIndex(SnapshotDto::getComponentUuid, s -> DateUtils.formatDateTime(s.getCreatedAt())));
+            .collect(CommunityMoreCollectors.uniqueIndex(SnapshotDto::getUuid, s -> DateUtils.formatDateTime(s.getCreatedAt())));
 
         ProjectPullRequests.ListWsResponse.Builder protobufResponse = ProjectPullRequests.ListWsResponse.newBuilder();
         pullRequests
@@ -105,8 +106,8 @@ public class ListAction extends ProjectWsAction {
     }
 
     private static void checkPermission(ProjectDto project, UserSession userSession) {
-        if (userSession.hasProjectPermission(UserRole.USER, project) ||
-            userSession.hasProjectPermission(UserRole.SCAN, project) ||
+        if (userSession.hasChildProjectsPermission(UserRole.USER, project) ||
+            userSession.hasChildProjectsPermission(UserRole.SCAN, project) ||
             userSession.hasPermission(GlobalPermission.SCAN)) {
             return;
         }

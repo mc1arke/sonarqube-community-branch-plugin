@@ -96,7 +96,7 @@ public class CommunityBranchSupportDelegate implements BranchSupportDelegate {
             .setUuid(branchUuid)
             .setBranchUuid(branchUuid)
             .setUuidPath(ComponentDto.UUID_PATH_OF_ROOT)
-            .setMainBranchProjectUuid(mainComponentDto.uuid())
+            .setBranchUuid(mainComponentDto.uuid())
             .setCreatedAt(new Date(clock.millis()));
         dbClient.componentDao().insert(dbSession, componentDto, false);
 
