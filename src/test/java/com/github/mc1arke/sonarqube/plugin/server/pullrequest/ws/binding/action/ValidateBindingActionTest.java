@@ -203,6 +203,6 @@ class ValidateBindingActionTest {
         underTest.handle(request, response);
 
         verify(validator).validate(projectAlmSettingDto, almSettingDto);
-        verify(userSession).checkProjectPermission(UserRole.USER, projectDto);
+        verify(userSession).hasEntityPermission(UserRole.USER, projectDto);
     }
 }

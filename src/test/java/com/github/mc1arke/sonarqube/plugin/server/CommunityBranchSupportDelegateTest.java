@@ -156,7 +156,6 @@ class CommunityBranchSupportDelegateTest {
         when(copyComponentDto.setKey(any())).thenReturn(copyComponentDto);
         when(copyComponentDto.setUuidPath(any())).thenReturn(copyComponentDto);
         when(copyComponentDto.setUuid(any())).thenReturn(copyComponentDto);
-        when(copyComponentDto.setMainBranchProjectUuid(any())).thenReturn(copyComponentDto);
         when(copyComponentDto.setCreatedAt(any())).thenReturn(copyComponentDto);
 
         BranchDto branchDto = mock(BranchDto.class);
@@ -186,7 +185,6 @@ class CommunityBranchSupportDelegateTest {
         verify(componentDao).insert(dbSession, copyComponentDto, false);
         verify(copyComponentDto).setUuid("uuid0");
         verify(copyComponentDto).setUuidPath(".");
-        verify(copyComponentDto).setMainBranchProjectUuid("componentUuid");
         verify(copyComponentDto).setCreatedAt(new Date(12345678901234L));
 
         assertThat(result).isSameAs(copyComponentDto);

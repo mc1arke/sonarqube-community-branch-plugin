@@ -89,7 +89,7 @@ class DeleteBindingActionTest {
         verify(dbSession).commit();
         verify(projectAlmSettingDao).deleteByProject(dbSession, componentDto);
         verify(response).noContent();
-        verify(userSession).checkProjectPermission("admin", componentDto);
+        verify(userSession).hasEntityPermission("admin", componentDto);
 
     }
 

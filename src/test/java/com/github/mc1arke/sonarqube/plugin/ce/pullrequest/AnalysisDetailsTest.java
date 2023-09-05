@@ -174,15 +174,13 @@ class AnalysisDetailsTest {
         QualityGate.Condition condition3 = mock(QualityGate.Condition.class);
         when(condition3.getStatus()).thenReturn(QualityGate.EvaluationStatus.NO_VALUE);
         QualityGate.Condition condition4 = mock(QualityGate.Condition.class);
-        when(condition4.getStatus()).thenReturn(QualityGate.EvaluationStatus.WARN);
-        QualityGate.Condition condition5 = mock(QualityGate.Condition.class);
-        when(condition5.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition4.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
 
-        when(qualityGate.getConditions()).thenReturn(List.of(condition1, condition2, condition3, condition4, condition5));
+        when(qualityGate.getConditions()).thenReturn(List.of(condition1, condition2, condition3, condition4));
 
         AnalysisDetails underTest = new AnalysisDetails("pullRequest", "commit", List.of(), qualityGate, mock(PostProjectAnalysisTask.ProjectAnalysis.class));
 
-        assertThat(underTest.findFailedQualityGateConditions()).isEqualTo(List.of(condition2, condition5));
+        assertThat(underTest.findFailedQualityGateConditions()).isEqualTo(List.of(condition2, condition4));
     }
 
     @Test

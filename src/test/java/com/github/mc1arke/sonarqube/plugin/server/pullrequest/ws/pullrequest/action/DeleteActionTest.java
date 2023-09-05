@@ -37,6 +37,7 @@ import org.sonar.db.DbClient;
 import org.sonar.db.component.BranchDao;
 import org.sonar.db.component.BranchDto;
 import org.sonar.db.component.BranchType;
+import org.sonar.db.entity.EntityDto;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentCleanerService;
 import org.sonar.server.component.ComponentFinder;
@@ -129,7 +130,7 @@ class DeleteActionTest {
         when(componentFinder.getProjectByKey(any(), any())).thenReturn(new ProjectDto().setKey("projectKey").setUuid("uuid0"));
 
         when(userSession.checkLoggedIn()).thenReturn(userSession);
-        when(userSession.checkProjectPermission(any(), any())).thenThrow(new UnauthorizedException("Dummy"));
+        when(userSession.hasEntityPermission(any(), any(EntityDto.class))).thenThrow(new UnauthorizedException("Dummy"));
 
         Response response = mock(Response.class);
 
