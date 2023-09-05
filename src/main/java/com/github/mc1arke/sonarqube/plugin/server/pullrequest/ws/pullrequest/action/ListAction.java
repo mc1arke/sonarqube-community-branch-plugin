@@ -106,8 +106,8 @@ public class ListAction extends ProjectWsAction {
     }
 
     private static void checkPermission(ProjectDto project, UserSession userSession) {
-        if (userSession.hasChildProjectsPermission(UserRole.USER, project) ||
-            userSession.hasChildProjectsPermission(UserRole.SCAN, project) ||
+        if (userSession.hasEntityPermission(UserRole.USER, project) ||
+            userSession.hasEntityPermission(UserRole.SCAN, project) ||
             userSession.hasPermission(GlobalPermission.SCAN)) {
             return;
         }
