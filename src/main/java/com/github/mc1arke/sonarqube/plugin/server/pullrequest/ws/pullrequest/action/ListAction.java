@@ -115,12 +115,15 @@ public class ListAction extends ProjectWsAction {
 
     private static void addPullRequest(ProjectPullRequests.ListWsResponse.Builder response, BranchDto branch, Map<String, BranchDto> mergeBranchesByUuid,
                                        @Nullable LiveMeasureDto qualityGateMeasure, @Nullable String analysisDate) {
+        DbProjectBranches.PullRequestData pullRequestData = branch.getPullRequestData();
+
+        if (pullRequestData == null) return;
+
         Optional<BranchDto> mergeBranch = Optional.ofNullable(mergeBranchesByUuid.get(branch.getMergeBranchUuid()));
 
         ProjectPullRequests.PullRequest.Builder builder = ProjectPullRequests.PullRequest.newBuilder();
         builder.setKey(branch.getKey());
 
-        DbProjectBranches.PullRequestData pullRequestData = Objects.requireNonNull(branch.getPullRequestData(), "Pull request data should be available for branch type PULL_REQUEST");
         builder.setBranch(pullRequestData.getBranch());
         Optional.ofNullable(Strings.emptyToNull(pullRequestData.getUrl())).ifPresent(builder::setUrl);
         Optional.ofNullable(Strings.emptyToNull(pullRequestData.getTitle())).ifPresent(builder::setTitle);
