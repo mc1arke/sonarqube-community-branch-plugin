@@ -86,7 +86,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
                     dbClient.projectAlmSettingDao().selectByProject(dbSession, projectAnalysis.getProject().getUuid());
 
             if (optionalProjectAlmSettingDto.isEmpty()) {
-                LOGGER.info("No ALM has been set on the current project, try using default hardcoded PayPay values");
+                LOGGER.info("No ALM has been set on the current project; using default hardcoded PayPay values");
 
                 ProjectAlmSettingDto paypayAlmSettingsDto = new ProjectAlmSettingDto();
                 paypayAlmSettingsDto.setAlmRepo(projectAnalysis.getScannerContext().getProperties().getOrDefault(
