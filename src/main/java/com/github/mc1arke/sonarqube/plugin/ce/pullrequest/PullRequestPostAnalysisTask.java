@@ -73,20 +73,44 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             LOGGER.warn("No pull request ID has been submitted with the Pull Request. Analysis will be skipped");
             return;
         }
-        ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto();
 
         String enablePrDecoration = Optional.ofNullable(System.getenv("ENABLE_PR_DECORATION"))
                 .orElse(projectAnalysis.getScannerContext().getProperties().getOrDefault("sonar.analysis.enableprdecoration", "true"));
         LOGGER.info("sonar.analysis.enableprdecoration: {}", enablePrDecoration);
+
+        ProjectAlmSettingDto projectAlmSettingDto;
         Optional<AlmSettingDto> optionalAlmSettingDto;
         try (DbSession dbSession = dbClient.openSession(false)) {
-            projectAlmSettingDto.setAlmRepo(projectAnalysis.getScannerContext().getProperties().getOrDefault(
-					"sonar.pullrequest.github.repository", "Pay-Baymax/" + projectAnalysis.getProject().getKey()));
-            projectAlmSettingDto.setAlmSettingUuid("AXxy3BubdvWBwkcdvIfk");
-            projectAlmSettingDto.setAlmSlug("");
-            projectAlmSettingDto.setProjectUuid(projectAnalysis.getProject().getUuid());
-            projectAlmSettingDto.setSummaryCommentEnabled(Boolean.parseBoolean(enablePrDecoration));
-            optionalAlmSettingDto = dbClient.almSettingDao().selectByUuid(dbSession, "AXxy3BubdvWBwkcdvIfk");
+
+            Optional<ProjectAlmSettingDto> optionalProjectAlmSettingDto =
+                    dbClient.projectAlmSettingDao().selectByProject(dbSession, projectAnalysis.getProject().getUuid());
+
+            if (optionalProjectAlmSettingDto.isEmpty()) {
+                LOGGER.info("No ALM has been set on the current project, try using default hardcoded PayPay values");
+
+                ProjectAlmSettingDto paypayAlmSettingsDto = new ProjectAlmSettingDto();
+                paypayAlmSettingsDto.setAlmRepo(projectAnalysis.getScannerContext().getProperties().getOrDefault(
+					    "sonar.pullrequest.github.repository", "Pay-Baymax/" + projectAnalysis.getProject().getKey()));
+                paypayAlmSettingsDto.setAlmSettingUuid("AXxy3BubdvWBwkcdvIfk");
+                paypayAlmSettingsDto.setAlmSlug("");
+                paypayAlmSettingsDto.setProjectUuid(projectAnalysis.getProject().getUuid());
+                paypayAlmSettingsDto.setSummaryCommentEnabled(Boolean.parseBoolean(enablePrDecoration));
+
+                optionalProjectAlmSettingDto = Optional.of(paypayAlmSettingsDto);
+            }
+
+            projectAlmSettingDto = optionalProjectAlmSettingDto.get();
+
+            LOGGER.info("FINAL ALM:" +
+                    " projectUuid=" + projectAlmSettingDto.getProjectUuid() +
+                    " almSettingsUuid=" + projectAlmSettingDto.getAlmSettingUuid() +
+                    " almRepo=" + projectAlmSettingDto.getAlmRepo() +
+                    " almSlug=" + projectAlmSettingDto.getAlmSlug() +
+                    " monorepo=" + projectAlmSettingDto.getMonorepo() +
+                    " summaryCommentEnabled=" + projectAlmSettingDto.getSummaryCommentEnabled());
+
+            String almSettingUuid = projectAlmSettingDto.getAlmSettingUuid();
+            optionalAlmSettingDto = dbClient.almSettingDao().selectByUuid(dbSession, almSettingUuid);
 
         }
 
