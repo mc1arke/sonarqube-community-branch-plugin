@@ -91,7 +91,7 @@ public class CommunityBranchLoaderDelegateTest {
         when(branchDto.isMain()).thenReturn(false);
 
         BranchDao branchDao = mock(BranchDao.class);
-        when(branchDao.selectByUuid(any(), any())).thenReturn(Optional.of(branchDto));
+        when(branchDao.selectMainBranchByProjectUuid(any(), any())).thenReturn(Optional.of(branchDto));
 
         ScannerReport.Metadata metadata = ScannerReport.Metadata.getDefaultInstance();
         when(dbClient.branchDao()).thenReturn(branchDao);
@@ -118,7 +118,7 @@ public class CommunityBranchLoaderDelegateTest {
         verify(dbClient).openSession(anyBoolean());
         verifyNoMoreInteractions(dbClient);
 
-        verify(branchDao).selectByUuid(any(), any());
+        verify(branchDao).selectMainBranchByProjectUuid(any(), any());
         verifyNoMoreInteractions(branchDao);
     }
 
