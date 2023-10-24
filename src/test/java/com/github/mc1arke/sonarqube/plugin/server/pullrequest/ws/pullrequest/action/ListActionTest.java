@@ -118,7 +118,12 @@ class ListActionTest {
                     .setBranch("prBranch2")
                     .setTitle("title3")
                     .setUrl("url3")
-                    .build())));
+                    .build()),
+                new BranchDto()
+                        .setBranchType(BranchType.PULL_REQUEST)
+                        .setKey("prKey4")
+                        .setUuid("uuid5")
+                        .setMergeBranchUuid("uuid2")));
 
         when(branchDao.selectByUuids(any(), any())).thenReturn(List.of(new BranchDto()
             .setUuid("uuid2")

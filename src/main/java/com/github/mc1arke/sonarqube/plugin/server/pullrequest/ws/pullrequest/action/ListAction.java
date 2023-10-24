@@ -19,20 +19,21 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.ac
 
 import static org.sonar.server.user.AbstractUserSession.insufficientPrivilegesException;
 
+import com.google.common.base.Strings;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nullable;
-
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.api.utils.DateUtils;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 import org.sonar.api.web.UserRole;
 import org.sonar.core.util.stream.MoreCollectors;
 import org.sonar.db.DbClient;
@@ -51,9 +52,9 @@ import org.sonar.server.ws.WsUtils;
 import org.sonarqube.ws.ProjectPullRequests;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.google.common.base.Strings;
-
 public class ListAction extends ProjectWsAction {
+
+    private static final Logger logger = Loggers.get(ListAction.class);
 
     private final UserSession userSession;
     private final ProtoBufWriter protoBufWriter;
@@ -120,7 +121,12 @@ public class ListAction extends ProjectWsAction {
         ProjectPullRequests.PullRequest.Builder builder = ProjectPullRequests.PullRequest.newBuilder();
         builder.setKey(branch.getKey());
 
-        DbProjectBranches.PullRequestData pullRequestData = Objects.requireNonNull(branch.getPullRequestData(), "Pull request data should be available for branch type PULL_REQUEST");
+        DbProjectBranches.PullRequestData pullRequestData = branch.getPullRequestData();
+        if (pullRequestData == null) {
+            logger.info("No pull request data available for branch of type PULL_REQUEST with key '%s'", branch.getKey());
+            return;
+        }
+
         builder.setBranch(pullRequestData.getBranch());
         Optional.ofNullable(Strings.emptyToNull(pullRequestData.getUrl())).ifPresent(builder::setUrl);
         Optional.ofNullable(Strings.emptyToNull(pullRequestData.getTitle())).ifPresent(builder::setTitle);
