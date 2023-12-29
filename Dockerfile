@@ -1,6 +1,6 @@
 ARG SONARQUBE_VERSION
 
-FROM gradle:7.3.3-jdk11-alpine as builder
+FROM gradle:7.3.3-jdk17-alpine as builder
 
 COPY . /home/build/project
 WORKDIR /home/build/project
