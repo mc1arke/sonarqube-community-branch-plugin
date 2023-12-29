@@ -117,8 +117,10 @@ public class ListAction extends ProjectWsAction {
                                        @Nullable LiveMeasureDto qualityGateMeasure, @Nullable String analysisDate) {
         DbProjectBranches.PullRequestData pullRequestData = branch.getPullRequestData();
         
-        if (pullRequestData == null) return;
-
+        if (pullRequestData == null) {
+            return;
+        }
+        
         Optional<BranchDto> mergeBranch = Optional.ofNullable(mergeBranchesByUuid.get(branch.getMergeBranchUuid()));
 
         ProjectPullRequests.PullRequest.Builder builder = ProjectPullRequests.PullRequest.newBuilder();

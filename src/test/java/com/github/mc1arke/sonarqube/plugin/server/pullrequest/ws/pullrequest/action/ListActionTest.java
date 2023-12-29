@@ -178,7 +178,7 @@ class ListActionTest {
     }
 
     @Test
-    void shouldExExcludePullRequestsWithoutData() {
+    void shouldExcludePullRequestsWithoutData() {
         Request request = mock(Request.class);
         when(request.mandatoryParam("project")).thenReturn("project");
 
