@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2023 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,9 +42,9 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSu
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 
 public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestDecorator<AzureDevopsClient, PullRequest, Void, CommentThread, Comment> implements PullRequestBuildStatusDecorator {
 
-    private static final Logger logger = Loggers.get(AzureDevOpsPullRequestDecorator.class);
+    private static final Logger logger = LoggerFactory.getLogger(AzureDevOpsPullRequestDecorator.class);
     private static final Pattern NOTE_MARKDOWN_LEGACY_SEE_LINK_PATTERN = Pattern.compile("^\\[See in SonarQube]\\((.*?)\\)$");
     private final AzureDevopsClientFactory azureDevopsClientFactory;
     private final MarkdownFormatterFactory markdownFormatterFactory;

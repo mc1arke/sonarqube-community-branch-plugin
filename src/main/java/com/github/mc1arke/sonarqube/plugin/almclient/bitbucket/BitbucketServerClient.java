@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2023 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,8 +37,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 
 class BitbucketServerClient implements BitbucketClient {
-    private static final Logger LOGGER = Loggers.get(BitbucketServerClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BitbucketServerClient.class);
     private static final MediaType APPLICATION_JSON_MEDIA_TYPE = MediaType.get("application/json");
     private static final String TITLE = "SonarQube";
     private static final String REPORTER = "SonarQube";
@@ -140,12 +140,16 @@ class BitbucketServerClient implements BitbucketClient {
     public boolean supportsCodeInsights() {
         try {
             ServerProperties server = getServerProperties();
-            LOGGER.debug(format("Your Bitbucket Server installation is version %s", server.getVersion()));
+            LOGGER.atDebug()
+                    .setMessage("Your Bitbucket Server installation is version {}")
+                    .addArgument(server::getVersion)
+                    .log();
             if (server.hasCodeInsightsApi()) {
                 return true;
             } else {
-                LOGGER.info("Bitbucket Server version is to old. %s is the minimum version that supports Code Insights",
-                        ServerProperties.CODE_INSIGHT_VERSION);
+                LOGGER.atInfo().setMessage("Bitbucket Server version is to old. {} is the minimum version that supports Code Insights")
+                        .addArgument(ServerProperties.CODE_INSIGHT_VERSION)
+                        .log();
             }
         } catch (IOException e) {
             LOGGER.error("Could not determine Bitbucket Server version", e);

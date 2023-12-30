@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,12 +18,12 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.Branch;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.ALM;
@@ -38,7 +38,7 @@ import java.util.Optional;
 
 public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
 
-    private static final Logger LOGGER = Loggers.get(PullRequestPostAnalysisTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PullRequestPostAnalysisTask.class);
 
     private final List<PullRequestBuildStatusDecorator> pullRequestDecorators;
     private final PostAnalysisIssueVisitor postAnalysisIssueVisitor;
@@ -60,7 +60,8 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
     @Override
     public void finished(Context context) {
         ProjectAnalysis projectAnalysis = context.getProjectAnalysis();
-        LOGGER.debug("Found " + pullRequestDecorators.size() + " pull request decorators");
+        LOGGER.atDebug().setMessage("Found {} pull request decorators").addArgument(pullRequestDecorators::size).log();
+
         Optional<Branch> optionalPullRequest =
                 projectAnalysis.getBranch().filter(branch -> Branch.Type.PULL_REQUEST == branch.getType());
         if (optionalPullRequest.isEmpty()) {
@@ -134,7 +135,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
                                     postAnalysisIssueVisitor.getIssues(), qualityGate, projectAnalysis);
 
         PullRequestBuildStatusDecorator pullRequestDecorator = optionalPullRequestDecorator.get();
-        LOGGER.info("Using pull request decorator " + pullRequestDecorator.getClass().getName());
+        LOGGER.info("Using pull request decorator {}", pullRequestDecorator.getClass().getName());
         DecorationResult decorationResult = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         decorationResult.getPullRequestUrl().ifPresent(pullRequestUrl -> persistPullRequestUrl(pullRequestUrl, projectAnalysis, optionalPullRequestId.get()));
@@ -151,7 +152,7 @@ public class PullRequestPostAnalysisTask implements PostProjectAnalysisTask {
             }
         }
 
-        LOGGER.warn("No decorator could be found matching " + alm);
+        LOGGER.warn("No decorator could be found matching {}", alm);
         return Optional.empty();
     }
 
