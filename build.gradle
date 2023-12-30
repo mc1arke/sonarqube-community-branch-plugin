@@ -20,7 +20,7 @@ plugins {
     id('java')
     id('jacoco')
     id('org.sonarqube') version('2.8')
-    id('info.solidsoft.pitest') version('1.4.0')
+    id('info.solidsoft.pitest') version('1.15.0')
     id('com.github.johnrengelman.shadow') version('5.1.0')
     id('net.researchgate.release') version('2.6.0')
 }
@@ -134,8 +134,9 @@ tasks.withType(JavaCompile) {
 assemble.dependsOn('shadowJar')
 
 pitest {
+    junit5PluginVersion = '1.2.1'
     timestampedReports = false
-    avoidCallsTo = ['org.sonar.api.utils.log.Logger']
+    avoidCallsTo = ['org.slf4j.Logger']
 }
 
 jacocoTestReport {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2023 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,11 +28,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.ce.ComputeEngineSide;
 import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -45,7 +45,7 @@ import static java.lang.String.format;
 @ComputeEngineSide
 public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
 
-    private static final Logger LOGGER = Loggers.get(DefaultBitbucketClientFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultBitbucketClientFactory.class);
 
     private final HttpClientBuilderFactory httpClientBuilderFactory;
     private final Settings settings;

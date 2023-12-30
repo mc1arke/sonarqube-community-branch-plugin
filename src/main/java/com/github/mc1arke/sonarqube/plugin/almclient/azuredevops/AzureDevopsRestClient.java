@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2023 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,8 +36,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -49,7 +49,7 @@ import java.util.function.Supplier;
 
 public class AzureDevopsRestClient implements AzureDevopsClient {
 
-    private static final Logger LOGGER = Loggers.get(AzureDevopsRestClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AzureDevopsRestClient.class);
     private static final String API_VERSION = "4.1";
     private static final String API_VERSION_PREVIEW = API_VERSION + "-preview";
 
@@ -143,21 +143,20 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
             return;
         }
 
-        String responseContent = Optional.ofNullable(httpResponse.getEntity()).map(entity -> {
-            try {
-                return EntityUtils.toString(entity, StandardCharsets.UTF_8);
-            } catch (IOException ex) {
-                LOGGER.warn("Could not decode response entity", ex);
-                return "";
-            }
-        }).orElse("");
+        LOGGER.atError().setMessage("Azure Devops response status did not match expected value. Expected: 200 {}{}{}{}")
+                .addArgument(System::lineSeparator)
+                .addArgument(httpResponse::getStatusLine)
+                .addArgument(System::lineSeparator)
+                .addArgument(() -> Optional.ofNullable(httpResponse.getEntity()).map(entity -> {
+                    try {
+                        return EntityUtils.toString(entity, StandardCharsets.UTF_8);
+                    } catch (IOException ex) {
+                        LOGGER.warn("Could not decode response entity", ex);
+                        return "";
+                    }
+                }).orElse(""))
+                .log();
 
-
-        LOGGER.error("Azure Devops response status did not match expected value. Expected: 200"
-                + System.lineSeparator()
-                + httpResponse.getStatusLine().toString()
-                + System.lineSeparator()
-                + responseContent);
 
         throw new IllegalStateException("An unexpected response code was returned from the Azure Devops API - Expected: 200, Got: " + httpResponse.getStatusLine().getStatusCode());
     }

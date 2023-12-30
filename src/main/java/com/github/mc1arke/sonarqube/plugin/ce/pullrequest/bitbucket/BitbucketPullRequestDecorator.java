@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2023 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,12 +34,12 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
 import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.Issue;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -61,7 +61,7 @@ import static java.util.stream.Collectors.toSet;
 
 public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
-    private static final Logger LOGGER = Loggers.get(BitbucketPullRequestDecorator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BitbucketPullRequestDecorator.class);
 
     private static final DecorationResult DEFAULT_DECORATION_RESULT = DecorationResult.builder().build();
 
