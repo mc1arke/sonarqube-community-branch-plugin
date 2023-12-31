@@ -160,11 +160,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       -
-        name: Sonar
+        name: Test and Sonar
         if: ${{ env.SONAR_TOKEN != null }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ./gradlew sonarqube \
+            ./gradlew test sonar \
+              -Dsonar.gradle.skipCompile=true \
               -Dsonar.pullrequest.provider=github \
               -Dsonar.pullrequest.github.repository=${{ github.repository }} \
               -Dsonar.host.url=https://sonarcloud.io \
@@ -173,7 +174,8 @@ jobs:
               -Dsonar.pullrequest.key=${{ github.event.number }} \
               -Dsonar.pullrequest.base=${{ github.base_ref }}
           elif [ "${{ needs.prep.outputs.release }}" = 'true' ]; then
-            ./gradlew sonarqube \
+            ./gradlew test sonar \
+              -Dsonar.gradle.skipCompile=true \
               -Dsonar.pullrequest.provider=github \
               -Dsonar.pullrequest.github.repository=${{ github.repository }} \
               -Dsonar.host.url=https://sonarcloud.io \
@@ -181,7 +183,8 @@ jobs:
               -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
               -Dsonar.projectVersion=${{ needs.prep.outputs.version }}
           else
-            ./gradlew sonarqube \
+            ./gradlew test sonar \
+              -Dsonar.gradle.skipCompile=true \
               -Dsonar.pullrequest.provider=github \
               -Dsonar.pullrequest.github.repository=${{ github.repository }} \
               -Dsonar.host.url=https://sonarcloud.io \
