@@ -19,10 +19,10 @@
 plugins {
     id('java')
     id('jacoco')
-    id('org.sonarqube') version('2.8')
+    id('org.sonarqube') version('4.4.1.3373')
     id('info.solidsoft.pitest') version('1.15.0')
-    id('com.github.johnrengelman.shadow') version('5.1.0')
-    id('net.researchgate.release') version('2.6.0')
+    id('com.github.johnrengelman.shadow') version('8.1.1')
+    id('net.researchgate.release') version('3.0.2')
 }
 
 group 'com.github.mc1arke.sonarqube.plugin'
@@ -112,18 +112,18 @@ jar {
 
 release {
     git {
-        requireBranch = ''
-        commitVersionFileOnly = true
+        requireBranch.set('')
+        commitVersionFileOnly.set(true)
     }
 }
 
 tasks.jar.configure {
-    classifier = 'nodeps'
+    archiveClassifier = 'nodeps'
     enabled = false
 }
 
 tasks.shadowJar.configure {
-    classifier = null
+    archiveClassifier = null
 }
 
 tasks.withType(JavaCompile) {
