@@ -115,6 +115,7 @@ release {
         requireBranch.set('')
         commitVersionFileOnly.set(true)
     }
+    buildTasks.set(["assemble"])
 }
 
 tasks.jar.configure {
