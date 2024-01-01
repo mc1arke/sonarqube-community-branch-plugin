@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -118,7 +118,12 @@ class ListActionTest {
                     .setBranch("prBranch2")
                     .setTitle("title3")
                     .setUrl("url3")
-                    .build())));
+                    .build()),
+            new BranchDto()
+                .setBranchType(BranchType.PULL_REQUEST)
+                .setKey("prKey4")
+                .setUuid("uuid5")
+                .setMergeBranchUuid("uuid2")));
 
         when(branchDao.selectByUuids(any(), any())).thenReturn(List.of(new BranchDto()
             .setUuid("uuid2")
@@ -164,6 +169,12 @@ class ListActionTest {
                 .setStatus(ProjectPullRequests.Status.newBuilder()
                     .build())
                 .setUrl("url3")
+                .setTarget("branch2Key")
+                .build())
+            .addPullRequests(ProjectPullRequests.PullRequest.newBuilder()
+                .setKey("prKey4")
+                .setBase("branch2Key")
+                .setStatus(ProjectPullRequests.Status.newBuilder().build())
                 .setTarget("branch2Key")
                 .build())
             .build();

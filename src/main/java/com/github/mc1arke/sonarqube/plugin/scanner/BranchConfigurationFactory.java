@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,13 +40,9 @@ public class BranchConfigurationFactory {
     }
 
     public BranchConfiguration createPullRequestConfiguration(String pullRequestKey, String pullRequestBranch, String pullRequestBase, ProjectBranches branches) {
-        if (branches.isEmpty()) {
-            return new CommunityBranchConfiguration(pullRequestBranch, BranchType.PULL_REQUEST, null, pullRequestBase, pullRequestKey);
-        }
-
-        String referenceBranch = branches.get(pullRequestBase) == null ? branches.defaultBranchName() : findReferenceBranch(pullRequestBase, branches);
-        return new CommunityBranchConfiguration(pullRequestBranch, BranchType.PULL_REQUEST, referenceBranch, pullRequestBase, pullRequestKey);
-
+        String targetBranch = Optional.ofNullable(pullRequestBase).orElse(branches.defaultBranchName());
+        String referenceBranch = findReferenceBranch(targetBranch, branches);
+        return new CommunityBranchConfiguration(pullRequestBranch, BranchType.PULL_REQUEST, referenceBranch, targetBranch, pullRequestKey);
     }
 
     private static String findReferenceBranch(String targetBranch, ProjectBranches branches) {
