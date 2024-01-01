@@ -23,17 +23,13 @@ Use the following table to find the correct plugin version for each SonarQube ve
 
 SonarQube Version | Plugin Version
 ------------------|---------------
-9.8+              | 1.14.0
-9.7               | 1.13.0
-9.1 - 9.6         | 1.12.0
-9.0               | 1.9.0
-8.9               | 1.8.3
-8.7 - 8.8         | 1.7.0
-8.5 - 8.6         | 1.6.0
-8.2 - 8.4         | 1.5.0
-8.1               | 1.4.0
-7.8 - 8.0         | 1.3.2
-7.4 - 7.7         | 1.0.2
+10.3              | 1.18.0
+10.2              | 1.17.1
+10.1              | 1.16.0
+10.0              | 1.15.0
+9.9 (LTS)         | 1.14.0
+
+Older versions are listed on the Github release page but are no longer supported.
 
 # Features
 
