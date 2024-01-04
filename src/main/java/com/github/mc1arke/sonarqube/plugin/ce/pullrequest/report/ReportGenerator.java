@@ -90,9 +90,9 @@ public class ReportGenerator {
                 .withProjectKey(analysisDetails.getAnalysisProjectKey())
                 .withResolution(issue.resolution())
                 .withSeverity(issue.severity())
-                .withSeverityImageUrl(String.format("%s/checks/Severity/%s.svg?sanitize=true", baseImageUrl, issue.severity().toLowerCase()))
+                .withSeverityImageUrl(String.format("%s/checks/Severity/%s.png", baseImageUrl, issue.severity().toLowerCase()))
                 .withType(issue.type().name())
-                .withTypeImageUrl(String.format("%s/checks/IssueType/%s.svg?sanitize=true", baseImageUrl, issue.type().name().toLowerCase()))
+                .withTypeImageUrl(String.format("%s/checks/IssueType/%s.png", baseImageUrl, issue.type().name().toLowerCase()))
                 .build();
     }
 
@@ -131,10 +131,10 @@ public class ReportGenerator {
                 .withSummaryImageUrl(baseImageUrl + "/common/icon.png")
                 .withBugCount(issueCounts.get(RuleType.BUG))
                 .withBugUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.BUG))
-                .withBugImageUrl(baseImageUrl + "/common/bug.svg?sanitize=true")
+                .withBugImageUrl(baseImageUrl + "/common/bug.png")
                 .withCodeSmellCount(issueCounts.get(RuleType.CODE_SMELL))
                 .withCodeSmellUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.CODE_SMELL))
-                .withCodeSmellImageUrl(baseImageUrl + "/common/code_smell.svg?sanitize=true")
+                .withCodeSmellImageUrl(baseImageUrl + "/common/code_smell.png")
                 .withCoverage(coverage)
                 .withNewCoverage(newCoverage)
                 .withCoverageUrl(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_COVERAGE_KEY))
@@ -149,13 +149,13 @@ public class ReportGenerator {
                         .collect(Collectors.toList()))
                 .withStatusDescription(QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ? "Passed" : "Failed")
                 .withStatusImageUrl(QualityGate.Status.OK == analysisDetails.getQualityGateStatus()
-                        ? baseImageUrl + "/checks/QualityGateBadge/passed.svg?sanitize=true"
-                        : baseImageUrl + "/checks/QualityGateBadge/failed.svg?sanitize=true")
+                        ? baseImageUrl + "/checks/QualityGateBadge/passed.png"
+                        : baseImageUrl + "/checks/QualityGateBadge/failed.png")
                 .withTotalIssueCount(issueTotal)
                 .withSecurityHotspotCount(issueCounts.get(RuleType.SECURITY_HOTSPOT))
                 .withVulnerabilityCount(issueCounts.get(RuleType.VULNERABILITY))
                 .withVulnerabilityUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.VULNERABILITY))
-                .withVulnerabilityImageUrl(baseImageUrl + "/common/vulnerability.svg?sanitize=true")
+                .withVulnerabilityImageUrl(baseImageUrl + "/common/vulnerability.png")
                 .build();
     }
 
@@ -201,7 +201,7 @@ public class ReportGenerator {
 
     private static String createCoverageImage(BigDecimal coverage, String baseImageUrl) {
         if (null == coverage) {
-            return baseImageUrl + "/checks/CoverageChart/NoCoverageInfo.svg?sanitize=true";
+            return baseImageUrl + "/checks/CoverageChart/NoCoverageInfo.png";
         }
         BigDecimal matchedLevel = BigDecimal.ZERO;
         for (BigDecimal level : COVERAGE_LEVELS) {
@@ -210,12 +210,12 @@ public class ReportGenerator {
                 break;
             }
         }
-        return baseImageUrl + "/checks/CoverageChart/" + matchedLevel + ".svg?sanitize=true";
+        return baseImageUrl + "/checks/CoverageChart/" + matchedLevel + ".png";
     }
 
     private static String createDuplicateImage(BigDecimal duplications, String baseImageUrl) {
         if (null == duplications) {
-            return baseImageUrl + "/checks/Duplications/NoDuplicationInfo.svg?sanitize=true";
+            return baseImageUrl + "/checks/Duplications/NoDuplicationInfo.png";
         }
         String matchedLevel = "20plus";
         for (DuplicationMapping level : DUPLICATION_LEVELS) {
@@ -224,7 +224,7 @@ public class ReportGenerator {
                 break;
             }
         }
-        return baseImageUrl + "/checks/Duplications/" + matchedLevel + ".svg?sanitize=true";
+        return baseImageUrl + "/checks/Duplications/" + matchedLevel + ".png";
     }
 
     private static String formatQualityGateCondition(QualityGate.Condition condition) {
