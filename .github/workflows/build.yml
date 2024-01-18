@@ -55,7 +55,7 @@ jobs:
           distribution: 'zulu'
       -
         name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
@@ -92,7 +92,7 @@ jobs:
           distribution: 'zulu'
       -
         name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
@@ -153,7 +153,7 @@ jobs:
           distribution: 'zulu'
       -
         name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
