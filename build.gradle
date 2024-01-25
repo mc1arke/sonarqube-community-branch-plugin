@@ -62,7 +62,7 @@ tasks.withType(JavaCompile) {
 dependencies {
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
-    testImplementation('org.mockito:mockito-core:5.8.0')
+    testImplementation('org.mockito:mockito-core:5.10.0')
     testImplementation('org.assertj:assertj-core:3.25.1')
     testImplementation('org.wiremock:wiremock:3.3.1')
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
