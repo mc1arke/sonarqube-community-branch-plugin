@@ -67,6 +67,13 @@ __Note:__ If you're setting the `SONAR_WEB_JAVAADDITIONALOPTS` or `SONAR_CE_JAVA
 your container launch then you'll need to add the `javaagent` configuration to your overrides to match what's in the
 provided Dockerfile.
 
+## Docker Compose
+
+A `docker-compose.yml` file is provided.
+It uses the env variables available in `.env`.
+
+To use it, clone the repository and execute `docker-compose up`. Note that you need to have docker-compose installed in your system and added to your PATH
+
 ## Kubernetes with official Helm Chart
 
 When using
