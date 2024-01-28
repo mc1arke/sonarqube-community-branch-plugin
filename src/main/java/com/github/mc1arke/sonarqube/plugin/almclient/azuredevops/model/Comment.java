@@ -19,7 +19,7 @@ public class Comment {
                    @JsonProperty("commentType") CommentType commentType) {
         this.content = content;
         this.author = author;
-        this.commentType = commentType;
+        this.commentType = CommentType.TEXT;
     }
 
     /**
