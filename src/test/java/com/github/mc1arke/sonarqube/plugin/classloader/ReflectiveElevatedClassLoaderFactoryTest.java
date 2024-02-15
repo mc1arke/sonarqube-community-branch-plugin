@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNotSame;
  * @author Michael Clarke
  */
 public class ReflectiveElevatedClassLoaderFactoryTest {
-    
+
     private static final String TARGET_PLUGIN_CLASS = "org.sonar.plugins.java.JavaPlugin";
     private static final String BUNDLED_PLUGINS_DIRECTORY = "lib/extensions";
     private static final String SONARQUBE_LIB_DIRECTORY = "sonarqube-lib/";
@@ -54,10 +54,10 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
     public void testLoadClass() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_api_", getClass().getClassLoader());
-        builder.setMask("_api_", new Mask().addInclusion("java/").addInclusion("org/sonar/api/"));
+        builder.setMask("_api_", Mask.builder().include("java/", "org/sonar/api/").build());
 
         builder.newClassloader("_customPlugin");
-        builder.setParent("_customPlugin", "_api_", new Mask());
+        builder.setParent("_customPlugin", "_api_", Mask.ALL);
         builder.setLoadingOrder("_customPlugin", ClassloaderBuilder.LoadingOrder.SELF_FIRST);
 
         File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
@@ -84,10 +84,10 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
     public void testLoadClassInvalidClassRealmKey() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_xxx_", getClass().getClassLoader());
-        builder.setMask("_xxx_", new Mask().addInclusion("java/").addInclusion("org/sonar/api/"));
+        builder.setMask("_xxx_", Mask.builder().include("java/", "org/sonar/api/").build());
 
         builder.newClassloader("_customPlugin");
-        builder.setParent("_customPlugin", "_xxx_", new Mask());
+        builder.setParent("_customPlugin", "_xxx_", Mask.ALL);
         builder.setLoadingOrder("_customPlugin", ClassloaderBuilder.LoadingOrder.SELF_FIRST);
 
         File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
@@ -115,7 +115,7 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
     public void testLoadClassNoParentRef() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_xxx_", getClass().getClassLoader());
-        builder.setMask("_xxx_", new Mask());
+        builder.setMask("_xxx_", Mask.ALL);
 
         File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
 
@@ -141,7 +141,7 @@ public class ReflectiveElevatedClassLoaderFactoryTest {
     public void testLoadClassInvalidApiClassloader() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_customPlugin");
-        builder.setParent("_customPlugin", new URLClassLoader(new URL[0]), new Mask());
+        builder.setParent("_customPlugin", new URLClassLoader(new URL[0]), Mask.ALL);
         builder.setLoadingOrder("_customPlugin", ClassloaderBuilder.LoadingOrder.SELF_FIRST);
 
         File[] sonarQubeDistributions = new File(SONARQUBE_LIB_DIRECTORY).listFiles();
