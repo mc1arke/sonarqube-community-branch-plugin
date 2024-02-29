@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -78,6 +79,10 @@ public class CommunityRepositoryBranchesLoaderTest {
             "/api/project_branches/list?project=projectKey",
             new CommunityProjectBranchesLoader.BranchesResponse(new ArrayList<>())
         );
+        mockResponse(
+            "/api/project_pull_requests/list?project=projectKey",
+            new CommunityProjectBranchesLoader.PullRequestsResponse(new ArrayList<>())
+        );
 
         CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
         ProjectBranches response = testCase.load("projectKey");
@@ -94,6 +99,10 @@ public class CommunityRepositoryBranchesLoaderTest {
             "/api/project_branches/list?project=key",
             new CommunityProjectBranchesLoader.BranchesResponse(infos)
         );
+        mockResponse(
+            "/api/project_pull_requests/list?project=key",
+            new CommunityProjectBranchesLoader.PullRequestsResponse(new ArrayList<>())
+        );
 
         CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
         ProjectBranches response = testCase.load("key");
@@ -109,6 +118,53 @@ public class CommunityRepositoryBranchesLoaderTest {
     }
 
     @Test
+    public void testAllBranchesAndPullRequestsFromNonEmptyServerResponse() {
+        mockResponse(
+            "/api/project_branches/list?project=key",
+            new CommunityProjectBranchesLoader.BranchesResponse(
+                List.of(
+                    new BranchInfo("main", BranchType.BRANCH, true, null),
+                    new BranchInfo("feature-1", BranchType.BRANCH, false, null),
+                    new BranchInfo("feature-2", BranchType.BRANCH, false, null)
+                )
+            )
+        );
+        mockResponse(
+            "/api/project_pull_requests/list?project=key",
+            new CommunityProjectBranchesLoader.PullRequestsResponse(
+                List.of(
+                    new CommunityProjectBranchesLoader.PullRequestsResponse.PullRequest("pr-1", "main"),
+                    new CommunityProjectBranchesLoader.PullRequestsResponse.PullRequest("pr-2", "main"),
+                    new CommunityProjectBranchesLoader.PullRequestsResponse.PullRequest("pr-3", "pr-2")
+                )
+            )
+        );
+
+        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
+        ProjectBranches response = testCase.load("key");
+        assertThat(response.isEmpty()).isFalse();
+        assertThat(response.defaultBranchName()).isEqualTo("main");
+        assertThat(response.get("main"))
+            .usingRecursiveComparison()
+            .isEqualTo(new BranchInfo("main", BranchType.BRANCH, true, null));
+        assertThat(response.get("feature-1"))
+            .usingRecursiveComparison()
+            .isEqualTo(new BranchInfo("feature-1", BranchType.BRANCH, false, null));
+        assertThat(response.get("feature-2"))
+            .usingRecursiveComparison()
+            .isEqualTo(new BranchInfo("feature-2", BranchType.BRANCH, false, null));
+        assertThat(response.get("pr-1"))
+            .usingRecursiveComparison()
+            .isEqualTo(new BranchInfo("pr-1", BranchType.PULL_REQUEST, false, "main"));
+        assertThat(response.get("pr-2"))
+            .usingRecursiveComparison()
+            .isEqualTo(new BranchInfo("pr-2", BranchType.PULL_REQUEST, false, "main"));
+        assertThat(response.get("pr-3"))
+            .usingRecursiveComparison()
+            .isEqualTo(new BranchInfo("pr-3", BranchType.PULL_REQUEST, false, "pr-2"));
+    }
+
+    @Test
     public void testMessageExceptionOnIOException() {
         mockResponseWithReader(
             "/api/project_branches/list?project=project",
@@ -118,6 +174,10 @@ public class CommunityRepositoryBranchesLoaderTest {
                     throw new IOException("Dummy IO Exception");
                 }
             }
+        );
+        mockResponse(
+            "/api/project_pull_requests/list?project=project",
+            new CommunityProjectBranchesLoader.PullRequestsResponse(new ArrayList<>())
         );
 
         expectedException.expectMessage("Could not load branches from server");
@@ -137,6 +197,10 @@ public class CommunityRepositoryBranchesLoaderTest {
                     throw new HttpException("url", 12, "content");
                 }
             }
+        );
+        mockResponse(
+            "/api/project_pull_requests/list?project=project",
+            new CommunityProjectBranchesLoader.PullRequestsResponse(new ArrayList<>())
         );
 
         expectedException.expectMessage("Could not load branches from server");
