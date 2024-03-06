@@ -154,12 +154,12 @@ class GraphqlGithubClientTest {
                 "  {" +
                 "    \"pullRequest\": {" +
                 "      \"id\": \"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"," +
-                "      \"body\": \"**Project ID:** project-key-test\\r\\n\"," +
                 "      \"comments\": {" +
                 "        \"nodes\": [" +
                 "          {" +
                 "            \"id\": \"MDEyOklzc3VlQ29tbWVudDE1MDE3\"," +
                 "            \"isMinimized\": false," +
+                "            \"body\": \"**Project ID:** project-key-test\\r\\n\"," +
                 "            \"author\": {" +
                 "              \"__typename\": \"Bot\"," +
                 "              \"login\": \"test-sonar\"" +
