@@ -79,6 +79,7 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
                 .withExternalId(analysisDetails.getAnalysisId())
                 .withName(String.format("%s Sonarqube Results", analysisDetails.getAnalysisProjectName()))
                 .withTitle("Quality Gate " + (analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? "success" : "failed"))
+                .withProjectKey(analysisDetails.getAnalysisProjectKey())
                 .build();
 
         try {
