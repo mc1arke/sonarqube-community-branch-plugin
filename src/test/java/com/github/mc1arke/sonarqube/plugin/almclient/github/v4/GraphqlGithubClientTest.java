@@ -154,6 +154,7 @@ class GraphqlGithubClientTest {
                 "  {" +
                 "    \"pullRequest\": {" +
                 "      \"id\": \"MDExOlB1bGxSZXF1ZXN0MzUzNDc=\"," +
+                "      \"body\": \"**Project ID:** project-key-test\\r\\n\"," +
                 "      \"comments\": {" +
                 "        \"nodes\": [" +
                 "          {" +
