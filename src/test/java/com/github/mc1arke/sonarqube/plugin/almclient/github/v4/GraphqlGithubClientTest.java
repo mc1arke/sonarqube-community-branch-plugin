@@ -301,7 +301,7 @@ class GraphqlGithubClientTest {
         assertEquals(requestEntities.get(2), getPullRequestRequestEntityArgumentCaptor.getValue());
         assertEquals(
             "query { repository (owner:\"owner\",name:\"repository\") { url pullRequest : pullRequest (number:999) { comments : comments (first:100) { nodes" +
-                " { author { type : __typename login } id minimized : isMinimized } pageInfo { hasNextPage endCursor } } id } } } ",
+                " { author { type : __typename login } id minimized : isMinimized body } pageInfo { hasNextPage endCursor } } id } } } ",
             getPullRequestRequestEntityArgumentCaptor.getValue().getRequest()
         );
 
