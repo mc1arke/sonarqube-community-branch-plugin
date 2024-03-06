@@ -28,7 +28,7 @@ public class CheckRunDetails {
     private final String summary;
     private final String title;
     private final String name;
-    private final String dashboardUrl;    
+    private final String dashboardUrl;
     private final ZonedDateTime startTime;
     private final ZonedDateTime endTime;
     private final String externalId;
