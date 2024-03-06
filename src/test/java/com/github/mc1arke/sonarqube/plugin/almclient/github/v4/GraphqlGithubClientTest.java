@@ -207,6 +207,7 @@ class GraphqlGithubClientTest {
                 .withName("Name")
                 .withTitle("Title")
                 .withPullRequestId(999)
+                .withProjectKey("project-key-test")
                 .build();
 
 
