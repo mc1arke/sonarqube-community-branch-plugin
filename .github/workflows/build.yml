@@ -124,7 +124,7 @@ jobs:
           path: build/libs/*.jar
       -
         name: GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: success()
         with:
           name: ${{ needs.prep.outputs.version }}
