@@ -82,10 +82,10 @@ public class ClassReferenceElevatedClassLoaderFactoryTest {
     public void testLoadClass() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_api_", getClass().getClassLoader());
-        builder.setMask("_api_", new Mask().addInclusion("java/").addInclusion("org/sonar/api/"));
+        builder.setMask("_api_", Mask.builder().include("java/", "org/sonar/api/").build());
 
         builder.newClassloader("_customPlugin");
-        builder.setParent("_customPlugin", "_api_", new Mask());
+        builder.setParent("_customPlugin", "_api_", Mask.ALL);
         builder.setLoadingOrder("_customPlugin", ClassloaderBuilder.LoadingOrder.SELF_FIRST);
 
         for (URL pluginUrl : findSonarqubePluginJars()) {
