@@ -147,6 +147,7 @@ class GithubPullRequestDecoratorTest {
                                             .withSeverity(i % 5 < 1 ? CheckAnnotationLevel.NOTICE : i % 5 > 2 ? CheckAnnotationLevel.FAILURE : CheckAnnotationLevel.WARNING)
                                             .build()).collect(Collectors.toList()))
                                 .withCheckConclusionState(CheckConclusionState.SUCCESS)
+                                .withProjectKey(analysisDetails.getAnalysisProjectKey())
                                 .build());
         assertThat(decorationResult).usingRecursiveComparison().isEqualTo(expectedResult);
     }

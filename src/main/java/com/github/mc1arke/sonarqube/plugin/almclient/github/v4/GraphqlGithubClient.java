@@ -116,7 +116,7 @@ public class GraphqlGithubClient implements GithubClient {
 
 
         if (postSummaryComment) {
-            postSummaryComment(graphqlUrl, headers, checkRunDetails.getPullRequestId(), checkRunDetails.getSummary());
+            postSummaryComment(graphqlUrl, headers, checkRunDetails.getPullRequestId(), checkRunDetails.getSummary(), checkRunDetails.getProjectKey());
         }
 
         return graphQLResponseEntity.getResponse().getCheckRun().getId();
@@ -128,7 +128,7 @@ public class GraphqlGithubClient implements GithubClient {
         return repositoryAuthenticationToken.getRepositoryUrl();
     }
 
-    private void postSummaryComment(String graphqlUrl, Map<String, String> headers, int pullRequestKey, String summary) throws IOException {
+    private void postSummaryComment(String graphqlUrl, Map<String, String> headers, int pullRequestKey, String summary, String projectId) throws IOException {
         String login = getLogin(graphqlUrl, headers);
 
         GetRepository.PullRequest pullRequest = getPullRequest(graphqlUrl, headers, pullRequestKey);
@@ -137,6 +137,7 @@ public class GraphqlGithubClient implements GithubClient {
         getComments(pullRequest, graphqlUrl, headers, pullRequestKey).stream()
             .filter(c -> "Bot".equalsIgnoreCase(c.getAuthor().getType()) && login.equalsIgnoreCase(c.getAuthor().getLogin()))
             .filter(c -> !c.isMinimized())
+            .filter(c -> c.getBody().contains(String.format("**Project ID:** %s\r\n", projectId)))
             .map(Comments.CommentNode::getId)
             .forEach(commentId -> this.minimizeComment(graphqlUrl, headers, commentId));
 
