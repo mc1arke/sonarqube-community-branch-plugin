@@ -55,9 +55,9 @@ import static org.mockito.Mockito.mock;
 
 class ReportGeneratorTest {
 
-    @CsvSource({"12, 0.svg?sanitize=true, 21, 20plus.svg?sanitize=true",
-            "98, 90.svg?sanitize=true, 1, 3.svg?sanitize=true",
-            ",NoCoverageInfo.svg?sanitize=true,,NoDuplicationInfo.svg?sanitize=true"})
+    @CsvSource({"12, 0.png, 21, 20plus.png",
+            "98, 90.png, 1, 3.png",
+            ",NoCoverageInfo.png,,NoDuplicationInfo.png"})
     @ParameterizedTest
     void shouldProduceCorrectAnalysisSummary(String coverage, String coverageImage, String duplications, String duplicationsImage) {
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
@@ -182,7 +182,7 @@ class ReportGeneratorTest {
         AnalysisSummary expected = AnalysisSummary.builder()
                         .withBugCount(2)
                         .withBugUrl("http://localhost:9000/project/issues?pullRequest=5&resolved=false&types=BUG&inNewCodePeriod=true&id=projectKey")
-                        .withBugImageUrl("http://localhost:9000/static/communityBranchPlugin/common/bug.svg?sanitize=true")
+                        .withBugImageUrl("http://localhost:9000/static/communityBranchPlugin/common/bug.png")
                         .withCoverage(null == coverage ? null : new BigDecimal(coverage))
                         .withCoverageUrl("http://localhost:9000/component_measures?id=projectKey&metric=new_coverage&pullRequest=5&view=list")
                         .withCoverageImageUrl("http://localhost:9000/static/communityBranchPlugin/checks/CoverageChart/" + coverageImage)
@@ -193,16 +193,16 @@ class ReportGeneratorTest {
                         .withNewDuplications(null == duplications ? null : new BigDecimal(duplications))
                         .withCodeSmellCount(1)
                         .withCodeSmellUrl("http://localhost:9000/project/issues?pullRequest=5&resolved=false&types=CODE_SMELL&inNewCodePeriod=true&id=projectKey")
-                        .withCodeSmellImageUrl("http://localhost:9000/static/communityBranchPlugin/common/code_smell.svg?sanitize=true")
+                        .withCodeSmellImageUrl("http://localhost:9000/static/communityBranchPlugin/common/code_smell.png")
                         .withDashboardUrl("http://localhost:9000/dashboard?id=projectKey&pullRequest=5")
                         .withProjectKey("projectKey")
                         .withSummaryImageUrl("http://localhost:9000/static/communityBranchPlugin/common/icon.png")
                         .withSecurityHotspotCount(1)
                         .withVulnerabilityCount(1)
                         .withVulnerabilityUrl("http://localhost:9000/project/issues?pullRequest=5&resolved=false&types=VULNERABILITY&inNewCodePeriod=true&id=projectKey")
-                        .withVulnerabilityImageUrl("http://localhost:9000/static/communityBranchPlugin/common/vulnerability.svg?sanitize=true")
+                        .withVulnerabilityImageUrl("http://localhost:9000/static/communityBranchPlugin/common/vulnerability.png")
                         .withStatusDescription("Failed")
-                        .withStatusImageUrl("http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/failed.svg?sanitize=true")
+                        .withStatusImageUrl("http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/failed.png")
                         .withTotalIssueCount(5)
                         .withFailedQualityGateConditions(List.of("19 Lines to Cover (is less than 20)",
                                 "2 Code Smells (is greater than 0)",
@@ -235,9 +235,9 @@ class ReportGeneratorTest {
                 .withMessage("message")
                 .withResolution("FIXED")
                 .withSeverity("CRITICAL")
-                .withSeverityImageUrl("http://target.host:port/path/to/root/static/communityBranchPlugin/checks/Severity/critical.svg?sanitize=true")
+                .withSeverityImageUrl("http://target.host:port/path/to/root/static/communityBranchPlugin/checks/Severity/critical.png")
                 .withType(ruleType.name())
-                .withTypeImageUrl("http://target.host:port/path/to/root/static/communityBranchPlugin/checks/IssueType/" + ruleType.name().toLowerCase(Locale.ENGLISH) + ".svg?sanitize=true")
+                .withTypeImageUrl("http://target.host:port/path/to/root/static/communityBranchPlugin/checks/IssueType/" + ruleType.name().toLowerCase(Locale.ENGLISH) + ".png")
                 .withProjectKey("project-key")
                 .build();
 
