@@ -49,12 +49,14 @@ public class Comments {
         private final Actor author;
         @GraphQLProperty(name = "isMinimized")
         private final boolean minimized;
+        private final String body;
 
         @JsonCreator
-        public CommentNode(@JsonProperty("id") String id, @JsonProperty("author") Actor author, @JsonProperty("isMinimized") boolean minimized) {
+        public CommentNode(@JsonProperty("id") String id, @JsonProperty("author") Actor author, @JsonProperty("isMinimized") boolean minimized, @JsonProperty("body") String body) {
             this.id = id;
             this.author = author;
             this.minimized = minimized;
+            this.body = body;
         }
 
         public String getId() {
@@ -67,6 +69,10 @@ public class Comments {
 
         public boolean isMinimized() {
             return minimized;
+        }
+
+        public String getBody() {
+            return body;
         }
     }
 }

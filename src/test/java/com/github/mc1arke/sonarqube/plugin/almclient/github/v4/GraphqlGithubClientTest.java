@@ -159,6 +159,7 @@ class GraphqlGithubClientTest {
                 "          {" +
                 "            \"id\": \"MDEyOklzc3VlQ29tbWVudDE1MDE3\"," +
                 "            \"isMinimized\": false," +
+                "            \"body\": \"**Project ID:** project-key-test\\r\\n\"," +
                 "            \"author\": {" +
                 "              \"__typename\": \"Bot\"," +
                 "              \"login\": \"test-sonar\"" +
@@ -207,6 +208,7 @@ class GraphqlGithubClientTest {
                 .withName("Name")
                 .withTitle("Title")
                 .withPullRequestId(999)
+                .withProjectKey("project-key-test")
                 .build();
 
 
@@ -299,7 +301,7 @@ class GraphqlGithubClientTest {
         assertEquals(requestEntities.get(2), getPullRequestRequestEntityArgumentCaptor.getValue());
         assertEquals(
             "query { repository (owner:\"owner\",name:\"repository\") { url pullRequest : pullRequest (number:999) { comments : comments (first:100) { nodes" +
-                " { author { type : __typename login } id minimized : isMinimized } pageInfo { hasNextPage endCursor } } id } } } ",
+                " { author { type : __typename login } id minimized : isMinimized body } pageInfo { hasNextPage endCursor } } id } } } ",
             getPullRequestRequestEntityArgumentCaptor.getValue().getRequest()
         );
 

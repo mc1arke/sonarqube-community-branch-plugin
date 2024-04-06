@@ -36,6 +36,7 @@ public class CheckRunDetails {
     private final List<Annotation> annotations;
     private final CheckConclusionState checkConclusionState;
     private final int pullRequestId;
+    private final String projectKey;
 
     private CheckRunDetails(Builder builder) {
         summary = builder.summary;
@@ -49,6 +50,7 @@ public class CheckRunDetails {
         annotations = builder.annotations;
         checkConclusionState = builder.checkConclusionState;
         pullRequestId = builder.pullRequestId;
+        projectKey = builder.projectKey;
     }
 
     public String getSummary() {
@@ -95,6 +97,10 @@ public class CheckRunDetails {
         return pullRequestId;
     }
 
+    public String getProjectKey() {
+        return projectKey;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -111,6 +117,7 @@ public class CheckRunDetails {
         private List<Annotation> annotations;
         private CheckConclusionState checkConclusionState;
         private int pullRequestId;
+        private String projectKey;
 
         private Builder() {
             super();
@@ -168,6 +175,11 @@ public class CheckRunDetails {
 
         public Builder withPullRequestId(int pullRequestId) {
             this.pullRequestId = pullRequestId;
+            return this;
+        }
+
+        public Builder withProjectKey(String projectKey) {
+            this.projectKey = projectKey;
             return this;
         }
 
