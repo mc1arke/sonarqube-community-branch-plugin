@@ -148,6 +148,7 @@ class GraphqlGithubClientTest {
         ArgumentCaptor<GraphQLRequestEntity> getViewer = ArgumentCaptor.forClass(GraphQLRequestEntity.class);
         when(graphQLTemplate.query(getViewer.capture(), eq(Viewer.class))).thenReturn(viewerResponseEntity);
 
+        String bodyString = objectMapper.writeValueAsString("**Project ID:** project-key-test" + System.lineSeparator());
         GraphQLResponseEntity<GetRepository> getPullRequestResponseEntity =
             objectMapper.readValue("{" +
                 "\"response\": " +
@@ -159,7 +160,7 @@ class GraphqlGithubClientTest {
                 "          {" +
                 "            \"id\": \"MDEyOklzc3VlQ29tbWVudDE1MDE3\"," +
                 "            \"isMinimized\": false," +
-                "            \"body\": \"**Project ID:** project-key-test\\r\\n\"," +
+                "            \"body\": " + bodyString + "," +
                 "            \"author\": {" +
                 "              \"__typename\": \"Bot\"," +
                 "              \"login\": \"test-sonar\"" +

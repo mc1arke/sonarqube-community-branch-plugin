@@ -133,11 +133,12 @@ public class GraphqlGithubClient implements GithubClient {
 
         GetRepository.PullRequest pullRequest = getPullRequest(graphqlUrl, headers, pullRequestKey);
         String pullRequestId = pullRequest.getId();
+        String projectCommentMarker = String.format("**Project ID:** %s%n", projectId);
 
         getComments(pullRequest, graphqlUrl, headers, pullRequestKey).stream()
             .filter(c -> "Bot".equalsIgnoreCase(c.getAuthor().getType()) && login.equalsIgnoreCase(c.getAuthor().getLogin()))
             .filter(c -> !c.isMinimized())
-            .filter(c -> c.getBody().contains(String.format("**Project ID:** %s\r\n", projectId)))
+            .filter(c -> c.getBody().contains(projectCommentMarker))
             .map(Comments.CommentNode::getId)
             .forEach(commentId -> this.minimizeComment(graphqlUrl, headers, commentId));
 
