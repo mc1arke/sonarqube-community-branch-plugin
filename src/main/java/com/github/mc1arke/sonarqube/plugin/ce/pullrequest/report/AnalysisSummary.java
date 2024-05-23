@@ -204,10 +204,12 @@ public final class AnalysisSummary {
         List<String> failedConditions = getFailedQualityGateConditions();
 
         Document document = new Document(
-                new Paragraph(
-                    new Image(getStatusDescription(), getStatusImageUrl()),
-                    new Text(" "),
-                    new Text(String.format("**Project ID:** %s", getProjectKey()))),
+                new Heading(
+                    3, 
+                    new Text("Quality Gate"), 
+                    new Text(" "), 
+                    new Image(getStatusDescription(), getStatusImageUrl())),
+                new Paragraph(new Text(String.format("**Project ID:** %s", getProjectKey()))),
                 failedConditions.isEmpty() ? new Text("") :
                         new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
                                 com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,

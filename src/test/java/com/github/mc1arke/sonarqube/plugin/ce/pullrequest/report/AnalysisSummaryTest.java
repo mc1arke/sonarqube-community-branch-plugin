@@ -82,10 +82,12 @@ class AnalysisSummaryTest {
         verify(formatter).format(documentArgumentCaptor.capture());
 
         Document expectedDocument = new Document(
-                new Paragraph(
-                        new Image("status description", "statusImageUrl"),
+                new Heading(
+                        3, 
+                        new Text("Quality Gate"),
                         new Text(" "),
-                        new Text("**Project ID:** projectKey")),
+                        new Image("status description", "statusImageUrl")),
+                new Paragraph(new Text("**Project ID:** projectKey")),
                 new List(List.Style.BULLET,
                         new ListItem(new Text("issuea")),
                         new ListItem(new Text("issueb")),
