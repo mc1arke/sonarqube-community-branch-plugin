@@ -86,8 +86,7 @@ class AnalysisSummaryTest {
                         3, 
                         new Text("Quality Gate"),
                         new Text(" "),
-                        new Image("status description", "statusImageUrl")),
-                new Paragraph(new Text("**Project ID:** projectKey")),
+                        new Link("dashboardUrl", new Image("status description", "statusImageUrl"))),
                 new List(List.Style.BULLET,
                         new ListItem(new Text("issuea")),
                         new ListItem(new Text("issueb")),
@@ -113,7 +112,7 @@ class AnalysisSummaryTest {
 						new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl")),
 						new Text(" "),
 						new Text("199.00% Duplicated Code (66.00% Estimated after merge)"))),
-                new Paragraph(new Link("dashboardUrl", new Text("View in SonarQube"))));
+                new Paragraph(new Text("**Project ID:** projectKey")));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 

@@ -208,8 +208,7 @@ public final class AnalysisSummary {
                     3, 
                     new Text("Quality Gate"), 
                     new Text(" "), 
-                    new Image(getStatusDescription(), getStatusImageUrl())),
-                new Paragraph(new Text(String.format("**Project ID:** %s", getProjectKey()))),
+                    new Link(getDashboardUrl(), new Image(getStatusDescription(), getStatusImageUrl()))),
                 failedConditions.isEmpty() ? new Text("") :
                         new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
                                 com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
@@ -241,7 +240,7 @@ public final class AnalysisSummary {
                                         .map(decimalFormat::format)
                                         .map(i -> i + "% Duplicated Code")
                                         .orElse("No duplication info") + " (" + decimalFormat.format(getDuplications()) + "% Estimated after merge)"))),
-                new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
+                new Paragraph(new Text(String.format("**Project ID:** %s", getProjectKey()))));
 
         return formatterFactory.documentFormatter().format(document);
     }
