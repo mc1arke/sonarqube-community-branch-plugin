@@ -206,6 +206,7 @@ public final class AnalysisSummary {
         Document document = new Document(
                 new Paragraph(
                     new Image(getStatusDescription(), getStatusImageUrl()),
+                    new Text(" "),
                     new Text(String.format("**Project ID:** %s", getProjectKey()))),
                 failedConditions.isEmpty() ? new Text("") :
                         new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
@@ -215,7 +216,7 @@ public final class AnalysisSummary {
                                         .map(ListItem::new)
                                         .toArray(ListItem[]::new)),
                 new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
-                        com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
+                        com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.NONE,
                         new ListItem(new Link(getBugUrl(), new Image("Bug", getBugImageUrl())),
                                 new Text(" "),
                                 new Text(pluralOf(getBugCount(), "Bug", "Bugs"))),
@@ -224,22 +225,20 @@ public final class AnalysisSummary {
                                 new Text(pluralOf(getVulnerabilityCount() + getSecurityHotspotCount(), "Vulnerability", "Vulnerabilities"))),
                         new ListItem(new Link(getCodeSmellUrl(), new Image("Code Smell", getCodeSmellImageUrl())),
                                 new Text(" "),
-                                new Text(pluralOf(getCodeSmellCount(), "Code Smell", "Code Smells")))),
-                new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
-                        com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
+                                new Text(pluralOf(getCodeSmellCount(), "Code Smell", "Code Smells"))),
                         new ListItem(new Link(getCoverageUrl(), new Image("Coverage", getCoverageImageUrl())),
                                 new Text(" "), new Text(
                                 Optional.ofNullable(getNewCoverage())
                                         .map(decimalFormat::format)
                                         .map(i -> i + "% Coverage")
-                                        .orElse("No coverage information") + " (" +
+                                        .orElse("No coverage info") + " (" +
                                         decimalFormat.format(Optional.ofNullable(getCoverage()).orElse(BigDecimal.valueOf(0))) + "% Estimated after merge)")),
                         new ListItem(new Link(getDuplicationsUrl(), new Image("Duplications", getDuplicationsImageUrl())),
                                 new Text(" "),
                                 new Text(Optional.ofNullable(getNewDuplications())
                                         .map(decimalFormat::format)
                                         .map(i -> i + "% Duplicated Code")
-                                        .orElse("No duplication information") + " (" + decimalFormat.format(getDuplications()) + "% Estimated after merge)"))),
+                                        .orElse("No duplication info") + " (" + decimalFormat.format(getDuplications()) + "% Estimated after merge)"))),
                 new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
 
         return formatterFactory.documentFormatter().format(document);
