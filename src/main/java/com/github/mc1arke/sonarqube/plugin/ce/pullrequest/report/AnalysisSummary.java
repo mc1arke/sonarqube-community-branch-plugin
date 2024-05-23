@@ -203,7 +203,10 @@ public final class AnalysisSummary {
 
         List<String> failedConditions = getFailedQualityGateConditions();
 
-        Document document = new Document(new Paragraph(new Image(getStatusDescription(), getStatusImageUrl())),
+        Document document = new Document(
+                new Paragraph(
+                    new Image(getStatusDescription(), getStatusImageUrl()),
+                    new Text(String.format("**Project ID:** %s", getProjectKey()))),
                 failedConditions.isEmpty() ? new Text("") :
                         new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
                                 com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
@@ -211,8 +214,6 @@ public final class AnalysisSummary {
                                         .map(Text::new)
                                         .map(ListItem::new)
                                         .toArray(ListItem[]::new)),
-                new Heading(1, new Text("Analysis Details")),
-                new Heading(2, new Text(pluralOf(getTotalIssueCount(), "Issue", "Issues"))),
                 new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
                         com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
                         new ListItem(new Link(getBugUrl(), new Image("Bug", getBugImageUrl())),
@@ -224,7 +225,6 @@ public final class AnalysisSummary {
                         new ListItem(new Link(getCodeSmellUrl(), new Image("Code Smell", getCodeSmellImageUrl())),
                                 new Text(" "),
                                 new Text(pluralOf(getCodeSmellCount(), "Code Smell", "Code Smells")))),
-                new Heading(2, new Text("Coverage and Duplications")),
                 new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
                         com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
                         new ListItem(new Link(getCoverageUrl(), new Image("Coverage", getCoverageImageUrl())),
@@ -240,7 +240,6 @@ public final class AnalysisSummary {
                                         .map(decimalFormat::format)
                                         .map(i -> i + "% Duplicated Code")
                                         .orElse("No duplication information") + " (" + decimalFormat.format(getDuplications()) + "% Estimated after merge)"))),
-                new Paragraph(new Text(String.format("**Project ID:** %s", getProjectKey()))),
                 new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
 
         return formatterFactory.documentFormatter().format(document);
