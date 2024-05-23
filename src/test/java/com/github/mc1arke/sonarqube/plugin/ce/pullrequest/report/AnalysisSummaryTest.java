@@ -81,13 +81,12 @@ class AnalysisSummaryTest {
         ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
         verify(formatter).format(documentArgumentCaptor.capture());
 
-        Document expectedDocument = new Document(new Paragraph(new Image("status description", "statusImageUrl")),
+        Document expectedDocument = new Document(
+                new Paragraph(new Image("status description", "statusImageUrl"), new Text("**Project ID:** projectKey")),
                 new List(List.Style.BULLET,
                         new ListItem(new Text("issuea")),
                         new ListItem(new Text("issueb")),
                         new ListItem(new Text("issuec"))),
-                new Heading(1, new Text("Analysis Details")),
-                new Heading(2, new Text("666 Issues")),
                 new List(List.Style.BULLET,
                     new ListItem(
                         new Link("bugUrl", new Image("Bug","bugImageUrl")),
@@ -101,7 +100,6 @@ class AnalysisSummaryTest {
                         new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
                         new Text(" "),
                         new Text("1 Code Smell"))),
-                new Heading(2, new Text("Coverage and Duplications")),
                 new List(List.Style.BULLET,
                         new ListItem(
                             new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl")),
@@ -111,7 +109,6 @@ class AnalysisSummaryTest {
                                 new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl")),
                                 new Text(" "),
                                 new Text("199.00% Duplicated Code (66.00% Estimated after merge)"))),
-                new Paragraph(new Text("**Project ID:** projectKey")),
                 new Paragraph(new Link("dashboardUrl", new Text("View in SonarQube"))));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
