@@ -120,7 +120,6 @@ public class ReportGenerator {
                 .orElse(null);
 
         Map<RuleType, Long> issueCounts = countRuleByType(analysisDetails.getIssues());
-        long issueTotal = issueCounts.values().stream().mapToLong(l -> l).sum();
 
         List<QualityGate.Condition> failedConditions = analysisDetails.findFailedQualityGateConditions();
 
@@ -151,8 +150,9 @@ public class ReportGenerator {
                 .withStatusImageUrl(QualityGate.Status.OK == analysisDetails.getQualityGateStatus()
                         ? baseImageUrl + "/checks/QualityGateBadge/passed.png"
                         : baseImageUrl + "/checks/QualityGateBadge/failed.png")
-                .withTotalIssueCount(issueTotal)
                 .withSecurityHotspotCount(issueCounts.get(RuleType.SECURITY_HOTSPOT))
+                .withSecurityHotspotUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.SECURITY_HOTSPOT))
+                .withSecurityHotspotImageUrl(baseImageUrl + "/common/security_hotspot.png")
                 .withVulnerabilityCount(issueCounts.get(RuleType.VULNERABILITY))
                 .withVulnerabilityUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.VULNERABILITY))
                 .withVulnerabilityImageUrl(baseImageUrl + "/common/vulnerability.png")

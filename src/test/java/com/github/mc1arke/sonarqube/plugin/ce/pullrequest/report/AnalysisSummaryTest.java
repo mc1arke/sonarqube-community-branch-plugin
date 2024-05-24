@@ -63,9 +63,10 @@ class AnalysisSummaryTest {
                 .withFailedQualityGateConditions(java.util.List.of("issuea", "issueb", "issuec"))
                 .withNewCoverage(BigDecimal.valueOf(99))
                 .withSecurityHotspotCount(69)
+                .withSecurityHotspotUrl("securityHotspotUrl")
+                .withSecurityHotspotImageUrl("securityHotspotImageUrl")
                 .withStatusDescription("status description")
                 .withStatusImageUrl("statusImageUrl")
-                .withTotalIssueCount(666)
                 .withVulnerabilityCount(96)
                 .withVulnerabilityUrl("vulnerabilityUrl")
                 .withVulnerabilityImageUrl("vulnerabilityImageUrl")
@@ -97,13 +98,17 @@ class AnalysisSummaryTest {
                         new Text(" "),
                         new Text("911 Bugs")),
 					new ListItem(
+						new Link("securityHotspotUrl", new Image("Security Hotspot","securityHotspotImageUrl")),
+						new Text(" "),
+						new Text("69 Security Hotspots")),
+					new ListItem(
 						new Link("vulnerabilityUrl", new Image("Vulnerability","vulnerabilityImageUrl")),
 						new Text(" "),
-						new Text("165 Vulnerabilities")),
+						new Text("96 Vulnerabilities")),
 					new ListItem(
-                        new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
-                        new Text(" "),
-                        new Text("1 Code Smell")),
+						new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
+						new Text(" "),
+						new Text("1 Code Smell")),
 					new ListItem(
 						new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl")),
 						new Text(" "),
