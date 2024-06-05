@@ -198,12 +198,13 @@ class ReportGeneratorTest {
                         .withProjectKey("projectKey")
                         .withSummaryImageUrl("http://localhost:9000/static/communityBranchPlugin/common/icon.png")
                         .withSecurityHotspotCount(1)
+						.withSecurityHotspotUrl("http://localhost:9000/project/issues?pullRequest=5&resolved=false&types=SECURITY_HOTSPOT&inNewCodePeriod=true&id=projectKey")
+						.withSecurityHotspotImageUrl("http://localhost:9000/static/communityBranchPlugin/common/security_hotspot.png")
                         .withVulnerabilityCount(1)
                         .withVulnerabilityUrl("http://localhost:9000/project/issues?pullRequest=5&resolved=false&types=VULNERABILITY&inNewCodePeriod=true&id=projectKey")
                         .withVulnerabilityImageUrl("http://localhost:9000/static/communityBranchPlugin/common/vulnerability.png")
                         .withStatusDescription("Failed")
                         .withStatusImageUrl("http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/failed.png")
-                        .withTotalIssueCount(5)
                         .withFailedQualityGateConditions(List.of("19 Lines to Cover (is less than 20)",
                                 "2 Code Smells (is greater than 0)",
                                 "68.00% Line Coverage (is less than 80.00%)",

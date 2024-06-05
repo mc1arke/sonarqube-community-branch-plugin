@@ -63,9 +63,10 @@ class AnalysisSummaryTest {
                 .withFailedQualityGateConditions(java.util.List.of("issuea", "issueb", "issuec"))
                 .withNewCoverage(BigDecimal.valueOf(99))
                 .withSecurityHotspotCount(69)
+                .withSecurityHotspotUrl("securityHotspotUrl")
+                .withSecurityHotspotImageUrl("securityHotspotImageUrl")
                 .withStatusDescription("status description")
                 .withStatusImageUrl("statusImageUrl")
-                .withTotalIssueCount(666)
                 .withVulnerabilityCount(96)
                 .withVulnerabilityUrl("vulnerabilityUrl")
                 .withVulnerabilityImageUrl("vulnerabilityImageUrl")
@@ -82,34 +83,41 @@ class AnalysisSummaryTest {
         verify(formatter).format(documentArgumentCaptor.capture());
 
         Document expectedDocument = new Document(
-                new Paragraph(new Image("status description", "statusImageUrl"), new Text("**Project ID:** projectKey")),
+                new Heading(
+                        3, 
+                        new Text("Quality Gate"),
+                        new Text(" "),
+                        new Link("dashboardUrl", new Image("status description", "statusImageUrl"))),
                 new List(List.Style.BULLET,
                         new ListItem(new Text("issuea")),
                         new ListItem(new Text("issueb")),
                         new ListItem(new Text("issuec"))),
-                new List(List.Style.BULLET,
+                new List(List.Style.NONE,
                     new ListItem(
                         new Link("bugUrl", new Image("Bug","bugImageUrl")),
                         new Text(" "),
                         new Text("911 Bugs")),
-                new ListItem(
-                        new Link("vulnerabilityUrl", new Image("Vulnerability","vulnerabilityImageUrl")),
-                        new Text(" "),
-                        new Text("165 Vulnerabilities")),
-                new ListItem(
-                        new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
-                        new Text(" "),
-                        new Text("1 Code Smell"))),
-                new List(List.Style.BULLET,
-                        new ListItem(
-                            new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl")),
-                            new Text(" "),
-                            new Text("99.00% Coverage (303.00% Estimated after merge)")),
-                        new ListItem(
-                                new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl")),
-                                new Text(" "),
-                                new Text("199.00% Duplicated Code (66.00% Estimated after merge)"))),
-                new Paragraph(new Link("dashboardUrl", new Text("View in SonarQube"))));
+					new ListItem(
+						new Link("securityHotspotUrl", new Image("Security Hotspot","securityHotspotImageUrl")),
+						new Text(" "),
+						new Text("69 Security Hotspots")),
+					new ListItem(
+						new Link("vulnerabilityUrl", new Image("Vulnerability","vulnerabilityImageUrl")),
+						new Text(" "),
+						new Text("96 Vulnerabilities")),
+					new ListItem(
+						new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
+						new Text(" "),
+						new Text("1 Code Smell")),
+					new ListItem(
+						new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl")),
+						new Text(" "),
+						new Text("99.00% Coverage (303.00% Estimated after merge)")),
+					new ListItem(
+						new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl")),
+						new Text(" "),
+						new Text("199.00% Duplicated Code (66.00% Estimated after merge)"))),
+                new Paragraph(new Text("**Project ID:** projectKey")));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
