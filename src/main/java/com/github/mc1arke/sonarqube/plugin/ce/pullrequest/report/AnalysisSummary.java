@@ -55,13 +55,14 @@ public final class AnalysisSummary {
     private final String duplicationsUrl;
     private final String duplicationsImageUrl;
 
-    private final long totalIssueCount;
-
     private final long bugCount;
     private final String bugUrl;
     private final String bugImageUrl;
 
     private final long securityHotspotCount;
+    private final String securityHotspotUrl;
+    private final String securityHotspotImageUrl;
+
     private final long vulnerabilityCount;
     private final String vulnerabilityUrl;
     private final String vulnerabilityImageUrl;
@@ -85,11 +86,12 @@ public final class AnalysisSummary {
         this.duplications = builder.duplications;
         this.duplicationsUrl = builder.duplicationsUrl;
         this.duplicationsImageUrl = builder.duplicationsImageUrl;
-        this.totalIssueCount = builder.totalIssueCount;
         this.bugCount = builder.bugCount;
         this.bugUrl = builder.bugUrl;
         this.bugImageUrl = builder.bugImageUrl;
         this.securityHotspotCount = builder.securityHotspotCount;
+        this.securityHotspotUrl = builder.securityHotspotUrl;
+        this.securityHotspotImageUrl = builder.securityHotspotImageUrl;
         this.vulnerabilityCount = builder.vulnerabilityCount;
         this.vulnerabilityUrl = builder.vulnerabilityUrl;
         this.vulnerabilityImageUrl = builder.vulnerabilityImageUrl;
@@ -154,10 +156,6 @@ public final class AnalysisSummary {
         return duplicationsImageUrl;
     }
 
-    public long getTotalIssueCount() {
-        return totalIssueCount;
-    }
-
     public long getBugCount() {
         return bugCount;
     }
@@ -172,6 +170,14 @@ public final class AnalysisSummary {
 
     public long getSecurityHotspotCount() {
         return securityHotspotCount;
+    }
+
+    public String getSecurityHotspotUrl() {
+        return securityHotspotUrl;
+    }
+
+    public String getSecurityHotspotImageUrl() {
+        return securityHotspotImageUrl;
     }
 
     public long getVulnerabilityCount() {
@@ -203,7 +209,12 @@ public final class AnalysisSummary {
 
         List<String> failedConditions = getFailedQualityGateConditions();
 
-        Document document = new Document(new Paragraph(new Image(getStatusDescription(), getStatusImageUrl())),
+        Document document = new Document(
+                new Heading(
+                    3, 
+                    new Text("Quality Gate"), 
+                    new Text(" "), 
+                    new Link(getDashboardUrl(), new Image(getStatusDescription(), getStatusImageUrl()))),
                 failedConditions.isEmpty() ? new Text("") :
                         new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
                                 com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
@@ -211,37 +222,34 @@ public final class AnalysisSummary {
                                         .map(Text::new)
                                         .map(ListItem::new)
                                         .toArray(ListItem[]::new)),
-                new Heading(1, new Text("Analysis Details")),
-                new Heading(2, new Text(pluralOf(getTotalIssueCount(), "Issue", "Issues"))),
                 new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
-                        com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
+                        com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.NONE,
                         new ListItem(new Link(getBugUrl(), new Image("Bug", getBugImageUrl())),
                                 new Text(" "),
                                 new Text(pluralOf(getBugCount(), "Bug", "Bugs"))),
+                        new ListItem(new Link(getSecurityHotspotUrl(), new Image("Security Hotspot", getSecurityHotspotImageUrl())),
+                                new Text(" "),
+                                new Text(pluralOf(getSecurityHotspotCount(), "Security Hotspot", "Security Hotspots"))),
                         new ListItem(new Link(getVulnerabilityUrl(), new Image("Vulnerability", getVulnerabilityImageUrl())),
                                 new Text(" "),
-                                new Text(pluralOf(getVulnerabilityCount() + getSecurityHotspotCount(), "Vulnerability", "Vulnerabilities"))),
+                                new Text(pluralOf(getVulnerabilityCount(), "Vulnerability", "Vulnerabilities"))),
                         new ListItem(new Link(getCodeSmellUrl(), new Image("Code Smell", getCodeSmellImageUrl())),
                                 new Text(" "),
-                                new Text(pluralOf(getCodeSmellCount(), "Code Smell", "Code Smells")))),
-                new Heading(2, new Text("Coverage and Duplications")),
-                new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
-                        com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
+                                new Text(pluralOf(getCodeSmellCount(), "Code Smell", "Code Smells"))),
                         new ListItem(new Link(getCoverageUrl(), new Image("Coverage", getCoverageImageUrl())),
                                 new Text(" "), new Text(
                                 Optional.ofNullable(getNewCoverage())
                                         .map(decimalFormat::format)
                                         .map(i -> i + "% Coverage")
-                                        .orElse("No coverage information") + " (" +
+                                        .orElse("No coverage info") + " (" +
                                         decimalFormat.format(Optional.ofNullable(getCoverage()).orElse(BigDecimal.valueOf(0))) + "% Estimated after merge)")),
                         new ListItem(new Link(getDuplicationsUrl(), new Image("Duplications", getDuplicationsImageUrl())),
                                 new Text(" "),
                                 new Text(Optional.ofNullable(getNewDuplications())
                                         .map(decimalFormat::format)
                                         .map(i -> i + "% Duplicated Code")
-                                        .orElse("No duplication information") + " (" + decimalFormat.format(getDuplications()) + "% Estimated after merge)"))),
-                new Paragraph(new Text(String.format("**Project ID:** %s", getProjectKey()))),
-                new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
+                                        .orElse("No duplication info") + " (" + decimalFormat.format(getDuplications()) + "% Estimated after merge)"))),
+                new Paragraph(new Text(String.format("**Project ID:** %s", getProjectKey()))));
 
         return formatterFactory.documentFormatter().format(document);
     }
@@ -274,13 +282,14 @@ public final class AnalysisSummary {
         private String duplicationsUrl;
         private String duplicationsImageUrl;
 
-        private long totalIssueCount;
-
         private long bugCount;
         private String bugUrl;
         private String bugImageUrl;
 
         private long securityHotspotCount;
+        private String securityHotspotUrl;
+        private String securityHotspotImageUrl;
+
         private long vulnerabilityCount;
         private String vulnerabilityUrl;
         private String vulnerabilityImageUrl;
@@ -363,11 +372,6 @@ public final class AnalysisSummary {
             return this;
         }
 
-        public Builder withTotalIssueCount(long totalIssueCount) {
-            this.totalIssueCount = totalIssueCount;
-            return this;
-        }
-
         public Builder withBugCount(long bugCount) {
             this.bugCount = bugCount;
             return this;
@@ -385,6 +389,16 @@ public final class AnalysisSummary {
 
         public Builder withSecurityHotspotCount(long securityHotspotCount) {
             this.securityHotspotCount = securityHotspotCount;
+            return this;
+        }
+
+        public Builder withSecurityHotspotUrl(String securityHotspotUrl) {
+            this.securityHotspotUrl = securityHotspotUrl;
+            return this;
+        }
+
+        public Builder withSecurityHotspotImageUrl(String securityHotspotImageUrl) {
+            this.securityHotspotImageUrl = securityHotspotImageUrl;
             return this;
         }
 
