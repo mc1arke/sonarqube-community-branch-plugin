@@ -63,7 +63,7 @@ dependencies {
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation('org.mockito:mockito-core:5.12.0')
-    testImplementation('org.assertj:assertj-core:3.25.3')
+    testImplementation('org.assertj:assertj-core:3.26.3')
     testImplementation('org.wiremock:wiremock:3.8.0')
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
     implementation('org.bouncycastle:bcpkix-jdk15on:1.70')
