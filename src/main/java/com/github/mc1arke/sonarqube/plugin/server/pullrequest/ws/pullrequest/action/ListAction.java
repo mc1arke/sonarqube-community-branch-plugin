@@ -95,7 +95,7 @@ public class ListAction extends ProjectWsAction {
             .selectByComponentUuidsAndMetricKeys(dbSession, pullRequestUuids, List.of(CoreMetrics.ALERT_STATUS_KEY)).stream()
             .collect(Collectors.toMap(LiveMeasureDto::getComponentUuid, Function.identity()));
         Map<String, String> analysisDateByBranchUuid = getDbClient().snapshotDao().selectLastAnalysesByRootComponentUuids(dbSession, pullRequestUuids).stream()
-            .collect(Collectors.toMap(SnapshotDto::getUuid, s -> DateUtils.formatDateTime(s.getCreatedAt())));
+            .collect(Collectors.toMap(SnapshotDto::getRootComponentUuid, s -> DateUtils.formatDateTime(s.getCreatedAt())));
 
         ProjectPullRequests.ListWsResponse.Builder protobufResponse = ProjectPullRequests.ListWsResponse.newBuilder();
         pullRequests
