@@ -1,6 +1,6 @@
 ARG SONARQUBE_VERSION
 
-FROM gradle:8.5-jdk17-alpine as builder
+FROM gradle:8.9-jdk17-jammy as builder
 
 COPY . /home/build/project
 WORKDIR /home/build/project
