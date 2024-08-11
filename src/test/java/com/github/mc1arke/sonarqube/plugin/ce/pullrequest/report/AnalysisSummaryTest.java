@@ -71,7 +71,7 @@ class AnalysisSummaryTest {
                 .withVulnerabilityImageUrl("vulnerabilityImageUrl")
                 .build();
 
-        Formatter<Document> formatter = mock(Formatter.class);
+        Formatter<Document> formatter = mock();
         doReturn("formatted content").when(formatter).format(any());
         FormatterFactory formatterFactory = mock(FormatterFactory.class);
         doReturn(formatter).when(formatterFactory).documentFormatter();
@@ -113,6 +113,84 @@ class AnalysisSummaryTest {
                                 new Text("199.00% Duplicated Code (66.00% Estimated after merge)"))),
                 new Paragraph(new Text("**Project ID:** projectKey")),
                 new Paragraph(new Link("dashboardUrl", new Text("View in SonarQube"))));
+
+        assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
+
+    }
+
+
+    @Test
+    void shouldReturn0ForTotalDuplicationsWhereValueIsNull() {
+        AnalysisSummary underTest = AnalysisSummary.builder()
+            .withNewDuplications(BigDecimal.valueOf(199))
+            .withSummaryImageUrl("summaryImageUrl")
+            .withProjectKey("projectKey")
+            .withBugCount(911)
+            .withBugUrl("bugUrl")
+            .withBugImageUrl("bugImageUrl")
+            .withCodeSmellCount(1)
+            .withCoverage(BigDecimal.valueOf(303))
+            .withCodeSmellUrl("codeSmellUrl")
+            .withCodeSmellImageUrl("codeSmellImageUrl")
+            .withCoverageUrl("codeCoverageUrl")
+            .withCoverageImageUrl("codeCoverageImageUrl")
+            .withDashboardUrl("dashboardUrl")
+            .withDuplications(null)
+            .withDuplicationsUrl("duplicationsUrl")
+            .withDuplicationsImageUrl("duplicationsImageUrl")
+            .withFailedQualityGateConditions(java.util.List.of("issuea", "issueb", "issuec"))
+            .withNewCoverage(BigDecimal.valueOf(99))
+            .withSecurityHotspotCount(69)
+            .withStatusDescription("status description")
+            .withStatusImageUrl("statusImageUrl")
+            .withTotalIssueCount(666)
+            .withVulnerabilityCount(96)
+            .withVulnerabilityUrl("vulnerabilityUrl")
+            .withVulnerabilityImageUrl("vulnerabilityImageUrl")
+            .build();
+
+        Formatter<Document> formatter = mock();
+        doReturn("formatted content").when(formatter).format(any());
+        FormatterFactory formatterFactory = mock(FormatterFactory.class);
+        doReturn(formatter).when(formatterFactory).documentFormatter();
+
+        assertThat(underTest.format(formatterFactory)).isEqualTo("formatted content");
+
+        ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
+        verify(formatter).format(documentArgumentCaptor.capture());
+
+        Document expectedDocument = new Document(new Paragraph(new Image("status description", "statusImageUrl")),
+            new List(List.Style.BULLET,
+                new ListItem(new Text("issuea")),
+                new ListItem(new Text("issueb")),
+                new ListItem(new Text("issuec"))),
+            new Heading(1, new Text("Analysis Details")),
+            new Heading(2, new Text("666 Issues")),
+            new List(List.Style.BULLET,
+                new ListItem(
+                    new Link("bugUrl", new Image("Bug","bugImageUrl")),
+                    new Text(" "),
+                    new Text("911 Bugs")),
+                new ListItem(
+                    new Link("vulnerabilityUrl", new Image("Vulnerability","vulnerabilityImageUrl")),
+                    new Text(" "),
+                    new Text("165 Vulnerabilities")),
+                new ListItem(
+                    new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
+                    new Text(" "),
+                    new Text("1 Code Smell"))),
+            new Heading(2, new Text("Coverage and Duplications")),
+            new List(List.Style.BULLET,
+                new ListItem(
+                    new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl")),
+                    new Text(" "),
+                    new Text("99.00% Coverage (303.00% Estimated after merge)")),
+                new ListItem(
+                    new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl")),
+                    new Text(" "),
+                    new Text("199.00% Duplicated Code (0.00% Estimated after merge)"))),
+            new Paragraph(new Text("**Project ID:** projectKey")),
+            new Paragraph(new Link("dashboardUrl", new Text("View in SonarQube"))));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
 
