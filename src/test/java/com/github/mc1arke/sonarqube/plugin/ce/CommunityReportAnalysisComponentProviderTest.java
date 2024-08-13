@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,21 +18,46 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
+
+import com.github.mc1arke.sonarqube.plugin.almclient.DefaultLinkHeaderReader;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.DefaultBitbucketClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.HttpClientBuilderFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.DefaultGithubClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.DefaultUrlConnectionProvider;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAuthenticationProvider;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.DefaultGraphqlProvider;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestFixedIssuesIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestPostAnalysisTask;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.AzureDevOpsPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github.GithubPullRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabMergeRequestDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 
 /**
  * @author Michael Clarke
  */
-public class CommunityReportAnalysisComponentProviderTest {
+class CommunityReportAnalysisComponentProviderTest {
 
     @Test
-    public void testGetComponents() {
+    void shouldReturnAllRegisteredReportComponents() {
         List<Object> result = new CommunityReportAnalysisComponentProvider().getComponents();
-        assertEquals(18, result.size());
-        assertEquals(CommunityBranchLoaderDelegate.class, result.get(0));
+        assertThat(result).containsExactly(CommunityBranchLoaderDelegate.class, PullRequestPostAnalysisTask.class,
+            PostAnalysisIssueVisitor.class, DefaultLinkHeaderReader.class, ReportGenerator.class,
+            MarkdownFormatterFactory.class, DefaultGraphqlProvider.class, DefaultUrlConnectionProvider.class,
+            DefaultGithubClientFactory.class, RestApplicationAuthenticationProvider.class, GithubPullRequestDecorator.class,
+            HttpClientBuilderFactory.class, DefaultBitbucketClientFactory.class, BitbucketPullRequestDecorator.class,
+            DefaultGitlabClientFactory.class, GitlabMergeRequestDecorator.class,
+            DefaultAzureDevopsClientFactory.class, AzureDevOpsPullRequestDecorator.class,
+            PullRequestFixedIssuesIssueVisitor.class);
     }
 }
