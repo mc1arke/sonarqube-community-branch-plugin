@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAu
 import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.DefaultGraphqlProvider;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestFixedIssuesIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestPostAnalysisTask;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops.AzureDevOpsPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketPullRequestDecorator;
@@ -53,7 +54,8 @@ public class CommunityReportAnalysisComponentProvider implements ReportAnalysisC
                              DefaultGithubClientFactory.class, RestApplicationAuthenticationProvider.class, GithubPullRequestDecorator.class,
                              HttpClientBuilderFactory.class, DefaultBitbucketClientFactory.class, BitbucketPullRequestDecorator.class,
                              DefaultGitlabClientFactory.class, GitlabMergeRequestDecorator.class,
-                             DefaultAzureDevopsClientFactory.class, AzureDevOpsPullRequestDecorator.class);
+                             DefaultAzureDevopsClientFactory.class, AzureDevOpsPullRequestDecorator.class,
+                             PullRequestFixedIssuesIssueVisitor.class);
     }
 
 }
