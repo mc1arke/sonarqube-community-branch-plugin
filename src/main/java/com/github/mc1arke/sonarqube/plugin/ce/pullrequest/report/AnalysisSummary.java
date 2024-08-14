@@ -212,7 +212,7 @@ public final class AnalysisSummary {
         Document document = new Document(
                 new Heading(
                     3, 
-                    new Text("Quality Gate"), 
+                    new Link(getDashboardUrl(), new Text("Quality Gate")), 
                     new Text(" "), 
                     new Link(getDashboardUrl(), new Image(getStatusDescription(), getStatusImageUrl()))),
                 failedConditions.isEmpty() ? new Text("") :
@@ -248,7 +248,7 @@ public final class AnalysisSummary {
                                 new Text(Optional.ofNullable(getNewDuplications())
                                         .map(decimalFormat::format)
                                         .map(i -> i + "% Duplicated Code")
-                                        .orElse("No duplication info") + " (" + decimalFormat.format(getDuplications()) + "% Estimated after merge)"))),
+                                        .orElse("No duplication info") + + " (" + decimalFormat.format(Optional.ofNullable(getDuplications()).orElse(BigDecimal.ZERO)) + "% Estimated after merge)"))),
                 new Paragraph(new Text(String.format("**Project ID:** %s", getProjectKey()))));
 
         return formatterFactory.documentFormatter().format(document);

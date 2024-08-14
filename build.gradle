@@ -40,7 +40,7 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '10.4.0.87286'
+def sonarqubeVersion = '10.6.0.92116'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
@@ -62,17 +62,17 @@ tasks.withType(JavaCompile) {
 dependencies {
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
-    testImplementation('org.mockito:mockito-core:5.11.0')
-    testImplementation('org.assertj:assertj-core:3.25.3')
-    testImplementation('org.wiremock:wiremock:3.5.2')
+    testImplementation('org.mockito:mockito-core:5.12.0')
+    testImplementation('org.assertj:assertj-core:3.26.3')
+    testImplementation('org.wiremock:wiremock:3.8.0')
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
     implementation('org.bouncycastle:bcpkix-jdk15on:1.70')
     implementation(files('lib/nodes-0.5.0.jar'))
-    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.0')
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
     implementation('org.javassist:javassist:3.30.2-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:4.12.0')
-    testImplementation(platform('org.junit:junit-bom:5.10.2'))
+    testImplementation(platform('org.junit:junit-bom:5.10.3'))
     testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('junit:junit:4.13.2')
     testRuntimeOnly('org.junit.vintage:junit-vintage-engine')
