@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2024 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -64,6 +64,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
     private static final Logger LOGGER = LoggerFactory.getLogger(BitbucketPullRequestDecorator.class);
 
     private static final DecorationResult DEFAULT_DECORATION_RESULT = DecorationResult.builder().build();
+    private static final String REPORT_KEY = "com.sonarsource.sonarqube";
 
     private final BitbucketClientFactory bitbucketClientFactory;
     private final ReportGenerator reportGenerator;
@@ -93,9 +94,11 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                     analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? ReportStatus.PASSED : ReportStatus.FAILED
             );
 
-            client.uploadReport(analysisDetails.getCommitSha(), codeInsightsReport, analysisDetails.getAnalysisProjectKey());
+            String reportKey = Boolean.TRUE.equals(projectAlmSettingDto.getMonorepo()) ? analysisDetails.getAnalysisProjectKey() : REPORT_KEY;
 
-            updateAnnotations(client, analysisDetails);
+            client.uploadReport(analysisDetails.getCommitSha(), codeInsightsReport, reportKey);
+
+            updateAnnotations(client, analysisDetails, reportKey);
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }
@@ -120,10 +123,10 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
         return reportData;
     }
 
-    private void updateAnnotations(BitbucketClient client, AnalysisDetails analysisDetails) throws IOException {
+    private void updateAnnotations(BitbucketClient client, AnalysisDetails analysisDetails, String reportKey) throws IOException {
         final AtomicInteger chunkCounter = new AtomicInteger(0);
 
-        client.deleteAnnotations(analysisDetails.getCommitSha(), analysisDetails.getAnalysisProjectKey());
+        client.deleteAnnotations(analysisDetails.getCommitSha(), reportKey);
 
         AnnotationUploadLimit uploadLimit = client.getAnnotationUploadLimit();
 
@@ -152,7 +155,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                     break;
                 }
 
-                client.uploadAnnotations(analysisDetails.getCommitSha(), annotations, analysisDetails.getAnalysisProjectKey());
+                client.uploadAnnotations(analysisDetails.getCommitSha(), annotations, reportKey);
             } catch (BitbucketException e) {
                 if (e.isError(BitbucketException.PAYLOAD_TOO_LARGE)) {
                     LOGGER.warn("The annotations will be truncated since the maximum number of annotations for this report has been reached.");
@@ -197,19 +200,19 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
         }
     }
 
-    private static ReportData securityReport(Long vulnerabilities, Long hotspots) {
+    private static ReportData securityReport(long vulnerabilities, long hotspots) {
         String vulnerabilityDescription = vulnerabilities == 1 ? "Vulnerability" : "Vulnerabilities";
         String hotspotDescription = hotspots == 1 ? "Hotspot" : "Hotspots";
         String security = format("%d %s (and %d %s)", vulnerabilities, vulnerabilityDescription, hotspots, hotspotDescription);
         return new ReportData("Security", new DataValue.Text(security));
     }
 
-    private static ReportData reliabilityReport(Long bugs) {
+    private static ReportData reliabilityReport(long bugs) {
         String description = bugs == 1 ? "Bug" : "Bugs";
         return new ReportData("Reliability", new DataValue.Text(format("%d %s", bugs, description)));
     }
 
-    private static ReportData maintainabilityReport(Long codeSmells) {
+    private static ReportData maintainabilityReport(long codeSmells) {
         String description = codeSmells == 1 ? "Code Smell" : "Code Smells";
         return new ReportData("Maintainability", new DataValue.Text(format("%d %s", codeSmells, description)));
     }
