@@ -119,6 +119,20 @@ class BranchConfigurationFactoryTest {
     }
 
     @Test
+    void shouldReturnPullRequestWithTargetOfDefaultBranchIfTargetDoesNotExistAndDefaultExists() {
+        ProjectBranches projectBranches = mock();
+        when(projectBranches.isEmpty()).thenReturn(false);
+        when(projectBranches.defaultBranchName()).thenReturn("defaultBranch");
+        BranchInfo branchInfo = new BranchInfo("defaultBranch", BranchType.BRANCH, true, null);
+        when(projectBranches.get("defaultBranch")).thenReturn(branchInfo);
+
+        BranchConfigurationFactory underTest = new BranchConfigurationFactory();
+        BranchConfiguration actual = underTest.createPullRequestConfiguration("key", "source", "missing", projectBranches);
+
+        assertThat(actual).usingRecursiveComparison().isEqualTo(new CommunityBranchConfiguration("source", BranchType.PULL_REQUEST, "defaultBranch", "missing", "key"));
+    }
+
+    @Test
     void shouldReturnPullRequestWithTargetOfTargetAsReferenceIfTargetBranchExists() {
         ProjectBranches projectBranches = mock(ProjectBranches.class);
         when(projectBranches.isEmpty()).thenReturn(false);

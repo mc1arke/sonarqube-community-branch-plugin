@@ -41,7 +41,7 @@ public class BranchConfigurationFactory {
 
     public BranchConfiguration createPullRequestConfiguration(String pullRequestKey, String pullRequestBranch, String pullRequestBase, ProjectBranches branches) {
         String targetBranch = Optional.ofNullable(pullRequestBase).orElse(branches.defaultBranchName());
-        String referenceBranch = findReferenceBranch(targetBranch, branches);
+        String referenceBranch = findReferenceBranch(Optional.ofNullable(branches.get(targetBranch)).map(BranchInfo::name).orElse(branches.defaultBranchName()), branches);
         return new CommunityBranchConfiguration(pullRequestBranch, BranchType.PULL_REQUEST, referenceBranch, targetBranch, pullRequestKey);
     }
 
@@ -58,6 +58,7 @@ public class BranchConfigurationFactory {
             throw MessageException.of(String.format("The branch '%s' of type %s does not have a target", target.name(), target.type()));
         }
 
-        return findReferenceBranch(targetBranchTarget, branches);
+        return Optional.ofNullable(branches.get(targetBranchTarget)).map(BranchInfo::name)
+                .orElseThrow(() -> MessageException.of(String.format("The branch '%s' of type %s has a target '%s' which does not exist", target.name(), target.type(), targetBranchTarget)));
     }
 }
