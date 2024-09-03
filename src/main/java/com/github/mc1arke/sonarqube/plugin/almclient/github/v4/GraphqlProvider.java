@@ -20,7 +20,6 @@ package com.github.mc1arke.sonarqube.plugin.almclient.github.v4;
 
 import io.aexp.nodes.graphql.GraphQLRequestEntity;
 import io.aexp.nodes.graphql.GraphQLTemplate;
-import io.aexp.nodes.graphql.InputObject;
 
 public interface GraphqlProvider {
 
