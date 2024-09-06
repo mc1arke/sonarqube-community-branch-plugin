@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,6 @@ import io.aexp.nodes.graphql.Arguments;
 import io.aexp.nodes.graphql.GraphQLRequestEntity;
 import io.aexp.nodes.graphql.GraphQLResponseEntity;
 import io.aexp.nodes.graphql.GraphQLTemplate;
-import io.aexp.nodes.graphql.InputObject;
 import io.aexp.nodes.graphql.internal.Error;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +89,7 @@ public class GraphqlGithubClient implements GithubClient {
         inputObjectArguments.put("completedAt", DATE_TIME_FORMATTER.format(checkRunDetails.getEndTime()));
         inputObjectArguments.put("externalId", checkRunDetails.getExternalId());
         inputObjectArguments.put("output", checkRunOutputContentBuilder.build());
+        inputObjectArguments.put("headSha", checkRunDetails.getCommitId());
 
         InputObject.Builder<Object> repositoryInputObjectBuilder = graphqlProvider.createInputObject();
         inputObjectArguments.forEach(repositoryInputObjectBuilder::put);
@@ -101,9 +101,7 @@ public class GraphqlGithubClient implements GithubClient {
                         .url(graphqlUrl)
                         .headers(headers)
                         .request(CreateCheckRun.class)
-                        .arguments(new Arguments("createCheckRun", new Argument<>(INPUT, repositoryInputObjectBuilder
-                                .put("headSha", checkRunDetails.getCommitId())
-                                .build())))
+                        .arguments(new Arguments("createCheckRun", new Argument<>(INPUT, repositoryInputObjectBuilder.build())))
                         .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE);
 
         GraphQLRequestEntity graphQLRequestEntity = graphQLRequestEntityBuilder.build();
