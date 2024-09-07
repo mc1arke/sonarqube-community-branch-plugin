@@ -23,7 +23,7 @@ Use the following table to find the correct plugin version for each SonarQube ve
 
 | SonarQube Version | Plugin Version |
 |-------------------|----------------|
-| 10.6              | 1.21.0         |
+| 10.6              | 1.22.0         |
 | 10.5              | 1.20.0         |
 | 10.4              | 1.19.0         |
 | 9.9 (LTS)         | 1.14.0         |
