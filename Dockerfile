@@ -1,13 +1,13 @@
 ARG SONARQUBE_VERSION
 
-FROM gradle:8.9-jdk17-jammy as builder
+FROM gradle:8.9-jdk17-jammy AS builder
 
 COPY . /home/build/project
 WORKDIR /home/build/project
 RUN gradle build -x test
 
 FROM sonarqube:${SONARQUBE_VERSION}
-COPY --from=builder --chown=sonarqube:sonarqube /home/build/project/build/libs/sonarqube-community-branch-plugin-*.jar /opt/sonarqube/extensions/plugins/
+COPY --from=builder --chown=sonarqube /home/build/project/build/libs/sonarqube-community-branch-plugin-*.jar /opt/sonarqube/extensions/plugins/
 
 ARG PLUGIN_VERSION
 ENV PLUGIN_VERSION=${PLUGIN_VERSION}
