@@ -104,7 +104,7 @@ public class ListAction extends ProjectWsAction {
         protoBufWriter.write(protobufResponse.build(), request, response);
     }
 
-    private static void checkPermission(ProjectDto project, UserSession userSession) {
+    static void checkPermission(ProjectDto project, UserSession userSession) {
         if (userSession.hasEntityPermission(UserRole.USER, project) ||
             userSession.hasEntityPermission(UserRole.SCAN, project) ||
             userSession.hasPermission(GlobalPermission.SCAN)) {

@@ -58,6 +58,7 @@ import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.Pul
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.DeleteAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.ListAction;
 
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.GitLabReportAction;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.Plugin;
 import org.sonar.api.PropertyType;
@@ -94,6 +95,7 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                     ValidateBindingAction.class,
                     DeleteAction.class,
                     ListAction.class,
+                    GitLabReportAction.class,
                     PullRequestWs.class,
 
                     GithubValidator.class,
