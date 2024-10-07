@@ -57,6 +57,7 @@ import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.PullRequestWs;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.DeleteAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.ListAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.GitLabReportAction;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.sonar.api.Plugin;
@@ -142,6 +143,7 @@ class CommunityBranchPluginTest {
                 eq(ValidateBindingAction.class),
                 eq(DeleteAction.class),
                 eq(ListAction.class),
+                eq(GitLabReportAction.class),
                 eq(PullRequestWs.class),
                 eq(GithubValidator.class),
                 eq(DefaultGraphqlProvider.class),
