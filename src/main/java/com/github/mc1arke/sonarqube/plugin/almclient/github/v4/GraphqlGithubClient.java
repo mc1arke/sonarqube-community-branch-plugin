@@ -89,7 +89,6 @@ public class GraphqlGithubClient implements GithubClient {
         inputObjectArguments.put("completedAt", DATE_TIME_FORMATTER.format(checkRunDetails.getEndTime()));
         inputObjectArguments.put("externalId", checkRunDetails.getExternalId());
         inputObjectArguments.put("output", checkRunOutputContentBuilder.build());
-        inputObjectArguments.put("headSha", checkRunDetails.getCommitId());
 
         InputObject.Builder<Object> repositoryInputObjectBuilder = graphqlProvider.createInputObject();
         inputObjectArguments.forEach(repositoryInputObjectBuilder::put);
@@ -101,7 +100,9 @@ public class GraphqlGithubClient implements GithubClient {
                         .url(graphqlUrl)
                         .headers(headers)
                         .request(CreateCheckRun.class)
-                        .arguments(new Arguments("createCheckRun", new Argument<>(INPUT, repositoryInputObjectBuilder.build())))
+                        .arguments(new Arguments("createCheckRun", new Argument<>(INPUT, repositoryInputObjectBuilder
+                                .put("headSha", checkRunDetails.getCommitId())
+                                .build())))
                         .requestMethod(GraphQLTemplate.GraphQLMethod.MUTATE);
 
         GraphQLRequestEntity graphQLRequestEntity = graphQLRequestEntityBuilder.build();
