@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Markus Heberling, Michael Clarke
+ * Copyright (C) 2019-2024 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
-import com.github.mc1arke.sonarqube.plugin.almclient.LinkHeaderReader;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.LinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;

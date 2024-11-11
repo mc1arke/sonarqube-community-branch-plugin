@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,15 +18,15 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator;
 
-import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
+import java.util.List;
+
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
-import java.util.Collections;
-import java.util.List;
+import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
 
 @ServerSide
 public class GithubValidator implements Validator {
@@ -40,17 +40,17 @@ public class GithubValidator implements Validator {
     @Override
     public void validate(ProjectAlmSettingDto projectAlmSettingDto, AlmSettingDto almSettingDto) {
         try {
-            githubClientFactory.createClient(projectAlmSettingDto, almSettingDto);
+            githubClientFactory.createClient(almSettingDto, projectAlmSettingDto).getRepository(projectAlmSettingDto.getAlmRepo());
         } catch (InvalidConfigurationException ex) {
             throw ex;
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
             throw new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "Could not create Github client - " + ex.getMessage(), ex);
         }
     }
 
     @Override
     public List<ALM> alm() {
-        return Collections.singletonList(ALM.GITHUB);
+        return List.of(ALM.GITHUB);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.almclient;
+package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

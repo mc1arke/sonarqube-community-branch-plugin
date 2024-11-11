@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Julien Roy
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,8 +16,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package com.github.mc1arke.sonarqube.plugin.almclient.github.v4.model;
+package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
-public enum CommentClassifiers {
-    OUTDATED
+import java.util.Optional;
+
+public interface LinkHeaderReader {
+
+    Optional<String> findNextLink(String linkHeader);
+
 }
