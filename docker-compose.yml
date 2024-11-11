@@ -1,9 +1,8 @@
-version: "3.8"
-
 services:
   sonarqube:
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     image: mc1arke/sonarqube-with-community-branch-plugin:${SONARQUBE_VERSION}
     build:
       context: .
@@ -13,7 +12,7 @@ services:
         PLUGIN_VERSION: ${PLUGIN_VERSION}
     container_name: sonarqube
     ports:
-      - 9000:9000
+      - "9000:9000"
     networks:
       - sonarnet
     environment:
@@ -24,7 +23,13 @@ services:
       - sonarqube_conf:/opt/sonarqube/conf
       - sonarqube_data:/opt/sonarqube/data
   db:
-    image: postgres:11
+    image: postgres:16
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sonar" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    hostname: db
     container_name: postgres
     networks:
       - sonarnet

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
-import com.github.mc1arke.sonarqube.plugin.almclient.LinkHeaderReader;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.impl.client.HttpClients;
 import org.sonar.api.ce.ComputeEngineSide;

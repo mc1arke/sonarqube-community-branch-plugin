@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,21 +18,40 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
-import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClient;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.model.Annotation;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.model.CheckRunDetails;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.model.CheckAnnotationLevel;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.model.CheckConclusionState;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.net.URL;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.kohsuke.github.GHCheckRun;
+import org.kohsuke.github.GHCheckRunBuilder;
+import org.kohsuke.github.GHIssueComment;
+import org.kohsuke.github.GHPullRequest;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHUser;
+import org.kohsuke.github.GitHub;
 import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.rule.Severity;
 import org.sonar.ce.task.projectanalysis.component.Component;
@@ -40,41 +59,30 @@ import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
-import java.io.IOException;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 
 class GithubPullRequestDecoratorTest {
 
-    private final GithubClient githubClient = mock(GithubClient.class);
-    private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-    private final GithubClientFactory githubClientFactory = mock(GithubClientFactory.class);
-    private final ReportGenerator reportGenerator = mock(ReportGenerator.class);
-    private final MarkdownFormatterFactory markdownFormatterFactory = mock(MarkdownFormatterFactory.class);
+    private final AnalysisDetails analysisDetails = mock();
+    private final GithubClientFactory githubClientFactory = mock();
+    private final ReportGenerator reportGenerator = mock();
+    private final MarkdownFormatterFactory markdownFormatterFactory = mock();
     private final Clock clock = Clock.fixed(Instant.ofEpochSecond(102030405), ZoneId.of("UTC"));
     private final GithubPullRequestDecorator testCase = new GithubPullRequestDecorator(githubClientFactory, reportGenerator, markdownFormatterFactory, clock);
-    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-    private final AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock();
+    private final AlmSettingDto almSettingDto = mock();
+    private final AnalysisSummary analysisSummary = mock();
+    private final GitHub gitHub = mock();
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
+        doReturn("alm-repo").when(projectAlmSettingDto).getAlmRepo();
         doReturn("123").when(analysisDetails).getPullRequestId();
         doReturn(Date.from(clock.instant())).when(analysisDetails).getAnalysisDate();
         doReturn("analysis-id").when(analysisDetails).getAnalysisId();
@@ -98,18 +106,18 @@ class GithubPullRequestDecoratorTest {
         doReturn(analysisSummary).when(reportGenerator).createAnalysisSummary(any());
         doReturn("dashboard-url").when(analysisSummary).getDashboardUrl();
         doReturn("report summary").when(analysisSummary).format(any());
+        doReturn(gitHub).when(githubClientFactory).createClient(any(), any());
     }
 
     @Test
-    void verifyCorrectNameReturned() {
-        assertThat(testCase.alm()).isEqualTo(Collections.singletonList(ALM.GITHUB));
+    void shouldReturnCorrectAlms() {
+        assertThat(testCase.alm()).isEqualTo(List.of(ALM.GITHUB));
     }
 
     @Test
-    void verifyClientExceptionPropagated() throws IOException {
+    void shouldThrowExceptionIfClientCreationFails() throws IOException {
         Exception dummyException = new IOException("Dummy Exception");
-        doReturn(githubClient).when(githubClientFactory).createClient(any(), any());
-        doThrow(dummyException).when(githubClient).createCheckRun(any(), anyBoolean());
+        doThrow(dummyException).when(githubClientFactory).createClient(any(), any());
 
         assertThatThrownBy(() -> testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .hasMessage("Could not decorate Pull Request on Github")
@@ -117,38 +125,131 @@ class GithubPullRequestDecoratorTest {
     }
 
     @Test
-    void verifyCorrectArgumentsAndReturnValuesUsed() throws IOException {
+    void shouldDecoratePullRequestWithCorrectAnalysisAndSummaryCommentWhenEnabled() throws IOException {
         doReturn(true).when(projectAlmSettingDto).getSummaryCommentEnabled();
-        DecorationResult expectedResult = DecorationResult.builder().withPullRequestUrl("http://github.url/repo/path/pull/123").build();
-        doReturn(githubClient).when(githubClientFactory).createClient(any(), any());
-        doReturn("checkRunId").when(githubClient).createCheckRun(any(), anyBoolean());
-        doReturn("http://github.url/repo/path").when(githubClient).getRepositoryUrl();
+        GHRepository repository = mock();
+        doReturn(repository).when(gitHub).getRepository(any());
+        GHCheckRunBuilder checkRunBuilder = mock(InvocationOnMock::getMock);
+        doReturn(null).when(checkRunBuilder).create();
+        doReturn(checkRunBuilder).when(repository).createCheckRun(any(), any());
+        GHPullRequest pullRequest = mock();
+        GHIssueComment comment1 = createComment("summary comment from current bot user, no project ID", "Bot", 123, 1);
+        GHIssueComment comment2 = createComment("summary comment from non bot user with no project ID", "User", 321, 2);
+        GHIssueComment comment3 = createComment("summary comment from current bot user, with project ID. **Project ID:** project-key\n", "Bot", 123, 3);
+        GHIssueComment comment4 = createComment("summary comment from other bot user, with project ID. **Project ID:** project-key\n", "Bot", 999, 4);
+        GHIssueComment comment5 = createComment("summary comment from other bot user, with project ID. **Project ID:** project-key\n", "User", 111, 5);
+        GHIssueComment summaryComment = createComment("summary comment from current bot user, with project ID. **Project ID:** project-key\r", "Bot", 123, 6);
+        doReturn(List.of(comment1, comment2, comment3, comment4, comment5, summaryComment)).when(pullRequest).getComments();
+        doReturn(summaryComment).when(pullRequest).comment(any(String.class));
+        doReturn(pullRequest).when(repository).getPullRequest(anyInt());
+        doReturn(new URL("http://url.of/pull/request")).when(pullRequest).getHtmlUrl();
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        ArgumentCaptor<CheckRunDetails> checkRunDetailsArgumentCaptor = ArgumentCaptor.forClass(CheckRunDetails.class);
-        verify(githubClient).createCheckRun(checkRunDetailsArgumentCaptor.capture(), eq(true));
+        verify(gitHub).getRepository("alm-repo");
+        verify(repository).createCheckRun("Project Name Sonarqube Results", "commit-sha");
 
-        assertThat(checkRunDetailsArgumentCaptor.getValue())
-                .usingRecursiveComparison()
-                        .isEqualTo(CheckRunDetails.builder()
-                                .withTitle("Quality Gate success")
-                                .withName("Project Name Sonarqube Results")
-                                .withExternalId("analysis-id")
-                                .withPullRequestId(123)
-                                .withStartTime(clock.instant().atZone(ZoneId.of("UTC")))
-                                .withEndTime(clock.instant().atZone(ZoneId.of("UTC")))
-                                .withDashboardUrl("dashboard-url")
-                                .withSummary("report summary")
-                                .withCommitId("commit-sha")
-                                .withAnnotations(IntStream.range(0, 20).mapToObj(i -> Annotation.builder()
-                                            .withScmPath("path" + i)
-                                            .withLine(i)
-                                            .withMessage("issue message " + i)
-                                            .withSeverity(i % 5 < 1 ? CheckAnnotationLevel.NOTICE : i % 5 > 2 ? CheckAnnotationLevel.FAILURE : CheckAnnotationLevel.WARNING)
-                                            .build()).collect(Collectors.toList()))
-                                .withCheckConclusionState(CheckConclusionState.SUCCESS)
-                                .withProjectKey(analysisDetails.getAnalysisProjectKey())
-                                .build());
+        ArgumentCaptor<GHCheckRunBuilder.Output> outputCaptor = ArgumentCaptor.captor();
+
+        verify(checkRunBuilder).add(outputCaptor.capture());
+        verify(checkRunBuilder).withExternalID("analysis-id");
+        verify(checkRunBuilder).withStartedAt(Date.from(clock.instant()));
+        verify(checkRunBuilder).withCompletedAt(Date.from(clock.instant()));
+        verify(checkRunBuilder).withDetailsURL("dashboard-url");
+        verify(checkRunBuilder).withStatus(GHCheckRun.Status.COMPLETED);
+        verify(checkRunBuilder).withConclusion(GHCheckRun.Conclusion.SUCCESS);
+        verify(checkRunBuilder).create();
+
+        verifyNoMoreInteractions(checkRunBuilder);
+
+        GHCheckRunBuilder.Output output = new GHCheckRunBuilder.Output("Quality Gate success", "report summary");
+        for (int i = 0; i < 20; i++) {
+            output.add(new GHCheckRunBuilder.Annotation(
+                "path" + i,
+                i,
+                i % 5 < 1 ? GHCheckRun.AnnotationLevel.NOTICE : i % 5 > 2 ? GHCheckRun.AnnotationLevel.FAILURE : GHCheckRun.AnnotationLevel.WARNING,
+                "issue message " + i));
+        }
+
+        assertThat(outputCaptor.getValue()).usingRecursiveComparison().isEqualTo(output);
+
+        DecorationResult expectedResult = DecorationResult.builder().withPullRequestUrl("http://url.of/pull/request").build();
         assertThat(decorationResult).usingRecursiveComparison().isEqualTo(expectedResult);
+
+        verifyNoMoreInteractions(gitHub);
+
+        verify(comment1, never()).delete();
+        verify(comment2, never()).delete();
+        verify(comment3).delete();
+        verify(comment4, never()).delete();
+        verify(comment5, never()).delete();
+        verify(summaryComment, never()).delete();
+
+        verify(pullRequest).comment("report summary");
+        verify(pullRequest).getHtmlUrl();
+        verify(pullRequest).getComments();
+        verifyNoMoreInteractions(pullRequest);
+    }
+
+
+    @Test
+    void shouldDecoratePullRequestWithCorrectAnalysisAndNoSummaryCommentWhenDisabled() throws IOException {
+        doReturn(false).when(projectAlmSettingDto).getSummaryCommentEnabled();
+        GHRepository repository = mock();
+        doReturn(repository).when(gitHub).getRepository(any());
+        GHCheckRunBuilder checkRunBuilder = mock(InvocationOnMock::getMock);
+        doReturn(null).when(checkRunBuilder).create();
+        doReturn(checkRunBuilder).when(repository).createCheckRun(any(), any());
+        GHPullRequest pullRequest = mock();
+        doReturn(pullRequest).when(repository).getPullRequest(anyInt());
+        doReturn(new URL("http://url.of/pull/request")).when(pullRequest).getHtmlUrl();
+        doReturn(QualityGate.Status.ERROR).when(analysisDetails).getQualityGateStatus();
+
+        DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(gitHub).getRepository("alm-repo");
+        verify(repository).createCheckRun("Project Name Sonarqube Results", "commit-sha");
+
+        ArgumentCaptor<GHCheckRunBuilder.Output> outputCaptor = ArgumentCaptor.captor();
+
+        verify(checkRunBuilder).add(outputCaptor.capture());
+        verify(checkRunBuilder).withExternalID("analysis-id");
+        verify(checkRunBuilder).withStartedAt(Date.from(clock.instant()));
+        verify(checkRunBuilder).withCompletedAt(Date.from(clock.instant()));
+        verify(checkRunBuilder).withDetailsURL("dashboard-url");
+        verify(checkRunBuilder).withStatus(GHCheckRun.Status.COMPLETED);
+        verify(checkRunBuilder).withConclusion(GHCheckRun.Conclusion.FAILURE);
+        verify(checkRunBuilder).create();
+
+        verifyNoMoreInteractions(checkRunBuilder);
+
+        GHCheckRunBuilder.Output output = new GHCheckRunBuilder.Output("Quality Gate failed", "report summary");
+        for (int i = 0; i < 20; i++) {
+            output.add(new GHCheckRunBuilder.Annotation(
+                "path" + i,
+                i,
+                i % 5 < 1 ? GHCheckRun.AnnotationLevel.NOTICE : i % 5 > 2 ? GHCheckRun.AnnotationLevel.FAILURE : GHCheckRun.AnnotationLevel.WARNING,
+                "issue message " + i));
+        }
+
+        assertThat(outputCaptor.getValue()).usingRecursiveComparison().isEqualTo(output);
+
+        DecorationResult expectedResult = DecorationResult.builder().withPullRequestUrl("http://url.of/pull/request").build();
+        assertThat(decorationResult).usingRecursiveComparison().isEqualTo(expectedResult);
+
+        verifyNoMoreInteractions(gitHub);
+
+        verify(pullRequest).getHtmlUrl();
+        verifyNoMoreInteractions(pullRequest);
+    }
+
+    private static GHIssueComment createComment(String body, String userType, long userId, long commentId) throws IOException {
+        GHIssueComment comment = mock();
+        when(comment.getBody()).thenReturn(body);
+        when(comment.getId()).thenReturn(commentId);
+        GHUser user = mock();
+        when(user.getId()).thenReturn(userId);
+        when(user.getType()).thenReturn(userType);
+        when(comment.getUser()).thenReturn(user);
+        return comment;
     }
 }

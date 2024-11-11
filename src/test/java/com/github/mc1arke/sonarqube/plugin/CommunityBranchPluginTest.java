@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,14 +18,11 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
-import com.github.mc1arke.sonarqube.plugin.almclient.DefaultLinkHeaderReader;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultLinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.DefaultBitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.HttpClientBuilderFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.DefaultGithubClientFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.DefaultUrlConnectionProvider;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAuthenticationProvider;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.DefaultGraphqlProvider;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.scanner.BranchConfigurationFactory;
@@ -144,11 +141,8 @@ class CommunityBranchPluginTest {
                 eq(ListAction.class),
                 eq(PullRequestWs.class),
                 eq(GithubValidator.class),
-                eq(DefaultGraphqlProvider.class),
-                eq(DefaultGithubClientFactory.class),
+                eq(GithubClientFactory.class),
                 eq(DefaultLinkHeaderReader.class),
-                eq(DefaultUrlConnectionProvider.class),
-                eq(RestApplicationAuthenticationProvider.class),
                 eq(HttpClientBuilderFactory.class),
                 eq(DefaultBitbucketClientFactory.class),
                 eq(BitbucketValidator.class),

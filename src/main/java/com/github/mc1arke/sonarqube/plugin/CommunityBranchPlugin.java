@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,15 +18,21 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
-import com.github.mc1arke.sonarqube.plugin.almclient.DefaultLinkHeaderReader;
+import org.sonar.api.CoreProperties;
+import org.sonar.api.Plugin;
+import org.sonar.api.PropertyType;
+import org.sonar.api.SonarQubeSide;
+import org.sonar.api.config.PropertyDefinition;
+import org.sonar.api.resources.Qualifiers;
+import org.sonar.core.config.PurgeConstants;
+import org.sonar.core.extension.CoreExtension;
+
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.DefaultBitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.HttpClientBuilderFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.DefaultGithubClientFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.DefaultUrlConnectionProvider;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.v3.RestApplicationAuthenticationProvider;
-import com.github.mc1arke.sonarqube.plugin.almclient.github.v4.DefaultGraphqlProvider;
+import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultLinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
 import com.github.mc1arke.sonarqube.plugin.scanner.BranchConfigurationFactory;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
@@ -58,15 +64,6 @@ import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.Pul
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.DeleteAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.ListAction;
 
-import org.sonar.api.CoreProperties;
-import org.sonar.api.Plugin;
-import org.sonar.api.PropertyType;
-import org.sonar.api.SonarQubeSide;
-import org.sonar.api.config.PropertyDefinition;
-import org.sonar.api.resources.Qualifiers;
-import org.sonar.core.config.PurgeConstants;
-import org.sonar.core.extension.CoreExtension;
-
 /**
  * @author Michael Clarke
  */
@@ -97,11 +94,8 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                     PullRequestWs.class,
 
                     GithubValidator.class,
-                    DefaultGraphqlProvider.class,
-                    DefaultGithubClientFactory.class,
+                    GithubClientFactory.class,
                     DefaultLinkHeaderReader.class,
-                    DefaultUrlConnectionProvider.class,
-                    RestApplicationAuthenticationProvider.class,
                     HttpClientBuilderFactory.class,
                     DefaultBitbucketClientFactory.class,
                     BitbucketValidator.class,
