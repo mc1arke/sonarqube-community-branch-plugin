@@ -37,6 +37,7 @@ public final class List extends Node {
     }
 
     public enum Style {
+        NONE,
         BULLET
     }
 }

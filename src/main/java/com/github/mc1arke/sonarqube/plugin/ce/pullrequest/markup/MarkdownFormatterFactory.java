@@ -55,6 +55,8 @@ public final class MarkdownFormatterFactory extends BaseFormatterFactory {
             node.getChildren().forEach(i -> {
                 if (node.getStyle() == List.Style.BULLET) {
                     output.append("- ").append(format(i));
+                } else if (node.getStyle() == List.Style.NONE) {
+                    output.append(format(i));
                 } else {
                     throw new IllegalArgumentException("Unknown list type: " + node.getStyle());
                 }
