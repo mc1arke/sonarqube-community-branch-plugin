@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,50 +18,38 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report;
 
-import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.config.Configuration;
-import org.sonar.api.issue.Issue;
-import org.sonar.api.measures.CoreMetrics;
-import org.sonar.api.measures.Metric;
-import org.sonar.api.platform.Server;
-import org.sonar.api.rules.RuleType;
-import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
-import org.sonar.ce.task.projectanalysis.measure.Measure;
-import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
-import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
-import org.sonar.server.measure.Rating;
-
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.Configuration;
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.api.issue.impact.SoftwareQuality;
+import org.sonar.api.measures.CoreMetrics;
+import org.sonar.api.measures.Metric;
+import org.sonar.api.platform.Server;
+import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
+import org.sonar.ce.task.projectanalysis.measure.Measure;
+import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
+import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
+import org.sonar.server.measure.Rating;
+
+import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+
 public class ReportGenerator {
 
-    private static final List<String> CLOSED_ISSUE_STATUS = Arrays.asList(Issue.STATUS_CLOSED, Issue.STATUS_RESOLVED);
-
-    private static final List<BigDecimal> COVERAGE_LEVELS = List.of(BigDecimal.valueOf(100),
-                    BigDecimal.valueOf(90),
-                    BigDecimal.valueOf(60),
-                    BigDecimal.valueOf(50),
-                    BigDecimal.valueOf(40),
-                    BigDecimal.valueOf(25));
-
-    private static final List<DuplicationMapping> DUPLICATION_LEVELS = List.of(new DuplicationMapping(BigDecimal.valueOf(3), "3"),
-                    new DuplicationMapping(BigDecimal.valueOf(5), "5"),
-                    new DuplicationMapping(BigDecimal.TEN, "10"),
-                    new DuplicationMapping(BigDecimal.valueOf(20), "20"));
+    private static final String NO_DATA_IMAGE_PATH = "common/no-data-16px.png";
+    private static final String PASSED_IMAGE_PATH = "common/passed-16px.png";
 
     private final Server server;
     private final Configuration configuration;
@@ -80,19 +68,9 @@ public class ReportGenerator {
     public AnalysisIssueSummary createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue componentIssue, AnalysisDetails analysisDetails) {
         final PostAnalysisIssueVisitor.LightIssue issue = componentIssue.getIssue();
 
-        String baseImageUrl = getBaseImageUrl();
-
         return AnalysisIssueSummary.builder()
-                .withEffortInMinutes(issue.effortInMinutes())
-                .withIssueKey(issue.key())
                 .withIssueUrl(getIssueUrl(issue, analysisDetails))
                 .withMessage(issue.getMessage())
-                .withProjectKey(analysisDetails.getAnalysisProjectKey())
-                .withResolution(issue.resolution())
-                .withSeverity(issue.severity())
-                .withSeverityImageUrl(String.format("%s/checks/Severity/%s.png", baseImageUrl, issue.severity().toLowerCase()))
-                .withType(issue.type().name())
-                .withTypeImageUrl(String.format("%s/checks/IssueType/%s.png", baseImageUrl, issue.type().name().toLowerCase()))
                 .build();
     }
 
@@ -119,8 +97,13 @@ public class ReportGenerator {
                 .map(BigDecimal::valueOf)
                 .orElse(null);
 
-        Map<RuleType, Long> issueCounts = countRuleByType(analysisDetails.getIssues());
-        long issueTotal = issueCounts.values().stream().mapToLong(l -> l).sum();
+        int fixedIssues = findMeasure(CoreMetrics.PULL_REQUEST_FIXED_ISSUES_KEY)
+            .map(Measure::getIntValue)
+            .orElse(0);
+        long newIssues = analysisDetails.getIssues().stream().filter(i -> i.getIssue().issueStatus() == IssueStatus.OPEN).count();
+        int acceptedIssues = findMeasure(CoreMetrics.ACCEPTED_ISSUES_KEY)
+            .map(Measure::getIntValue)
+            .orElse(0);
 
         List<QualityGate.Condition> failedConditions = analysisDetails.findFailedQualityGateConditions();
 
@@ -129,43 +112,25 @@ public class ReportGenerator {
         return AnalysisSummary.builder()
                 .withProjectKey(analysisDetails.getAnalysisProjectKey())
                 .withSummaryImageUrl(baseImageUrl + "/common/icon.png")
-                .withBugCount(issueCounts.get(RuleType.BUG))
-                .withBugUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.BUG))
-                .withBugImageUrl(baseImageUrl + "/common/bug.png")
-                .withCodeSmellCount(issueCounts.get(RuleType.CODE_SMELL))
-                .withCodeSmellUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.CODE_SMELL))
-                .withCodeSmellImageUrl(baseImageUrl + "/common/code_smell.png")
-                .withCoverage(coverage)
+                .withCoverage(new AnalysisSummary.UrlIconMetric<>(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_COVERAGE_KEY), baseImageUrl + "/" + (newCoverage == null ? NO_DATA_IMAGE_PATH : PASSED_IMAGE_PATH), coverage))
                 .withNewCoverage(newCoverage)
-                .withCoverageUrl(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_COVERAGE_KEY))
-                .withCoverageImageUrl(createCoverageImage(newCoverage, baseImageUrl))
                 .withDashboardUrl(getDashboardUrl(analysisDetails))
-                .withDuplications(duplications)
-                .withDuplicationsUrl(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY))
-                .withDuplicationsImageUrl(createDuplicateImage(newDuplications, baseImageUrl))
+                .withDuplications(new AnalysisSummary.UrlIconMetric<>(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY), baseImageUrl + "/" + (newDuplications == null ? NO_DATA_IMAGE_PATH : PASSED_IMAGE_PATH), duplications))
                 .withNewDuplications(newDuplications)
                 .withFailedQualityGateConditions(failedConditions.stream()
                         .map(ReportGenerator::formatQualityGateCondition)
                         .collect(Collectors.toList()))
                 .withStatusDescription(QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ? "Passed" : "Failed")
                 .withStatusImageUrl(QualityGate.Status.OK == analysisDetails.getQualityGateStatus()
-                        ? baseImageUrl + "/checks/QualityGateBadge/passed.png"
-                        : baseImageUrl + "/checks/QualityGateBadge/failed.png")
-                .withTotalIssueCount(issueTotal)
-                .withSecurityHotspotCount(issueCounts.get(RuleType.SECURITY_HOTSPOT))
-                .withVulnerabilityCount(issueCounts.get(RuleType.VULNERABILITY))
-                .withVulnerabilityUrl(getIssuesUrlForRuleType(analysisDetails, RuleType.VULNERABILITY))
-                .withVulnerabilityImageUrl(baseImageUrl + "/common/vulnerability.png")
+                        ? baseImageUrl + "/checks/QualityGateBadge/passed-16px.png"
+                        : baseImageUrl + "/checks/QualityGateBadge/failed-16px.png")
+                .withSecurityHotspots(new AnalysisSummary.UrlIconMetric<>(String.format("%s/security_hotspots?id=%s&pullRequest=%s", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)),
+                    baseImageUrl + "/" + PASSED_IMAGE_PATH,
+                    findMeasure(CoreMetrics.SECURITY_HOTSPOTS_KEY).map(Measure::getIntValue).orElse(0)))
+                .withFixedIssues(new AnalysisSummary.UrlIconMetric<>(String.format("%s/project/issues?id=%s&fixedInPullRequest=%s", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/common/fixed-16px.png", fixedIssues))
+                .withNewIssues(new AnalysisSummary.UrlIconMetric<>(String.format("%s/project/issues?id=%s&pullRequest=%s&resolved=false", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/" + PASSED_IMAGE_PATH, newIssues))
+                .withAcceptedIssues(new AnalysisSummary.UrlIconMetric<>(String.format("%s/project/issues?id=%s&pullRequest=%s&issueStatus=ACCEPTED", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/common/accepted-16px.png", acceptedIssues))
                 .build();
-    }
-
-    private String getIssuesUrlForRuleType(AnalysisDetails analysisDetails, RuleType ruleType) {
-        // https://my-server:port/project/issues?pullRequest=341&resolved=false&types=BUG&inNewCodePeriod=true&id=some-key
-        return server.getPublicRootUrl() +
-                "/project/issues?pullRequest=" + analysisDetails.getPullRequestId() +
-                "&resolved=false&types=" + ruleType.name() +
-                "&inNewCodePeriod=true" +
-                "&id=" + URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8);
     }
 
     private String getComponentMeasuresUrlForCodeMetrics(AnalysisDetails analysisDetails, String codeMetricsKey) {
@@ -184,7 +149,7 @@ public class ReportGenerator {
     }
 
     private String getIssueUrl(PostAnalysisIssueVisitor.LightIssue issue, AnalysisDetails analysisDetails) {
-        if (issue.type() == RuleType.SECURITY_HOTSPOT) {
+        if (issue.impacts().containsKey(SoftwareQuality.SECURITY)) {
             return String.format("%s/security_hotspots?id=%s&pullRequest=%s&hotspots=%s", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), analysisDetails.getPullRequestId(), issue.key());
         } else {
             return String.format("%s/project/issues?id=%s&pullRequest=%s&issues=%s&open=%s", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), analysisDetails.getPullRequestId(), issue.key(), issue.key());
@@ -197,34 +162,6 @@ public class ReportGenerator {
 
     private String getDashboardUrl(AnalysisDetails analysisDetails) {
         return server.getPublicRootUrl() + "/dashboard?id=" + URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8) + "&pullRequest=" + analysisDetails.getPullRequestId();
-    }
-
-    private static String createCoverageImage(BigDecimal coverage, String baseImageUrl) {
-        if (null == coverage) {
-            return baseImageUrl + "/checks/CoverageChart/NoCoverageInfo.png";
-        }
-        BigDecimal matchedLevel = BigDecimal.ZERO;
-        for (BigDecimal level : COVERAGE_LEVELS) {
-            if (coverage.compareTo(level) >= 0) {
-                matchedLevel = level;
-                break;
-            }
-        }
-        return baseImageUrl + "/checks/CoverageChart/" + matchedLevel + ".png";
-    }
-
-    private static String createDuplicateImage(BigDecimal duplications, String baseImageUrl) {
-        if (null == duplications) {
-            return baseImageUrl + "/checks/Duplications/NoDuplicationInfo.png";
-        }
-        String matchedLevel = "20plus";
-        for (DuplicationMapping level : DUPLICATION_LEVELS) {
-            if (level.getDuplicationLevel().compareTo(duplications) >= 0) {
-                matchedLevel = level.getImageName();
-                break;
-            }
-        }
-        return baseImageUrl + "/checks/Duplications/" + matchedLevel + ".png";
     }
 
     private static String formatQualityGateCondition(QualityGate.Condition condition) {
@@ -244,34 +181,6 @@ public class ReportGenerator {
             return String.format("%s %s (%s %s)", condition.getValue(), metric.getName(),
                     condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
                             "is less than", condition.getErrorThreshold());
-        }
-    }
-
-    private static Map<RuleType, Long> countRuleByType(List<PostAnalysisIssueVisitor.ComponentIssue> issues) {
-        return Arrays.stream(RuleType.values()).collect(Collectors.toMap(k -> k,
-                k -> issues.stream()
-                        .map(PostAnalysisIssueVisitor.ComponentIssue::getIssue)
-                        .filter(i -> !CLOSED_ISSUE_STATUS.contains(i.status()))
-                        .filter(i -> k == i.type())
-                        .count()));
-    }
-
-    private static class DuplicationMapping {
-
-        private final BigDecimal duplicationLevel;
-        private final String imageName;
-
-        DuplicationMapping(BigDecimal duplicationLevel, String imageName) {
-            this.duplicationLevel = duplicationLevel;
-            this.imageName = imageName;
-        }
-
-        private BigDecimal getDuplicationLevel() {
-            return duplicationLevel;
-        }
-
-        private String getImageName() {
-            return imageName;
         }
     }
 

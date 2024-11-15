@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,18 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Bold;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Formatter;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
@@ -28,168 +40,179 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.ListItem;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Paragraph;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
-import java.math.BigDecimal;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 class AnalysisSummaryTest {
 
     @Test
-    void testCreateAnalysisSummary() {
+    void shouldCreateAnalysisSummaryWithNoViolationsListIfQualityGatePasses() {
         AnalysisSummary underTest = AnalysisSummary.builder()
                 .withNewDuplications(BigDecimal.valueOf(199))
                 .withSummaryImageUrl("summaryImageUrl")
                 .withProjectKey("projectKey")
-                .withBugCount(911)
-                .withBugUrl("bugUrl")
-                .withBugImageUrl("bugImageUrl")
-                .withCodeSmellCount(1)
-                .withCoverage(BigDecimal.valueOf(303))
-                .withCodeSmellUrl("codeSmellUrl")
-                .withCodeSmellImageUrl("codeSmellImageUrl")
-                .withCoverageUrl("codeCoverageUrl")
-                .withCoverageImageUrl("codeCoverageImageUrl")
+                .withCoverage(new AnalysisSummary.UrlIconMetric<>("codeCoverageUrl", "codeCoverageImageUrl", BigDecimal.valueOf(303)))
                 .withDashboardUrl("dashboardUrl")
-                .withDuplications(BigDecimal.valueOf(66))
-                .withDuplicationsUrl("duplicationsUrl")
-                .withDuplicationsImageUrl("duplicationsImageUrl")
-                .withFailedQualityGateConditions(java.util.List.of("issuea", "issueb", "issuec"))
+                .withDuplications(new AnalysisSummary.UrlIconMetric<>("duplicationsUrl", "duplicationsImageUrl", BigDecimal.valueOf(66)))
+                .withFailedQualityGateConditions(java.util.List.of())
                 .withNewCoverage(BigDecimal.valueOf(99))
-                .withSecurityHotspotCount(69)
+                .withSecurityHotspots(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69))
                 .withStatusDescription("status description")
                 .withStatusImageUrl("statusImageUrl")
-                .withTotalIssueCount(666)
-                .withVulnerabilityCount(96)
-                .withVulnerabilityUrl("vulnerabilityUrl")
-                .withVulnerabilityImageUrl("vulnerabilityImageUrl")
+                .withAcceptedIssues(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 0))
+                .withFixedIssues(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 12))
+                .withNewIssues(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L))
                 .build();
 
         Formatter<Document> formatter = mock();
-        doReturn("formatted content").when(formatter).format(any());
-        FormatterFactory formatterFactory = mock(FormatterFactory.class);
-        doReturn(formatter).when(formatterFactory).documentFormatter();
+        when(formatter.format(any())).thenReturn("formatted content");
+        FormatterFactory formatterFactory = mock();
+        when(formatterFactory.documentFormatter()).thenReturn(formatter);
 
         assertThat(underTest.format(formatterFactory)).isEqualTo("formatted content");
 
-        ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
+        ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.captor();
         verify(formatter).format(documentArgumentCaptor.capture());
 
-        Document expectedDocument = new Document(new Paragraph(new Image("status description", "statusImageUrl")),
-                new List(List.Style.BULLET,
-                        new ListItem(new Text("issuea")),
-                        new ListItem(new Text("issueb")),
-                        new ListItem(new Text("issuec"))),
-                new Heading(1, new Text("Analysis Details")),
-                new Heading(2, new Text("666 Issues")),
+        Document expectedDocument = new Document(new Heading(3, new Image("status description", "statusImageUrl"),
+            new Text(" "),
+            new Text(("Quality Gate passed"))),
+                new Heading(4, new Text("Issues")),
                 new List(List.Style.BULLET,
                     new ListItem(
-                        new Link("bugUrl", new Image("Bug","bugImageUrl")),
+                        new Link("newIssuesUrl", new Image("New Issues","newIssuesImageUrl"),
                         new Text(" "),
-                        new Text("911 Bugs")),
+                        new Text("666 New Issues"))),
                 new ListItem(
-                        new Link("vulnerabilityUrl", new Image("Vulnerability","vulnerabilityImageUrl")),
+                        new Link("fixedIssuesUrl", new Image("Fixed Issues","fixedIssuesImageUrl"),
                         new Text(" "),
-                        new Text("165 Vulnerabilities")),
+                        new Text("12 Fixed Issues"))),
                 new ListItem(
-                        new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
+                        new Link("acceptedIssuesUrl", new Image("Accepted Issues", "acceptedIssuesImageUrl"),
                         new Text(" "),
-                        new Text("1 Code Smell"))),
-                new Heading(2, new Text("Coverage and Duplications")),
+                        new Text("0 Accepted Issues")))),
+                new Heading(4, new Text("Measures")),
                 new List(List.Style.BULLET,
                         new ListItem(
-                            new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl")),
+                            new Link("securityHotspotsUrl", new Image("Security Hotspots", "securityHotspotsImageUrl"),
                             new Text(" "),
-                            new Text("99.00% Coverage (303.00% Estimated after merge)")),
+                            new Text("69 Security Hotspots"))),
                         new ListItem(
-                                new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl")),
+                                new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl"),
                                 new Text(" "),
-                                new Text("199.00% Duplicated Code (66.00% Estimated after merge)"))),
-                new Paragraph(new Text("**Project ID:** projectKey")),
+                                new Text("99.00% Coverage (303.00% Estimated after merge)"))),
+                    new ListItem(
+                        new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl"),
+                        new Text(" "),
+                        new Text("199.00% Duplicated Code (66.00% Estimated after merge)")))),
+                new Paragraph(new Bold(new Text("Project ID:")), new Text(" "), new Text("projectKey")),
                 new Paragraph(new Link("dashboardUrl", new Text("View in SonarQube"))));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
-
     }
 
-
     @Test
-    void shouldReturn0ForTotalDuplicationsWhereValueIsNull() {
+    void shouldReturnNotInfoForExpectedTotalDuplicationsWhereValueIsNull() {
         AnalysisSummary underTest = AnalysisSummary.builder()
             .withNewDuplications(BigDecimal.valueOf(199))
             .withSummaryImageUrl("summaryImageUrl")
             .withProjectKey("projectKey")
-            .withBugCount(911)
-            .withBugUrl("bugUrl")
-            .withBugImageUrl("bugImageUrl")
-            .withCodeSmellCount(1)
-            .withCoverage(BigDecimal.valueOf(303))
-            .withCodeSmellUrl("codeSmellUrl")
-            .withCodeSmellImageUrl("codeSmellImageUrl")
-            .withCoverageUrl("codeCoverageUrl")
-            .withCoverageImageUrl("codeCoverageImageUrl")
+            .withCoverage(new AnalysisSummary.UrlIconMetric<>("codeCoverageUrl", "codeCoverageImageUrl", BigDecimal.valueOf(303)))
             .withDashboardUrl("dashboardUrl")
-            .withDuplications(null)
-            .withDuplicationsUrl("duplicationsUrl")
-            .withDuplicationsImageUrl("duplicationsImageUrl")
-            .withFailedQualityGateConditions(java.util.List.of("issuea", "issueb", "issuec"))
+            .withDuplications(new AnalysisSummary.UrlIconMetric<>("duplicationsUrl", "duplicationsImageUrl", null))
+            .withFailedQualityGateConditions(java.util.List.of())
             .withNewCoverage(BigDecimal.valueOf(99))
-            .withSecurityHotspotCount(69)
+            .withSecurityHotspots(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69))
             .withStatusDescription("status description")
             .withStatusImageUrl("statusImageUrl")
-            .withTotalIssueCount(666)
-            .withVulnerabilityCount(96)
-            .withVulnerabilityUrl("vulnerabilityUrl")
-            .withVulnerabilityImageUrl("vulnerabilityImageUrl")
+            .withAcceptedIssues(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 0))
+            .withFixedIssues(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 12))
+            .withNewIssues(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L))
             .build();
 
         Formatter<Document> formatter = mock();
-        doReturn("formatted content").when(formatter).format(any());
-        FormatterFactory formatterFactory = mock(FormatterFactory.class);
-        doReturn(formatter).when(formatterFactory).documentFormatter();
+        when(formatter.format(any())).thenReturn("formatted content");
+        FormatterFactory formatterFactory = mock();
+        when(formatterFactory.documentFormatter()).thenReturn(formatter);
 
         assertThat(underTest.format(formatterFactory)).isEqualTo("formatted content");
 
-        ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
+        ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.captor();
         verify(formatter).format(documentArgumentCaptor.capture());
 
-        Document expectedDocument = new Document(new Paragraph(new Image("status description", "statusImageUrl")),
+        Document expectedDocument = new Document(new Heading(3, new Image("status description", "statusImageUrl"),
+            new Text(" "),
+            new Text(("Quality Gate passed"))),
+            new Heading(4, new Text("Issues")),
+            new List(List.Style.BULLET,
+                new ListItem(
+                    new Link("newIssuesUrl", new Image("New Issues","newIssuesImageUrl"),
+                        new Text(" "),
+                        new Text("666 New Issues"))),
+                new ListItem(
+                    new Link("fixedIssuesUrl", new Image("Fixed Issues","fixedIssuesImageUrl"),
+                        new Text(" "),
+                        new Text("12 Fixed Issues"))),
+                new ListItem(
+                    new Link("acceptedIssuesUrl", new Image("Accepted Issues", "acceptedIssuesImageUrl"),
+                        new Text(" "),
+                        new Text("0 Accepted Issues")))),
+            new Heading(4, new Text("Measures")),
+            new List(List.Style.BULLET,
+                new ListItem(
+                    new Link("securityHotspotsUrl", new Image("Security Hotspots", "securityHotspotsImageUrl"),
+                        new Text(" "),
+                        new Text("69 Security Hotspots"))),
+                new ListItem(
+                    new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl"),
+                        new Text(" "),
+                        new Text("99.00% Coverage (303.00% Estimated after merge)"))),
+                new ListItem(
+                    new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl"),
+                        new Text(" "),
+                        new Text("199.00% Duplicated Code")))),
+            new Paragraph(new Bold(new Text("Project ID:")), new Text(" "), new Text("projectKey")),
+            new Paragraph(new Link("dashboardUrl", new Text("View in SonarQube"))));
+
+        assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);
+    }
+
+
+    @Test
+    void shouldOnlyShowFailedConditionsAndNotMeasuresOrIssuesMetricsWhenQualityGateFails() {
+        AnalysisSummary underTest = AnalysisSummary.builder()
+            .withNewDuplications(BigDecimal.valueOf(199))
+            .withSummaryImageUrl("summaryImageUrl")
+            .withProjectKey("projectKey")
+            .withCoverage(new AnalysisSummary.UrlIconMetric<>("codeCoverageUrl", "codeCoverageImageUrl", BigDecimal.valueOf(303)))
+            .withDashboardUrl("dashboardUrl")
+            .withDuplications(new AnalysisSummary.UrlIconMetric<>("duplicationsUrl", "duplicationsUrl", null))
+            .withFailedQualityGateConditions(java.util.List.of("issuea", "issueb", "issuec"))
+            .withNewCoverage(BigDecimal.valueOf(99))
+            .withSecurityHotspots(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69))
+            .withStatusDescription("status description")
+            .withStatusImageUrl("statusImageUrl")
+            .withAcceptedIssues(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 1))
+            .withFixedIssues(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 1))
+            .withNewIssues(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 1L))
+            .build();
+
+        Formatter<Document> formatter = mock();
+        when(formatter.format(any())).thenReturn("formatted content");
+        FormatterFactory formatterFactory = mock();
+        when(formatterFactory.documentFormatter()).thenReturn(formatter);
+
+        assertThat(underTest.format(formatterFactory)).isEqualTo("formatted content");
+
+        ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.captor();
+        verify(formatter).format(documentArgumentCaptor.capture());
+
+        Document expectedDocument = new Document(new Heading(3, new Image("status description", "statusImageUrl"),
+            new Text(" "),
+            new Text("Quality Gate failed")),
             new List(List.Style.BULLET,
                 new ListItem(new Text("issuea")),
                 new ListItem(new Text("issueb")),
                 new ListItem(new Text("issuec"))),
-            new Heading(1, new Text("Analysis Details")),
-            new Heading(2, new Text("666 Issues")),
-            new List(List.Style.BULLET,
-                new ListItem(
-                    new Link("bugUrl", new Image("Bug","bugImageUrl")),
-                    new Text(" "),
-                    new Text("911 Bugs")),
-                new ListItem(
-                    new Link("vulnerabilityUrl", new Image("Vulnerability","vulnerabilityImageUrl")),
-                    new Text(" "),
-                    new Text("165 Vulnerabilities")),
-                new ListItem(
-                    new Link("codeSmellUrl", new Image("Code Smell", "codeSmellImageUrl")),
-                    new Text(" "),
-                    new Text("1 Code Smell"))),
-            new Heading(2, new Text("Coverage and Duplications")),
-            new List(List.Style.BULLET,
-                new ListItem(
-                    new Link("codeCoverageUrl", new Image("Coverage", "codeCoverageImageUrl")),
-                    new Text(" "),
-                    new Text("99.00% Coverage (303.00% Estimated after merge)")),
-                new ListItem(
-                    new Link("duplicationsUrl", new Image("Duplications", "duplicationsImageUrl")),
-                    new Text(" "),
-                    new Text("199.00% Duplicated Code (0.00% Estimated after merge)"))),
-            new Paragraph(new Text("**Project ID:** projectKey")),
+            new Paragraph(new Bold(new Text("Project ID:")), new Text(" "), new Text("projectKey")),
             new Paragraph(new Link("dashboardUrl", new Text("View in SonarQube"))));
 
         assertThat(documentArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expectedDocument);

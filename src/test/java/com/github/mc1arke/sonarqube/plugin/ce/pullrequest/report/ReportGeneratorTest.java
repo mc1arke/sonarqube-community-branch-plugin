@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,17 +18,30 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report;
 
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.sonar.api.ce.posttask.Project;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.Configuration;
-import org.sonar.api.issue.Issue;
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.api.issue.impact.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.platform.Server;
-import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.component.TreeRootHolder;
 import org.sonar.ce.task.projectanalysis.measure.Measure;
@@ -36,176 +49,157 @@ import org.sonar.ce.task.projectanalysis.measure.MeasureRepository;
 import org.sonar.ce.task.projectanalysis.metric.Metric;
 import org.sonar.ce.task.projectanalysis.metric.MetricRepository;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 
 class ReportGeneratorTest {
 
-    @CsvSource({"12, 0.png, 21, 20plus.png",
-            "98, 90.png, 1, 3.png",
-            ",NoCoverageInfo.png,,NoDuplicationInfo.png"})
+    @CsvSource({"98, passed-16px.png, 1, passed-16px.png",
+            ",no-data-16px.png,,no-data-16px.png"})
     @ParameterizedTest
     void shouldProduceCorrectAnalysisSummary(String coverage, String coverageImage, String duplications, String duplicationsImage) {
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        doReturn("5").when(analysisDetails).getPullRequestId();
-        doReturn("projectKey").when(analysisDetails).getAnalysisProjectKey();
+        AnalysisDetails analysisDetails = mock();
+        when(analysisDetails.getPullRequestId()).thenReturn("5");
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
 
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
+        TreeRootHolder treeRootHolder = mock();
 
-        PostAnalysisIssueVisitor.LightIssue issue1 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        doReturn(Issue.STATUS_CLOSED).when(issue1).status();
+        PostAnalysisIssueVisitor.LightIssue issue1 = mock();
+        when(issue1.issueStatus()).thenReturn(IssueStatus.FIXED);
 
-        PostAnalysisIssueVisitor.LightIssue issue2 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        doReturn(Issue.STATUS_OPEN).when(issue2).status();
-        doReturn(RuleType.BUG).when(issue2).type();
+        PostAnalysisIssueVisitor.LightIssue issue2 = mock();
+        when(issue2.issueStatus()).thenReturn(IssueStatus.OPEN);
+        when(issue2.impacts()).thenReturn(Map.of(SoftwareQuality.RELIABILITY, Severity.HIGH));
 
-        PostAnalysisIssueVisitor.LightIssue issue3 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        doReturn(Issue.STATUS_OPEN).when(issue3).status();
-        doReturn(RuleType.SECURITY_HOTSPOT).when(issue3).type();
+        PostAnalysisIssueVisitor.LightIssue issue3 = mock();
+        when(issue3.issueStatus()).thenReturn(IssueStatus.OPEN);
+        when(issue3.impacts()).thenReturn(Map.of(SoftwareQuality.SECURITY, Severity.HIGH));
 
-        PostAnalysisIssueVisitor.LightIssue issue4 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        doReturn(Issue.STATUS_OPEN).when(issue4).status();
-        doReturn(RuleType.CODE_SMELL).when(issue4).type();
+        PostAnalysisIssueVisitor.LightIssue issue4 = mock();
+        when(issue4.issueStatus()).thenReturn(IssueStatus.OPEN);
+        when(issue4.impacts()).thenReturn(Map.of(SoftwareQuality.MAINTAINABILITY, Severity.HIGH));
 
-        PostAnalysisIssueVisitor.LightIssue issue5 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        doReturn(Issue.STATUS_OPEN).when(issue5).status();
-        doReturn(RuleType.VULNERABILITY).when(issue5).type();
+        PostAnalysisIssueVisitor.LightIssue issue5 = mock();
+        when(issue5.issueStatus()).thenReturn(IssueStatus.OPEN);
+        when(issue5.impacts()).thenReturn(Map.of(SoftwareQuality.SECURITY, Severity.HIGH));
 
-        PostAnalysisIssueVisitor.LightIssue issue6 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        doReturn(Issue.STATUS_OPEN).when(issue6).status();
-        doReturn(RuleType.BUG).when(issue6).type();
+        PostAnalysisIssueVisitor.LightIssue issue6 = mock();
+        when(issue6.issueStatus()).thenReturn(IssueStatus.OPEN);
+        when(issue6.impacts()).thenReturn(Map.of(SoftwareQuality.RELIABILITY, Severity.HIGH));
 
-        doReturn(Stream.of(issue1, issue2, issue3, issue4, issue5, issue6).map(i -> {
+        List<PostAnalysisIssueVisitor.ComponentIssue> issues = Stream.of(issue1, issue2, issue3, issue4, issue5, issue6).map(i -> {
             PostAnalysisIssueVisitor.ComponentIssue componentIssue =
-                    mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-            doReturn(i).when(componentIssue).getIssue();
+                    mock();
+            when(componentIssue.getIssue()).thenReturn(i);
             return componentIssue;
-        }).collect(Collectors.toList())).when(analysisDetails).getIssues();
+        }).collect(Collectors.toList());
+        when(analysisDetails.getIssues()).thenReturn(issues);
 
-        QualityGate.Condition condition1 = mock(QualityGate.Condition.class);
-        doReturn(QualityGate.EvaluationStatus.ERROR).when(condition1).getStatus();
-        doReturn(CoreMetrics.LINES_TO_COVER.getKey()).when(condition1).getMetricKey();
-        doReturn("19").when(condition1).getValue();
-        doReturn(QualityGate.Operator.LESS_THAN).when(condition1).getOperator();
-        doReturn("20").when(condition1).getErrorThreshold();
+        QualityGate.Condition condition1 = mock();
+        when(condition1.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition1.getMetricKey()).thenReturn(CoreMetrics.LINES_TO_COVER.getKey());
+        when(condition1.getValue()).thenReturn("19");
+        when(condition1.getOperator()).thenReturn(QualityGate.Operator.LESS_THAN);
+        when(condition1.getErrorThreshold()).thenReturn("20");
 
-        QualityGate.Condition condition2 = mock(QualityGate.Condition.class);
-        doReturn(QualityGate.EvaluationStatus.ERROR).when(condition2).getStatus();
-        doReturn(CoreMetrics.CODE_SMELLS.getKey()).when(condition2).getMetricKey();
-        doReturn("2").when(condition2).getValue();
-        doReturn(QualityGate.Operator.GREATER_THAN).when(condition2).getOperator();
-        doReturn("0").when(condition2).getErrorThreshold();
+        QualityGate.Condition condition2 = mock();
+        when(condition2.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition2.getMetricKey()).thenReturn(CoreMetrics.MAINTAINABILITY_ISSUES_KEY);
+        when(condition2.getValue()).thenReturn("2");
+        when(condition2.getOperator()).thenReturn(QualityGate.Operator.GREATER_THAN);
+        when(condition2.getErrorThreshold()).thenReturn("0");
 
-        QualityGate.Condition condition3 = mock(QualityGate.Condition.class);
-        doReturn(QualityGate.EvaluationStatus.ERROR).when(condition3).getStatus();
-        doReturn(CoreMetrics.LINE_COVERAGE.getKey()).when(condition3).getMetricKey();
-        doReturn("68").when(condition3).getValue();
-        doReturn(QualityGate.Operator.LESS_THAN).when(condition3).getOperator();
-        doReturn("80").when(condition3).getErrorThreshold();
+        QualityGate.Condition condition3 = mock();
+        when(condition3.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition3.getMetricKey()).thenReturn(CoreMetrics.LINE_COVERAGE.getKey());
+        when(condition3.getValue()).thenReturn("68");
+        when(condition3.getOperator()).thenReturn(QualityGate.Operator.LESS_THAN);
+        when(condition3.getErrorThreshold()).thenReturn("80");
 
-        QualityGate.Condition condition4 = mock(QualityGate.Condition.class);
-        doReturn(QualityGate.EvaluationStatus.ERROR).when(condition4).getStatus();
-        doReturn(CoreMetrics.NEW_SECURITY_RATING.getKey()).when(condition4).getMetricKey();
-        doReturn("5").when(condition4).getValue();
-        doReturn(QualityGate.Operator.GREATER_THAN).when(condition4).getOperator();
-        doReturn("4").when(condition4).getErrorThreshold();
+        QualityGate.Condition condition4 = mock();
+        when(condition4.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition4.getMetricKey()).thenReturn(CoreMetrics.NEW_SECURITY_RATING.getKey());
+        when(condition4.getValue()).thenReturn("5");
+        when(condition4.getOperator()).thenReturn(QualityGate.Operator.GREATER_THAN);
+        when(condition4.getErrorThreshold()).thenReturn("4");
 
-        QualityGate.Condition condition5 = mock(QualityGate.Condition.class);
-        doReturn(QualityGate.EvaluationStatus.ERROR).when(condition5).getStatus();
-        doReturn(CoreMetrics.RELIABILITY_RATING.getKey()).when(condition5).getMetricKey();
-        doReturn("1").when(condition5).getValue();
-        doReturn(QualityGate.Operator.LESS_THAN).when(condition5).getOperator();
-        doReturn("3").when(condition5).getErrorThreshold();
+        QualityGate.Condition condition5 = mock();
+        when(condition5.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition5.getMetricKey()).thenReturn(CoreMetrics.RELIABILITY_RATING.getKey());
+        when(condition5.getValue()).thenReturn("1");
+        when(condition5.getOperator()).thenReturn(QualityGate.Operator.LESS_THAN);
+        when(condition5.getErrorThreshold()).thenReturn("3");
 
-        QualityGate.Condition condition6 = mock(QualityGate.Condition.class);
-        doReturn(QualityGate.EvaluationStatus.ERROR).when(condition6).getStatus();
-        doReturn(CoreMetrics.NEW_COVERAGE.getKey()).when(condition6).getMetricKey();
-        doReturn(coverage).when(condition6).getValue();
-        doReturn(QualityGate.Operator.GREATER_THAN).when(condition6).getOperator();
-        doReturn("15").when(condition6).getErrorThreshold();
+        QualityGate.Condition condition6 = mock();
+        when(condition6.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition6.getMetricKey()).thenReturn(CoreMetrics.NEW_COVERAGE.getKey());
+        when(condition6.getValue()).thenReturn(coverage);
+        when(condition6.getOperator()).thenReturn(QualityGate.Operator.GREATER_THAN);
+        when(condition6.getErrorThreshold()).thenReturn("15");
 
-        QualityGate.Condition condition7 = mock(QualityGate.Condition.class);
-        doReturn(QualityGate.EvaluationStatus.OK).when(condition7).getStatus();
-        doReturn(CoreMetrics.NEW_BUGS.getKey()).when(condition7).getMetricKey();
-        doReturn("0").when(condition7).getValue();
-        doReturn(QualityGate.Operator.LESS_THAN).when(condition7).getOperator();
-        doReturn("1").when(condition7).getErrorThreshold();
+        QualityGate.Condition condition7 = mock();
+        when(condition7.getStatus()).thenReturn(QualityGate.EvaluationStatus.OK);
+        when(condition7.getMetricKey()).thenReturn(CoreMetrics.NEW_RELIABILITY_ISSUES_KEY);
+        when(condition7.getValue()).thenReturn("0");
+        when(condition7.getOperator()).thenReturn(QualityGate.Operator.LESS_THAN);
+        when(condition7.getErrorThreshold()).thenReturn("1");
 
-        QualityGate.Condition condition8 = mock(QualityGate.Condition.class);
-        doReturn(QualityGate.EvaluationStatus.OK).when(condition8).getStatus();
-        doReturn(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY.getKey()).when(condition8).getMetricKey();
-        doReturn(duplications).when(condition8).getValue();
-        doReturn(QualityGate.Operator.GREATER_THAN).when(condition8).getOperator();
-        doReturn("1").when(condition8).getErrorThreshold();
+        QualityGate.Condition condition8 = mock();
+        when(condition8.getStatus()).thenReturn(QualityGate.EvaluationStatus.OK);
+        when(condition8.getMetricKey()).thenReturn(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY.getKey());
+        when(condition8.getValue()).thenReturn(duplications);
+        when(condition8.getOperator()).thenReturn(QualityGate.Operator.GREATER_THAN);
+        when(condition8.getErrorThreshold()).thenReturn("1");
 
+        when(analysisDetails.findFailedQualityGateConditions()).thenReturn(Arrays.asList(condition1, condition2, condition3, condition4));
+        when(analysisDetails.findQualityGateCondition(any())).thenAnswer(i -> Stream.of(condition1, condition2, condition3, condition4, condition5, condition6, condition7, condition8)
+            .filter(condition -> condition.getMetricKey().equals(i.getArgument(0, String.class)))
+            .findFirst());
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
 
-        doReturn(Arrays.asList(condition1, condition2, condition3, condition4))
-                .when(analysisDetails).findFailedQualityGateConditions();
-        doAnswer(i -> Stream.of(condition1, condition2, condition3, condition4, condition5, condition6, condition7, condition8).filter(condition -> condition.getMetricKey().equals(i.getArgument(0, String.class))).findFirst()).when(analysisDetails).findQualityGateCondition(any());
-        doReturn(QualityGate.Status.ERROR).when(analysisDetails).getQualityGateStatus();
+        Project project = mock();
+        when(project.getKey()).thenReturn("Project Key");
 
-        Project project = mock(Project.class);
-        doReturn("Project Key").when(project).getKey();
+        Component rootComponent = mock();
+        when(treeRootHolder.getRoot()).thenReturn(rootComponent);
 
-        Component rootComponent = mock(Component.class);
-        doReturn(rootComponent).when(treeRootHolder).getRoot();
+        MetricRepository metricRepository = mock();
+        Metric covergeMetric = mock();
+        when(metricRepository.getByKey(CoreMetrics.COVERAGE_KEY)).thenReturn(covergeMetric);
+        Metric duplicationsMetric = mock();
+        when(metricRepository.getByKey(CoreMetrics.DUPLICATED_LINES_DENSITY_KEY)).thenReturn(duplicationsMetric);
 
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
+        MeasureRepository measureRepository = mock();
         if (coverage != null) {
-            doReturn(Optional.of(Measure.newMeasureBuilder().create(Double.parseDouble(coverage), 2, "data")),
-                    Optional.of(Measure.newMeasureBuilder().create(Double.parseDouble(duplications), 2, "data"))).when(measureRepository)
-                    .getRawMeasure(eq(rootComponent), any(Metric.class));
+            when(measureRepository.getRawMeasure(rootComponent, covergeMetric))
+                .thenReturn(Optional.of(Measure.newMeasureBuilder().create(Double.parseDouble(coverage), 2, "data")));
         }
-
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        doReturn(mock(Metric.class)).when(metricRepository).getByKey(anyString());
-
-        Server server = mock(Server.class);
-        doReturn("http://localhost:9000").when(server).getPublicRootUrl();
-        Configuration configuration = mock(Configuration.class);
+        if (duplications != null) {
+            when(measureRepository.getRawMeasure(rootComponent, duplicationsMetric))
+                .thenReturn(Optional.of(Measure.newMeasureBuilder().create(Double.parseDouble(duplications), 2, "data")));
+        }
+        
+        Server server = mock();
+        when(server.getPublicRootUrl()).thenReturn("http://localhost:9000");
+        Configuration configuration = mock();
         ReportGenerator underTest = new ReportGenerator(server, configuration, measureRepository, metricRepository, treeRootHolder);
 
         AnalysisSummary expected = AnalysisSummary.builder()
-                        .withBugCount(2)
-                        .withBugUrl("http://localhost:9000/project/issues?pullRequest=5&resolved=false&types=BUG&inNewCodePeriod=true&id=projectKey")
-                        .withBugImageUrl("http://localhost:9000/static/communityBranchPlugin/common/bug.png")
-                        .withCoverage(null == coverage ? null : new BigDecimal(coverage))
-                        .withCoverageUrl("http://localhost:9000/component_measures?id=projectKey&metric=new_coverage&pullRequest=5&view=list")
-                        .withCoverageImageUrl("http://localhost:9000/static/communityBranchPlugin/checks/CoverageChart/" + coverageImage)
+                        .withCoverage(new AnalysisSummary.UrlIconMetric<>("http://localhost:9000/component_measures?id=projectKey&metric=new_coverage&pullRequest=5&view=list", "http://localhost:9000/static/communityBranchPlugin/common/" + coverageImage, null == coverage ? null : new BigDecimal(coverage)))
                         .withNewCoverage(null == coverage ? null : new BigDecimal(coverage))
-                        .withDuplications(null == duplications ? null : new BigDecimal(duplications).setScale(1, RoundingMode.CEILING))
-                        .withDuplicationsUrl("http://localhost:9000/component_measures?id=projectKey&metric=new_duplicated_lines_density&pullRequest=5&view=list")
-                        .withDuplicationsImageUrl("http://localhost:9000/static/communityBranchPlugin/checks/Duplications/" + duplicationsImage)
+                        .withDuplications(new AnalysisSummary.UrlIconMetric<>("http://localhost:9000/component_measures?id=projectKey&metric=new_duplicated_lines_density&pullRequest=5&view=list", "http://localhost:9000/static/communityBranchPlugin/common/" + duplicationsImage, null == duplications ? null : new BigDecimal(duplications).setScale(1, RoundingMode.CEILING)))
                         .withNewDuplications(null == duplications ? null : new BigDecimal(duplications))
-                        .withCodeSmellCount(1)
-                        .withCodeSmellUrl("http://localhost:9000/project/issues?pullRequest=5&resolved=false&types=CODE_SMELL&inNewCodePeriod=true&id=projectKey")
-                        .withCodeSmellImageUrl("http://localhost:9000/static/communityBranchPlugin/common/code_smell.png")
                         .withDashboardUrl("http://localhost:9000/dashboard?id=projectKey&pullRequest=5")
                         .withProjectKey("projectKey")
                         .withSummaryImageUrl("http://localhost:9000/static/communityBranchPlugin/common/icon.png")
-                        .withSecurityHotspotCount(1)
-                        .withVulnerabilityCount(1)
-                        .withVulnerabilityUrl("http://localhost:9000/project/issues?pullRequest=5&resolved=false&types=VULNERABILITY&inNewCodePeriod=true&id=projectKey")
-                        .withVulnerabilityImageUrl("http://localhost:9000/static/communityBranchPlugin/common/vulnerability.png")
+                        .withSecurityHotspots(new AnalysisSummary.UrlIconMetric<>("http://localhost:9000/security_hotspots?id=projectKey&pullRequest=5", "http://localhost:9000/static/communityBranchPlugin/common/passed-16px.png", 0))
                         .withStatusDescription("Failed")
-                        .withStatusImageUrl("http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/failed.png")
-                        .withTotalIssueCount(5)
+                        .withStatusImageUrl("http://localhost:9000/static/communityBranchPlugin/checks/QualityGateBadge/failed-16px.png")
+                        .withAcceptedIssues(new AnalysisSummary.UrlIconMetric<>("http://localhost:9000/project/issues?id=projectKey&pullRequest=5&issueStatus=ACCEPTED", "http://localhost:9000/static/communityBranchPlugin/common/accepted-16px.png", 0))
+                        .withNewIssues(new AnalysisSummary.UrlIconMetric<>("http://localhost:9000/project/issues?id=projectKey&pullRequest=5&resolved=false", "http://localhost:9000/static/communityBranchPlugin/common/passed-16px.png", 5L))
+                        .withFixedIssues(new AnalysisSummary.UrlIconMetric<>("http://localhost:9000/project/issues?id=projectKey&fixedInPullRequest=5", "http://localhost:9000/static/communityBranchPlugin/common/fixed-16px.png", 0))
                         .withFailedQualityGateConditions(List.of("19 Lines to Cover (is less than 20)",
-                                "2 Code Smells (is greater than 0)",
+                                "2 Maintainability Issues (is greater than 0)",
                                 "68.00% Line Coverage (is less than 80.00%)",
                                 "E Security Rating on New Code (is worse than D)"))
                         .build();
@@ -215,45 +209,35 @@ class ReportGeneratorTest {
                 .isEqualTo(expected);
     }
 
-    @CsvSource({"SECURITY_HOTSPOT, security_hotspots?id=project-key&pullRequest=pull-request-id&hotspots=issue-key",
-            "BUG, project/issues?id=project-key&pullRequest=pull-request-id&issues=issue-key&open=issue-key"})
+    @CsvSource({"SECURITY, security_hotspots?id=project-key&pullRequest=pull-request-id&hotspots=issue-key",
+            "MAINTAINABILITY, project/issues?id=project-key&pullRequest=pull-request-id&issues=issue-key&open=issue-key"})
     @ParameterizedTest
-    void shouldProduceCorrectAnalysisIssueSummary(RuleType ruleType, String issueUrlPostfix) {
-        MeasureRepository measureRepository = mock(MeasureRepository.class);
-        MetricRepository metricRepository = mock(MetricRepository.class);
-        TreeRootHolder treeRootHolder = mock(TreeRootHolder.class);
+    void shouldProduceCorrectAnalysisIssueSummary(SoftwareQuality ruleType, String issueUrlPostfix) {
+        MeasureRepository measureRepository = mock();
+        MetricRepository metricRepository = mock();
+        TreeRootHolder treeRootHolder = mock();
 
-        Server server = mock(Server.class);
-        doReturn("http://target.host:port/path/to/root").when(server).getPublicRootUrl();
-        Configuration configuration = mock(Configuration.class);
+        Server server = mock();
+        when(server.getPublicRootUrl()).thenReturn("http://target.host:port/path/to/root");
+        Configuration configuration = mock();
         ReportGenerator underTest = new ReportGenerator(server, configuration, measureRepository, metricRepository, treeRootHolder);
 
         AnalysisIssueSummary expected = AnalysisIssueSummary.builder()
-                .withEffortInMinutes(101L)
-                .withIssueKey("issue-key")
                 .withIssueUrl("http://target.host:port/path/to/root/" + issueUrlPostfix)
                 .withMessage("message")
-                .withResolution("FIXED")
-                .withSeverity("CRITICAL")
-                .withSeverityImageUrl("http://target.host:port/path/to/root/static/communityBranchPlugin/checks/Severity/critical.png")
-                .withType(ruleType.name())
-                .withTypeImageUrl("http://target.host:port/path/to/root/static/communityBranchPlugin/checks/IssueType/" + ruleType.name().toLowerCase(Locale.ENGLISH) + ".png")
-                .withProjectKey("project-key")
                 .build();
 
-        PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        doReturn("issue-key").when(lightIssue).key();
-        doReturn("CRITICAL").when(lightIssue).severity();
-        doReturn("message").when(lightIssue).getMessage();
-        doReturn("FIXED").when(lightIssue).resolution();
-        doReturn(ruleType).when(lightIssue).type();
-        doReturn(101L).when(lightIssue).effortInMinutes();
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-        doReturn(lightIssue).when(componentIssue).getIssue();
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
+        when(lightIssue.key()).thenReturn("issue-key");
+        when(lightIssue.impacts()).thenReturn(Map.of(ruleType, Severity.HIGH));
+        when(lightIssue.getMessage()).thenReturn("message");
+        when(lightIssue.resolution()).thenReturn("FIXED");
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
+        when(componentIssue.getIssue()).thenReturn(lightIssue);
 
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        doReturn("project-key").when(analysisDetails).getAnalysisProjectKey();
-        doReturn("pull-request-id").when(analysisDetails).getPullRequestId();
+        AnalysisDetails analysisDetails = mock();
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn("project-key");
+        when(analysisDetails.getPullRequestId()).thenReturn("pull-request-id");
 
         assertThat(underTest.createAnalysisIssueSummary(componentIssue, analysisDetails))
                 .usingRecursiveComparison()

@@ -18,6 +18,36 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.api.issue.impact.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
+import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
@@ -29,34 +59,6 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisit
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.ArgumentCaptor;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.issue.Issue;
-import org.sonar.api.rule.Severity;
-import org.sonar.api.rules.RuleType;
-import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class BitbucketPullRequestDecoratorTest {
 
@@ -95,21 +97,32 @@ class BitbucketPullRequestDecoratorTest {
         mockValidAnalysis();
         when(analysisSummary.getNewDuplications()).thenReturn(BigDecimal.TEN);
         when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.ONE);
+        when(analysisSummary.getAcceptedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 0));
+        when(analysisSummary.getFixedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 12));
+        when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L));
+        when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69));
+        when(analysisSummary.getSummaryImageUrl()).thenReturn(IMAGE_URL);
+        when(analysisSummary.getDashboardUrl()).thenReturn(DASHBOARD_URL);
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        ArgumentCaptor<List<ReportData>> reportDataArgumentCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<ReportData>> reportDataArgumentCaptor = ArgumentCaptor.captor();
         verify(client).createCodeInsightsAnnotation(ISSUE_KEY, ISSUE_LINE, ISSUE_LINK, ISSUE_MESSAGE, ISSUE_PATH, "HIGH", "BUG");
         verify(client).createLinkDataValue(DASHBOARD_URL);
-        verify(client).createCodeInsightsReport(reportDataArgumentCaptor.capture(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
+        verify(client).createCodeInsightsReport(reportDataArgumentCaptor.capture(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(IMAGE_URL), eq(ReportStatus.PASSED));
+        when(analysisSummary.getAcceptedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 0));
+        when(analysisSummary.getFixedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 12));
+        when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L));
+        when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69));
         verify(client).deleteAnnotations(COMMIT, REPORT_KEY);
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .isEqualTo(List.of(new ReportData("Reliability", new DataValue.Text("0 Bugs")),
+                .isEqualTo(List.of(new ReportData("New Issues", new DataValue.Text("666 Issues")),
+                        new ReportData("Accepted Issues", new DataValue.Text("0 Issues")),
+                        new ReportData("Fixed Issues", new DataValue.Text("12 Issues")),
                         new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ONE)),
-                        new ReportData("Security", new DataValue.Text("0 Vulnerabilities (and 0 Hotspots)")),
                         new ReportData("Duplication", new DataValue.Percentage(BigDecimal.TEN)),
-                        new ReportData("Maintainability", new DataValue.Text("0 Code Smells")),
                         new ReportData("Analysis details", null)));
     }
 
@@ -122,9 +135,13 @@ class BitbucketPullRequestDecoratorTest {
         mockValidAnalysis();
         when(analysisSummary.getNewCoverage()).thenReturn(null);
         when(analysisSummary.getNewDuplications()).thenReturn(null);
+        when(analysisSummary.getAcceptedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 0));
+        when(analysisSummary.getFixedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 1));
+        when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L));
+        when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69));
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        ArgumentCaptor<List<ReportData>> reportDataArgumentCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<ReportData>> reportDataArgumentCaptor = ArgumentCaptor.captor();
         verify(client).createCodeInsightsAnnotation(ISSUE_KEY, ISSUE_LINE, ISSUE_LINK, ISSUE_MESSAGE, ISSUE_PATH, "HIGH", "BUG");
         verify(client).createLinkDataValue(DASHBOARD_URL);
         verify(client).createCodeInsightsReport(reportDataArgumentCaptor.capture(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
@@ -132,11 +149,11 @@ class BitbucketPullRequestDecoratorTest {
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .isEqualTo(List.of(new ReportData("Reliability", new DataValue.Text("0 Bugs")),
+                .isEqualTo(List.of(new ReportData("New Issues", new DataValue.Text("666 Issues")),
+                        new ReportData("Accepted Issues", new DataValue.Text("0 Issues")),
+                        new ReportData("Fixed Issues", new DataValue.Text("1 Issue")),
                         new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ZERO)),
-                        new ReportData("Security", new DataValue.Text("0 Vulnerabilities (and 0 Hotspots)")),
                         new ReportData("Duplication", new DataValue.Percentage(BigDecimal.ZERO)),
-                        new ReportData("Maintainability", new DataValue.Text("0 Code Smells")),
                         new ReportData("Analysis details", null)));
     }
 
@@ -170,11 +187,10 @@ class BitbucketPullRequestDecoratorTest {
         when(component.getReportAttributes()).thenReturn(reportAttributes);
 
         PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(defaultIssue.status()).thenReturn(Issue.STATUS_OPEN);
-        when(defaultIssue.severity()).thenReturn(Severity.CRITICAL);
+        when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
+        when(defaultIssue.impacts()).thenReturn(Map.of(SoftwareQuality.RELIABILITY, Severity.HIGH));
         when(defaultIssue.getLine()).thenReturn(ISSUE_LINE);
         when(defaultIssue.key()).thenReturn(ISSUE_KEY);
-        when(defaultIssue.type()).thenReturn(RuleType.BUG);
         when(defaultIssue.getMessage()).thenReturn(ISSUE_MESSAGE);
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
