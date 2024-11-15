@@ -1,38 +1,22 @@
+/*
+ * Copyright (C) 2024 Michael Clarke
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
-
-import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
-import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.config.internal.Encryption;
-import org.sonar.api.config.internal.Settings;
-import org.sonar.api.issue.Issue;
-import org.sonar.api.rule.RuleKey;
-import org.sonar.api.rules.RuleType;
-import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.scm.Changeset;
-import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
-import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
-import org.sonar.db.alm.setting.ALM;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-import org.sonar.db.protobuf.DbIssues;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -49,6 +33,40 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.config.internal.Encryption;
+import org.sonar.api.config.internal.Settings;
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.api.rule.RuleKey;
+import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.scm.Changeset;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonar.db.alm.setting.ALM;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import org.sonar.db.protobuf.DbIssues;
+
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+
 
 public class AzureDevOpsPullRequestDecoratorTest {
 
@@ -59,16 +77,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     private final String sonarProject = "sonarProject";
     private final String pullRequestId = "8513";
     private final String azureRepository = "my Repository";
-    private final String sonarRootUrl = "http://sonar:9000/sonar";
-    private final String filePath = "path/to/file";
-    private final String issueMessage = "issueMessage";
     private final String issueKeyVal = "issueKeyVal";
-    private final String ruleKeyVal = "ruleKeyVal";
-    private final String threadId = "1468";
-    private final int lineNumber = 5;
-    private final String token = "token";
-    private final String authHeader = "Basic OnRva2Vu";
-    private final String authorId = "author-id";
     private final String projectName = "Project Name";
 
     private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
@@ -93,6 +102,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     }
 
     private void configureTestDefaults() {
+        String token = "token";
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn(token);
         when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl());
 
@@ -111,15 +121,15 @@ public class AzureDevOpsPullRequestDecoratorTest {
         when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
 
         DbIssues.Locations locate = DbIssues.Locations.newBuilder().build();
-        RuleType rule = RuleType.CODE_SMELL;
         RuleKey ruleKey = mock(RuleKey.class);
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
         when(componentIssue.getComponent()).thenReturn(component);
         when(componentIssue.getScmPath()).thenReturn(Optional.of("scmPath"));
-        when(defaultIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
+        when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
+        int lineNumber = 5;
         when(defaultIssue.getLine()).thenReturn(lineNumber);
         when(defaultIssue.getLocations()).thenReturn(locate);
-        when(defaultIssue.type()).thenReturn(rule);
+        String issueMessage = "issueMessage";
         when(defaultIssue.getMessage()).thenReturn(issueMessage);
         when(defaultIssue.getRuleKey()).thenReturn(ruleKey);
         when(defaultIssue.key()).thenReturn(issueKeyVal);
@@ -129,6 +139,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
         when(scmInfo.hasChangesetForLine(anyInt())).thenReturn(true);
         when(scmInfo.getChangesetForLine(anyInt())).thenReturn(changeset);
         when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
+        String ruleKeyVal = "ruleKeyVal";
         when(ruleKey.toString()).thenReturn(ruleKeyVal);
 
         when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
@@ -138,6 +149,10 @@ public class AzureDevOpsPullRequestDecoratorTest {
     }
 
     private void setupStubs() {
+        String filePath = "path/to/file";
+        String authorId = "author-id";
+        String threadId = "1468";
+        String authHeader = "Basic OnRva2Vu";
         wireMockRule.stubFor(get(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/"+ pullRequestId +"/threads?api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Authorization", equalTo(authHeader))
@@ -377,6 +392,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
                         "}]}")));
 
 
+        String sonarRootUrl = "http://sonar:9000/sonar";
         wireMockRule.stubFor(post(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/"+ pullRequestId +"/statuses?api-version=4.1-preview"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
@@ -579,7 +595,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
     public void decorateQualityGateStatusClosedIssue() {
         configureTestDefaults();
 
-        when(defaultIssue.getStatus()).thenReturn(Issue.STATUS_CLOSED);
+        when(defaultIssue.issueStatus()).thenReturn(IssueStatus.FIXED);
         when(defaultIssue.getLine()).thenReturn(18);
 
         DecorationResult result = pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -588,9 +604,7 @@ public class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     public void shouldRemoveUserInfoFromRepositoryUrlForLinking() {
-        ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
-        AzureDevopsClientFactory azureDevopsClientFactory = mock(AzureDevopsClientFactory.class);
-        ReportGenerator reportGenerator = mock(ReportGenerator.class);
+        AzureDevopsClientFactory azureDevopsClientFactory = mock();
         MarkdownFormatterFactory markdownFormatterFactory = mock(MarkdownFormatterFactory.class);
 
         AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
@@ -600,8 +614,6 @@ public class AzureDevOpsPullRequestDecoratorTest {
         PullRequest pullRequest = mock(PullRequest.class);
         when(pullRequest.getRepository()).thenReturn(repository);
         when(pullRequest.getId()).thenReturn(999);
-
-        AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
 
         assertThat(underTest.createFrontEndUrl(pullRequest, analysisDetails)).contains("https://domain.com/path/to/repo/pullRequest/999");
     }

@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.github;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +32,7 @@ import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.rule.Severity;
+import org.sonar.api.issue.impact.Severity;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
@@ -41,7 +42,10 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Bold;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Text;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 
@@ -93,7 +97,7 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
             output.add(new GHCheckRunBuilder.Annotation(
                 componentIssue.getScmPath().orElseThrow(),
                 Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0),
-                mapToGithubAnnotationLevel(componentIssue.getIssue().severity()),
+                mapToGithubAnnotationLevel(componentIssue.getIssue().impacts().values()),
                 Optional.ofNullable(componentIssue.getIssue().getMessage()).orElseThrow())
             );
         }
@@ -116,7 +120,7 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
     }
 
     private void postSummaryComment(GHPullRequest pullRequest, String summary, String projectId) throws IOException {
-        String projectCommentMarker = String.format("**Project ID:** %s", projectId);
+        String projectCommentMarker = markdownFormatterFactory.documentFormatter().format(new Document(new Bold(new Text("Project ID:")), new Text(" " + projectId)));
 
         GHIssueComment summaryComment = pullRequest.comment(summary);
 
@@ -131,15 +135,14 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
 
     }
 
-    private static GHCheckRun.AnnotationLevel mapToGithubAnnotationLevel(String sonarqubeSeverity) {
-        switch (sonarqubeSeverity) {
-            case Severity.INFO:
+    private static GHCheckRun.AnnotationLevel mapToGithubAnnotationLevel(Collection<Severity> sonarqubeSeverity) {
+        Severity maxSeverity = sonarqubeSeverity.stream().max(Severity::compareTo).orElseThrow();
+        switch (maxSeverity) {
+            case LOW:
                 return GHCheckRun.AnnotationLevel.NOTICE;
-            case Severity.MINOR:
-            case Severity.MAJOR:
+            case MEDIUM:
                 return GHCheckRun.AnnotationLevel.WARNING;
-            case Severity.CRITICAL:
-            case Severity.BLOCKER:
+            case HIGH:
                 return GHCheckRun.AnnotationLevel.FAILURE;
             default:
                 throw new IllegalArgumentException("Unknown severity value: " + sonarqubeSeverity);

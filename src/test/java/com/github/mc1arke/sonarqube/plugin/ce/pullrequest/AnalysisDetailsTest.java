@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,15 +18,13 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import org.junit.jupiter.api.Test;
-import org.sonar.api.ce.posttask.Analysis;
-import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
-import org.sonar.api.ce.posttask.Project;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.ce.posttask.ScannerContext;
-import org.sonar.api.issue.Issue;
-import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,13 +35,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Test;
+import org.sonar.api.ce.posttask.Analysis;
+import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
+import org.sonar.api.ce.posttask.Project;
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.ce.posttask.ScannerContext;
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
 
 class AnalysisDetailsTest {
 
@@ -118,7 +118,7 @@ class AnalysisDetailsTest {
     @Test
     void shouldOnlyReturnNonClosedFileIssuesWithScmInfo() {
         PostAnalysisIssueVisitor.LightIssue lightIssue1 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(lightIssue1.status()).thenReturn(Issue.STATUS_OPEN);
+        when(lightIssue1.issueStatus()).thenReturn(IssueStatus.OPEN);
         Component component1 = mock(Component.class);
         when(component1.getType()).thenReturn(Component.Type.FILE);
         ReportAttributes reportAttributes1 = mock(ReportAttributes.class);
@@ -127,7 +127,7 @@ class AnalysisDetailsTest {
         PostAnalysisIssueVisitor.ComponentIssue componentIssue1 = new PostAnalysisIssueVisitor.ComponentIssue(component1, lightIssue1);
 
         PostAnalysisIssueVisitor.LightIssue lightIssue2 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(lightIssue2.status()).thenReturn(Issue.STATUS_OPEN);
+        when(lightIssue2.issueStatus()).thenReturn(IssueStatus.OPEN);
         Component component2 = mock(Component.class);
         when(component2.getType()).thenReturn(Component.Type.FILE);
         ReportAttributes reportAttributes2 = mock(ReportAttributes.class);
@@ -136,7 +136,7 @@ class AnalysisDetailsTest {
         PostAnalysisIssueVisitor.ComponentIssue componentIssue2 = new PostAnalysisIssueVisitor.ComponentIssue(component2, lightIssue2);
 
         PostAnalysisIssueVisitor.LightIssue lightIssue3 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(lightIssue3.status()).thenReturn(Issue.STATUS_OPEN);
+        when(lightIssue3.issueStatus()).thenReturn(IssueStatus.OPEN);
         Component component3 = mock(Component.class);
         when(component3.getType()).thenReturn(Component.Type.PROJECT);
         ReportAttributes reportAttributes3 = mock(ReportAttributes.class);
@@ -145,7 +145,7 @@ class AnalysisDetailsTest {
         PostAnalysisIssueVisitor.ComponentIssue componentIssue3 = new PostAnalysisIssueVisitor.ComponentIssue(component3, lightIssue3);
 
         PostAnalysisIssueVisitor.LightIssue lightIssue4 = mock(PostAnalysisIssueVisitor.LightIssue.class);
-        when(lightIssue4.status()).thenReturn(Issue.STATUS_CLOSED);
+        when(lightIssue4.issueStatus()).thenReturn(IssueStatus.FIXED);
         Component component4 = mock(Component.class);
         when(component4.getType()).thenReturn(Component.Type.FILE);
         ReportAttributes reportAttributes4 = mock(ReportAttributes.class);
@@ -160,7 +160,7 @@ class AnalysisDetailsTest {
                 Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4),
                 mock(QualityGate.class), mock(PostProjectAnalysisTask.ProjectAnalysis.class));
         
-        assertThat(underTest.getScmReportableIssues()).containsOnly(componentIssue1);
+        assertThat(underTest.getScmReportableIssues()).usingRecursiveFieldByFieldElementComparator().containsOnly(componentIssue1);
     }
 
     @Test
@@ -202,7 +202,7 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldRetrievePropertyFromScannerProperties() {
-        Map<String, String> scannerProperties = mock(Map.class);
+        Map<String, String> scannerProperties = mock();
         when(scannerProperties.get(anyString())).thenReturn("world");
 
         ScannerContext scannerContext = mock(ScannerContext.class);

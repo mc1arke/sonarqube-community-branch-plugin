@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,23 +19,19 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 
-import org.sonar.api.ce.posttask.Analysis;
-import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
-import org.sonar.api.ce.posttask.Project;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.issue.Issue;
-import org.sonar.ce.task.projectanalysis.component.Component;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class AnalysisDetails {
+import org.sonar.api.ce.posttask.Analysis;
+import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
+import org.sonar.api.ce.posttask.Project;
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.ce.task.projectanalysis.component.Component;
 
-    private static final List<String> OPEN_ISSUE_STATUSES =
-            Issue.STATUSES.stream().filter(s -> !Issue.STATUS_CLOSED.equals(s) && !Issue.STATUS_RESOLVED.equals(s))
-                    .collect(Collectors.toList());
+public class AnalysisDetails {
 
     private final String pullRequestId;
     private final String commitId;
@@ -100,7 +96,7 @@ public class AnalysisDetails {
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
                 .filter(i -> i.getIssue().resolution() == null)
-                .filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().status()))
+                .filter(i -> i.getIssue().issueStatus() == IssueStatus.OPEN)
                 .collect(Collectors.toList());
     }
 

@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -37,6 +36,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -53,7 +53,8 @@ import org.kohsuke.github.GitHub;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.rule.Severity;
+import org.sonar.api.issue.impact.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
@@ -63,6 +64,8 @@ import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Formatter;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
@@ -82,31 +85,32 @@ class GithubPullRequestDecoratorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        doReturn("alm-repo").when(projectAlmSettingDto).getAlmRepo();
-        doReturn("123").when(analysisDetails).getPullRequestId();
-        doReturn(Date.from(clock.instant())).when(analysisDetails).getAnalysisDate();
-        doReturn("analysis-id").when(analysisDetails).getAnalysisId();
-        doReturn("project-key").when(analysisDetails).getAnalysisProjectKey();
-        doReturn("Project Name").when(analysisDetails).getAnalysisProjectName();
-        doReturn(QualityGate.Status.OK).when(analysisDetails).getQualityGateStatus();
-        doReturn("commit-sha").when(analysisDetails).getCommitSha();
-        doReturn(IntStream.range(0, 20).mapToObj(i -> {
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("alm-repo");
+        when(analysisDetails.getPullRequestId()).thenReturn("123");
+        when(analysisDetails.getAnalysisDate()).thenReturn(Date.from(clock.instant()));
+        when(analysisDetails.getAnalysisId()).thenReturn("analysis-id");
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn("project-key");
+        when(analysisDetails.getAnalysisProjectName()).thenReturn("Project Name");
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(analysisDetails.getCommitSha()).thenReturn("commit-sha");
+        List<PostAnalysisIssueVisitor.ComponentIssue> reportableIssues = IntStream.range(0, 20).mapToObj(i -> {
             PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
             Component component = mock(Component.class);
-            doReturn(Optional.of("path" + i)).when(componentIssue).getScmPath();
-            doReturn(component).when(componentIssue).getComponent();
+            when(componentIssue.getScmPath()).thenReturn(Optional.of("path" + i));
+            when(componentIssue.getComponent()).thenReturn(component);
             PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
-            doReturn("issue message " + i).when(lightIssue).getMessage();
-            doReturn(i).when(lightIssue).getLine();
-            doReturn(Severity.ALL.get(i % Severity.ALL.size())).when(lightIssue).severity();
-            doReturn(lightIssue).when(componentIssue).getIssue();
+            when(lightIssue.getMessage()).thenReturn("issue message " + i);
+            when(lightIssue.getLine()).thenReturn(i);
+            when(lightIssue.impacts()).thenReturn(Map.of(SoftwareQuality.values()[i % SoftwareQuality.values().length], Severity.values()[i % Severity.values().length]));
+            when(componentIssue.getIssue()).thenReturn(lightIssue);
             return componentIssue;
-        }).collect(Collectors.toList())).when(analysisDetails).getScmReportableIssues();
+        }).collect(Collectors.toList());
+        when(analysisDetails.getScmReportableIssues()).thenReturn(reportableIssues);
 
-        doReturn(analysisSummary).when(reportGenerator).createAnalysisSummary(any());
-        doReturn("dashboard-url").when(analysisSummary).getDashboardUrl();
-        doReturn("report summary").when(analysisSummary).format(any());
-        doReturn(gitHub).when(githubClientFactory).createClient(any(), any());
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+        when(analysisSummary.getDashboardUrl()).thenReturn("dashboard-url");
+        when(analysisSummary.format(any())).thenReturn("report summary");
+        when(githubClientFactory.createClient(any(), any())).thenReturn(gitHub);
     }
 
     @Test
@@ -117,7 +121,7 @@ class GithubPullRequestDecoratorTest {
     @Test
     void shouldThrowExceptionIfClientCreationFails() throws IOException {
         Exception dummyException = new IOException("Dummy Exception");
-        doThrow(dummyException).when(githubClientFactory).createClient(any(), any());
+        when(githubClientFactory.createClient(any(), any())).thenThrow(dummyException);
 
         assertThatThrownBy(() -> testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .hasMessage("Could not decorate Pull Request on Github")
@@ -126,12 +130,12 @@ class GithubPullRequestDecoratorTest {
 
     @Test
     void shouldDecoratePullRequestWithCorrectAnalysisAndSummaryCommentWhenEnabled() throws IOException {
-        doReturn(true).when(projectAlmSettingDto).getSummaryCommentEnabled();
+        when(projectAlmSettingDto.getSummaryCommentEnabled()).thenReturn(true);
         GHRepository repository = mock();
-        doReturn(repository).when(gitHub).getRepository(any());
+        when(gitHub.getRepository(any())).thenReturn(repository);
         GHCheckRunBuilder checkRunBuilder = mock(InvocationOnMock::getMock);
         doReturn(null).when(checkRunBuilder).create();
-        doReturn(checkRunBuilder).when(repository).createCheckRun(any(), any());
+        when(repository.createCheckRun(any(), any())).thenReturn(checkRunBuilder);
         GHPullRequest pullRequest = mock();
         GHIssueComment comment1 = createComment("summary comment from current bot user, no project ID", "Bot", 123, 1);
         GHIssueComment comment2 = createComment("summary comment from non bot user with no project ID", "User", 321, 2);
@@ -139,10 +143,13 @@ class GithubPullRequestDecoratorTest {
         GHIssueComment comment4 = createComment("summary comment from other bot user, with project ID. **Project ID:** project-key\n", "Bot", 999, 4);
         GHIssueComment comment5 = createComment("summary comment from other bot user, with project ID. **Project ID:** project-key\n", "User", 111, 5);
         GHIssueComment summaryComment = createComment("summary comment from current bot user, with project ID. **Project ID:** project-key\r", "Bot", 123, 6);
-        doReturn(List.of(comment1, comment2, comment3, comment4, comment5, summaryComment)).when(pullRequest).getComments();
-        doReturn(summaryComment).when(pullRequest).comment(any(String.class));
-        doReturn(pullRequest).when(repository).getPullRequest(anyInt());
-        doReturn(new URL("http://url.of/pull/request")).when(pullRequest).getHtmlUrl();
+        when(pullRequest.getComments()).thenReturn(List.of(comment1, comment2, comment3, comment4, comment5, summaryComment));
+        when(pullRequest.comment(any(String.class))).thenReturn(summaryComment);
+        when(repository.getPullRequest(anyInt())).thenReturn(pullRequest);
+        when(pullRequest.getHtmlUrl()).thenReturn(new URL("http://url.of/pull/request"));
+        Formatter<Document> documentFormatter = mock();
+        when(documentFormatter.format(any())).thenReturn("**Project ID:** project-key");
+        when(markdownFormatterFactory.documentFormatter()).thenReturn(documentFormatter);
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(gitHub).getRepository("alm-repo");
@@ -166,7 +173,7 @@ class GithubPullRequestDecoratorTest {
             output.add(new GHCheckRunBuilder.Annotation(
                 "path" + i,
                 i,
-                i % 5 < 1 ? GHCheckRun.AnnotationLevel.NOTICE : i % 5 > 2 ? GHCheckRun.AnnotationLevel.FAILURE : GHCheckRun.AnnotationLevel.WARNING,
+                GHCheckRun.AnnotationLevel.values()[i % GHCheckRun.AnnotationLevel.values().length],
                 "issue message " + i));
         }
 
@@ -193,16 +200,16 @@ class GithubPullRequestDecoratorTest {
 
     @Test
     void shouldDecoratePullRequestWithCorrectAnalysisAndNoSummaryCommentWhenDisabled() throws IOException {
-        doReturn(false).when(projectAlmSettingDto).getSummaryCommentEnabled();
+        when(projectAlmSettingDto.getSummaryCommentEnabled()).thenReturn(false);
         GHRepository repository = mock();
-        doReturn(repository).when(gitHub).getRepository(any());
+        when(gitHub.getRepository(any())).thenReturn(repository);
         GHCheckRunBuilder checkRunBuilder = mock(InvocationOnMock::getMock);
         doReturn(null).when(checkRunBuilder).create();
-        doReturn(checkRunBuilder).when(repository).createCheckRun(any(), any());
+        when(repository.createCheckRun(any(), any())).thenReturn(checkRunBuilder);
         GHPullRequest pullRequest = mock();
-        doReturn(pullRequest).when(repository).getPullRequest(anyInt());
-        doReturn(new URL("http://url.of/pull/request")).when(pullRequest).getHtmlUrl();
-        doReturn(QualityGate.Status.ERROR).when(analysisDetails).getQualityGateStatus();
+        when(repository.getPullRequest(anyInt())).thenReturn(pullRequest);
+        when(pullRequest.getHtmlUrl()).thenReturn(new URL("http://url.of/pull/request"));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
 
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
@@ -227,7 +234,7 @@ class GithubPullRequestDecoratorTest {
             output.add(new GHCheckRunBuilder.Annotation(
                 "path" + i,
                 i,
-                i % 5 < 1 ? GHCheckRun.AnnotationLevel.NOTICE : i % 5 > 2 ? GHCheckRun.AnnotationLevel.FAILURE : GHCheckRun.AnnotationLevel.WARNING,
+                GHCheckRun.AnnotationLevel.values()[i %  GHCheckRun.AnnotationLevel.values().length],
                 "issue message " + i));
         }
 

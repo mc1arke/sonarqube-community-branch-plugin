@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Bold;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Document;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.FormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.Heading;
@@ -46,29 +47,15 @@ public final class AnalysisSummary {
     private final String dashboardUrl;
 
     private final BigDecimal newCoverage;
-    private final BigDecimal coverage;
-    private final String coverageUrl;
-    private final String coverageImageUrl;
+    private final UrlIconMetric<BigDecimal> coverage;
 
     private final BigDecimal newDuplications;
-    private final BigDecimal duplications;
-    private final String duplicationsUrl;
-    private final String duplicationsImageUrl;
+    private final UrlIconMetric<BigDecimal> duplications;
 
-    private final long totalIssueCount;
-
-    private final long bugCount;
-    private final String bugUrl;
-    private final String bugImageUrl;
-
-    private final long securityHotspotCount;
-    private final long vulnerabilityCount;
-    private final String vulnerabilityUrl;
-    private final String vulnerabilityImageUrl;
-
-    private final long codeSmellCount;
-    private final String codeSmellUrl;
-    private final String codeSmellImageUrl;
+    private final UrlIconMetric<Long> newIssues;
+    private final UrlIconMetric<Integer> acceptedIssues;
+    private final UrlIconMetric<Integer> fixedIssues;
+    private final UrlIconMetric<Integer> securityHotspots;
 
     private AnalysisSummary(Builder builder) {
         this.summaryImageUrl = builder.summaryImageUrl;
@@ -79,23 +66,13 @@ public final class AnalysisSummary {
         this.dashboardUrl = builder.dashboardUrl;
         this.newCoverage = builder.newCoverage;
         this.coverage = builder.coverage;
-        this.coverageUrl = builder.coverageUrl;
-        this.coverageImageUrl = builder.coverageImageUrl;
         this.newDuplications = builder.newDuplications;
         this.duplications = builder.duplications;
-        this.duplicationsUrl = builder.duplicationsUrl;
-        this.duplicationsImageUrl = builder.duplicationsImageUrl;
-        this.totalIssueCount = builder.totalIssueCount;
-        this.bugCount = builder.bugCount;
-        this.bugUrl = builder.bugUrl;
-        this.bugImageUrl = builder.bugImageUrl;
-        this.securityHotspotCount = builder.securityHotspotCount;
-        this.vulnerabilityCount = builder.vulnerabilityCount;
-        this.vulnerabilityUrl = builder.vulnerabilityUrl;
-        this.vulnerabilityImageUrl = builder.vulnerabilityImageUrl;
-        this.codeSmellCount = builder.codeSmellCount;
-        this.codeSmellUrl = builder.codeSmellUrl;
-        this.codeSmellImageUrl = builder.codeSmellImageUrl;
+
+        this.securityHotspots = builder.securityHotspots;
+        this.newIssues = builder.newIssues;
+        this.acceptedIssues = builder.acceptedIssues;
+        this.fixedIssues = builder.fixedIssues;
     }
 
     public String getSummaryImageUrl() {
@@ -126,76 +103,32 @@ public final class AnalysisSummary {
         return newCoverage;
     }
 
-    public BigDecimal getCoverage() {
+    public UrlIconMetric<BigDecimal> getCoverage() {
         return coverage;
-    }
-
-    public String getCoverageUrl() {
-        return coverageUrl;
-    }
-
-    public String getCoverageImageUrl() {
-        return coverageImageUrl;
     }
 
     public BigDecimal getNewDuplications() {
         return newDuplications;
     }
 
-    public BigDecimal getDuplications() {
+    public UrlIconMetric<BigDecimal> getDuplications() {
         return duplications;
     }
 
-    public String getDuplicationsUrl() {
-        return duplicationsUrl;
+    public UrlIconMetric<Integer> getSecurityHotspots() {
+        return securityHotspots;
     }
 
-    public String getDuplicationsImageUrl() {
-        return duplicationsImageUrl;
+    public UrlIconMetric<Integer> getAcceptedIssues() {
+        return acceptedIssues;
     }
 
-    public long getTotalIssueCount() {
-        return totalIssueCount;
+    public UrlIconMetric<Integer> getFixedIssues() {
+        return fixedIssues;
     }
 
-    public long getBugCount() {
-        return bugCount;
-    }
-
-    public String getBugUrl() {
-        return bugUrl;
-    }
-
-    public String getBugImageUrl() {
-        return bugImageUrl;
-    }
-
-    public long getSecurityHotspotCount() {
-        return securityHotspotCount;
-    }
-
-    public long getVulnerabilityCount() {
-        return vulnerabilityCount;
-    }
-
-    public String getVulnerabilityUrl() {
-        return vulnerabilityUrl;
-    }
-
-    public String getVulnerabilityImageUrl() {
-        return vulnerabilityImageUrl;
-    }
-
-    public long getCodeSmellCount() {
-        return codeSmellCount;
-    }
-
-    public String getCodeSmellUrl() {
-        return codeSmellUrl;
-    }
-
-    public String getCodeSmellImageUrl() {
-        return codeSmellImageUrl;
+    public UrlIconMetric<Long> getNewIssues() {
+        return newIssues;
     }
 
     public String format(FormatterFactory formatterFactory) {
@@ -203,47 +136,57 @@ public final class AnalysisSummary {
 
         List<String> failedConditions = getFailedQualityGateConditions();
 
-        Document document = new Document(new Paragraph(new Image(getStatusDescription(), getStatusImageUrl())),
-                failedConditions.isEmpty() ? new Text("") :
-                        new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
-                                com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
-                                failedConditions.stream()
-                                        .map(Text::new)
-                                        .map(ListItem::new)
-                                        .toArray(ListItem[]::new)),
-                new Heading(1, new Text("Analysis Details")),
-                new Heading(2, new Text(pluralOf(getTotalIssueCount(), "Issue", "Issues"))),
+        if (failedConditions.isEmpty()) {
+            Document document = new Document(new Heading(3, new Image(getStatusDescription(), getStatusImageUrl()),
+                new Text(" "),
+                new Text("Quality Gate passed")),
+                new Heading(4, new Text("Issues")),
                 new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
-                        com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
-                        new ListItem(new Link(getBugUrl(), new Image("Bug", getBugImageUrl())),
-                                new Text(" "),
-                                new Text(pluralOf(getBugCount(), "Bug", "Bugs"))),
-                        new ListItem(new Link(getVulnerabilityUrl(), new Image("Vulnerability", getVulnerabilityImageUrl())),
-                                new Text(" "),
-                                new Text(pluralOf(getVulnerabilityCount() + getSecurityHotspotCount(), "Vulnerability", "Vulnerabilities"))),
-                        new ListItem(new Link(getCodeSmellUrl(), new Image("Code Smell", getCodeSmellImageUrl())),
-                                new Text(" "),
-                                new Text(pluralOf(getCodeSmellCount(), "Code Smell", "Code Smells")))),
-                new Heading(2, new Text("Coverage and Duplications")),
+                    com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
+                    new ListItem(new Link(getNewIssues().getUrl(), new Image("New Issues", getNewIssues().getIconUrl()), new Text(" "), new Text(pluralOf(getNewIssues().getValue(), "New Issue", "New Issues")))),
+                    new ListItem(new Link(getFixedIssues().getUrl(), new Image("Fixed Issues", getFixedIssues().getIconUrl()), new Text(" "), new Text(pluralOf(getFixedIssues().getValue(), "Fixed Issue", "Fixed Issues")))),
+                    new ListItem(new Link(getAcceptedIssues().getUrl(), new Image("Accepted Issues", getAcceptedIssues().getIconUrl()), new Text(" "), new Text(pluralOf(getAcceptedIssues().getValue(), "Accepted Issue", "Accepted Issues"))))
+                ),
+                new Heading(4, new Text("Measures")),
                 new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
-                        com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
-                        new ListItem(new Link(getCoverageUrl(), new Image("Coverage", getCoverageImageUrl())),
-                                new Text(" "), new Text(
-                                Optional.ofNullable(getNewCoverage())
-                                        .map(decimalFormat::format)
-                                        .map(i -> i + "% Coverage")
-                                        .orElse("No coverage information") + " (" +
-                                        decimalFormat.format(Optional.ofNullable(getCoverage()).orElse(BigDecimal.valueOf(0))) + "% Estimated after merge)")),
-                        new ListItem(new Link(getDuplicationsUrl(), new Image("Duplications", getDuplicationsImageUrl())),
-                                new Text(" "),
-                                new Text(Optional.ofNullable(getNewDuplications())
-                                        .map(decimalFormat::format)
-                                        .map(i -> i + "% Duplicated Code")
-                                        .orElse("No duplication information") + " (" + decimalFormat.format(Optional.ofNullable(getDuplications()).orElse(BigDecimal.ZERO)) + "% Estimated after merge)"))),
-                new Paragraph(new Text(String.format("**Project ID:** %s", getProjectKey()))),
+                    com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
+                    new ListItem(new Link(getSecurityHotspots().getUrl(), new Image("Security Hotspots", getSecurityHotspots().getIconUrl()), new Text(" "), new Text(pluralOf(getSecurityHotspots().getValue(), "Security Hotspot", "Security Hotspots")))),
+                    new ListItem(new Link(getCoverage().getUrl(), new Image("Coverage", getCoverage().getIconUrl()), new Text(" "), new Text(
+                        Optional.ofNullable(getNewCoverage())
+                            .map(decimalFormat::format)
+                            .map(i -> i + "% Coverage")
+                            .orElse("No data about coverage")
+                            + Optional.ofNullable(getCoverage().getValue())
+                            .map(decimalFormat::format)
+                            .map( i -> " (" + i + "% Estimated after merge)")
+                            .orElse("")))),
+                    new ListItem(new Link(getDuplications().getUrl(), new Image("Duplications", getDuplications().getIconUrl()), new Text(" "), new Text(Optional.ofNullable(getNewDuplications())
+                        .map(decimalFormat::format)
+                        .map(i -> i + "% Duplicated Code")
+                        .orElse("No data about duplications")
+                        + Optional.ofNullable(getDuplications().getValue())
+                        .map(decimalFormat::format)
+                        .map(i -> " (" + i + "% Estimated after merge)")
+                        .orElse(""))))),
+                new Paragraph(new Bold(new Text("Project ID:")), new Text(" "), new Text(getProjectKey())),
                 new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
 
-        return formatterFactory.documentFormatter().format(document);
+            return formatterFactory.documentFormatter().format(document);
+        } else {
+            Document document = new Document(new Heading(3, new Image(getStatusDescription(), getStatusImageUrl()),
+                new Text(" "),
+                new Text("Quality Gate failed")),
+                new com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List(
+                    com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.List.Style.BULLET,
+                    failedConditions.stream()
+                        .map(Text::new)
+                        .map(ListItem::new)
+                        .toArray(ListItem[]::new)),
+                new Paragraph(new Bold(new Text("Project ID:")), new Text(" "), new Text(getProjectKey())),
+                new Paragraph(new Link(getDashboardUrl(), new Text("View in SonarQube"))));
+
+            return formatterFactory.documentFormatter().format(document);
+        }
     }
 
     private static String pluralOf(long value, String singleLabel, String multiLabel) {
@@ -265,29 +208,15 @@ public final class AnalysisSummary {
         private String dashboardUrl;
 
         private BigDecimal newCoverage;
-        private BigDecimal coverage;
-        private String coverageUrl;
-        private String coverageImageUrl;
+        private UrlIconMetric<BigDecimal> coverage;
 
         private BigDecimal newDuplications;
-        private BigDecimal duplications;
-        private String duplicationsUrl;
-        private String duplicationsImageUrl;
+        private UrlIconMetric<BigDecimal> duplications;
 
-        private long totalIssueCount;
-
-        private long bugCount;
-        private String bugUrl;
-        private String bugImageUrl;
-
-        private long securityHotspotCount;
-        private long vulnerabilityCount;
-        private String vulnerabilityUrl;
-        private String vulnerabilityImageUrl;
-
-        private long codeSmellCount;
-        private String codeSmellUrl;
-        private String codeSmellImageUrl;
+        private UrlIconMetric<Long> newIssues;
+        private UrlIconMetric<Integer> fixedIssues;
+        private UrlIconMetric<Integer> acceptedIssues;
+        private UrlIconMetric<Integer> securityHotspots;
 
         private Builder() {
             super();
@@ -328,18 +257,8 @@ public final class AnalysisSummary {
             return this;
         }
 
-        public Builder withCoverage(BigDecimal coverage) {
+        public Builder withCoverage(UrlIconMetric<BigDecimal> coverage) {
             this.coverage = coverage;
-            return this;
-        }
-
-        public Builder withCoverageUrl(String coverageUrl) {
-            this.coverageUrl = coverageUrl;
-            return this;
-        }
-
-        public Builder withCoverageImageUrl(String coverageImageUrl) {
-            this.coverageImageUrl = coverageImageUrl;
             return this;
         }
 
@@ -348,78 +267,58 @@ public final class AnalysisSummary {
             return this;
         }
 
-        public Builder withDuplications(BigDecimal duplications) {
+        public Builder withDuplications(UrlIconMetric<BigDecimal> duplications) {
             this.duplications = duplications;
             return this;
         }
 
-        public Builder withDuplicationsUrl(String duplicationsUrl) {
-            this.duplicationsUrl = duplicationsUrl;
+        public Builder withSecurityHotspots(UrlIconMetric<Integer> securityHotspots) {
+            this.securityHotspots = securityHotspots;
             return this;
         }
 
-        public Builder withDuplicationsImageUrl(String duplicationsImageUrl) {
-            this.duplicationsImageUrl = duplicationsImageUrl;
+        public Builder withNewIssues(UrlIconMetric<Long> newIssues) {
+            this.newIssues = newIssues;
             return this;
         }
 
-        public Builder withTotalIssueCount(long totalIssueCount) {
-            this.totalIssueCount = totalIssueCount;
+        public Builder withFixedIssues(UrlIconMetric<Integer> fixedIssues) {
+            this.fixedIssues = fixedIssues;
             return this;
         }
 
-        public Builder withBugCount(long bugCount) {
-            this.bugCount = bugCount;
-            return this;
-        }
-
-        public Builder withBugUrl(String bugUrl) {
-            this.bugUrl = bugUrl;
-            return this;
-        }
-
-        public Builder withBugImageUrl(String bugImageUrl) {
-            this.bugImageUrl = bugImageUrl;
-            return this;
-        }
-
-        public Builder withSecurityHotspotCount(long securityHotspotCount) {
-            this.securityHotspotCount = securityHotspotCount;
-            return this;
-        }
-
-        public Builder withVulnerabilityCount(long vulnerabilityCount) {
-            this.vulnerabilityCount = vulnerabilityCount;
-            return this;
-        }
-
-        public Builder withVulnerabilityUrl(String vulnerabilityUrl) {
-            this.vulnerabilityUrl = vulnerabilityUrl;
-            return this;
-        }
-
-        public Builder withVulnerabilityImageUrl(String vulnerabilityImageUrl) {
-            this.vulnerabilityImageUrl = vulnerabilityImageUrl;
-            return this;
-        }
-
-        public Builder withCodeSmellCount(long codeSmellCount) {
-            this.codeSmellCount = codeSmellCount;
-            return this;
-        }
-
-        public Builder withCodeSmellUrl(String codeSmellUrl) {
-            this.codeSmellUrl = codeSmellUrl;
-            return this;
-        }
-
-        public Builder withCodeSmellImageUrl(String codeSmellImageUrl) {
-            this.codeSmellImageUrl = codeSmellImageUrl;
+        public Builder withAcceptedIssues(UrlIconMetric<Integer> acceptedIssues) {
+            this.acceptedIssues = acceptedIssues;
             return this;
         }
 
         public AnalysisSummary build() {
             return new AnalysisSummary(this);
+        }
+    }
+
+    public static class UrlIconMetric<T extends Number> {
+
+        private final String url;
+        private final String iconUrl;
+        private final T value;
+
+        public UrlIconMetric(String url, String iconUrl, T value) {
+            this.url = url;
+            this.iconUrl = iconUrl;
+            this.value = value;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public String getIconUrl() {
+            return iconUrl;
+        }
+
+        public T getValue() {
+            return value;
         }
     }
 
