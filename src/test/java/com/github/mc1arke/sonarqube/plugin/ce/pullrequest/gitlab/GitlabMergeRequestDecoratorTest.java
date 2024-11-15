@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2022 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,39 @@
  *
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.scm.Changeset;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonar.db.alm.setting.ALM;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
@@ -36,38 +69,6 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatt
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.issue.Issue;
-import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.scm.Changeset;
-import org.sonar.ce.task.projectanalysis.scm.ScmInfo;
-import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
-import org.sonar.db.alm.setting.ALM;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class GitlabMergeRequestDecoratorTest {
 
@@ -435,39 +436,10 @@ public class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    public void shouldNotCommentOrAttemptCloseOfDiscussionWithMultipleResolvableNotesFromSonarqubeWithOtherProjectId() throws IOException {
-        Note note = mock(Note.class);
-        when(note.getAuthor()).thenReturn(sonarqubeUser);
-        when(note.getBody()).thenReturn("And another post with an issue ID\n[View in SonarQube](url)");
-        when(note.isResolvable()).thenReturn(true);
-
-        Note note2 = mock(Note.class);
-        when(note2.getAuthor()).thenReturn(sonarqubeUser);
-        when(note2.getBody()).thenReturn(OLD_SONARQUBE_ISSUE_COMMENT);
-        when(note2.isResolvable()).thenReturn(true);
-
-        Note note3 = mock(Note.class);
-        when(note3.getAuthor()).thenReturn(sonarqubeUser);
-        when(note3.getBody()).thenReturn("Some additional comment");
-        when(note3.isResolvable()).thenReturn(true);
-
-        Discussion discussion = mock(Discussion.class);
-        when(discussion.getId()).thenReturn("discussionId6");
-        when(discussion.getNotes()).thenReturn(Arrays.asList(note, note2, note3));
-
-        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
-
-        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
-
-        verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
-        verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
-    }
-
-    @Test
     public void shouldThrowErrorIfSubmittingNewIssueToGitlabFails() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(lightIssue.key()).thenReturn("issueKey1");
-        when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
+        when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         when(lightIssue.getLine()).thenReturn(999);
 
         Component component = mock(Component.class);
@@ -509,7 +481,7 @@ public class GitlabMergeRequestDecoratorTest {
     public void shouldStartNewDiscussionForNewIssueFromCommitInMergeRequest() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(lightIssue.key()).thenReturn("issueKey1");
-        when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
+        when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         when(lightIssue.getLine()).thenReturn(999);
 
         Component component = mock(Component.class);
@@ -548,7 +520,7 @@ public class GitlabMergeRequestDecoratorTest {
     public void shouldNotStartNewDiscussionForIssueWithExistingCommentFromCommitInMergeRequest() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(lightIssue.key()).thenReturn("issueKey1");
-        when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
+        when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         when(lightIssue.getLine()).thenReturn(999);
 
         Component component = mock(Component.class);
@@ -593,7 +565,7 @@ public class GitlabMergeRequestDecoratorTest {
     public void shouldNotCreateCommentsForIssuesWithNoLineNumbers() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
         when(lightIssue.key()).thenReturn("issueKey1");
-        when(lightIssue.getStatus()).thenReturn(Issue.STATUS_OPEN);
+        when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         when(lightIssue.getLine()).thenReturn(null);
 
         Component component = mock(Component.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,18 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
-import org.junit.Test;
-import org.sonar.api.rule.RuleKey;
-import org.sonar.api.rules.RuleType;
-import org.sonar.ce.task.projectanalysis.component.Component;
-import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
-import org.sonar.core.issue.DefaultIssue;
-import org.sonar.db.protobuf.DbIssues;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -39,16 +27,29 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.Test;
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.api.issue.impact.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
+import org.sonar.api.rule.RuleKey;
+import org.sonar.ce.task.projectanalysis.component.Component;
+import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
+import org.sonar.core.issue.DefaultIssue;
+import org.sonar.db.protobuf.DbIssues;
+
 public class PostAnalysisIssueVisitorTest {
 
-    private static final long EXAMPLE_ISSUE_EFFORT_IN_MINUTES = 15L;
     private static final String EXAMPLE_ISSUE_KEY = "key";
     private static final int EXAMPLE_ISSUE_LINE = 1000;
     private static final String EXAMPLE_ISSUE_MESSAGE = "message";
     private static final String EXAMPLE_ISSUE_RESOLUTION = "resolution";
-    private static final String EXAMPLE_ISSUE_SEVERITY = "severity";
-    private static final String EXAMPLE_ISSUE_STATUS = "status";
-    private static final RuleType EXAMPLE_ISSUE_TYPE = RuleType.BUG;
+    private static final Map<SoftwareQuality, Severity> EXAMPLE_IMPACTS = Map.of(SoftwareQuality.RELIABILITY, Severity.HIGH);
+    private static final IssueStatus EXAMPLE_ISSUE_STATUS = IssueStatus.OPEN;
     private static final RuleKey EXAMPLE_ISSUE_RULEKEY = RuleKey.of("repo", "rule");
     private static final DbIssues.Locations EXAMPLE_ISSUE_LOCATIONS = DbIssues.Locations.getDefaultInstance();
 
@@ -66,7 +67,7 @@ public class PostAnalysisIssueVisitorTest {
         }
 
 
-        assertThat(testCase.getIssues().size()).isEqualTo(expected.size());
+        assertThat(testCase.getIssues()).hasSameSizeAs(expected);
         for (int i = 0; i < expected.size(); i++) {
             assertThat(testCase.getIssues().get(i).getIssue()).isEqualTo(expected.get(i).getIssue());
             assertThat(testCase.getIssues().get(i).getComponent()).isEqualTo(expected.get(i).getComponent());
@@ -75,16 +76,14 @@ public class PostAnalysisIssueVisitorTest {
 
     private DefaultIssue exampleDefaultIssue() {
         DefaultIssue defaultIssue = mock(DefaultIssue.class);
-        doReturn(EXAMPLE_ISSUE_EFFORT_IN_MINUTES).when(defaultIssue).effortInMinutes();
-        doReturn(EXAMPLE_ISSUE_KEY).when(defaultIssue).key();
-        doReturn(EXAMPLE_ISSUE_LINE).when(defaultIssue).getLine();
-        doReturn(EXAMPLE_ISSUE_MESSAGE).when(defaultIssue).getMessage();
-        doReturn(EXAMPLE_ISSUE_RESOLUTION).when(defaultIssue).resolution();
-        doReturn(EXAMPLE_ISSUE_SEVERITY).when(defaultIssue).severity();
-        doReturn(EXAMPLE_ISSUE_STATUS).when(defaultIssue).status();
-        doReturn(EXAMPLE_ISSUE_TYPE).when(defaultIssue).type();
-        doReturn(EXAMPLE_ISSUE_RULEKEY).when(defaultIssue).getRuleKey();
-        doReturn(EXAMPLE_ISSUE_LOCATIONS).when(defaultIssue).getLocations();
+        when(defaultIssue.key()).thenReturn(EXAMPLE_ISSUE_KEY);
+        when(defaultIssue.getLine()).thenReturn(EXAMPLE_ISSUE_LINE);
+        when(defaultIssue.getMessage()).thenReturn(EXAMPLE_ISSUE_MESSAGE);
+        when(defaultIssue.resolution()).thenReturn(EXAMPLE_ISSUE_RESOLUTION);
+        when(defaultIssue.issueStatus()).thenReturn(EXAMPLE_ISSUE_STATUS);
+        when(defaultIssue.getRuleKey()).thenReturn(EXAMPLE_ISSUE_RULEKEY);
+        when(defaultIssue.getLocations()).thenReturn(EXAMPLE_ISSUE_LOCATIONS);
+        when(defaultIssue.impacts()).thenReturn(EXAMPLE_IMPACTS);
         return defaultIssue;
     }
 
@@ -101,28 +100,23 @@ public class PostAnalysisIssueVisitorTest {
 
         // check values equality, twice (see below)
         for (int i = 0; i < 2; i++) {
-            assertThat(lightIssue.effortInMinutes()).isEqualTo(EXAMPLE_ISSUE_EFFORT_IN_MINUTES);
             assertThat(lightIssue.key()).isEqualTo(EXAMPLE_ISSUE_KEY);
             assertThat(lightIssue.getLine()).isEqualTo(EXAMPLE_ISSUE_LINE);
             assertThat(lightIssue.getMessage()).isEqualTo(EXAMPLE_ISSUE_MESSAGE);
             assertThat(lightIssue.resolution()).isEqualTo(EXAMPLE_ISSUE_RESOLUTION);
-            assertThat(lightIssue.severity()).isEqualTo(EXAMPLE_ISSUE_SEVERITY);
-            assertThat(lightIssue.status()).isEqualTo(EXAMPLE_ISSUE_STATUS);
-            assertThat(lightIssue.getStatus()).isEqualTo(EXAMPLE_ISSUE_STATUS); // alias getter
-            assertThat(lightIssue.type()).isEqualTo(EXAMPLE_ISSUE_TYPE);
+            assertThat(lightIssue.impacts()).isEqualTo(EXAMPLE_IMPACTS);
+            assertThat(lightIssue.issueStatus()).isEqualTo(EXAMPLE_ISSUE_STATUS);
             assertThat(lightIssue.getRuleKey()).isEqualTo(EXAMPLE_ISSUE_RULEKEY);
             assertThat(lightIssue.getLocations()).isEqualTo(EXAMPLE_ISSUE_LOCATIONS);
         }
 
         // check DefaultIssue getters have been called _exactly once_
-        verify(defaultIssue).effortInMinutes();
         verify(defaultIssue).key();
         verify(defaultIssue).getLine();
         verify(defaultIssue).getMessage();
         verify(defaultIssue).resolution();
-        verify(defaultIssue).severity();
-        verify(defaultIssue).status();
-        verify(defaultIssue).type();
+        verify(defaultIssue).impacts();
+        verify(defaultIssue).issueStatus();
         verify(defaultIssue).getRuleKey();
         verify(defaultIssue).getLocations();
         verifyNoMoreInteractions(defaultIssue);
