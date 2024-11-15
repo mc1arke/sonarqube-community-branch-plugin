@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,8 @@ abstract class BaseFormatterFactory implements FormatterFactory {
             return textFormatter().format((Text) node);
         } else if (node instanceof Link) {
             return linkFormatter().format((Link) node);
+        } else if (node instanceof Bold) {
+            return boldFormatter().format((Bold) node);
         } else {
             throw new IllegalArgumentException("Unknown node type: " + node.getClass().getName());
         }

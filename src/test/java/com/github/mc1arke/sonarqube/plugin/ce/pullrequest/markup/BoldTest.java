@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 Michael Clarke
+ * Copyright (C) 2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,14 +18,20 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-public final class Paragraph extends Node {
+import static org.assertj.core.api.Assertions.assertThat;
 
-    public Paragraph(Node... children) {
-        super(children);
+import org.junit.jupiter.api.Test;
+
+class BoldTest {
+
+    @Test
+    void shouldAcceptTextAsChild() {
+        assertThat(new Bold().isValidChild(new Text("hello"))).isTrue();
     }
 
-    @Override
-    boolean isValidChild(Node child) {
-        return child instanceof Image || child instanceof Text || child instanceof Link || child instanceof Bold;
+    @Test
+    void shouldRejectNonTextAsChild() {
+        assertThat(new Bold().isValidChild(new Bold())).isFalse();
     }
+
 }

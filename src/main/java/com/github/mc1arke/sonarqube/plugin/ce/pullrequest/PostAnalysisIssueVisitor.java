@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,19 +18,23 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import javax.annotation.CheckForNull;
+
+import org.sonar.api.issue.IssueStatus;
+import org.sonar.api.issue.impact.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.api.rule.RuleKey;
-import org.sonar.api.rules.RuleType;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.issue.IssueVisitor;
 import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.protobuf.DbIssues;
-
-import javax.annotation.CheckForNull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 public class PostAnalysisIssueVisitor extends IssueVisitor {
 
@@ -72,42 +76,27 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
         }
     }
 
-    /**
-     * A simple bean for holding the useful bits of a #{@link DefaultIssue}.
-     * <br>
-     * It presents a subset of the #{@link DefaultIssue} interface, hence the inconsistent getters names,
-     * and CheckForNull annotations.
-     */
     public static class LightIssue {
 
-        private final Long effortInMinutes;
         private final String key;
         private final Integer line;
         private final String message;
         private final String resolution;
-        private final String severity;
-        private final String status;
-        private final RuleType type;
+        private final IssueStatus status;
+        private final Map<SoftwareQuality, Severity> impacts;
         private final DbIssues.Locations locations;
         private final RuleKey ruleKey;
 
         LightIssue(DefaultIssue issue) {
-            this.effortInMinutes = issue.effortInMinutes();
             this.key = issue.key();
             this.line = issue.getLine();
             this.message = issue.getMessage();
 
             this.resolution = issue.resolution();
-            this.severity = issue.severity();
-            this.status = issue.status();
-            this.type = issue.type();
+            this.status = issue.issueStatus();
+            this.impacts = issue.impacts();
             this.locations = issue.getLocations();
             this.ruleKey = issue.getRuleKey();
-        }
-
-        @CheckForNull
-        public Long effortInMinutes() {
-            return effortInMinutes;
         }
 
         public String key() {
@@ -129,20 +118,12 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
             return resolution;
         }
 
-        public String severity() {
-            return severity;
-        }
-
-        public String getStatus() {
+        public IssueStatus issueStatus() {
             return status;
         }
 
-        public String status() {
-            return status;
-        }
-
-        public RuleType type() {
-            return type;
+        public Map<SoftwareQuality, Severity> impacts() {
+            return impacts;
         }
 
         public DbIssues.Locations getLocations() {
@@ -155,7 +136,7 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
 
         @Override
         public int hashCode() {
-            return Objects.hash(effortInMinutes, key, line, message, resolution, severity, status, type);
+            return Objects.hash(key, line, message, resolution, status, impacts);
         }
 
         @Override
@@ -167,14 +148,12 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
                 return false;
             }
             LightIssue other = (LightIssue) obj;
-            return Objects.equals(effortInMinutes, other.effortInMinutes)
-                    && Objects.equals(key, other.key)
+            return Objects.equals(key, other.key)
                     && Objects.equals(line, other.line)
                     && Objects.equals(message, other.message)
                     && Objects.equals(resolution, other.resolution)
-                    && Objects.equals(severity, other.severity)
                     && Objects.equals(status, other.status)
-                    && type == other.type;
+                    && Objects.equals(impacts, other.impacts);
         }
 
     }

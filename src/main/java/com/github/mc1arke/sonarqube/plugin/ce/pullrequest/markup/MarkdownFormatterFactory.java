@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -78,5 +78,10 @@ public final class MarkdownFormatterFactory extends BaseFormatterFactory {
     @Override
     public Formatter<Text> textFormatter() {
         return node -> htmlEscaper().escape(node.getContent());
+    }
+
+    @Override
+    public Formatter<Bold> boldFormatter() {
+        return node -> String.format("**%s**", childContents(node));
     }
 }

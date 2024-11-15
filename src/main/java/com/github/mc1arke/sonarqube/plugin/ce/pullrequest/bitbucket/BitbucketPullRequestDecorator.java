@@ -18,6 +18,29 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket;
 
+import static java.lang.String.format;
+import static java.util.stream.Collectors.toSet;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.api.issue.impact.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
+import org.sonar.db.alm.setting.ALM;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketException;
@@ -27,37 +50,13 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsight
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import com.google.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.api.issue.Issue;
-import org.sonar.api.rule.Severity;
-import org.sonar.api.rules.RuleType;
-import org.sonar.db.alm.setting.ALM;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import static java.lang.String.format;
-import static java.util.stream.Collectors.toSet;
 
 public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
@@ -113,14 +112,18 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
     private static List<ReportData> toReport(BitbucketClient client, AnalysisSummary analysisSummary) {
         List<ReportData> reportData = new ArrayList<>();
-        reportData.add(reliabilityReport(analysisSummary.getBugCount()));
+        reportData.add(new ReportData("New Issues", new DataValue.Text(issueLabel(analysisSummary.getNewIssues().getValue()))));
+        reportData.add(new ReportData("Accepted Issues", new DataValue.Text(issueLabel(analysisSummary.getAcceptedIssues().getValue()))));
+        reportData.add(new ReportData("Fixed Issues", new DataValue.Text(issueLabel(analysisSummary.getFixedIssues().getValue()))));
         reportData.add(new ReportData("Code coverage", new DataValue.Percentage(Optional.ofNullable(analysisSummary.getNewCoverage()).orElse(BigDecimal.ZERO))));
-        reportData.add(securityReport(analysisSummary.getVulnerabilityCount(), analysisSummary.getSecurityHotspotCount()));
         reportData.add(new ReportData("Duplication", new DataValue.Percentage(Optional.ofNullable(analysisSummary.getNewDuplications()).orElse(BigDecimal.ZERO))));
-        reportData.add(maintainabilityReport(analysisSummary.getCodeSmellCount()));
         reportData.add(new ReportData("Analysis details", client.createLinkDataValue(analysisSummary.getDashboardUrl())));
 
         return reportData;
+    }
+
+    private static String issueLabel(long count) {
+        return count + (count == 1 ? " Issue" : " Issues");
     }
 
     private void updateAnnotations(BitbucketClient client, AnalysisDetails analysisDetails, String reportKey) throws IOException {
@@ -131,19 +134,17 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
         AnnotationUploadLimit uploadLimit = client.getAnnotationUploadLimit();
 
         Map<Integer, Set<CodeInsightsAnnotation>> annotationChunks = analysisDetails.getScmReportableIssues().stream()
-                .filter(i -> !(i.getIssue().type() == RuleType.SECURITY_HOTSPOT && Issue.SECURITY_HOTSPOT_RESOLUTIONS
-                        .contains(i.getIssue().resolution())))
-                .sorted(Comparator.comparing(a -> Severity.ALL.indexOf(a.getIssue().severity())))
                 .map(componentIssue -> {
                     String path = componentIssue.getComponent().getReportAttributes().getScmPath().orElseThrow();
                     AnalysisIssueSummary analysisIssueSummary = reportGenerator.createAnalysisIssueSummary(componentIssue, analysisDetails);
+                    Map.Entry<SoftwareQuality, Severity> highestSeverity = findHighestSeverity(componentIssue.getIssue().impacts());
                     return client.createCodeInsightsAnnotation(componentIssue.getIssue().key(),
                             Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0),
                             analysisIssueSummary.getIssueUrl(),
                             componentIssue.getIssue().getMessage(),
                             path,
-                            toBitbucketSeverity(componentIssue.getIssue().severity()),
-                            toBitbucketType(componentIssue.getIssue().type()));
+                            toBitbucketSeverity(highestSeverity.getValue()),
+                            toBitbucketType(highestSeverity.getKey()));
                 }).collect(Collectors.groupingBy(s -> chunkCounter.getAndIncrement() / uploadLimit.getAnnotationBatchSize(), toSet()));
 
         int totalAnnotationsCounter = 1;
@@ -166,55 +167,39 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
         }
     }
 
+    private static Map.Entry<SoftwareQuality, Severity> findHighestSeverity(Map<SoftwareQuality, Severity> impacts) {
+        return impacts.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .orElseThrow(() -> new IllegalStateException("No severity found in impacts"));
+    }
+
     @VisibleForTesting
     static boolean exceedsMaximumNumberOfAnnotations(int chunkCounter, AnnotationUploadLimit uploadLimit) {
         return (chunkCounter * uploadLimit.getAnnotationBatchSize()) > uploadLimit.getTotalAllowedAnnotations();
     }
 
-    private static String toBitbucketSeverity(String severity) {
-        if (severity == null) {
-            return "LOW";
-        }
+    private static String toBitbucketSeverity(Severity severity) {
         switch (severity) {
-            case Severity.BLOCKER:
-            case Severity.CRITICAL:
+            case HIGH:
                 return "HIGH";
-            case Severity.MAJOR:
+            case MEDIUM:
                 return "MEDIUM";
             default:
                 return "LOW";
         }
     }
 
-    private static String toBitbucketType(RuleType sonarqubeType) {
+    private static String toBitbucketType(SoftwareQuality sonarqubeType) {
         switch (sonarqubeType) {
-            case SECURITY_HOTSPOT:
-            case VULNERABILITY:
+            case SECURITY:
                 return "VULNERABILITY";
-            case CODE_SMELL:
+            case MAINTAINABILITY:
                 return "CODE_SMELL";
-            case BUG:
+            case RELIABILITY:
                 return "BUG";
             default:
                 throw new IllegalStateException(format("%s is not a valid ruleType.", sonarqubeType));
         }
-    }
-
-    private static ReportData securityReport(long vulnerabilities, long hotspots) {
-        String vulnerabilityDescription = vulnerabilities == 1 ? "Vulnerability" : "Vulnerabilities";
-        String hotspotDescription = hotspots == 1 ? "Hotspot" : "Hotspots";
-        String security = format("%d %s (and %d %s)", vulnerabilities, vulnerabilityDescription, hotspots, hotspotDescription);
-        return new ReportData("Security", new DataValue.Text(security));
-    }
-
-    private static ReportData reliabilityReport(long bugs) {
-        String description = bugs == 1 ? "Bug" : "Bugs";
-        return new ReportData("Reliability", new DataValue.Text(format("%d %s", bugs, description)));
-    }
-
-    private static ReportData maintainabilityReport(long codeSmells) {
-        String description = codeSmells == 1 ? "Code Smell" : "Code Smells";
-        return new ReportData("Maintainability", new DataValue.Text(format("%d %s", codeSmells, description)));
     }
 
     private static String reportDescription(AnalysisDetails details, AnalysisSummary analysisSummary) {
