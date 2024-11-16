@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2023 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CommentTh
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CommentThreadResponse;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commits;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.ConnectionData;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentThreadRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitPullRequestStatus;
@@ -105,6 +106,13 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
     }
 
     @Override
+    public void deletePullRequestThreadComment(String projectId, String repositoryName, int pullRequestId, int threadId, int commentId) throws IOException {
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads/%s/comments/%s?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, threadId, commentId, API_VERSION);
+
+        execute(url, "delete", null, null);
+    }
+
+    @Override
     public PullRequest retrievePullRequest(String projectId, String repositoryName, int pullRequestId) throws IOException {
         String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         return execute(url, "get", null, PullRequest.class);
@@ -114,6 +122,12 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
     public List<Commit> getPullRequestCommits(String projectId, String repositoryName, int pullRequestId) throws IOException {
         String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/commits?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         return Objects.requireNonNull(execute(url, "get", null, Commits.class)).getValue();
+    }
+
+    @Override
+    public ConnectionData getConnectionData() throws IOException {
+        String url = String.format("%s/_apis/ConnectionData?api-version=%s", apiUrl, API_VERSION_PREVIEW);
+        return Objects.requireNonNull(execute(url, "get", null, ConnectionData.class));
     }
 
 

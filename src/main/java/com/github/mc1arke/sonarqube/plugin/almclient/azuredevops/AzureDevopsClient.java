@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.almclient.azuredevops;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CommentThread;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.ConnectionData;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentThreadRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitPullRequestStatus;
@@ -46,4 +47,9 @@ public interface AzureDevopsClient {
     void submitPullRequestStatus(String projectName, String repositoryName, int pullRequestId, GitPullRequestStatus status) throws IOException;
 
     Repository getRepository(String projectName, String repositoryName) throws IOException;
+
+    void deletePullRequestThreadComment(String projectName, String repositoryName, int pullRequestId, int threadId, int commentId) throws IOException;
+
+    ConnectionData getConnectionData() throws IOException;
+
 }

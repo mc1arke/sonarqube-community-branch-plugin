@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,4 +48,6 @@ public interface GitlabClient {
     void setMergeRequestPipelineStatus(long projectId, String commitRevision, PipelineStatus status) throws IOException;
 
     Project getProject(String projectSlug) throws IOException;
+
+    void deleteMergeRequestDiscussionNote(long projectId, long mergeRequestIid, String discussionId, long noteId) throws IOException;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2024 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,25 @@
  *
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.sonar.api.ce.posttask.QualityGate;
+import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
+import org.sonar.db.alm.setting.ALM;
+import org.sonar.db.alm.setting.AlmSettingDto;
+import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import org.sonar.db.protobuf.DbIssues;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
@@ -41,26 +60,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatt
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.sonar.api.ce.posttask.QualityGate;
-import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
-import org.sonar.db.alm.setting.ALM;
-import org.sonar.db.alm.setting.AlmSettingDto;
-import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-import org.sonar.db.protobuf.DbIssues;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestDecorator<AzureDevopsClient, PullRequest, Void, CommentThread, Comment> implements PullRequestBuildStatusDecorator {
+public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestDecorator<AzureDevopsClient, PullRequest, String, CommentThread, Comment> implements PullRequestBuildStatusDecorator {
 
     private static final Logger logger = LoggerFactory.getLogger(AzureDevOpsPullRequestDecorator.class);
     private static final Pattern NOTE_MARKDOWN_LEGACY_SEE_LINK_PATTERN = Pattern.compile("^\\[See in SonarQube]\\((.*?)\\)$");
@@ -115,8 +116,14 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     }
 
     @Override
-    protected Void getCurrentUser(AzureDevopsClient client) {
-        return null;
+    protected String getCurrentUser(AzureDevopsClient client) {
+        try {
+            return client.getConnectionData().getAuthenticatedUser().getId();
+        } catch (Exception e) {
+            logger.warn("Could not retrieve authenticated user", e);
+            // historically we didn't handle users here so always returned null. This is a fallback to that behaviour.
+            return null;
+        }
     }
 
     @Override
@@ -194,8 +201,8 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     }
 
     @Override
-    protected boolean isNoteFromCurrentUser(Comment note, Void user) {
-        return true;
+    protected boolean isNoteFromCurrentUser(Comment note, String user) {
+        return note.getAuthor().getId().equals(user);
     }
 
     @Override
@@ -233,6 +240,17 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
             client.resolvePullRequestThread(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), discussion.getId());
         } catch (IOException ex) {
             throw new IllegalStateException("Could not resolve Pull Request comment thread on Azure Devops", ex);
+        }
+    }
+
+    @Override
+    protected void deleteDiscussion(AzureDevopsClient client, CommentThread discussion, PullRequest pullRequest, List<Comment> notesForDiscussion) {
+        try {
+            for (Comment note : notesForDiscussion) {
+                client.deletePullRequestThreadComment(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), discussion.getId(), note.getId());
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not delete Pull Request comment thread on Azure Devops", ex);
         }
     }
 
