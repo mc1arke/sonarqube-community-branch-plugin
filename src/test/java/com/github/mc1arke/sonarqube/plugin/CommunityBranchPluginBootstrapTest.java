@@ -21,13 +21,10 @@ package com.github.mc1arke.sonarqube.plugin;
 import com.github.mc1arke.sonarqube.plugin.classloader.DefaultElevatedClassLoaderFactoryProvider;
 import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactory;
 import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactoryProvider;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
-import org.hamcrest.core.IsEqual;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mockito;
 import org.sonar.api.Plugin;
 import org.sonar.api.SonarQubeSide;
@@ -36,37 +33,31 @@ import org.sonar.api.config.Configuration;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityBranchPluginBootstrapTest {
+class CommunityBranchPluginBootstrapTest {
 
-    private final ExpectedException expectedException = ExpectedException.none();
-
-    @Rule
-    public ExpectedException expectedException() {
-        return expectedException;
-    }
-
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         MockPlugin.invokedContext = null;
     }
 
     @Test
-    public void testDefineInvokedOnSuccessLoad() {
-        Plugin.Context context = mock(Plugin.Context.class);
-        Configuration configuration = mock(Configuration.class);
+    void shouldInvokeDefineOnSuccessfulLoad() {
+        Plugin.Context context = mock();
+        Configuration configuration = mock();
         when(context.getBootConfiguration()).thenReturn(configuration);
         when(configuration.get(any())).thenReturn(Optional.empty());
-        SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+        SonarRuntime sonarRuntime = mock();
         when(context.getRuntime()).thenReturn(sonarRuntime);
         when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
@@ -77,27 +68,26 @@ public class CommunityBranchPluginBootstrapTest {
             }
         };
 
-        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock(ElevatedClassLoaderFactory.class);
+        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider =
-                mock(ElevatedClassLoaderFactoryProvider.class);
+        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
         when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
 
         CommunityBranchPluginBootstrap testCase =
-                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider);
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
         testCase.define(context);
 
-        assertEquals(context, MockPlugin.invokedContext);
+        assertThat(MockPlugin.invokedContext).isSameAs(context);
     }
 
     @Test
-    public void testDefineNotInvokedForNonScanner() {
-        Plugin.Context context = mock(Plugin.Context.class);
-        Configuration configuration = mock(Configuration.class);
+    void shouldNotInvokeDefineOnNonScannerScope() {
+        Plugin.Context context = mock();
+        Configuration configuration = mock();
         when(context.getBootConfiguration()).thenReturn(configuration);
         when(configuration.get(any())).thenReturn(Optional.empty());
-        SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+        SonarRuntime sonarRuntime = mock();
         when(context.getRuntime()).thenReturn(sonarRuntime);
         when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SERVER);
 
@@ -108,23 +98,22 @@ public class CommunityBranchPluginBootstrapTest {
             }
         };
 
-        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock(ElevatedClassLoaderFactory.class);
+        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider =
-                mock(ElevatedClassLoaderFactoryProvider.class);
+        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
         when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
 
         CommunityBranchPluginBootstrap testCase =
-                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider);
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
         testCase.define(context);
 
-        assertNull(MockPlugin.invokedContext);
+        assertThat(MockPlugin.invokedContext).isNull();
     }
 
 
     @Test
-    public void testFailureOnIncorrectClassTypeReturned() {
+    void shouldThrowExceptionIfIncorrectClassReturned() {
         ClassLoader classLoader = new ClassLoader() {
             @Override
             public Class<?> loadClass(String name) {
@@ -132,34 +121,33 @@ public class CommunityBranchPluginBootstrapTest {
             }
         };
 
-        ElevatedClassLoaderFactory classLoaderFactory = mock(ElevatedClassLoaderFactory.class);
+        ElevatedClassLoaderFactory classLoaderFactory = mock();
         when(classLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
         Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
-        SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+        SonarRuntime sonarRuntime = mock();
         when(context.getRuntime()).thenReturn(sonarRuntime);
         when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage(IsEqual.equalTo(
-                "Expected loaded class to be instance of 'org.sonar.api.Plugin' but was '" + getClass().getName() +
-                "'"));
-
-        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock(ElevatedClassLoaderFactory.class);
+        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
         ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider =
-                mock(ElevatedClassLoaderFactoryProvider.class);
+                mock();
         when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
 
 
         CommunityBranchPluginBootstrap testCase =
-                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider);
-        testCase.define(context);
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
+
+        assertThatThrownBy(() -> testCase.define(context))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Expected loaded class to be instance of 'org.sonar.api.Plugin' but was 'com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginBootstrapTest'")
+            .hasNoCause();
     }
 
     @Test
-    public void testFailureOnReflectiveOperationException() {
+    void shouldThrowExceptionOnReflectionFailure() {
         ClassLoader classLoader = new ClassLoader() {
             @Override
             public Class<?> loadClass(String name) throws ClassNotFoundException {
@@ -167,69 +155,85 @@ public class CommunityBranchPluginBootstrapTest {
             }
         };
         Plugin.Context context = mock(Plugin.Context.class, Mockito.RETURNS_DEEP_STUBS);
-        SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+        SonarRuntime sonarRuntime = mock();
         when(context.getRuntime()).thenReturn(sonarRuntime);
         when(sonarRuntime.getSonarQubeSide()).thenReturn(SonarQubeSide.SCANNER);
 
-        expectedException.expectCause(new BaseMatcher<ClassNotFoundException>() {
 
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("Cause matcher");
-            }
-
-            @Override
-            public boolean matches(Object item) {
-                if (item instanceof ClassNotFoundException) {
-                    return "Whoops".equals(((ClassNotFoundException) item).getMessage());
-                }
-                return false;
-            }
-        });
-
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Could not create CommunityBranchPlugin instance"));
-
-
-        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock(ElevatedClassLoaderFactory.class);
+        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider =
-                mock(ElevatedClassLoaderFactoryProvider.class);
+        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
         when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
 
 
         CommunityBranchPluginBootstrap testCase =
-                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider);
-        testCase.define(context);
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
+
+        assertThatThrownBy(() -> testCase.define(context))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Could not create CommunityBranchPlugin instance")
+            .hasCause(new ClassNotFoundException("Whoops"));
+    }
+
+    @EnumSource(value = SonarQubeSide.class, mode = EnumSource.Mode.EXCLUDE, names ="SCANNER")
+    @ParameterizedTest
+    void shouldThrowExceptionWhenPluginNotMarkedAsAvailableInScope(SonarQubeSide sonarQubeSide) {
+        Plugin.Context context = mock();
+        SonarRuntime sonarRuntime = mock();
+        when(context.getRuntime()).thenReturn(sonarRuntime);
+        when(sonarRuntime.getSonarQubeSide()).thenReturn(sonarQubeSide);
+        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
+
+        CommunityBranchPluginBootstrap underTest = new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, false);
+
+        assertThatThrownBy(() -> underTest.define(context))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("The plugin did not detect agent modifications so SonarQube is unlikely to work with Pull Requests or Branches. Please check the Java Agent has been correctly set for the " + sonarQubeSide + " component")
+            .hasNoCause();
+
+        verify(context).getRuntime();
+        verify(sonarRuntime).getSonarQubeSide();
+        verifyNoMoreInteractions(context);
+        verifyNoMoreInteractions(sonarRuntime);
+        verifyNoInteractions(elevatedClassLoaderFactoryProvider);
+    }
+
+
+    @EnumSource(value = SonarQubeSide.class, mode = EnumSource.Mode.EXCLUDE, names ="SCANNER")
+    @ParameterizedTest
+    void shouldNotThrowExceptionWhenPluginMarkedAsAvailableInScope(SonarQubeSide sonarQubeSide) {
+        Plugin.Context context = mock();
+        SonarRuntime sonarRuntime = mock();
+        when(context.getRuntime()).thenReturn(sonarRuntime);
+        when(sonarRuntime.getSonarQubeSide()).thenReturn(sonarQubeSide);
+        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
+
+        CommunityBranchPluginBootstrap underTest = new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
+
+        underTest.define(context);
+
+        verify(context).getRuntime();
+        verify(sonarRuntime).getSonarQubeSide();
+        verifyNoMoreInteractions(context);
+        verifyNoMoreInteractions(sonarRuntime);
+        verifyNoInteractions(elevatedClassLoaderFactoryProvider);
     }
 
     @Test
-    public void testNoArgsConstructor() {
-        assertEquals(new CommunityBranchPluginBootstrap(DefaultElevatedClassLoaderFactoryProvider.getInstance()),
+    void testNoArgsConstructor() {
+        assertEquals(new CommunityBranchPluginBootstrap(DefaultElevatedClassLoaderFactoryProvider.getInstance(), false),
                      new CommunityBranchPluginBootstrap());
         assertEquals(
-                new CommunityBranchPluginBootstrap(DefaultElevatedClassLoaderFactoryProvider.getInstance()).hashCode(),
+                new CommunityBranchPluginBootstrap(DefaultElevatedClassLoaderFactoryProvider.getInstance(), false).hashCode(),
                 new CommunityBranchPluginBootstrap().hashCode());
 
     }
 
     @Test
-    public void testEqualsSameInstance() {
-        CommunityBranchPluginBootstrap testCase = new CommunityBranchPluginBootstrap();
-        assertEquals(testCase, testCase);
-    }
-
-    @Test
-    public void testNotEqualsUnrelatedClasses() {
-        assertNotEquals(new CommunityBranchPluginBootstrap(), "");
-        assertNotEquals(new CommunityBranchPluginBootstrap(), null);
-    }
-
-    @Test
-    public void testDifferentHashCode() {
-        assertNotEquals(new CommunityBranchPluginBootstrap(mock(ElevatedClassLoaderFactoryProvider.class)).hashCode(),
-                        new CommunityBranchPluginBootstrap(mock(ElevatedClassLoaderFactoryProvider.class)).hashCode());
+    void testDifferentHashCode() {
+        assertNotEquals(new CommunityBranchPluginBootstrap(mock(), false).hashCode(),
+                        new CommunityBranchPluginBootstrap(mock(), true).hashCode());
     }
 
 

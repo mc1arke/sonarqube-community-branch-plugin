@@ -21,6 +21,9 @@ package com.github.mc1arke.sonarqube.plugin;
 import com.github.mc1arke.sonarqube.plugin.classloader.DefaultElevatedClassLoaderFactoryProvider;
 import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactory;
 import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactoryProvider;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.Plugin;
 import org.sonar.api.SonarQubeSide;
 
@@ -43,20 +46,32 @@ import java.util.Objects;
  */
 public class CommunityBranchPluginBootstrap implements Plugin {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommunityBranchPluginBootstrap.class);
+
     private final ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider;
+    private final boolean available;
 
     public CommunityBranchPluginBootstrap() {
-        this(DefaultElevatedClassLoaderFactoryProvider.getInstance());
+        this(DefaultElevatedClassLoaderFactoryProvider.getInstance(), false);
     }
 
-    /*package*/ CommunityBranchPluginBootstrap(ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider) {
+    /*package*/ CommunityBranchPluginBootstrap(ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider, boolean available) {
         super();
         this.elevatedClassLoaderFactoryProvider = elevatedClassLoaderFactoryProvider;
+        this.available = available;
     }
 
     @Override
     public void define(Context context) {
-        if (SonarQubeSide.SCANNER != context.getRuntime().getSonarQubeSide()) {
+        SonarQubeSide sonarQubeSide = context.getRuntime().getSonarQubeSide();
+        if (SonarQubeSide.COMPUTE_ENGINE == sonarQubeSide || SonarQubeSide.SERVER == sonarQubeSide) {
+            if (isAvailable()) {
+                LOGGER.info("Expected agent runtime modifications detected for component: {}", sonarQubeSide);
+            } else {
+                throw new IllegalStateException(String.format("The plugin did not detect agent modifications so SonarQube is unlikely to work with Pull Requests or Branches. Please check the Java Agent has been correctly set for the %s component", sonarQubeSide));
+            }
+        }
+        if (SonarQubeSide.SCANNER != sonarQubeSide) {
             return;
         }
         try {
@@ -84,11 +99,16 @@ public class CommunityBranchPluginBootstrap implements Plugin {
             return false;
         }
         CommunityBranchPluginBootstrap that = (CommunityBranchPluginBootstrap) o;
-        return Objects.equals(elevatedClassLoaderFactoryProvider, that.elevatedClassLoaderFactoryProvider);
+        return Objects.equals(elevatedClassLoaderFactoryProvider, that.elevatedClassLoaderFactoryProvider)
+            && available == that.available;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(elevatedClassLoaderFactoryProvider);
+        return Objects.hash(elevatedClassLoaderFactoryProvider, available);
+    }
+
+    boolean isAvailable() {
+        return available;
     }
 }

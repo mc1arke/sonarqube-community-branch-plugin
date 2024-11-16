@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2023 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,13 +31,13 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.SonarRuntime;
-import org.sonar.core.documentation.DefaultDocumentationLinkGenerator;
 import org.sonar.core.documentation.DocumentationLinkGenerator;
 import org.sonar.core.platform.EditionProvider;
 import org.sonar.core.platform.PlatformEditionProvider;
@@ -54,28 +54,54 @@ class CommunityBranchAgentTest {
 
     @Test
     void shouldThrowErrorIfAgentArgsNotValid() {
-        assertThatThrownBy(() -> CommunityBranchAgent.premain("badarg", mock(Instrumentation.class)))
+        Instrumentation instrumentation = mock();
+        assertThatThrownBy(() -> CommunityBranchAgent.premain("badarg", instrumentation))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Invalid/missing agent argument");
     }
 
     @Test
-    void shouldRedefineMultipleAlmFeatureClassForWebLaunch() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
+    void shouldRedefinePluginBootstrapIsAvailableForWebLaunch() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
         CustomClassloader classLoader = new CustomClassloader();
-        Instrumentation instrumentation = mock(Instrumentation.class);
+        Instrumentation instrumentation = mock();
 
         CommunityBranchAgent.premain("web", instrumentation);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
-        verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
+        verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
+
 
         try (InputStream inputStream = MultipleAlmFeature.class.getResourceAsStream(MultipleAlmFeature.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
-            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(classLoader, MultipleAlmFeature.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(getClass().getClassLoader(), CommunityBranchPluginBootstrap.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+
+            Object instance =  classLoader.loadClass(CommunityBranchPluginBootstrap.class.getName(), result).getConstructor().newInstance();
+
+            Method isAvailable = instance.getClass().getDeclaredMethod("isAvailable");
+            isAvailable.setAccessible(true);
+            boolean available = (boolean) isAvailable.invoke(instance);
+            assertThat(available).isTrue();
+        }
+    }
+
+    @Test
+    void shouldRedefineMultipleAlmFeatureClassForWebLaunch() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
+        CustomClassloader classLoader = new CustomClassloader();
+        Instrumentation instrumentation = mock();
+
+        CommunityBranchAgent.premain("web", instrumentation);
+
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
+        verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
+
+        try (InputStream inputStream = MultipleAlmFeature.class.getResourceAsStream(MultipleAlmFeature.class.getSimpleName() + ".class")) {
+            byte[] input = IOUtils.toByteArray(inputStream);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(1).transform(classLoader, MultipleAlmFeature.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
             Class<SonarQubeFeature> redefined = (Class<SonarQubeFeature>) classLoader.loadClass(MultipleAlmFeature.class.getName(), result);
 
-            SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+            SonarRuntime sonarRuntime = mock();
 
             SonarQubeFeature multipleAlmFeatureProvider = redefined.getConstructor(SonarRuntime.class).newInstance(sonarRuntime);
             assertThat(multipleAlmFeatureProvider.isAvailable()).isTrue();
@@ -86,26 +112,26 @@ class CommunityBranchAgentTest {
     @Test
     void shouldRedefineSetActionClassForWebLaunch() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
         CustomClassloader classLoader = new CustomClassloader();
-        Instrumentation instrumentation = mock(Instrumentation.class);
-        DocumentationLinkGenerator documentationLinkGenerator = mock(DefaultDocumentationLinkGenerator.class);
+        Instrumentation instrumentation = mock();
+        DocumentationLinkGenerator documentationLinkGenerator = mock();
 
         CommunityBranchAgent.premain("web", instrumentation);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(SetAction.class);
-        verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
+        verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
         try (InputStream inputStream = SetAction.class.getResourceAsStream(SetAction.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
-            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(1).transform(classLoader, SetAction.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(2).transform(classLoader, SetAction.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
             Class<?> setActionClass = classLoader.loadClass(SetAction.class.getName(), result);
 
-            DbClient dbClient = mock(DbClient.class);
-            ComponentFinder componentFinder = mock(ComponentFinder.class);
-            UserSession userSession = mock(UserSession.class);
-            PlatformEditionProvider platformEditionProvider = mock(PlatformEditionProvider.class);
-            NewCodePeriodDao newCodePeriodDao = mock(NewCodePeriodDao.class);
+            DbClient dbClient = mock();
+            ComponentFinder componentFinder = mock();
+            UserSession userSession = mock();
+            PlatformEditionProvider platformEditionProvider = mock();
+            NewCodePeriodDao newCodePeriodDao = mock();
 
             Object setAction = setActionClass.getConstructor(DbClient.class, UserSession.class, ComponentFinder.class, PlatformEditionProvider.class, NewCodePeriodDao.class, DocumentationLinkGenerator.class)
                     .newInstance(dbClient, userSession, componentFinder, platformEditionProvider, newCodePeriodDao, documentationLinkGenerator);
@@ -120,24 +146,24 @@ class CommunityBranchAgentTest {
     void shouldRedefinesUnsetActionClassForWebLaunch() throws IOException, UnmodifiableClassException, IllegalClassFormatException, ReflectiveOperationException {
         CustomClassloader classLoader = new CustomClassloader();
 
-        Instrumentation instrumentation = mock(Instrumentation.class);
+        Instrumentation instrumentation = mock();
         CommunityBranchAgent.premain("web", instrumentation);
-        DocumentationLinkGenerator documentationLinkGenerator = mock(DefaultDocumentationLinkGenerator.class);
+        DocumentationLinkGenerator documentationLinkGenerator = mock();
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(UnsetAction.class);
-        verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
+        verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
         try (InputStream inputStream = SetAction.class.getResourceAsStream(SetAction.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
-            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(2).transform(classLoader, UnsetAction.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(3).transform(classLoader, UnsetAction.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
             Class<?> unsetActionClass = classLoader.loadClass(UnsetAction.class.getName(), result);
-            DbClient dbClient = mock(DbClient.class);
-            ComponentFinder componentFinder = mock(ComponentFinder.class);
-            UserSession userSession = mock(UserSession.class);
-            PlatformEditionProvider platformEditionProvider = mock(PlatformEditionProvider.class);
-            NewCodePeriodDao newCodePeriodDao = mock(NewCodePeriodDao.class);
+            DbClient dbClient = mock();
+            ComponentFinder componentFinder = mock();
+            UserSession userSession = mock();
+            PlatformEditionProvider platformEditionProvider = mock();
+            NewCodePeriodDao newCodePeriodDao = mock();
 
             Object setAction = unsetActionClass.getConstructor(DbClient.class, UserSession.class, ComponentFinder.class, PlatformEditionProvider.class, NewCodePeriodDao.class, DocumentationLinkGenerator.class)
                     .newInstance(dbClient, userSession, componentFinder, platformEditionProvider, newCodePeriodDao, documentationLinkGenerator);
@@ -150,13 +176,13 @@ class CommunityBranchAgentTest {
 
     @Test
     void shouldSkipNonTargetClasForWebLaunch() throws UnmodifiableClassException, ClassNotFoundException, IllegalClassFormatException {
-        Instrumentation instrumentation = mock(Instrumentation.class);
+        Instrumentation instrumentation = mock();
 
         CommunityBranchAgent.premain("web", instrumentation);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
-        verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
+        verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
         byte[] input = new byte[]{1, 2, 3, 4, 5, 6};
         byte[] result = classFileTransformerArgumentCaptor.getValue().transform(getClass().getClassLoader(), "com/github/mc1arke/Dummy", getClass(), getClass().getProtectionDomain(), input);
@@ -166,13 +192,13 @@ class CommunityBranchAgentTest {
 
     @Test
     void shouldSkipNonTargetClassForCeLunch() throws UnmodifiableClassException, ClassNotFoundException, IllegalClassFormatException {
-        Instrumentation instrumentation = mock(Instrumentation.class);
+        Instrumentation instrumentation = mock();
 
         CommunityBranchAgent.premain("ce", instrumentation);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(PlatformEditionProvider.class);
-        verify(instrumentation, times(2)).addTransformer(classFileTransformerArgumentCaptor.capture());
+        verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
         byte[] input = new byte[]{1, 2, 3, 4, 5, 6};
         byte[] result = classFileTransformerArgumentCaptor.getValue().transform(getClass().getClassLoader(), "com/github/mc1arke/Dummy", getClass(), getClass().getProtectionDomain(), input);
@@ -182,18 +208,32 @@ class CommunityBranchAgentTest {
 
     @Test
     void shouldRedefineTargetClassesForCeLaunch() throws ReflectiveOperationException, IOException, UnmodifiableClassException, IllegalClassFormatException {
-        Instrumentation instrumentation = mock(Instrumentation.class);
+        Instrumentation instrumentation = mock();
 
         CommunityBranchAgent.premain("ce", instrumentation);
 
         ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
         verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
         verify(instrumentation).retransformClasses(PlatformEditionProvider.class);
-        verify(instrumentation, times(2)).addTransformer(classFileTransformerArgumentCaptor.capture());
+        verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
+
+        try (InputStream inputStream = MultipleAlmFeature.class.getResourceAsStream(MultipleAlmFeature.class.getSimpleName() + ".class")) {
+            byte[] input = IOUtils.toByteArray(inputStream);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(getClass().getClassLoader(), CommunityBranchPluginBootstrap.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+
+            CustomClassloader classLoader = new CustomClassloader();
+
+            Object instance =  classLoader.loadClass(CommunityBranchPluginBootstrap.class.getName(), result).getConstructor().newInstance();
+
+            Method isAvailable = instance.getClass().getDeclaredMethod("isAvailable");
+            isAvailable.setAccessible(true);
+            boolean available = (boolean) isAvailable.invoke(instance);
+            assertThat(available).isTrue();
+        }
 
         try (InputStream inputStream = PlatformEditionProvider.class.getResourceAsStream(PlatformEditionProvider.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
-            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(getClass().getClassLoader(), PlatformEditionProvider.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(1).transform(getClass().getClassLoader(), PlatformEditionProvider.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
             CustomClassloader classLoader = new CustomClassloader();
 
@@ -203,11 +243,11 @@ class CommunityBranchAgentTest {
 
         try (InputStream inputStream = MultipleAlmFeature.class.getResourceAsStream(MultipleAlmFeature.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
-            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(1).transform(getClass().getClassLoader(), MultipleAlmFeature.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(2).transform(getClass().getClassLoader(), MultipleAlmFeature.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
             CustomClassloader classLoader = new CustomClassloader();
 
-            SonarRuntime sonarRuntime = mock(SonarRuntime.class);
+            SonarRuntime sonarRuntime = mock();
 
             Class<MultipleAlmFeature> redefined = (Class<MultipleAlmFeature>) classLoader.loadClass(MultipleAlmFeature.class.getName(), result);
             SonarQubeFeature multipleAlmFeatureProvider = redefined.getConstructor(SonarRuntime.class).newInstance(sonarRuntime);
