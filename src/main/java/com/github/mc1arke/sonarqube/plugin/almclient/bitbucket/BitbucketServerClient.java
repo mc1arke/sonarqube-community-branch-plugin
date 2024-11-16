@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2024 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
@@ -176,6 +177,18 @@ class BitbucketServerClient implements BitbucketClient {
                     .readValue(Optional.ofNullable(response.body())
                             .orElseThrow(() -> new IllegalStateException("No response body from BitBucket"))
                             .string());
+        }
+    }
+
+    @Override
+    public void submitBuildStatus(String commitSha, BuildStatus buildStatus) throws IOException {
+        Request req = new Request.Builder()
+                .post(RequestBody.create(objectMapper.writeValueAsString(buildStatus), APPLICATION_JSON_MEDIA_TYPE))
+                .url(format("%s/rest/api/1.0/projects/%s/repos/%s/commits/%s/builds", config.getUrl(), config.getProject(), config.getRepository(), commitSha))
+                .build();
+
+        try (Response response = okHttpClient.newCall(req).execute()) {
+            validate(response);
         }
     }
 
