@@ -51,9 +51,11 @@ public final class CommunityBranchAgent {
         Component component = Component.fromString(args).orElseThrow(() -> new IllegalArgumentException("Invalid/missing agent argument"));
 
         if (component == Component.CE) {
+            redefineEdition(instrumentation, "com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginBootstrap", redefineIsAvailableFlag());
             redefineEdition(instrumentation, "org.sonar.core.platform.PlatformEditionProvider", redefineOptionalEditionGetMethod());
             redefineEdition(instrumentation, "org.sonar.server.almsettings.MultipleAlmFeature", redefineIsAvailableFlag());
         } else if (component == Component.WEB) {
+            redefineEdition(instrumentation, "com.github.mc1arke.sonarqube.plugin.CommunityBranchPluginBootstrap", redefineIsAvailableFlag());
             redefineEdition(instrumentation, "org.sonar.server.almsettings.MultipleAlmFeature", redefineIsAvailableFlag());
             redefineEdition(instrumentation, "org.sonar.server.newcodeperiod.ws.SetAction", redefineConstructorEditionProviderField(EditionProvider.Edition.DEVELOPER));
             redefineEdition(instrumentation, "org.sonar.server.newcodeperiod.ws.UnsetAction", redefineConstructorEditionProviderField(EditionProvider.Edition.DEVELOPER));
