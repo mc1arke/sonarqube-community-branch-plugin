@@ -45,6 +45,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketException;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
@@ -98,6 +99,9 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
             client.uploadReport(analysisDetails.getCommitSha(), codeInsightsReport, reportKey);
 
             updateAnnotations(client, analysisDetails, reportKey);
+
+            BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
+            client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }

@@ -51,6 +51,7 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
@@ -146,6 +147,10 @@ class BitbucketPullRequestDecoratorTest {
         verify(client).createLinkDataValue(DASHBOARD_URL);
         verify(client).createCodeInsightsReport(reportDataArgumentCaptor.capture(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
         verify(client).deleteAnnotations(COMMIT, REPORT_KEY);
+
+        ArgumentCaptor<BuildStatus> buildStatusArgumentCaptor = ArgumentCaptor.captor();
+        verify(client).submitBuildStatus(eq(COMMIT), buildStatusArgumentCaptor.capture());
+        assertThat(buildStatusArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(new BuildStatus(BuildStatus.State.SUCCESSFUL, REPORT_KEY, "SonarQube", DASHBOARD_URL));
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
