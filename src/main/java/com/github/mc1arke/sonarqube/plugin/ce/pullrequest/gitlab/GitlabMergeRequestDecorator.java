@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2024 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -221,6 +221,17 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
             client.resolveMergeRequestDiscussion(pullRequest.getTargetProjectId(), pullRequest.getIid(), discussion.getId());
         } catch (IOException ex) {
             throw new IllegalStateException("Could not resolve Merge Request discussion", ex);
+        }
+    }
+
+    @Override
+    protected void deleteDiscussion(GitlabClient client, Discussion discussion, MergeRequest pullRequest, List<Note> notesForDiscussion) {
+        try {
+            for (Note note : notesForDiscussion) {
+                client.deleteMergeRequestDiscussionNote(pullRequest.getTargetProjectId(), pullRequest.getIid(), discussion.getId(), note.getId());
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not delete Merge Request discussion", ex);
         }
     }
 

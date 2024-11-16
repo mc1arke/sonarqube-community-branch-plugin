@@ -19,15 +19,16 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.created;
+import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -41,8 +42,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.internal.Encryption;
 import org.sonar.api.config.internal.Settings;
@@ -62,27 +63,29 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatt
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 
-public class GitlabMergeRequestDecoratorIntegrationTest {
+class GitlabMergeRequestDecoratorIntegrationTest {
 
-    @Rule
-    public final WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
+    @RegisterExtension
+    static WireMockExtension wireMockExtension = WireMockExtension.extensionOptions()
+        .failOnUnmatchedRequests(true)
+        .build();
 
     @Test
-    public void decorateQualityGateStatusOk() {
+    void decorateQualityGateStatusOk() {
         decorateQualityGateStatus(QualityGate.Status.OK);
     }
 
     @Test
-    public void decorateQualityGateStatusError() {
+    void decorateQualityGateStatusError() {
         decorateQualityGateStatus(QualityGate.Status.ERROR);
     }
 
     private void decorateQualityGateStatus(QualityGate.Status status) {
         String user = "sonar_user";
         String repositorySlug = "repo/slug";
-        String commitSHA = "commitSHA";
+        String commitSha = "commitSha";
         long mergeRequestIid = 6;
         String projectKey = "projectKey";
         String sonarRootUrl = "http://sonar:9000/sonar";
@@ -95,16 +98,16 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
         AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("token");
-        when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl()+"/api/v4");
+        when(almSettingDto.getUrl()).thenReturn(wireMockExtension.baseUrl() + "/api/v4");
 
         AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-        when(almSettingDto.getUrl()).thenReturn(wireMockRule.baseUrl()+"/api/v4");
+        when(almSettingDto.getUrl()).thenReturn(wireMockExtension.baseUrl() + "/api/v4");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
         when(projectAlmSettingDto.getMonorepo()).thenReturn(true);
         when(analysisDetails.getQualityGateStatus()).thenReturn(status);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
         when(analysisDetails.getPullRequestId()).thenReturn(Long.toString(mergeRequestIid));
-        when(analysisDetails.getCommitSha()).thenReturn(commitSHA);
+        when(analysisDetails.getCommitSha()).thenReturn(commitSha);
 
         ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
 
@@ -124,7 +127,7 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
             when(scmInfo.hasChangesetForLine(anyInt())).thenReturn(true);
             when(scmInfo.getChangesetForLine(anyInt())).thenReturn(Changeset.newChangesetBuilder()
                     .setDate(0L)
-                    .setRevision(commitSHA)
+                    .setRevision(commitSha)
                     .build());
             when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
 
@@ -143,29 +146,29 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
         when(analysisIssueSummary.format(any())).thenReturn("issué");
         when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
 
-        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/user")).withHeader("PRIVATE-TOKEN", equalTo("token")).willReturn(okJson("{\n" +
+        wireMockExtension.stubFor(get(urlPathEqualTo("/api/v4/user")).withHeader("PRIVATE-TOKEN", equalTo("token")).willReturn(okJson("{\n" +
                 "  \"id\": 1,\n" +
                 "  \"username\": \"" + user + "\"}")));
 
-        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + mergeRequestIid)).willReturn(okJson("{\n" +
+        wireMockExtension.stubFor(get(urlPathEqualTo("/api/v4/projects/" + urlEncode(repositorySlug) + "/merge_requests/" + mergeRequestIid)).willReturn(okJson("{\n" +
                 "  \"id\": 15235,\n" +
                 "  \"iid\": " + mergeRequestIid + ",\n" +
                 "  \"target_project_id\": " + sourceProjectId + ",\n" +
                 "  \"web_url\": \"http://gitlab.example.com/my-group/my-project/merge_requests/1\",\n" +
                 "  \"diff_refs\": {\n" +
                 "    \"base_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\",\n" +
-                "    \"head_sha\":\"" + commitSHA + "\",\n" +
+                "    \"head_sha\":\"" + commitSha + "\",\n" +
                 "    \"start_sha\":\"d6a420d043dfe85e7c240fd136fc6e197998b10a\"\n" +
                 "  }," +
                 "  \"source_project_id\": " + sourceProjectId  + "\n" +
                 "}")));
 
-        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/commits")).willReturn(okJson("[\n" +
+        wireMockExtension.stubFor(get(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/commits")).willReturn(okJson("[\n" +
                 "  {\n" +
-                "    \"id\": \"" + commitSHA + "\"\n" +
+                "    \"id\": \"" + commitSha + "\"\n" +
                 "  }]")));
 
-        wireMockRule.stubFor(get(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions")).willReturn(okJson(
+        wireMockExtension.stubFor(get(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions")).willReturn(okJson(
                 "[\n" + discussionPostResponseBody(discussionId,
                         discussionNote(noteId, user, "Old sonarqube issue.\\nPlease fix this finding", true, false),
                         discussionNote(noteId + 1, "other", "I have fixed this", true, false)) +
@@ -193,45 +196,51 @@ public class GitlabMergeRequestDecoratorIntegrationTest {
                         "," +
                         discussionPostResponseBody(discussionId + 7,
                                 discussionNote(noteId + 11, user, "Sonarqube issue for anther project\\n[View in SonarQube](https://sonarqube.dummy/project/issues?id=abcd-" + projectKey + "&pullRequest=1234&issues=oldid&open=oldid)", true, false)) +
+                        "," +
+                        discussionPostResponseBody(discussionId + 8,
+                            discussionNote(noteId + 12, user, "Old summary note, should be deleted\\n[View in SonarQube](https://sonarqube.dummy/dashboard?id=" + projectKey + "&pullRequest=1234)", true, false)) +
                         "]")));
 
-        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + "/notes"))
+        wireMockExtension.stubFor(delete(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 8 + "/notes/" + noteId + 12))
+                .willReturn(noContent()));
+
+        wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + "/notes"))
                 .withRequestBody(equalTo("body=" + urlEncode("This looks like a comment from an old SonarQube version, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
                 .willReturn(created()));
 
-        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 2 + "/notes"))
+        wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 2 + "/notes"))
                 .withRequestBody(equalTo("body=" + urlEncode("This looks like a comment from an old SonarQube version, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
                 .willReturn(created()));
 
-        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 6 + "/notes"))
+        wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 6 + "/notes"))
                 .withRequestBody(equalTo("body=" + urlEncode("This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
                 .willReturn(created()));
 
-        wireMockRule.stubFor(post(urlEqualTo("/api/v4/projects/" + sourceProjectId + "/statuses/" + commitSHA + "?state=" + (status == QualityGate.Status.OK ? "success" : "failed")))
+        wireMockExtension.stubFor(post(urlEqualTo("/api/v4/projects/" + sourceProjectId + "/statuses/" + commitSha + "?state=" + (status == QualityGate.Status.OK ? "success" : "failed")))
                 .withRequestBody(equalTo("name=SonarQube&target_url=" + urlEncode(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + mergeRequestIid) + "&description=SonarQube+Status&coverage=10"))
                 .willReturn(created()));
 
-        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
+        wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
                 .withRequestBody(equalTo("body=summary+comm%C3%A9nt%0A%0A%5Blink+text%5D"))
                 .willReturn(created().withBody(discussionPostResponseBody(discussionId, discussionNote(noteId, user, "summary comment", true, false)))));
 
-        wireMockRule.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
+        wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
                 .withRequestBody(equalTo("body=issu%C3%A9&" +
                         urlEncode("position[base_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
                         urlEncode("position[start_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
-                        urlEncode("position[head_sha]") + "=" + commitSHA + "&" +
+                        urlEncode("position[head_sha]") + "=" + commitSha + "&" +
                         urlEncode("position[old_path]") + "=" + urlEncode(filePath) + "&" +
                         urlEncode("position[new_path]") + "=" + urlEncode(filePath) + "&" +
                         urlEncode("position[new_line]") + "=" + lineNumber + "&" +
                         urlEncode("position[position_type]") + "=text"))
                 .willReturn(created().withBody(discussionPostResponseBody(discussionId, discussionNote(noteId, user, "issue",true, false)))));
 
-        wireMockRule.stubFor(put(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId))
+        wireMockExtension.stubFor(put(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId))
                 .withQueryParam("resolved", equalTo("true"))
                 .willReturn(ok())
         );
 
-        wireMockRule.stubFor(put(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 1))
+        wireMockExtension.stubFor(put(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 1))
                 .withQueryParam("resolved", equalTo("true"))
                 .willReturn(ok())
         );

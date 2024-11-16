@@ -30,6 +30,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.User;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -131,6 +132,14 @@ class GitlabRestClient implements GitlabClient {
 
         HttpPut httpPut = new HttpPut(discussionIdUrl);
         entity(httpPut, null);
+    }
+
+    @Override
+    public void deleteMergeRequestDiscussionNote(long projectId, long mergeRequestIid, String discussionId, long noteId) throws IOException {
+        String discussionIdUrl = String.format("%s/projects/%s/merge_requests/%s/discussions/%s/notes/%s", baseGitlabApiUrl, projectId, mergeRequestIid, discussionId, noteId);
+
+        HttpDelete httpDelete = new HttpDelete(discussionIdUrl);
+        entity(httpDelete, null, x -> validateResponse(x, 204, "Commit discussions note deleted"));
     }
 
     @Override
