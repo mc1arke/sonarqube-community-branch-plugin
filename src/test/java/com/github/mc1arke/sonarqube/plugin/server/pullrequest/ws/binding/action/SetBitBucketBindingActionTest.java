@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,29 +37,29 @@ class SetBitBucketBindingActionTest {
 
     @Test
     void shouldDefineActionWithRequiredParameters() {
-        DbClient dbClient = mock(DbClient.class);
-        UserSession userSession = mock(UserSession.class);
-        ComponentFinder componentFinder = mock(ComponentFinder.class);
+        DbClient dbClient = mock();
+        UserSession userSession = mock();
+        ComponentFinder componentFinder = mock();
 
-        WebService.NewAction newAction = mock(WebService.NewAction.class);
+        WebService.NewAction newAction = mock();
         when(newAction.setPost(anyBoolean())).thenReturn(newAction);
 
-        WebService.NewParam slugParameter = mock(WebService.NewParam.class);
+        WebService.NewParam slugParameter = mock();
         when(slugParameter.setMaximumLength(any(Integer.class))).thenReturn(slugParameter);
         when(slugParameter.setRequired(anyBoolean())).thenReturn(slugParameter);
         when(newAction.createParam("slug")).thenReturn(slugParameter);
 
-        WebService.NewParam repositoryParameter = mock(WebService.NewParam.class);
+        WebService.NewParam repositoryParameter = mock();
         when(repositoryParameter.setMaximumLength(any(Integer.class))).thenReturn(repositoryParameter);
         when(repositoryParameter.setRequired(anyBoolean())).thenReturn(repositoryParameter);
         when(newAction.createParam("repository")).thenReturn(repositoryParameter);
 
-        WebService.NewParam almSettingParameter = mock(WebService.NewParam.class);
+        WebService.NewParam almSettingParameter = mock();
         when(almSettingParameter.setMaximumLength(any(Integer.class))).thenReturn(almSettingParameter);
         when(almSettingParameter.setRequired(anyBoolean())).thenReturn(almSettingParameter);
         when(newAction.createParam("almSetting")).thenReturn(almSettingParameter);
 
-        WebService.NewParam monoRepoParameter = mock(WebService.NewParam.class);
+        WebService.NewParam monoRepoParameter = mock();
         when(monoRepoParameter.setRequired(anyBoolean())).thenReturn(monoRepoParameter);
         when(newAction.createParam("monorepo")).thenReturn(monoRepoParameter);
 
@@ -79,11 +79,11 @@ class SetBitBucketBindingActionTest {
 
     @Test
     void shouldHandleRequestWithRequiredParameters() {
-        DbClient dbClient = mock(DbClient.class);
-        UserSession userSession = mock(UserSession.class);
-        ComponentFinder componentFinder = mock(ComponentFinder.class);
+        DbClient dbClient = mock();
+        UserSession userSession = mock();
+        ComponentFinder componentFinder = mock();
 
-        Request request = mock(Request.class);
+        Request request = mock();
         when(request.mandatoryParam("slug")).thenReturn("slug");
         when(request.mandatoryParam("repository")).thenReturn("repository");
 

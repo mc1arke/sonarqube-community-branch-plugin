@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,9 +34,9 @@ class GithubActionsAutoConfigurerTest {
 
     @Test
     void shouldReturnOptionalEmptyIfNotGithubActions() {
-        System2 system2 = mock(System2.class);
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        System2 system2 = mock();
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        ProjectBranches projectBranches = mock();
 
         GithubActionsAutoConfigurer underTest = new GithubActionsAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).isEmpty();
@@ -44,10 +44,10 @@ class GithubActionsAutoConfigurerTest {
 
     @Test
     void shouldReturnOptionalEmptyIfGithubActionsWithNoGithubRefProperty() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("GITHUB_ACTIONS")).thenReturn("true");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        ProjectBranches projectBranches = mock();
 
         GithubActionsAutoConfigurer underTest = new GithubActionsAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).isEmpty();
@@ -55,14 +55,14 @@ class GithubActionsAutoConfigurerTest {
 
     @Test
     void shouldReturnBranchConfigurationBasedOnNoPrIdInEnvironmentParameters() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("GITHUB_ACTIONS")).thenReturn("true");
         when(system2.envVariable("GITHUB_REF")).thenReturn("refs/heads/branch");
         when(system2.envVariable("GITHUB_REF_NAME")).thenReturn("branch");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createBranchConfiguration(any(), any())).thenReturn(branchConfiguration);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         GithubActionsAutoConfigurer underTest = new GithubActionsAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).contains(branchConfiguration);
@@ -71,15 +71,15 @@ class GithubActionsAutoConfigurerTest {
 
     @Test
     void shouldReturnPullRequestConfigurationBasedOnPrIdInEnvironmentParameters() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("GITHUB_ACTIONS")).thenReturn("true");
         when(system2.envVariable("GITHUB_HEAD_REF")).thenReturn("source");
         when(system2.envVariable("GITHUB_REF")).thenReturn("refs/pull/id/merge");
         when(system2.envVariable("GITHUB_BASE_REF")).thenReturn("target");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createPullRequestConfiguration(any(), any(), any(), any())).thenReturn(branchConfiguration);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         GithubActionsAutoConfigurer underTest = new GithubActionsAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).contains(branchConfiguration);

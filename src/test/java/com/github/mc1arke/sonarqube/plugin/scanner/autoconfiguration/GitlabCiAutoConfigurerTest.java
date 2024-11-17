@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,9 +34,9 @@ class GitlabCiAutoConfigurerTest {
 
     @Test
     void shouldReturnOptionalEmptyIfNotGitlabCi() {
-        System2 system2 = mock(System2.class);
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        System2 system2 = mock();
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        ProjectBranches projectBranches = mock();
 
         GitlabCiAutoConfigurer underTest = new GitlabCiAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).isEmpty();
@@ -44,13 +44,13 @@ class GitlabCiAutoConfigurerTest {
 
     @Test
     void shouldReturnBranchConfigurationBasedOnNoPrIdInEnvironmentParameters() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("GITLAB_CI")).thenReturn("true");
         when(system2.envVariable("CI_COMMIT_REF_NAME")).thenReturn("branch");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createBranchConfiguration(any(), any())).thenReturn(branchConfiguration);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         GitlabCiAutoConfigurer underTest = new GitlabCiAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).contains(branchConfiguration);
@@ -59,15 +59,15 @@ class GitlabCiAutoConfigurerTest {
 
     @Test
     void shouldReturnPullRequestConfigurationBasedOnPrIdInEnvironmentParameters() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("GITLAB_CI")).thenReturn("true");
         when(system2.envVariable("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME")).thenReturn("source");
         when(system2.envVariable("CI_MERGE_REQUEST_IID")).thenReturn("id");
         when(system2.envVariable("CI_MERGE_REQUEST_TARGET_BRANCH_NAME")).thenReturn("target");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createPullRequestConfiguration(any(), any(), any(), any())).thenReturn(branchConfiguration);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         GitlabCiAutoConfigurer underTest = new GitlabCiAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).contains(branchConfiguration);

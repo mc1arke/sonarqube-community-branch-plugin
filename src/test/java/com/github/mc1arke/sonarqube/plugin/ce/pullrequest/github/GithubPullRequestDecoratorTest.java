@@ -94,11 +94,11 @@ class GithubPullRequestDecoratorTest {
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
         when(analysisDetails.getCommitSha()).thenReturn("commit-sha");
         List<PostAnalysisIssueVisitor.ComponentIssue> reportableIssues = IntStream.range(0, 20).mapToObj(i -> {
-            PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-            Component component = mock(Component.class);
+            PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
+            Component component = mock();
             when(componentIssue.getScmPath()).thenReturn(Optional.of("path" + i));
             when(componentIssue.getComponent()).thenReturn(component);
-            PostAnalysisIssueVisitor.LightIssue lightIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+            PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
             when(lightIssue.getMessage()).thenReturn("issue message " + i);
             when(lightIssue.getLine()).thenReturn(i);
             when(lightIssue.impacts()).thenReturn(Map.of(SoftwareQuality.values()[i % SoftwareQuality.values().length], Severity.values()[i % Severity.values().length]));

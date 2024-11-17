@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,9 +34,9 @@ class AzureDevopsAutoConfigurerTest {
 
     @Test
     void shouldReturnOptionalEmptyIfNotTfBuild() {
-        System2 system2 = mock(System2.class);
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        System2 system2 = mock();
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        ProjectBranches projectBranches = mock();
 
         AzureDevopsAutoConfigurer underTest = new AzureDevopsAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).isEmpty();
@@ -44,10 +44,10 @@ class AzureDevopsAutoConfigurerTest {
 
     @Test
     void shouldReturnOptionalEmptyIfTfBuildWithNoPullRequestId() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("TF_BUILD")).thenReturn("true");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        ProjectBranches projectBranches = mock();
 
         AzureDevopsAutoConfigurer underTest = new AzureDevopsAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).isEmpty();
@@ -55,15 +55,15 @@ class AzureDevopsAutoConfigurerTest {
 
     @Test
     void shouldReturnConfigurationBasedOnAllEnvironmentParameters() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("TF_BUILD")).thenReturn("true");
         when(system2.envVariable("SYSTEM_PULLREQUEST_PULLREQUESTID")).thenReturn("id");
         when(system2.envVariable("SYSTEM_PULLREQUEST_SOURCEBRANCH")).thenReturn("source");
         when(system2.envVariable("SYSTEM_PULLREQUEST_TARGETBRANCH")).thenReturn("target");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createPullRequestConfiguration(any(), any(), any(), any())).thenReturn(branchConfiguration);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         AzureDevopsAutoConfigurer underTest = new AzureDevopsAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).contains(branchConfiguration);

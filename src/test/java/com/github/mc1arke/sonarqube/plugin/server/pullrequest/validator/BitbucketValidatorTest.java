@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2022 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,9 +38,9 @@ import static org.mockito.Mockito.when;
 
 class BitbucketValidatorTest {
 
-    private final BitbucketClientFactory bitbucketClientFactory = mock(BitbucketClientFactory.class);
-    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+    private final BitbucketClientFactory bitbucketClientFactory = mock();
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock();
+    private final AlmSettingDto almSettingDto = mock();
 
     @Test
     void testCorrectAlmReturnedForValidator() {
@@ -71,7 +71,7 @@ class BitbucketValidatorTest {
     @Test
     void testInvalidConfigurationExceptionThrownIfRetrieveRepositoryFails() throws IOException {
         BitbucketValidator underTest = new BitbucketValidator(bitbucketClientFactory);
-        BitbucketClient bitbucketClient = mock(BitbucketClient.class);
+        BitbucketClient bitbucketClient = mock();
         when(bitbucketClient.retrieveRepository()).thenThrow(new IOException("dummy"));
         when(bitbucketClientFactory.createClient(any(), any())).thenReturn(bitbucketClient);
         assertThatThrownBy(() -> underTest.validate(projectAlmSettingDto, almSettingDto))
@@ -83,7 +83,7 @@ class BitbucketValidatorTest {
     @Test
     void testInvalidConfigurationExceptionThrownIfCodeInsightsCheckFails() {
         BitbucketValidator underTest = new BitbucketValidator(bitbucketClientFactory);
-        BitbucketClient bitbucketClient = mock(BitbucketClient.class);
+        BitbucketClient bitbucketClient = mock();
         when(bitbucketClient.supportsCodeInsights()).thenThrow(new IllegalStateException("dummy"));
         when(bitbucketClientFactory.createClient(any(), any())).thenReturn(bitbucketClient);
         assertThatThrownBy(() -> underTest.validate(projectAlmSettingDto, almSettingDto))
@@ -95,7 +95,7 @@ class BitbucketValidatorTest {
     @Test
     void testInvalidConfigurationExceptionThrownIfCodeInsightsIsFalse() {
         BitbucketValidator underTest = new BitbucketValidator(bitbucketClientFactory);
-        BitbucketClient bitbucketClient = mock(BitbucketClient.class);
+        BitbucketClient bitbucketClient = mock();
         when(bitbucketClient.supportsCodeInsights()).thenReturn(false);
         when(bitbucketClientFactory.createClient(any(), any())).thenReturn(bitbucketClient);
         assertThatThrownBy(() -> underTest.validate(projectAlmSettingDto, almSettingDto))
@@ -107,7 +107,7 @@ class BitbucketValidatorTest {
     @Test
     void testHappyPath() {
         BitbucketValidator underTest = new BitbucketValidator(bitbucketClientFactory);
-        BitbucketClient bitbucketClient = mock(BitbucketClient.class);
+        BitbucketClient bitbucketClient = mock();
         when(bitbucketClient.supportsCodeInsights()).thenReturn(true);
         when(bitbucketClientFactory.createClient(any(), any())).thenReturn(bitbucketClient);
 

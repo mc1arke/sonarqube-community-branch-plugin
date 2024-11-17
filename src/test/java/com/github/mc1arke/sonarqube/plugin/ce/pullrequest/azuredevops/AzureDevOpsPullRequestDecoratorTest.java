@@ -114,9 +114,9 @@ class AzureDevOpsPullRequestDecoratorTest {
     void shouldRemoveUserInfoFromRepositoryUrlForLinking() {
         AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
 
-        Repository repository = mock(Repository.class);
+        Repository repository = mock();
         when(repository.getRemoteUrl()).thenReturn("https://user@domain.com/path/to/repo");
-        PullRequest pullRequest = mock(PullRequest.class);
+        PullRequest pullRequest = mock();
         when(pullRequest.getRepository()).thenReturn(repository);
         when(pullRequest.getId()).thenReturn(999);
 
@@ -126,7 +126,7 @@ class AzureDevOpsPullRequestDecoratorTest {
 
     @Test
     void testName() {
-        assertThat(new AzureDevOpsPullRequestDecorator(mock(ScmInfoRepository.class), mock(AzureDevopsClientFactory.class), mock(ReportGenerator.class), mock(MarkdownFormatterFactory.class)).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
+        assertThat(new AzureDevOpsPullRequestDecorator(mock(), mock(), mock(), mock()).alm()).isEqualTo(Collections.singletonList(ALM.AZURE_DEVOPS));
     }
 
     @Test

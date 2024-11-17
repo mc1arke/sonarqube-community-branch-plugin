@@ -119,7 +119,7 @@ class PullRequestFixedIssuesIssueVisitorTest {
     }
 
     private static DefaultIssue mockIssue(IssueStatus issueStatus) {
-        DefaultIssue issue = mock(DefaultIssue.class);
+        DefaultIssue issue = mock();
         when(issue.issueStatus()).thenReturn(issueStatus);
         return issue;
     }

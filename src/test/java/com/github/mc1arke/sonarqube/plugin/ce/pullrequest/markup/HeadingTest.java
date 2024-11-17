@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,38 +18,36 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-import org.junit.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
-public class HeadingTest {
+import org.junit.jupiter.api.Test;
+
+class HeadingTest {
 
     @Test
-    public void correctParametersReturned() {
+    void shouldReturnCorrectParameters() {
         Heading heading = new Heading(2);
         assertThat(heading.getLevel()).isEqualTo(2);
     }
 
     @Test
-    public void checkInvalidAddChild() {
-        assertFalse(new Heading(2).isValidChild(new Heading(2)));
+    void shouldNotAcceptHeadingAsValidChild() {
+        assertThat(new Heading(2).isValidChild(new Heading(2))).isFalse();
     }
 
     @Test
-    public void checkValidAddChildText() {
-        assertTrue(new Heading(2).isValidChild(new Text("")));
+    void shouldAcceptTextAsValidChild() {
+        assertThat(new Heading(2).isValidChild(new Text(""))).isTrue();
     }
 
     @Test
-    public void checkValidAddChildImage() {
-        assertTrue(new Heading(2).isValidChild(new Image("alt", "src")));
+    void shouldAcceptImageAsValidChild() {
+        assertThat(new Heading(2).isValidChild(new Image("alt", "src"))).isTrue();
     }
 
     @Test
-    public void checkValidAddChildLink() {
-        assertTrue(new Heading(2).isValidChild(new Link("url")));
+    void shouldAcceptLinkAsValidChild() {
+        assertThat(new Heading(2).isValidChild(new Link("url"))).isTrue();
     }
 
 }

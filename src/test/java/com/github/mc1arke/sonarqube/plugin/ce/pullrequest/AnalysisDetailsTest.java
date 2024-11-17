@@ -49,9 +49,9 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldReturnStatusFromQualityGate() {
-        QualityGate qualityGate = mock(QualityGate.class);
+        QualityGate qualityGate = mock();
         doReturn(QualityGate.Status.ERROR).when(qualityGate).getStatus();
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
+        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock();
 
         AnalysisDetails testCase =
                 new AnalysisDetails("pullRequestKey", "commitHash", new ArrayList<>(), qualityGate, projectAnalysis);
@@ -61,9 +61,9 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldGetDateFromAnalysis() {
-        QualityGate qualityGate = mock(QualityGate.class);
-        Analysis analysis = mock(Analysis.class);
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
+        QualityGate qualityGate = mock();
+        Analysis analysis = mock();
+        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock();
         doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
         doReturn(new Date()).when(analysis).getDate();
 
@@ -75,9 +75,9 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldGetIdFromAnalysis() {
-        QualityGate qualityGate = mock(QualityGate.class);
-        Analysis analysis = mock(Analysis.class);
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
+        QualityGate qualityGate = mock();
+        Analysis analysis = mock();
+        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock();
         doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
         doReturn("Analysis ID").when(analysis).getAnalysisUuid();
 
@@ -89,9 +89,9 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldGetProjectKeyFromUnderlyingProject() {
-        QualityGate qualityGate = mock(QualityGate.class);
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Project project = mock(Project.class);
+        QualityGate qualityGate = mock();
+        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock();
+        Project project = mock();
         when(project.getKey()).thenReturn("Project Key");
         when(projectAnalysis.getProject()).thenReturn(project);
 
@@ -103,9 +103,9 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldGetProjectNameFromUnderlyingProject() {
-        QualityGate qualityGate = mock(QualityGate.class);
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-        Project project = mock(Project.class);
+        QualityGate qualityGate = mock();
+        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock();
+        Project project = mock();
         when(project.getName()).thenReturn("Project Name");
         when(projectAnalysis.getProject()).thenReturn(project);
 
@@ -117,85 +117,85 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldOnlyReturnNonClosedFileIssuesWithScmInfo() {
-        PostAnalysisIssueVisitor.LightIssue lightIssue1 = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        PostAnalysisIssueVisitor.LightIssue lightIssue1 = mock();
         when(lightIssue1.issueStatus()).thenReturn(IssueStatus.OPEN);
-        Component component1 = mock(Component.class);
+        Component component1 = mock();
         when(component1.getType()).thenReturn(Component.Type.FILE);
-        ReportAttributes reportAttributes1 = mock(ReportAttributes.class);
+        ReportAttributes reportAttributes1 = mock();
         when(reportAttributes1.getScmPath()).thenReturn(Optional.of("path"));
         when(component1.getReportAttributes()).thenReturn(reportAttributes1);
         PostAnalysisIssueVisitor.ComponentIssue componentIssue1 = new PostAnalysisIssueVisitor.ComponentIssue(component1, lightIssue1);
 
-        PostAnalysisIssueVisitor.LightIssue lightIssue2 = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        PostAnalysisIssueVisitor.LightIssue lightIssue2 = mock();
         when(lightIssue2.issueStatus()).thenReturn(IssueStatus.OPEN);
-        Component component2 = mock(Component.class);
+        Component component2 = mock();
         when(component2.getType()).thenReturn(Component.Type.FILE);
-        ReportAttributes reportAttributes2 = mock(ReportAttributes.class);
+        ReportAttributes reportAttributes2 = mock();
         when(reportAttributes2.getScmPath()).thenReturn(Optional.empty());
         when(component2.getReportAttributes()).thenReturn(reportAttributes2);
         PostAnalysisIssueVisitor.ComponentIssue componentIssue2 = new PostAnalysisIssueVisitor.ComponentIssue(component2, lightIssue2);
 
-        PostAnalysisIssueVisitor.LightIssue lightIssue3 = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        PostAnalysisIssueVisitor.LightIssue lightIssue3 = mock();
         when(lightIssue3.issueStatus()).thenReturn(IssueStatus.OPEN);
-        Component component3 = mock(Component.class);
+        Component component3 = mock();
         when(component3.getType()).thenReturn(Component.Type.PROJECT);
-        ReportAttributes reportAttributes3 = mock(ReportAttributes.class);
+        ReportAttributes reportAttributes3 = mock();
         when(reportAttributes3.getScmPath()).thenReturn(Optional.of("path"));
         when(component3.getReportAttributes()).thenReturn(reportAttributes3);
         PostAnalysisIssueVisitor.ComponentIssue componentIssue3 = new PostAnalysisIssueVisitor.ComponentIssue(component3, lightIssue3);
 
-        PostAnalysisIssueVisitor.LightIssue lightIssue4 = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        PostAnalysisIssueVisitor.LightIssue lightIssue4 = mock();
         when(lightIssue4.issueStatus()).thenReturn(IssueStatus.FIXED);
-        Component component4 = mock(Component.class);
+        Component component4 = mock();
         when(component4.getType()).thenReturn(Component.Type.FILE);
-        ReportAttributes reportAttributes4 = mock(ReportAttributes.class);
+        ReportAttributes reportAttributes4 = mock();
         when(reportAttributes4.getScmPath()).thenReturn(Optional.of("path"));
         when(component4.getReportAttributes()).thenReturn(reportAttributes4);
         PostAnalysisIssueVisitor.ComponentIssue componentIssue4 = new PostAnalysisIssueVisitor.ComponentIssue(component4, lightIssue4);
 
-        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
+        PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock();
         when(postAnalysisIssueVisitor.getIssues()).thenReturn(Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4));
         
         AnalysisDetails underTest = new AnalysisDetails("pullRequest", "commmitId",
                 Arrays.asList(componentIssue1, componentIssue2, componentIssue3, componentIssue4),
-                mock(QualityGate.class), mock(PostProjectAnalysisTask.ProjectAnalysis.class));
+                mock(), mock());
         
         assertThat(underTest.getScmReportableIssues()).usingRecursiveFieldByFieldElementComparator().containsOnly(componentIssue1);
     }
 
     @Test
     void shouldOnlyReturnQualityGateConditionsInErrorState() {
-        QualityGate qualityGate = mock(QualityGate.class);
+        QualityGate qualityGate = mock();
 
-        QualityGate.Condition condition1 = mock(QualityGate.Condition.class);
+        QualityGate.Condition condition1 = mock();
         when(condition1.getStatus()).thenReturn(QualityGate.EvaluationStatus.OK);
-        QualityGate.Condition condition2 = mock(QualityGate.Condition.class);
+        QualityGate.Condition condition2 = mock();
         when(condition2.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
-        QualityGate.Condition condition3 = mock(QualityGate.Condition.class);
+        QualityGate.Condition condition3 = mock();
         when(condition3.getStatus()).thenReturn(QualityGate.EvaluationStatus.NO_VALUE);
-        QualityGate.Condition condition4 = mock(QualityGate.Condition.class);
+        QualityGate.Condition condition4 = mock();
         when(condition4.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
 
         when(qualityGate.getConditions()).thenReturn(List.of(condition1, condition2, condition3, condition4));
 
-        AnalysisDetails underTest = new AnalysisDetails("pullRequest", "commit", List.of(), qualityGate, mock(PostProjectAnalysisTask.ProjectAnalysis.class));
+        AnalysisDetails underTest = new AnalysisDetails("pullRequest", "commit", List.of(), qualityGate, mock());
 
         assertThat(underTest.findFailedQualityGateConditions()).isEqualTo(List.of(condition2, condition4));
     }
 
     @Test
     void shouldFilterOnQualityGateConditionName() {
-        QualityGate qualityGate = mock(QualityGate.class);
+        QualityGate qualityGate = mock();
 
         List<QualityGate.Condition> conditions = IntStream.range(0, 10).mapToObj(i -> {
-            QualityGate.Condition condition = mock(QualityGate.Condition.class);
+            QualityGate.Condition condition = mock();
             when(condition.getMetricKey()).thenReturn("key" + i);
             return condition;
         }).collect(Collectors.toList());
 
         when(qualityGate.getConditions()).thenReturn(conditions);
 
-        AnalysisDetails underTest = new AnalysisDetails("pullRequest", "commit", List.of(), qualityGate, mock(PostProjectAnalysisTask.ProjectAnalysis.class));
+        AnalysisDetails underTest = new AnalysisDetails("pullRequest", "commit", List.of(), qualityGate, mock());
 
         assertThat(underTest.findQualityGateCondition("key2")).contains(conditions.get(2));
     }
@@ -205,12 +205,12 @@ class AnalysisDetailsTest {
         Map<String, String> scannerProperties = mock();
         when(scannerProperties.get(anyString())).thenReturn("world");
 
-        ScannerContext scannerContext = mock(ScannerContext.class);
+        ScannerContext scannerContext = mock();
         when(scannerContext.getProperties()).thenReturn(scannerProperties);
-        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
+        PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock();
         when(projectAnalysis.getScannerContext()).thenReturn(scannerContext);
 
-        AnalysisDetails underTest = new AnalysisDetails("PullRequest", "Commit", List.of(), mock(QualityGate.class), projectAnalysis);
+        AnalysisDetails underTest = new AnalysisDetails("PullRequest", "Commit", List.of(), mock(), projectAnalysis);
 
         assertThat(underTest.getScannerProperty("hello")).contains("world");
 
@@ -219,7 +219,7 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldReturnPullRequestId() {
-        AnalysisDetails underTest = new AnalysisDetails("pull-request-id", "commit-id", List.of(), mock(QualityGate.class), mock(PostProjectAnalysisTask.ProjectAnalysis.class));
+        AnalysisDetails underTest = new AnalysisDetails("pull-request-id", "commit-id", List.of(), mock(), mock());
 
         assertThat(underTest.getPullRequestId()).isEqualTo("pull-request-id");
     }
@@ -227,7 +227,7 @@ class AnalysisDetailsTest {
 
     @Test
     void shouldReturnCommitSha() {
-        AnalysisDetails underTest = new AnalysisDetails("pull-request-id", "commit-id", List.of(), mock(QualityGate.class), mock(PostProjectAnalysisTask.ProjectAnalysis.class));
+        AnalysisDetails underTest = new AnalysisDetails("pull-request-id", "commit-id", List.of(), mock(), mock());
 
         assertThat(underTest.getCommitSha()).isEqualTo("commit-id");
     }

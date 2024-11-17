@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,23 +18,23 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
 
-public class ImageTest {
+import org.junit.jupiter.api.Test;
+
+class ImageTest {
 
     @Test
-    public void correctParametersReturned() {
+    void shouldReturnCorrectParametersFromObject() {
         Image image = new Image("alt", "source");
         assertThat(image).extracting(Image::getAltText).isEqualTo("alt");
         assertThat(image).extracting(Image::getSource).isEqualTo("source");
     }
 
     @Test
-    public void checkInvalidAddChild() {
-        assertFalse(new Image("", "").isValidChild(new Image("", "")));
+    void shouldNotAcceptImageAsChild() {
+        assertThat(new Image("", "").isValidChild(new Image("", ""))).isFalse();
     }
 
 }

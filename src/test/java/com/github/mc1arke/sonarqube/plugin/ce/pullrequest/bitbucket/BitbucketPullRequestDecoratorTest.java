@@ -74,15 +74,15 @@ class BitbucketPullRequestDecoratorTest {
     private static final String DASHBOARD_URL = "https://dashboard-url";
     private static final String IMAGE_URL = "https://image-url";
 
-    private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
-    private final ReportGenerator reportGenerator = mock(ReportGenerator.class);
-    private final BitbucketClient client = mock(BitbucketClient.class);
-    private final BitbucketClientFactory bitbucketClientFactory = mock(BitbucketClientFactory.class);
+    private final AnalysisDetails analysisDetails = mock();
+    private final ReportGenerator reportGenerator = mock();
+    private final BitbucketClient client = mock();
+    private final BitbucketClientFactory bitbucketClientFactory = mock();
     private final BitbucketPullRequestDecorator underTest = new BitbucketPullRequestDecorator(bitbucketClientFactory, reportGenerator);
 
-    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-    private final AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
+    private final AlmSettingDto almSettingDto = mock();
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock();
+    private final AnalysisSummary analysisSummary = mock();
 
     @BeforeEach
     void setUp() {
@@ -184,25 +184,25 @@ class BitbucketPullRequestDecoratorTest {
 
         when(analysisDetails.getAnalysisDate()).thenReturn(Date.from(Instant.now()));
 
-        ReportAttributes reportAttributes = mock(ReportAttributes.class);
+        ReportAttributes reportAttributes = mock();
         when(reportAttributes.getScmPath()).thenReturn(Optional.of(ISSUE_PATH));
 
-        Component component = mock(Component.class);
+        Component component = mock();
         when(component.getType()).thenReturn(Component.Type.FILE);
         when(component.getReportAttributes()).thenReturn(reportAttributes);
 
-        PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        PostAnalysisIssueVisitor.LightIssue defaultIssue = mock();
         when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         when(defaultIssue.impacts()).thenReturn(Map.of(SoftwareQuality.RELIABILITY, Severity.HIGH));
         when(defaultIssue.getLine()).thenReturn(ISSUE_LINE);
         when(defaultIssue.key()).thenReturn(ISSUE_KEY);
         when(defaultIssue.getMessage()).thenReturn(ISSUE_MESSAGE);
 
-        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
         when(componentIssue.getComponent()).thenReturn(component);
 
-        AnalysisIssueSummary analysisIssueSummary = mock(AnalysisIssueSummary.class);
+        AnalysisIssueSummary analysisIssueSummary = mock();
         when(analysisIssueSummary.getIssueUrl()).thenReturn("https://issue-link");
         when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
 

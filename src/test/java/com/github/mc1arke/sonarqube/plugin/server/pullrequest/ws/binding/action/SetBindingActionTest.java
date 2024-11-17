@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,10 +47,10 @@ class SetBindingActionTest {
 
     @Test
     void shouldDefineActionWithRequiredParameters() {
-        DbClient dbClient = mock(DbClient.class);
-        ComponentFinder componentFinder = mock(ComponentFinder.class);
-        UserSession userSession = mock(UserSession.class);
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        DbClient dbClient = mock();
+        ComponentFinder componentFinder = mock();
+        UserSession userSession = mock();
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         SetBindingAction testCase = new SetBindingAction(dbClient, componentFinder, userSession, "dummy") {
 
             @Override
@@ -61,13 +61,13 @@ class SetBindingActionTest {
 
         Map<String, WebService.NewParam> paramMap = new HashMap<>();
 
-        WebService.NewController newController = mock(WebService.NewController.class);
-        WebService.NewAction newAction = mock(WebService.NewAction.class);
+        WebService.NewController newController = mock();
+        WebService.NewAction newAction = mock();
         when(newController.createAction(any())).thenReturn(newAction);
         when(newAction.setPost(true)).thenReturn(newAction);
         when(newAction.setHandler(testCase)).thenReturn(newAction);
         when(newAction.createParam(any())).then(i -> {
-            WebService.NewParam newParam = mock(WebService.NewParam.class);
+            WebService.NewParam newParam = mock();
             paramMap.put(i.getArgument(0), newParam);
             when(newParam.setRequired(anyBoolean())).thenReturn(newParam);
             return newParam;
@@ -84,23 +84,23 @@ class SetBindingActionTest {
 
     @Test
     void shouldHandleRequestWithRequiredParameters() {
-        DbClient dbClient = mock(DbClient.class);
-        DbSession dbSession = mock(DbSession.class);
+        DbClient dbClient = mock();
+        DbSession dbSession = mock();
         when(dbClient.openSession(false)).thenReturn(dbSession);
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDao almSettingDao = mock();
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getUuid()).thenReturn("almSettingsUuid");
         when(almSettingDao.selectByKey(dbSession, "almSetting")).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
-        ComponentFinder componentFinder = mock(ComponentFinder.class);
-        ProjectDto componentDto = mock(ProjectDto.class);
+        ComponentFinder componentFinder = mock();
+        ProjectDto componentDto = mock();
         when(componentDto.getUuid()).thenReturn("projectUuid");
         when(componentFinder.getProjectByKey(dbSession, "project")).thenReturn(componentDto);
-        UserSession userSession = mock(UserSession.class);
+        UserSession userSession = mock();
         ThreadLocal<WebService.NewAction> capturedAction = new ThreadLocal<>();
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         SetBindingAction testCase = new SetBindingAction(dbClient, componentFinder, userSession, "dummy") {
 
             @Override
@@ -116,8 +116,8 @@ class SetBindingActionTest {
             }
         };
 
-        Request request = mock(Request.class);
-        Response response = mock(Response.class);
+        Request request = mock();
+        Response response = mock();
 
         when(request.mandatoryParam("almSetting")).thenReturn("almSetting");
         when(request.mandatoryParam("project")).thenReturn("project");

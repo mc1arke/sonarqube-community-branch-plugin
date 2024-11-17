@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,20 +46,20 @@ import org.sonar.server.user.UserSession;
 
 class DeleteActionTest {
 
-    private final DbClient dbClient = mock(DbClient.class);
-    private final UserSession userSession = mock(UserSession.class);
-    private final ComponentFinder componentFinder = mock(ComponentFinder.class);
-    private final ComponentCleanerService componentCleanerService = mock(ComponentCleanerService.class);
+    private final DbClient dbClient = mock();
+    private final UserSession userSession = mock();
+    private final ComponentFinder componentFinder = mock();
+    private final ComponentCleanerService componentCleanerService = mock();
     private final DeleteAction underTest = new DeleteAction(dbClient, componentFinder, userSession, componentCleanerService);
 
     @Test
     void shouldDefineEndpointWithAllParameters() {
-        WebService.NewController newController = mock(WebService.NewController.class);
-        WebService.NewAction newAction = mock(WebService.NewAction.class);
+        WebService.NewController newController = mock();
+        WebService.NewAction newAction = mock();
         when(newAction.setHandler(any())).thenReturn(newAction);
         when(newController.createAction(any())).thenReturn(newAction);
-        WebService.NewParam projectParam = mock(WebService.NewParam.class);
-        WebService.NewParam pullRequestParam = mock(WebService.NewParam.class);
+        WebService.NewParam projectParam = mock();
+        WebService.NewParam pullRequestParam = mock();
         when(newAction.createParam(any())).thenReturn(projectParam, pullRequestParam);
 
         when(newAction.setPost(anyBoolean())).thenReturn(newAction);
@@ -82,7 +82,7 @@ class DeleteActionTest {
 
     @Test
     void shouldExecuteRequestWithValidParameters() {
-        Request request = mock(Request.class);
+        Request request = mock();
         when(request.mandatoryParam("project")).thenReturn("project");
         when(request.mandatoryParam("pullRequest")).thenReturn("pullRequestId");
 
@@ -91,11 +91,11 @@ class DeleteActionTest {
         when(userSession.checkLoggedIn()).thenReturn(userSession);
 
         BranchDto pullRequest = new BranchDto().setBranchType(BranchType.PULL_REQUEST);
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(dbClient.branchDao()).thenReturn(branchDao);
         when(branchDao.selectByPullRequestKey(any(), any(), any())).thenReturn(Optional.of(pullRequest));
 
-        Response response = mock(Response.class);
+        Response response = mock();
 
         underTest.handle(request, response);
 
@@ -105,7 +105,7 @@ class DeleteActionTest {
 
     @Test
     void shouldNotPerformDeleteIfUserNotLoggedIn() {
-        Request request = mock(Request.class);
+        Request request = mock();
         when(request.mandatoryParam("project")).thenReturn("project");
         when(request.mandatoryParam("pullRequest")).thenReturn("pullRequestId");
 
@@ -113,7 +113,7 @@ class DeleteActionTest {
 
         when(userSession.checkLoggedIn()).thenThrow(new UnauthorizedException("Dummy"));
 
-        Response response = mock(Response.class);
+        Response response = mock();
 
         assertThatThrownBy(() -> underTest.handle(request, response)).isInstanceOf(UnauthorizedException.class).hasMessage("Dummy");
 
@@ -123,7 +123,7 @@ class DeleteActionTest {
 
     @Test
     void shouldNotPerformDeleteIfUserNotProjectAdmin() {
-        Request request = mock(Request.class);
+        Request request = mock();
         when(request.mandatoryParam("project")).thenReturn("project");
         when(request.mandatoryParam("pullRequest")).thenReturn("pullRequestId");
 
@@ -132,7 +132,7 @@ class DeleteActionTest {
         when(userSession.checkLoggedIn()).thenReturn(userSession);
         when(userSession.hasEntityPermission(any(), any(EntityDto.class))).thenThrow(new UnauthorizedException("Dummy"));
 
-        Response response = mock(Response.class);
+        Response response = mock();
 
         assertThatThrownBy(() -> underTest.handle(request, response)).isInstanceOf(UnauthorizedException.class).hasMessage("Dummy");
 
