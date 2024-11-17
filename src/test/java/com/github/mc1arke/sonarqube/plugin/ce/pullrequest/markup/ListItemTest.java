@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,31 +18,30 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
-public class ListItemTest {
+class ListItemTest {
 
     @Test
-    public void testIsValidChildInvalidChild() {
-        assertFalse(new ListItem().isValidChild(new Paragraph()));
+    void shouldNotAcceptParagraphAsValidChild() {
+        assertThat(new ListItem().isValidChild(new Paragraph())).isFalse();
     }
 
     @Test
-    public void testIsValidChildText() {
-        assertTrue(new ListItem().isValidChild(new Text("")));
+    void shouldAcceptTextAsValidChild() {
+        assertThat(new ListItem().isValidChild(new Text(""))).isTrue();
     }
 
     @Test
-    public void testIsValidChildImage() {
-        assertTrue(new ListItem().isValidChild(new Image("", "")));
+    void shouldAcceptImageAsValidChild() {
+        assertThat(new ListItem().isValidChild(new Image("", ""))).isTrue();
     }
 
     @Test
-    public void testIsValidChildLink() {
-        assertTrue(new ListItem().isValidChild(new Link("")));
+    void shouldAcceptLinkAsValidChild() {
+        assertThat(new ListItem().isValidChild(new Link(""))).isTrue();
     }
 
 }

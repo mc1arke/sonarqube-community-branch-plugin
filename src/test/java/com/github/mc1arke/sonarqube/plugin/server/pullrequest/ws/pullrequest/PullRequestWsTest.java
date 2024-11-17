@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,10 +32,10 @@ class PullRequestWsTest {
 
     @Test
     void shouldCallDefineOnEachAction() {
-        PullRequestWsAction[] pullRequestWsActions = new PullRequestWsAction[]{mock(PullRequestWsAction.class), mock(PullRequestWsAction.class), mock(PullRequestWsAction.class)};
+        PullRequestWsAction[] pullRequestWsActions = new PullRequestWsAction[]{mock(), mock(), mock()};
 
-        WebService.Context context = mock(WebService.Context.class);
-        WebService.NewController controller = mock(WebService.NewController.class);
+        WebService.Context context = mock();
+        WebService.NewController controller = mock();
         when(context.createController(any())).thenReturn(controller);
 
         new PullRequestWs(pullRequestWsActions).define(context);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Michael Clarke
+ * Copyright (C) 2022-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,9 +34,9 @@ class BitbucketPipelinesAutoConfigurerTest {
 
     @Test
     void shouldReturnOptionalEmptyIfNotCi() {
-        System2 system2 = mock(System2.class);
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        System2 system2 = mock();
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        ProjectBranches projectBranches = mock();
 
         BitbucketPipelinesAutoConfigurer underTest = new BitbucketPipelinesAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).isEmpty();
@@ -44,10 +44,10 @@ class BitbucketPipelinesAutoConfigurerTest {
 
     @Test
     void shouldReturnOptionalEmptyIfCiWithNoBranchProperty() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("CI")).thenReturn("true");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        ProjectBranches projectBranches = mock();
 
         BitbucketPipelinesAutoConfigurer underTest = new BitbucketPipelinesAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).isEmpty();
@@ -55,13 +55,13 @@ class BitbucketPipelinesAutoConfigurerTest {
 
     @Test
     void shouldReturnBranchConfigurationBasedOnNoPrIdInEnvironmentParameters() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("CI")).thenReturn("true");
         when(system2.envVariable("BITBUCKET_BRANCH")).thenReturn("branch");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createBranchConfiguration(any(), any())).thenReturn(branchConfiguration);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         BitbucketPipelinesAutoConfigurer underTest = new BitbucketPipelinesAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).contains(branchConfiguration);
@@ -70,15 +70,15 @@ class BitbucketPipelinesAutoConfigurerTest {
 
     @Test
     void shouldReturnPullRequestConfigurationBasedOnPrIdInEnvironmentParameters() {
-        System2 system2 = mock(System2.class);
+        System2 system2 = mock();
         when(system2.envVariable("CI")).thenReturn("true");
         when(system2.envVariable("BITBUCKET_BRANCH")).thenReturn("source");
         when(system2.envVariable("BITBUCKET_PR_ID")).thenReturn("id");
         when(system2.envVariable("BITBUCKET_PR_DESTINATION_BRANCH")).thenReturn("target");
-        BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        BranchConfigurationFactory branchConfigurationFactory = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createPullRequestConfiguration(any(), any(), any(), any())).thenReturn(branchConfiguration);
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         BitbucketPipelinesAutoConfigurer underTest = new BitbucketPipelinesAutoConfigurer(branchConfigurationFactory);
         assertThat(underTest.detectConfiguration(system2, projectBranches)).contains(branchConfiguration);

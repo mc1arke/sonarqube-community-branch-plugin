@@ -71,10 +71,10 @@ class BitbucketCloudClientUnitTest {
     @Test
     void testUploadReport() throws IOException {
         // given
-        CodeInsightsReport report = mock(CodeInsightsReport.class);
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ArgumentCaptor<Request> captor = ArgumentCaptor.forClass(Request.class);
+        CodeInsightsReport report = mock();
+        Call call = mock();
+        Response response = mock();
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -95,9 +95,9 @@ class BitbucketCloudClientUnitTest {
     @Test
     void testDeleteReport() throws IOException {
         // given
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ArgumentCaptor<Request> captor = ArgumentCaptor.forClass(Request.class);
+        Call call = mock();
+        Response response = mock();
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -115,11 +115,11 @@ class BitbucketCloudClientUnitTest {
     @Test
     void testUploadAnnotations() throws IOException {
         // given
-        CodeInsightsAnnotation annotation = mock(CloudAnnotation.class);
+        CloudAnnotation annotation = mock();
         Set<CodeInsightsAnnotation> annotations = Sets.newHashSet(annotation);
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ArgumentCaptor<Request> captor = ArgumentCaptor.forClass(Request.class);
+        Call call = mock();
+        Response response = mock();
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -151,10 +151,10 @@ class BitbucketCloudClientUnitTest {
     @Test
     void testUploadReportFailsWithMessage() throws IOException {
         // given
-        CodeInsightsReport report = mock(CodeInsightsReport.class);
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ResponseBody responseBody = mock(ResponseBody.class);
+        CodeInsightsReport report = mock();
+        Call call = mock();
+        Response response = mock();
+        ResponseBody responseBody = mock();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);

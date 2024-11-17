@@ -40,21 +40,21 @@ import static org.mockito.Mockito.when;
 
 class GitlabRestClientTest {
 
-    private final CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
-    private final LinkHeaderReader linkHeaderReader = mock(LinkHeaderReader.class);
-    private final ObjectMapper objectMapper = mock(ObjectMapper.class);
+    private final CloseableHttpClient closeableHttpClient = mock();
+    private final LinkHeaderReader linkHeaderReader = mock();
+    private final ObjectMapper objectMapper = mock();
 
     @Test
     void checkErrorThrownOnNonSuccessResponseStatus() throws IOException {
         GitlabRestClient underTest = new GitlabRestClient("http://url.test/api", "token", linkHeaderReader, objectMapper, () -> closeableHttpClient);
 
-        CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
-        StatusLine statusLine = mock(StatusLine.class);
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(500);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
 
-        MergeRequestNote mergeRequestNote = mock(MergeRequestNote.class);
+        MergeRequestNote mergeRequestNote = mock();
         when(mergeRequestNote.getContent()).thenReturn("note");
 
         assertThatThrownBy(() -> underTest.addMergeRequestDiscussion(101, 99, mergeRequestNote))
@@ -62,7 +62,7 @@ class GitlabRestClientTest {
                 .hasMessage("An unexpected response code was returned from the Gitlab API - Expected: 201, Got: 500")
                 .hasNoCause();
 
-        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
         verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
 
         HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestArgumentCaptor.getValue();
@@ -74,11 +74,11 @@ class GitlabRestClientTest {
 
     @Test
     void checkCorrectEncodingUsedOnMergeRequestDiscussion() throws IOException {
-        CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
-        StatusLine statusLine = mock(StatusLine.class);
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(201);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
-        HttpEntity httpEntity = mock(HttpEntity.class);
+        HttpEntity httpEntity = mock();
         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
 
@@ -87,7 +87,7 @@ class GitlabRestClientTest {
         GitlabRestClient underTest = new GitlabRestClient("http://api.url", "token", linkHeaderReader, objectMapper, () -> closeableHttpClient);
         underTest.addMergeRequestDiscussion(123, 321, mergeRequestNote);
 
-        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
         verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
 
         HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestArgumentCaptor.getValue();

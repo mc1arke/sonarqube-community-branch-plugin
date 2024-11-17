@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,29 +37,29 @@ class SetAzureBindingActionTest {
 
     @Test
     void shouldDefineActionWithRequiredParameters() {
-        DbClient dbClient = mock(DbClient.class);
-        UserSession userSession = mock(UserSession.class);
-        ComponentFinder componentFinder = mock(ComponentFinder.class);
+        DbClient dbClient = mock();
+        UserSession userSession = mock();
+        ComponentFinder componentFinder = mock();
 
-        WebService.NewAction newAction = mock(WebService.NewAction.class);
+        WebService.NewAction newAction = mock();
         when(newAction.setPost(anyBoolean())).thenReturn(newAction);
 
-        WebService.NewParam repositoryNameParameter = mock(WebService.NewParam.class);
+        WebService.NewParam repositoryNameParameter = mock();
         when(repositoryNameParameter.setMaximumLength(any(Integer.class))).thenReturn(repositoryNameParameter);
         when(repositoryNameParameter.setRequired(anyBoolean())).thenReturn(repositoryNameParameter);
         when(newAction.createParam("repositoryName")).thenReturn(repositoryNameParameter);
 
-        WebService.NewParam projectNameParameter = mock(WebService.NewParam.class);
+        WebService.NewParam projectNameParameter = mock();
         when(projectNameParameter.setMaximumLength(any(Integer.class))).thenReturn(projectNameParameter);
         when(projectNameParameter.setRequired(anyBoolean())).thenReturn(projectNameParameter);
         when(newAction.createParam("projectName")).thenReturn(projectNameParameter);
 
-        WebService.NewParam almSettingParameter = mock(WebService.NewParam.class);
+        WebService.NewParam almSettingParameter = mock();
         when(almSettingParameter.setMaximumLength(any(Integer.class))).thenReturn(almSettingParameter);
         when(almSettingParameter.setRequired(anyBoolean())).thenReturn(almSettingParameter);
         when(newAction.createParam("almSetting")).thenReturn(almSettingParameter);
 
-        WebService.NewParam monoRepoParameter = mock(WebService.NewParam.class);
+        WebService.NewParam monoRepoParameter = mock();
         when(monoRepoParameter.setRequired(anyBoolean())).thenReturn(monoRepoParameter);
         when(newAction.createParam("monorepo")).thenReturn(monoRepoParameter);
 
@@ -76,11 +76,11 @@ class SetAzureBindingActionTest {
 
     @Test
     void shouldHandleRequestWithValidParameters() {
-        DbClient dbClient = mock(DbClient.class);
-        UserSession userSession = mock(UserSession.class);
-        ComponentFinder componentFinder = mock(ComponentFinder.class);
+        DbClient dbClient = mock();
+        UserSession userSession = mock();
+        ComponentFinder componentFinder = mock();
 
-        Request request = mock(Request.class);
+        Request request = mock();
         when(request.mandatoryParam("repositoryName")).thenReturn("repository");
         when(request.mandatoryParam("projectName")).thenReturn("project");
 

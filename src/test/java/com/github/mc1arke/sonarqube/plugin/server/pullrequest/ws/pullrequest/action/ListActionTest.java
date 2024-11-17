@@ -51,19 +51,19 @@ import org.sonarqube.ws.ProjectPullRequests;
 
 class ListActionTest {
 
-    private final DbClient dbClient = mock(DbClient.class);
-    private final UserSession userSession = mock(UserSession.class);
-    private final ComponentFinder componentFinder = mock(ComponentFinder.class);
-    private final ProtoBufWriter protoBufWriter = mock(ProtoBufWriter.class);
+    private final DbClient dbClient = mock();
+    private final UserSession userSession = mock();
+    private final ComponentFinder componentFinder = mock();
+    private final ProtoBufWriter protoBufWriter = mock();
     private final ListAction underTest = new ListAction(dbClient, componentFinder, userSession, protoBufWriter);
 
     @Test
     void shouldDefineEndpointWithProjectParameter() {
-        WebService.NewController newController = mock(WebService.NewController.class);
-        WebService.NewAction newAction = mock(WebService.NewAction.class);
+        WebService.NewController newController = mock();
+        WebService.NewAction newAction = mock();
         when(newAction.setHandler(any())).thenReturn(newAction);
         when(newController.createAction(any())).thenReturn(newAction);
-        WebService.NewParam projectParam = mock(WebService.NewParam.class);
+        WebService.NewParam projectParam = mock();
         when(newAction.createParam(any())).thenReturn(projectParam);
 
         underTest.define(newController);
@@ -80,14 +80,14 @@ class ListActionTest {
 
     @Test
     void shouldExecuteRequestWithValidParameter() {
-        Request request = mock(Request.class);
+        Request request = mock();
         when(request.mandatoryParam("project")).thenReturn("project");
 
         when(componentFinder.getProjectByKey(any(), any())).thenReturn(new ProjectDto().setKey("projectKey").setUuid("uuid0"));
 
         when(userSession.hasPermission(any())).thenReturn(true);
 
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(dbClient.branchDao()).thenReturn(branchDao);
         when(branchDao.selectByProject(any(), any())).thenReturn(List.of(new BranchDto()
             .setBranchType(BranchType.PULL_REQUEST)
@@ -130,17 +130,17 @@ class ListActionTest {
             .setUuid("uuid2")
             .setKey("branch2Key")));
 
-        LiveMeasureDao liveMeasureDao = mock(LiveMeasureDao.class);
+        LiveMeasureDao liveMeasureDao = mock();
         when(dbClient.liveMeasureDao()).thenReturn(liveMeasureDao);
         when(liveMeasureDao.selectByComponentUuidsAndMetricKeys(any(), any(), any())).thenReturn(List.of(new LiveMeasureDto()
             .setComponentUuid("uuid1")
             .setData("live measure")));
 
-        SnapshotDao snapshotDao = mock(SnapshotDao.class);
+        SnapshotDao snapshotDao = mock();
         when(dbClient.snapshotDao()).thenReturn(snapshotDao);
         when(snapshotDao.selectLastAnalysesByRootComponentUuids(any(), any())).thenReturn(List.of(new SnapshotDto().setRootComponentUuid("uuid3").setCreatedAt(1234567891234L)));
 
-        Response response = mock(Response.class);
+        Response response = mock();
 
         ProjectPullRequests.ListWsResponse expected = ProjectPullRequests.ListWsResponse.newBuilder()
             .addPullRequests(ProjectPullRequests.PullRequest.newBuilder()
@@ -184,7 +184,7 @@ class ListActionTest {
 
         underTest.handle(request, response);
 
-        ArgumentCaptor<ProjectPullRequests.ListWsResponse> messageArgumentCaptor = ArgumentCaptor.forClass(ProjectPullRequests.ListWsResponse.class);
+        ArgumentCaptor<ProjectPullRequests.ListWsResponse> messageArgumentCaptor = ArgumentCaptor.captor();
         verify(protoBufWriter).write(messageArgumentCaptor.capture(), eq(request), eq(response));
 
         assertThat(messageArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(expected);
@@ -192,10 +192,10 @@ class ListActionTest {
 
     @Test
     void shouldNotExecuteRequestIfUserDoesNotHaveAnyPermissions() {
-        Request request = mock(Request.class);
+        Request request = mock();
         when(request.mandatoryParam("project")).thenReturn("project");
 
-        Response response = mock(Response.class);
+        Response response = mock();
 
         assertThatThrownBy(() -> underTest.handle(request, response)).isInstanceOf(ForbiddenException.class);
 

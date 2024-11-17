@@ -35,7 +35,7 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldReturnBranchWithNoTargetIfNoProjectBranchesExist() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(true);
 
         BranchConfigurationFactory underTest = new BranchConfigurationFactory();
@@ -46,7 +46,7 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldReturnBranchWithDefaultReferenceIfSpecifiedBranchDoesNotExist() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(false);
         when(projectBranches.defaultBranchName()).thenReturn("default");
         when(projectBranches.get(any())).thenReturn(null);
@@ -59,10 +59,10 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldReturnBranchWithSelfReferenceIfSpecifiedBranchDoesExist() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(false);
         when(projectBranches.defaultBranchName()).thenReturn("default");
-        when(projectBranches.get(any())).thenReturn(mock(BranchInfo.class));
+        when(projectBranches.get(any())).thenReturn(mock());
 
         BranchConfigurationFactory underTest = new BranchConfigurationFactory();
         BranchConfiguration actual = underTest.createBranchConfiguration("branch", projectBranches);
@@ -72,7 +72,7 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldThrowErrorIfAttemptingToCreatePullRequestWithNoTargetIfNoProjectBranchesExist() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(true);
         when(projectBranches.defaultBranchName()).thenReturn("default-branch-name");
 
@@ -84,7 +84,7 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldThrowErrorIfAttemptingToCreatePullRequestWithTargetIfNoProjectBranchesExist() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(true);
 
         BranchConfigurationFactory underTest = new BranchConfigurationFactory();
@@ -95,7 +95,7 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldThrowErrorIfAttemptingToCreatePullRequestWithTargetBranchThatDoesNotExist() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(false);
 
         BranchConfigurationFactory underTest = new BranchConfigurationFactory();
@@ -106,7 +106,7 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldReturnPullRequestWithTargetOfDefaultBranchIfTargetNotSpecifiedAndDefaultExists() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(false);
         when(projectBranches.defaultBranchName()).thenReturn("defaultBranch");
         BranchInfo branchInfo = new BranchInfo("defaultBranch", BranchType.BRANCH, true, null);
@@ -134,7 +134,7 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldReturnPullRequestWithTargetOfTargetAsReferenceIfTargetBranchExists() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(false);
         BranchInfo branchInfo = new BranchInfo("target", BranchType.PULL_REQUEST, false, "target2");
         when(projectBranches.get("target")).thenReturn(branchInfo);
@@ -149,7 +149,7 @@ class BranchConfigurationFactoryTest {
 
     @Test
     void shouldThrowExceptionIfPullRequestTargetsOtherPullRequestWithoutATarget() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(false);
         BranchInfo branchInfo = new BranchInfo("target", BranchType.PULL_REQUEST, false, null);
         when(projectBranches.get("target")).thenReturn(branchInfo);

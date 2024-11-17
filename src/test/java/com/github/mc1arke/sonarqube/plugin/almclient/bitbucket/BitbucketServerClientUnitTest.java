@@ -71,10 +71,10 @@ class BitbucketServerClientUnitTest {
         // given
         ServerProperties serverProperties = new ServerProperties("5.0");
 
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ObjectReader reader = mock(ObjectReader.class);
-        ResponseBody responseBody = mock(ResponseBody.class);
+        Call call = mock();
+        Response response = mock();
+        ObjectReader reader = mock();
+        ResponseBody responseBody = mock();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -98,10 +98,10 @@ class BitbucketServerClientUnitTest {
         // given
         ServerProperties serverProperties = new ServerProperties("5.15");
 
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ObjectReader reader = mock(ObjectReader.class);
-        ResponseBody responseBody = mock(ResponseBody.class);
+        Call call = mock();
+        Response response = mock();
+        ObjectReader reader = mock();
+        ResponseBody responseBody = mock();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -125,10 +125,10 @@ class BitbucketServerClientUnitTest {
         // given
         ServerProperties serverProperties = new ServerProperties("6.0");
 
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ObjectReader reader = mock(ObjectReader.class);
-        ResponseBody responseBody = mock(ResponseBody.class);
+        Call call = mock();
+        Response response = mock();
+        ObjectReader reader = mock();
+        ResponseBody responseBody = mock();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -150,7 +150,7 @@ class BitbucketServerClientUnitTest {
     @Test
     void testSupportsCodeInsightsIsFalseWhenException() throws IOException {
         // given
-        Call call = mock(Call.class);
+        Call call = mock();
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenThrow(new IOException());
 
@@ -166,11 +166,11 @@ class BitbucketServerClientUnitTest {
         // given
         ServerProperties serverProperties = new ServerProperties("5.0");
 
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ObjectReader reader = mock(ObjectReader.class);
-        ResponseBody responseBody = mock(ResponseBody.class);
-        ArgumentCaptor<Request> captor = ArgumentCaptor.forClass(Request.class);
+        Call call = mock();
+        Response response = mock();
+        ObjectReader reader = mock();
+        ResponseBody responseBody = mock();
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -196,9 +196,9 @@ class BitbucketServerClientUnitTest {
     @Test
     void testGetServerPropertiesError() throws IOException {
         // given
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ObjectReader reader = mock(ObjectReader.class);
+        Call call = mock();
+        Response response = mock();
+        ObjectReader reader = mock();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -216,10 +216,10 @@ class BitbucketServerClientUnitTest {
     @Test
     void testUploadReport() throws IOException {
         // given
-        CodeInsightsReport report = mock(CodeInsightsReport.class);
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ArgumentCaptor<Request> captor = ArgumentCaptor.forClass(Request.class);
+        CodeInsightsReport report = mock();
+        Call call = mock();
+        Response response = mock();
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -240,9 +240,9 @@ class BitbucketServerClientUnitTest {
     @Test
     void testUploadReportFails() throws IOException {
         // given
-        CodeInsightsReport report = mock(CodeInsightsReport.class);
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
+        CodeInsightsReport report = mock();
+        Call call = mock();
+        Response response = mock();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -262,11 +262,11 @@ class BitbucketServerClientUnitTest {
         ErrorResponse.Error error = new ErrorResponse.Error("error!");
         ErrorResponse errorResponse = new ErrorResponse(Sets.newHashSet(error));
 
-        CodeInsightsReport report = mock(CodeInsightsReport.class);
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ResponseBody responseBody = mock(ResponseBody.class);
-        ObjectReader reader = mock(ObjectReader.class);
+        CodeInsightsReport report = mock();
+        Call call = mock();
+        Response response = mock();
+        ResponseBody responseBody = mock();
+        ObjectReader reader = mock();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -293,7 +293,7 @@ class BitbucketServerClientUnitTest {
     @Test
     void testUploadAnnotations() throws IOException {
         // given
-        Annotation annotation = mock(Annotation.class);
+        Annotation annotation = mock();
         when(annotation.getLine()).thenReturn(12);
         when(annotation.getMessage()).thenReturn("hello");
         when(annotation.getSeverity()).thenReturn("severe");
@@ -302,9 +302,9 @@ class BitbucketServerClientUnitTest {
         when(annotation.getLink()).thenReturn("link");
         when(annotation.getType()).thenReturn("type");
         Set<CodeInsightsAnnotation> annotations = Sets.newHashSet(annotation);
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ArgumentCaptor<Request> captor = ArgumentCaptor.forClass(Request.class);
+        Call call = mock();
+        Response response = mock();
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
@@ -340,9 +340,9 @@ class BitbucketServerClientUnitTest {
     @Test
     void testDeleteAnnotations() throws IOException {
         // given
-        Call call = mock(Call.class);
-        Response response = mock(Response.class);
-        ArgumentCaptor<Request> captor = ArgumentCaptor.forClass(Request.class);
+        Call call = mock();
+        Response response = mock();
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
 
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);

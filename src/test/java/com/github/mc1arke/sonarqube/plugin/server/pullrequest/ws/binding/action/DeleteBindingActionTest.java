@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,17 +38,17 @@ class DeleteBindingActionTest {
 
     @Test
     void shouldDefineEndpointWithParameters() {
-        DbClient dbClient = mock(DbClient.class);
-        UserSession userSession = mock(UserSession.class);
-        ComponentFinder componentFinder = mock(ComponentFinder.class);
+        DbClient dbClient = mock();
+        UserSession userSession = mock();
+        ComponentFinder componentFinder = mock();
         DeleteBindingAction testCase = new DeleteBindingAction(dbClient, userSession, componentFinder);
 
-        WebService.NewParam keyParam = mock(WebService.NewParam.class);
+        WebService.NewParam keyParam = mock();
         when(keyParam.setMaximumLength(200)).thenReturn(keyParam);
-        WebService.NewParam newKeyParam = mock(WebService.NewParam.class);
+        WebService.NewParam newKeyParam = mock();
         when(newKeyParam.setMaximumLength(200)).thenReturn(newKeyParam);
-        WebService.NewController newController = mock(WebService.NewController.class);
-        WebService.NewAction newAction = mock(WebService.NewAction.class);
+        WebService.NewController newController = mock();
+        WebService.NewAction newAction = mock();
         when(newController.createAction("delete_binding")).thenReturn(newAction);
         when(newAction.setPost(true)).thenReturn(newAction);
         when(newAction.setHandler(testCase)).thenReturn(newAction);
@@ -63,19 +63,19 @@ class DeleteBindingActionTest {
 
     @Test
     void shouldHandleEndpointWithValidRequest() {
-        DbClient dbClient = mock(DbClient.class);
-        DbSession dbSession = mock(DbSession.class);
+        DbClient dbClient = mock();
+        DbSession dbSession = mock();
         when(dbClient.openSession(false)).thenReturn(dbSession);
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        AlmSettingDao almSettingDao = mock();
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
 
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        UserSession userSession = mock(UserSession.class);
+        UserSession userSession = mock();
 
-        ProjectDto componentDto = mock(ProjectDto.class);
-        ComponentFinder componentFinder = mock(ComponentFinder.class);
+        ProjectDto componentDto = mock();
+        ComponentFinder componentFinder = mock();
         when(componentFinder.getProjectByKey(dbSession, "projectKey")).thenReturn(componentDto);
 
         DeleteBindingAction testCase = new DeleteBindingAction(dbClient, userSession, componentFinder);

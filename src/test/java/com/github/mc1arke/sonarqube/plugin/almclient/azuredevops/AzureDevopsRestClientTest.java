@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2021-2024 Michael Clarke
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ */
 package com.github.mc1arke.sonarqube.plugin.almclient.azuredevops;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,27 +47,27 @@ import static org.mockito.Mockito.when;
 
 class AzureDevopsRestClientTest {
 
-    private final ObjectMapper objectMapper = mock(ObjectMapper.class);
-    private final CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
+    private final ObjectMapper objectMapper = mock();
+    private final CloseableHttpClient closeableHttpClient = mock();
 
     @Test
     void checkErrorThrownOnNonSuccessResponseStatus() throws IOException {
         AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
 
-        CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
-        StatusLine statusLine = mock(StatusLine.class);
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(500);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
         when(objectMapper.writeValueAsString(any())).thenReturn("json");
 
-        GitPullRequestStatus gitPullRequestStatus = mock(GitPullRequestStatus.class);
+        GitPullRequestStatus gitPullRequestStatus = mock();
         assertThatThrownBy(() -> underTest.submitPullRequestStatus("project", "repo", 101, gitPullRequestStatus))
                 .isExactlyInstanceOf(IllegalStateException.class)
                 .hasMessage("An unexpected response code was returned from the Azure Devops API - Expected: 200, Got: 500")
                 .hasNoCause();
 
-        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
         verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
 
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
@@ -63,8 +81,8 @@ class AzureDevopsRestClientTest {
     void checkSubmitPullRequestStatusSubmitsCorrectContent() throws IOException {
         AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
 
-        CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
-        StatusLine statusLine = mock(StatusLine.class);
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(200);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
@@ -72,7 +90,7 @@ class AzureDevopsRestClientTest {
 
         underTest.submitPullRequestStatus("project Id With Spaces", "repository Name With Spaces", 123, new GitPullRequestStatus(GitStatusState.SUCCEEDED, "description", new GitStatusContext("name", "genre"), "url"));
 
-        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
         verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
 
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
@@ -86,8 +104,8 @@ class AzureDevopsRestClientTest {
     void checkAddCommentToThreadSubmitsCorrectContent() throws IOException {
         AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://test.url", "authToken", objectMapper, () -> closeableHttpClient);
 
-        CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
-        StatusLine statusLine = mock(StatusLine.class);
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(200);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
@@ -95,7 +113,7 @@ class AzureDevopsRestClientTest {
 
         underTest.addCommentToThread("projectId", "repository Name", 123, 321, new CreateCommentRequest("comment"));
 
-        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
         verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
 
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
@@ -109,18 +127,18 @@ class AzureDevopsRestClientTest {
     void checkRetrievePullRequestReturnsCorrectContent() throws IOException {
         AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://test.url", "authToken", objectMapper, () -> closeableHttpClient);
 
-        CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
-        StatusLine statusLine = mock(StatusLine.class);
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(200);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity("content", StandardCharsets.UTF_8));
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
-        PullRequest pullRequest = mock(PullRequest.class);
+        PullRequest pullRequest = mock();
         when(objectMapper.readValue(any(String.class), eq(PullRequest.class))).thenReturn(pullRequest);
 
         PullRequest result = underTest.retrievePullRequest("projectId", "repository Name", 123);
 
-        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
         verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
 
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());

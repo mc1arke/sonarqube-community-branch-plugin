@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,16 +59,17 @@ import static org.mockito.Mockito.when;
 
 class PullRequestPostAnalysisTaskTest {
 
-    private final PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock(PostProjectAnalysisTask.ProjectAnalysis.class);
-    private final Branch branch = mock(Branch.class);
-    private final ScannerContext scannerContext = mock(ScannerContext.class);
+    private final PostProjectAnalysisTask.ProjectAnalysis projectAnalysis = mock();
+    private final Branch branch = mock();
+    private final ScannerContext scannerContext = mock();
 
     private final List<PullRequestBuildStatusDecorator> pullRequestBuildStatusDecorators = new ArrayList<>();
-    private final PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock(PostAnalysisIssueVisitor.class);
-    private final PostProjectAnalysisTask.Context context = mock(PostProjectAnalysisTask.Context.class);
-    private final DbClient dbClient = mock(DbClient.class);
-    private final Project project = mock(Project.class);
-    private final List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = List.of(mock(PostAnalysisIssueVisitor.ComponentIssue.class));
+    private final PostAnalysisIssueVisitor postAnalysisIssueVisitor = mock();
+    private final PostProjectAnalysisTask.Context context = mock();
+    private final DbClient dbClient = mock();
+    private final Project project = mock();
+    private final PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
+    private final List<PostAnalysisIssueVisitor.ComponentIssue> componentIssues = List.of(componentIssue);
 
     private final PullRequestPostAnalysisTask testCase =
             new PullRequestPostAnalysisTask(pullRequestBuildStatusDecorators,
@@ -110,19 +111,19 @@ class PullRequestPostAnalysisTaskTest {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("branchName")).when(branch).getName();
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almUuid");
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
@@ -138,27 +139,27 @@ class PullRequestPostAnalysisTaskTest {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("branchName")).when(branch).getName();
 
-        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator1 = mock();
         doReturn(Collections.singletonList(ALM.BITBUCKET)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
-        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator2 = mock();
         doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almUuid");
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.AZURE_DEVOPS);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
@@ -176,27 +177,27 @@ class PullRequestPostAnalysisTaskTest {
 
         doReturn(Optional.empty()).when(projectAnalysis).getAnalysis();
 
-        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator1 = mock();
         doReturn(Collections.singletonList(ALM.AZURE_DEVOPS)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
-        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator2 = mock();
         doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almUuid");
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
@@ -212,31 +213,31 @@ class PullRequestPostAnalysisTaskTest {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
-        Analysis analysis = mock(Analysis.class);
+        Analysis analysis = mock();
         doReturn(Optional.empty()).when(analysis).getRevision();
         doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
 
-        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator1 = mock();
         doReturn(Collections.singletonList(ALM.BITBUCKET)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
-        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator2 = mock();
         doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almUuid");
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
@@ -252,34 +253,33 @@ class PullRequestPostAnalysisTaskTest {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
-        Analysis analysis = mock(Analysis.class);
+        Analysis analysis = mock();
         doReturn(Optional.of("revision")).when(analysis).getRevision();
         doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almUuid");
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        ScannerContext scannerContext = mock(ScannerContext.class);
         doReturn(scannerContext).when(projectAnalysis).getScannerContext();
 
-        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator1 = mock();
         doReturn(Collections.singletonList(ALM.GITLAB)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
-        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator2 = mock();
         doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         pullRequestBuildStatusDecorators.add(decorator2);
 
@@ -295,50 +295,49 @@ class PullRequestPostAnalysisTaskTest {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
-        PostProjectAnalysisTask.Context context = mock(PostProjectAnalysisTask.Context.class);
         doReturn(projectAnalysis).when(context).getProjectAnalysis();
 
-        Analysis analysis = mock(Analysis.class);
+        Analysis analysis = mock();
         doReturn(Optional.of("revision")).when(analysis).getRevision();
         doReturn(new Date()).when(analysis).getDate();
         doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
 
-        QualityGate qualityGate = mock(QualityGate.class);
+        QualityGate qualityGate = mock();
         doReturn(qualityGate).when(projectAnalysis).getQualityGate();
 
-        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator1 = mock();
         doReturn(Collections.singletonList(ALM.BITBUCKET)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
-        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator2 = mock();
         doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator2).alm();
         doReturn(DecorationResult.builder().build()).when(decorator2).decorateQualityGateStatus(any(), any(), any());
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
+        AlmSettingDto almSettingDto = mock();
         doReturn(ALM.GITHUB).when(almSettingDto).getAlm();
 
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        DbSession dbSession = mock(DbSession.class);
+        DbSession dbSession = mock();
         doReturn(dbSession).when(dbClient).openSession(anyBoolean());
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         doReturn(branchDao).when(dbClient).branchDao();
-        BranchDto branchDto = mock(BranchDto.class);
+        BranchDto branchDto = mock();
         doReturn(Optional.empty()).when(branchDao).selectByPullRequestKey(any(), any(), any());
         doReturn(DbProjectBranches.PullRequestData.newBuilder().build()).when(branchDto).getPullRequestData();
 
 
         testCase.finished(context);
 
-        ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
+        ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.captor();
 
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis).getQualityGate();
@@ -355,43 +354,42 @@ class PullRequestPostAnalysisTaskTest {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
-        Project project = mock(Project.class);
         doReturn("uuid").when(project).getUuid();
         doReturn(project).when(projectAnalysis).getProject();
 
-        Analysis analysis = mock(Analysis.class);
+        Analysis analysis = mock();
         doReturn(Optional.of("revision")).when(analysis).getRevision();
         doReturn(new Date()).when(analysis).getDate();
         doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
 
-        QualityGate qualityGate = mock(QualityGate.class);
+        QualityGate qualityGate = mock();
         doReturn(qualityGate).when(projectAnalysis).getQualityGate();
 
-        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator1 = mock();
         doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator1).alm();
         pullRequestBuildStatusDecorators.add(decorator1);
 
-        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator2 = mock();
         doReturn(Collections.singletonList(ALM.BITBUCKET)).when(decorator2).alm();
         doReturn(DecorationResult.builder().withPullRequestUrl("pullRequestUrl").build()).when(decorator2).decorateQualityGateStatus(any(), any(), any());
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
+        AlmSettingDto almSettingDto = mock();
         doReturn(ALM.BITBUCKET).when(almSettingDto).getAlm();
 
-        DbSession dbSession = mock(DbSession.class);
+        DbSession dbSession = mock();
         doReturn(dbSession).when(dbClient).openSession(anyBoolean());
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         doReturn(branchDao).when(dbClient).branchDao();
-        BranchDto branchDto = mock(BranchDto.class);
+        BranchDto branchDto = mock();
         doReturn(Optional.of(branchDto)).when(branchDao).selectByPullRequestKey(any(), any(), any());
         doReturn(DbProjectBranches.PullRequestData.newBuilder().build()).when(branchDto).getPullRequestData();
 
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         doReturn(Optional.of(projectAlmSettingDto)).when(projectAlmSettingDao).selectByProject(dbSession, "uuid");
         doReturn("setting-uuid").when(projectAlmSettingDto).getAlmSettingUuid();
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        AlmSettingDao almSettingDao = mock();
         doReturn(Optional.of(almSettingDto)).when(almSettingDao).selectByUuid(dbSession, "setting-uuid");
 
         doReturn(projectAlmSettingDao).when(dbClient).projectAlmSettingDao();
@@ -399,7 +397,7 @@ class PullRequestPostAnalysisTaskTest {
 
         testCase.finished(context);
 
-        ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
+        ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.captor();
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis).getQualityGate();
         verify(dbClient, times(2)).openSession(false);
@@ -407,8 +405,7 @@ class PullRequestPostAnalysisTaskTest {
         verify(branchDao).selectByPullRequestKey(dbSession, "uuid", "pull-request");
         verify(decorator2).decorateQualityGateStatus(analysisDetailsArgumentCaptor.capture(), eq(almSettingDto), eq(projectAlmSettingDto));
 
-        ArgumentCaptor<DbProjectBranches.PullRequestData> pullRequestDataArgumentCaptor = ArgumentCaptor.forClass(
-                DbProjectBranches.PullRequestData.class);
+        ArgumentCaptor<DbProjectBranches.PullRequestData> pullRequestDataArgumentCaptor = ArgumentCaptor.captor();
         verify(branchDto).setPullRequestData(pullRequestDataArgumentCaptor.capture());
         assertThat(pullRequestDataArgumentCaptor.getValue().getUrl()).isEqualTo("pullRequestUrl");
 
@@ -426,56 +423,55 @@ class PullRequestPostAnalysisTaskTest {
         doReturn(Branch.Type.PULL_REQUEST).when(branch).getType();
         doReturn(Optional.of("pull-request")).when(branch).getName();
 
-        Project project = mock(Project.class);
         doReturn("uuid").when(project).getUuid();
         doReturn(project).when(projectAnalysis).getProject();
 
-        Analysis analysis = mock(Analysis.class);
+        Analysis analysis = mock();
         doReturn(Optional.of("revision")).when(analysis).getRevision();
         doReturn(new Date()).when(analysis).getDate();
         doReturn(Optional.of(analysis)).when(projectAnalysis).getAnalysis();
 
-        QualityGate qualityGate = mock(QualityGate.class);
+        QualityGate qualityGate = mock();
         doReturn(qualityGate).when(projectAnalysis).getQualityGate();
 
-        PullRequestBuildStatusDecorator decorator1 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator1 = mock();
         doReturn(Collections.singletonList(ALM.GITHUB)).when(decorator1).alm();
         doReturn(DecorationResult.builder().withPullRequestUrl("pullRequestUrl").build()).when(decorator1).decorateQualityGateStatus(any(), any(), any());
         pullRequestBuildStatusDecorators.add(decorator1);
 
-        PullRequestBuildStatusDecorator decorator2 = mock(PullRequestBuildStatusDecorator.class);
+        PullRequestBuildStatusDecorator decorator2 = mock();
         pullRequestBuildStatusDecorators.add(decorator2);
 
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("dummy/repo");
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn("almUuid");
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getUrl()).thenReturn("http://host.name");
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock(DbSession.class));
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        DbSession dbSession = mock(DbSession.class);
+        DbSession dbSession = mock();
         doReturn(dbSession).when(dbClient).openSession(anyBoolean());
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         doReturn(branchDao).when(dbClient).branchDao();
-        BranchDto branchDto = mock(BranchDto.class);
+        BranchDto branchDto = mock();
         doReturn(Optional.empty()).when(branchDao).selectByPullRequestKey(any(), any(), any());
         doReturn(DbProjectBranches.PullRequestData.newBuilder().build()).when(branchDto).getPullRequestData();
 
         testCase.finished(context);
 
-        ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.forClass(AnalysisDetails.class);
-        ArgumentCaptor<AlmSettingDto> almSettingDtoArgumentCaptor = ArgumentCaptor.forClass(AlmSettingDto.class);
+        ArgumentCaptor<AnalysisDetails> analysisDetailsArgumentCaptor = ArgumentCaptor.captor();
+        ArgumentCaptor<AlmSettingDto> almSettingDtoArgumentCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<ProjectAlmSettingDto> projectAlmSettingDtoArgumentCaptor =
-                ArgumentCaptor.forClass(ProjectAlmSettingDto.class);
+                ArgumentCaptor.captor();
 
         verify(projectAnalysis).getAnalysis();
         verify(projectAnalysis).getQualityGate();

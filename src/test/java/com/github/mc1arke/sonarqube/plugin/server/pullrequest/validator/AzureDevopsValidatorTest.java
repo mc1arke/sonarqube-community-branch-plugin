@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,6 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.sonar.db.alm.setting.ALM;
@@ -39,9 +38,9 @@ import static org.mockito.Mockito.when;
 
 class AzureDevopsValidatorTest {
 
-    private final AzureDevopsClientFactory azureDevopsClientFactory = mock(AzureDevopsClientFactory.class);
-    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+    private final AzureDevopsClientFactory azureDevopsClientFactory = mock();
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock();
+    private final AlmSettingDto almSettingDto = mock();
 
     @Test
     void testCorrectAlmReturnedForValidator() {
@@ -64,7 +63,7 @@ class AzureDevopsValidatorTest {
         AzureDevopsValidator underTest = new AzureDevopsValidator(azureDevopsClientFactory);
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("slug");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
-        AzureDevopsClient azureDevopsClient = mock(AzureDevopsClient.class);
+        AzureDevopsClient azureDevopsClient = mock();
         when(azureDevopsClient.getRepository(any(), any())).thenThrow(new IllegalStateException("dummy"));
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         assertThatThrownBy(() -> underTest.validate(projectAlmSettingDto, almSettingDto))
@@ -86,8 +85,8 @@ class AzureDevopsValidatorTest {
     @Test
     void testExceptionOnMissingSlug() throws IOException {
         AzureDevopsValidator underTest = new AzureDevopsValidator(azureDevopsClientFactory);
-        AzureDevopsClient azureDevopsClient = mock(AzureDevopsClient.class);
-        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock(Repository.class));
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock());
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
 
         assertThatThrownBy(() -> underTest.validate(projectAlmSettingDto, almSettingDto))
@@ -99,8 +98,8 @@ class AzureDevopsValidatorTest {
     @Test
     void testExceptionOnMissingRepo() throws IOException {
         AzureDevopsValidator underTest = new AzureDevopsValidator(azureDevopsClientFactory);
-        AzureDevopsClient azureDevopsClient = mock(AzureDevopsClient.class);
-        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock(Repository.class));
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock());
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("slug");
 
@@ -114,8 +113,8 @@ class AzureDevopsValidatorTest {
     @Test
     void testHappyPath() throws IOException {
         AzureDevopsValidator underTest = new AzureDevopsValidator(azureDevopsClientFactory);
-        AzureDevopsClient azureDevopsClient = mock(AzureDevopsClient.class);
-        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock(Repository.class));
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock());
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("slug");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");

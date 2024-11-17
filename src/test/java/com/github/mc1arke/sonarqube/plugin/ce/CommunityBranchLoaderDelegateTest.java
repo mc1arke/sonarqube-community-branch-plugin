@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,10 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce;
 
-import org.hamcrest.core.IsEqual;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonar.ce.task.projectanalysis.analysis.Branch;
 import org.sonar.ce.task.projectanalysis.analysis.MutableAnalysisMetadataHolder;
@@ -36,9 +33,8 @@ import org.sonar.server.project.Project;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -49,40 +45,31 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityBranchLoaderDelegateTest {
+class CommunityBranchLoaderDelegateTest {
 
-    private final ExpectedException expectedException = ExpectedException.none();
-    private final MutableAnalysisMetadataHolder metadataHolder = mock(MutableAnalysisMetadataHolder.class);
-    private final DbClient dbClient = mock(DbClient.class);
+    private final MutableAnalysisMetadataHolder metadataHolder = mock();
+    private final DbClient dbClient = mock();
     private final BranchLoaderDelegate testCase = new CommunityBranchLoaderDelegate(dbClient, metadataHolder);
 
-    @Rule
-    public ExpectedException expectedException() {
-        return expectedException;
-    }
-
     @Test
-    public void testNoBranchDetailsNoExistingBranchThrowsException() {
+    void testNoBranchDetailsNoExistingBranchThrowsException() {
 
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(branchDao.selectByBranchKey(any(), any(), any())).thenReturn(Optional.empty());
 
         ScannerReport.Metadata metadata = ScannerReport.Metadata.getDefaultInstance();
         when(dbClient.branchDao()).thenReturn(branchDao);
         when(metadataHolder.getProject()).thenReturn(new Project("uuid", "key", "name", "description", new ArrayList<>()));
 
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Could not find main branch"));
-
-        testCase.load(metadata);
+        assertThatThrownBy(() -> testCase.load(metadata))
+            .isExactlyInstanceOf(IllegalStateException.class)
+            .hasMessage("Could not find main branch")
+            .hasNoCause();
     }
 
     @Test
-    public void testNoBranchDetailsExistingBranchMatch() {
-        BranchDto branchDto = mock(BranchDto.class);
+    void testNoBranchDetailsExistingBranchMatch() {
+        BranchDto branchDto = mock();
         when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(branchDto.getKey()).thenReturn("branchKey");
         when(branchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
@@ -90,7 +77,7 @@ public class CommunityBranchLoaderDelegateTest {
         when(branchDto.getUuid()).thenReturn("branchUuid");
         when(branchDto.isMain()).thenReturn(false);
 
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(branchDao.selectMainBranchByProjectUuid(any(), any())).thenReturn(Optional.of(branchDto));
 
         ScannerReport.Metadata metadata = ScannerReport.Metadata.getDefaultInstance();
@@ -99,15 +86,15 @@ public class CommunityBranchLoaderDelegateTest {
 
         testCase.load(metadata);
 
-        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.forClass(Branch.class);
+        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.captor();
 
         verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
-        assertEquals(BranchType.BRANCH, branchArgumentCaptor.getValue().getType());
-        assertNull(branchArgumentCaptor.getValue().getTargetBranchName());
-        assertEquals("branchKey", branchArgumentCaptor.getValue().getName());
-        assertFalse(branchArgumentCaptor.getValue().isMain());
-        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
-        assertNull(branchArgumentCaptor.getValue().getReferenceBranchUuid());
+        assertThat(branchArgumentCaptor.getValue().getType()).isEqualTo(BranchType.BRANCH);
+        assertThat(branchArgumentCaptor.getValue().getTargetBranchName()).isNull();
+        assertThat(branchArgumentCaptor.getValue().getName()).isEqualTo("branchKey");
+        assertThat(branchArgumentCaptor.getValue().isMain()).isFalse();
+        assertThat(branchArgumentCaptor.getValue().supportsCrossProjectCpd()).isFalse();
+        assertThat(branchArgumentCaptor.getValue().getReferenceBranchUuid()).isNull();
 
         verify(metadataHolder).getProject();
         verify(metadataHolder).setPullRequestKey(anyString());
@@ -123,9 +110,9 @@ public class CommunityBranchLoaderDelegateTest {
     }
 
     @Test
-    public void testBranchNameNoMatchingBranch() {
+    void testBranchNameNoMatchingBranch() {
 
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(branchDao.selectByBranchKey(any(), any(), any())).thenReturn(Optional.empty());
 
         ScannerReport.Metadata metadata =
@@ -135,22 +122,22 @@ public class CommunityBranchLoaderDelegateTest {
 
         when(metadataHolder.getProject()).thenReturn(new Project("uuid", "key", "name", "description", new ArrayList<>()));
 
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Invalid branch type 'UNSET'"));
-
-        testCase.load(metadata);
+        assertThatThrownBy(() -> testCase.load(metadata))
+            .isExactlyInstanceOf(IllegalStateException.class)
+            .hasMessage("Invalid branch type 'UNSET'")
+            .hasNoCause();
     }
 
     @Test
-    public void testBranchNameMatchingBranch() {
-        BranchDto branchDto = mock(BranchDto.class);
+    void testBranchNameMatchingBranch() {
+        BranchDto branchDto = mock();
         when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(branchDto.getKey()).thenReturn("branchKey");
         when(branchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
         when(branchDto.getProjectUuid()).thenReturn("projectUuid");
         when(branchDto.getUuid()).thenReturn("branchUuid");
 
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("branch"))).thenReturn(Optional.of(branchDto));
 
         ScannerReport.Metadata metadata =
@@ -163,14 +150,14 @@ public class CommunityBranchLoaderDelegateTest {
 
         testCase.load(metadata);
 
-        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.forClass(Branch.class);
+        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.captor();
 
         verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
-        assertEquals(BranchType.BRANCH, branchArgumentCaptor.getValue().getType());
-        assertEquals("projectUuid", branchArgumentCaptor.getValue().getReferenceBranchUuid());
-        assertEquals("branch", branchArgumentCaptor.getValue().getName());
-        assertFalse(branchArgumentCaptor.getValue().isMain());
-        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
+        assertThat(branchArgumentCaptor.getValue().getType()).isEqualTo(BranchType.BRANCH);
+        assertThat(branchArgumentCaptor.getValue().getReferenceBranchUuid()).isEqualTo("projectUuid");
+        assertThat(branchArgumentCaptor.getValue().getName()).isEqualTo("branch");
+        assertThat(branchArgumentCaptor.getValue().isMain()).isFalse();
+        assertThat(branchArgumentCaptor.getValue().supportsCrossProjectCpd()).isFalse();
 
         verify(metadataHolder).getProject();
         verify(metadataHolder).setPullRequestKey(anyString());
@@ -186,14 +173,14 @@ public class CommunityBranchLoaderDelegateTest {
     }
 
     @Test
-    public void testBranchNamePullRequest() {
-        BranchDto branchDto = mock(BranchDto.class);
+    void testBranchNamePullRequest() {
+        BranchDto branchDto = mock();
         when(branchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(branchDto.getKey()).thenReturn("branchKey");
         when(branchDto.getUuid()).thenReturn("mergeBranchUuid");
         when(branchDto.getProjectUuid()).thenReturn("projectUuid");
 
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("branch"))).thenReturn(Optional.of(branchDto));
 
         ScannerReport.Metadata metadata =
@@ -209,15 +196,15 @@ public class CommunityBranchLoaderDelegateTest {
 
         testCase.load(metadata);
 
-        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.forClass(Branch.class);
+        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.captor();
 
         verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
-        assertEquals(BranchType.PULL_REQUEST, branchArgumentCaptor.getValue().getType());
-        assertEquals("mergeBranchUuid", branchArgumentCaptor.getValue().getReferenceBranchUuid());
-        assertEquals("sourceBranch", branchArgumentCaptor.getValue().getName());
-        assertFalse(branchArgumentCaptor.getValue().isMain());
-        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
-        assertEquals("branch", branchArgumentCaptor.getValue().getTargetBranchName());
+        assertThat(branchArgumentCaptor.getValue().getType()).isEqualTo(BranchType.PULL_REQUEST);
+        assertThat(branchArgumentCaptor.getValue().getReferenceBranchUuid()).isEqualTo("mergeBranchUuid");
+        assertThat(branchArgumentCaptor.getValue().getName()).isEqualTo("sourceBranch");
+        assertThat(branchArgumentCaptor.getValue().isMain()).isFalse();
+        assertThat(branchArgumentCaptor.getValue().supportsCrossProjectCpd()).isFalse();
+        assertThat(branchArgumentCaptor.getValue().getTargetBranchName()).isEqualTo("branch");
 
 
         verify(metadataHolder).getProject();
@@ -234,8 +221,8 @@ public class CommunityBranchLoaderDelegateTest {
     }
 
     @Test
-    public void testBranchNamePullRequestNoSuchTarget() {
-        BranchDao branchDao = mock(BranchDao.class);
+    void testBranchNamePullRequestNoSuchTarget() {
+        BranchDao branchDao = mock();
         when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("branch"))).thenReturn(Optional.empty());
 
         ScannerReport.Metadata metadata =
@@ -247,31 +234,30 @@ public class CommunityBranchLoaderDelegateTest {
 
         when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
 
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Could not find target branch 'branch' in project"));
-
-
-        testCase.load(metadata);
+        assertThatThrownBy(() -> testCase.load(metadata))
+            .isExactlyInstanceOf(IllegalStateException.class)
+            .hasMessage("Could not find target branch 'branch' in project")
+            .hasNoCause();
     }
 
 
     @Test
-    public void testBranchNameMatchingBranchWithTargetBranch() {
-        BranchDto sourceBranchDto = mock(BranchDto.class);
+    void testBranchNameMatchingBranchWithTargetBranch() {
+        BranchDto sourceBranchDto = mock();
         when(sourceBranchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(sourceBranchDto.getKey()).thenReturn("branchKey");
         when(sourceBranchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
         when(sourceBranchDto.getProjectUuid()).thenReturn("projectUuid");
         when(sourceBranchDto.getUuid()).thenReturn("branchUuid");
 
-        BranchDto targetBranchDto = mock(BranchDto.class);
+        BranchDto targetBranchDto = mock();
         when(targetBranchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(targetBranchDto.getKey()).thenReturn("targetBranchKey");
         when(targetBranchDto.getMergeBranchUuid()).thenReturn("targetMergeBranchUuid");
         when(targetBranchDto.getProjectUuid()).thenReturn("projectUuid");
         when(targetBranchDto.getUuid()).thenReturn("targetBranchUuid");
 
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("branch")))
                 .thenReturn(Optional.of(sourceBranchDto));
         when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("mergeBranchName")))
@@ -290,14 +276,14 @@ public class CommunityBranchLoaderDelegateTest {
 
         testCase.load(metadata);
 
-        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.forClass(Branch.class);
+        ArgumentCaptor<Branch> branchArgumentCaptor = ArgumentCaptor.captor();
 
         verify(metadataHolder).setBranch(branchArgumentCaptor.capture());
-        assertEquals(BranchType.BRANCH, branchArgumentCaptor.getValue().getType());
-        assertEquals("targetBranchUuid", branchArgumentCaptor.getValue().getReferenceBranchUuid());
-        assertEquals("branch", branchArgumentCaptor.getValue().getName());
-        assertFalse(branchArgumentCaptor.getValue().isMain());
-        assertFalse(branchArgumentCaptor.getValue().supportsCrossProjectCpd());
+        assertThat(branchArgumentCaptor.getValue().getType()).isEqualTo(BranchType.BRANCH);
+        assertThat(branchArgumentCaptor.getValue().getReferenceBranchUuid()).isEqualTo("targetBranchUuid");
+        assertThat(branchArgumentCaptor.getValue().getName()).isEqualTo("branch");
+        assertThat(branchArgumentCaptor.getValue().isMain()).isFalse();
+        assertThat(branchArgumentCaptor.getValue().supportsCrossProjectCpd()).isFalse();
 
 
         verify(metadataHolder).getProject();
@@ -314,15 +300,15 @@ public class CommunityBranchLoaderDelegateTest {
     }
 
     @Test
-    public void testBranchNameMatchingBranchWithTargetBranchMissingTargetBranch() {
-        BranchDto sourceBranchDto = mock(BranchDto.class);
+    void testBranchNameMatchingBranchWithTargetBranchMissingTargetBranch() {
+        BranchDto sourceBranchDto = mock();
         when(sourceBranchDto.getBranchType()).thenReturn(BranchType.BRANCH);
         when(sourceBranchDto.getKey()).thenReturn("branchKey");
         when(sourceBranchDto.getMergeBranchUuid()).thenReturn("mergeBranchUuid");
         when(sourceBranchDto.getProjectUuid()).thenReturn("projectUuid");
         when(sourceBranchDto.getUuid()).thenReturn("branchUuid");
 
-        BranchDao branchDao = mock(BranchDao.class);
+        BranchDao branchDao = mock();
         when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("branch")))
                 .thenReturn(Optional.of(sourceBranchDto));
         when(branchDao.selectByBranchKey(any(), eq("projectUuid"), eq("mergeBranchName"))).thenReturn(Optional.empty());
@@ -337,11 +323,10 @@ public class CommunityBranchLoaderDelegateTest {
 
         when(metadataHolder.getProject()).thenReturn(new Project("projectUuid", "key", "name", "description", new ArrayList<>()));
 
-
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Could not find target branch 'mergeBranchName' in project"));
-
-        testCase.load(metadata);
+        assertThatThrownBy(() -> testCase.load(metadata))
+            .isExactlyInstanceOf(IllegalStateException.class)
+            .hasMessage("Could not find target branch 'mergeBranchName' in project")
+            .hasNoCause();
     }
 
 }

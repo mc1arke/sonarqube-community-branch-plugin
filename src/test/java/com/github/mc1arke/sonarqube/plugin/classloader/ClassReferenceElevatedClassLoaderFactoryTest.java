@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,68 +18,55 @@
  */
 package com.github.mc1arke.sonarqube.plugin.classloader;
 
-import org.hamcrest.core.IsEqual;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.mockito.ArgumentCaptor;
-import org.sonar.api.Plugin;
-import org.sonar.api.batch.rule.ActiveRule;
-import org.sonar.classloader.ClassloaderBuilder;
-import org.sonar.classloader.Mask;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.sonar.api.Plugin;
+import org.sonar.api.batch.rule.ActiveRule;
+import org.sonar.classloader.ClassloaderBuilder;
+import org.sonar.classloader.Mask;
 
-/**
- * @author Michael Clarke
- */
-public class ClassReferenceElevatedClassLoaderFactoryTest {
+class ClassReferenceElevatedClassLoaderFactoryTest {
 
     private static final String TARGET_PLUGIN_CLASS = "org.sonar.plugins.java.JavaPlugin";
-    private final ExpectedException expectedException = ExpectedException.none();
-
-    @Rule
-    public ExpectedException expectedException() {
-        return expectedException;
-    }
 
     @Test
-    public void testExceptionOnNoSuchClass() {
+    void shouldThrowExceptionIfNoSuchClassExists() {
         ClassReferenceElevatedClassLoaderFactory testCase = new ClassReferenceElevatedClassLoaderFactory("1");
+        Class<? extends Plugin> pluginClass = ((Plugin) context -> {}).getClass();
+        assertThatThrownBy(() -> testCase.createClassLoader(pluginClass))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Could not load class '1' from Plugin Classloader")
+            .hasCause(new ClassNotFoundException("1"));
 
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage(IsEqual.equalTo("Could not load class '1' from Plugin Classloader"));
-
-        testCase.createClassLoader(((Plugin) context -> {
-        }).getClass());
     }
 
     @Test
-    public void testClassloaderReturnedOnHappyPath() throws ReflectiveOperationException, MalformedURLException {
+    void shouldCreateClassloaderWhenProvidedValidArguments() throws ReflectiveOperationException, MalformedURLException {
         URLClassLoader mockClassLoader = new URLClassLoader(findSonarqubePluginJars());
         ElevatedClassLoaderFactory testCase = spy(new ClassReferenceElevatedClassLoaderFactory(getClass().getName()));
         testCase.createClassLoader((Class<? extends Plugin>) mockClassLoader.loadClass(TARGET_PLUGIN_CLASS));
 
-        ArgumentCaptor<ClassLoader> argumentCaptor = ArgumentCaptor.forClass(ClassLoader.class);
+        ArgumentCaptor<ClassLoader> argumentCaptor = ArgumentCaptor.captor();
         verify(testCase).createClassLoader(argumentCaptor.capture(), argumentCaptor.capture());
 
-        assertEquals(Arrays.asList(mockClassLoader, getClass().getClassLoader()), argumentCaptor.getAllValues());
+        assertThat(argumentCaptor.getAllValues()).containsExactly(mockClassLoader, getClass().getClassLoader());
     }
 
     @Test
-    public void testLoadClass() throws ClassNotFoundException, MalformedURLException {
+    void shouldCreateClassLoaderThatCanLoadInterceptedClasses() throws ClassNotFoundException, MalformedURLException {
         ClassloaderBuilder builder = new ClassloaderBuilder();
         builder.newClassloader("_api_", getClass().getClassLoader());
         builder.setMask("_api_", Mask.builder().include("java/", "org/sonar/api/").build());
@@ -101,8 +88,8 @@ public class ClassReferenceElevatedClassLoaderFactoryTest {
                 new ClassReferenceElevatedClassLoaderFactory(ActiveRule.class.getName());
         ClassLoader elevatedLoader = testCase.createClassLoader(loadedClass);
         Class<?> elevatedClass = elevatedLoader.loadClass(loadedClass.getName());
-        // Getting closer than this is going to be difficult since the URLClassLoader that actually loads is an inner class of evelvatedClassLoader
-        assertNotSame(elevatedLoader, elevatedClass.getClassLoader());
+        // Getting closer than this is going to be difficult since the URLClassLoader that actually loads is an inner class of elevatedClassLoader
+        assertThat(elevatedClass.getClassLoader()).isNotSameAs(elevatedLoader);
     }
 
     private static URL[] findSonarqubePluginJars() throws MalformedURLException {

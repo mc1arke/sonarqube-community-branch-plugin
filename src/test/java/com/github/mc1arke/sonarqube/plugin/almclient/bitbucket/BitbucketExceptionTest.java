@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,15 +18,16 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
-import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.ErrorResponse;
-import org.junit.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class BitbucketExceptionTest {
+import org.junit.jupiter.api.Test;
+
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.ErrorResponse;
+
+class BitbucketExceptionTest {
 
     @Test
-    public void verifyMessageReturnedWhenErrorResponseContainsNoErrors() {
+    void verifyMessageReturnedWhenErrorResponseContainsNoErrors() {
         BitbucketException testCase = new BitbucketException(401, new ErrorResponse(null));
         assertThat(testCase.getMessage()).isEqualTo("Bitbucket responded with an error status (401)");
     }

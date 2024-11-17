@@ -67,7 +67,7 @@ class CommunityBranchAgentTest {
 
         CommunityBranchAgent.premain("web", instrumentation);
 
-        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.captor();
         verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
         verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
@@ -92,7 +92,7 @@ class CommunityBranchAgentTest {
 
         CommunityBranchAgent.premain("web", instrumentation);
 
-        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.captor();
         verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
         verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
@@ -117,7 +117,7 @@ class CommunityBranchAgentTest {
 
         CommunityBranchAgent.premain("web", instrumentation);
 
-        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.captor();
         verify(instrumentation).retransformClasses(SetAction.class);
         verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
@@ -150,7 +150,7 @@ class CommunityBranchAgentTest {
         CommunityBranchAgent.premain("web", instrumentation);
         DocumentationLinkGenerator documentationLinkGenerator = mock();
 
-        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.captor();
         verify(instrumentation).retransformClasses(UnsetAction.class);
         verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
@@ -180,7 +180,7 @@ class CommunityBranchAgentTest {
 
         CommunityBranchAgent.premain("web", instrumentation);
 
-        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.captor();
         verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
         verify(instrumentation, times(4)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
@@ -196,7 +196,7 @@ class CommunityBranchAgentTest {
 
         CommunityBranchAgent.premain("ce", instrumentation);
 
-        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.captor();
         verify(instrumentation).retransformClasses(PlatformEditionProvider.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());
 
@@ -212,7 +212,7 @@ class CommunityBranchAgentTest {
 
         CommunityBranchAgent.premain("ce", instrumentation);
 
-        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.forClass(ClassFileTransformer.class);
+        ArgumentCaptor<ClassFileTransformer> classFileTransformerArgumentCaptor = ArgumentCaptor.captor();
         verify(instrumentation).retransformClasses(MultipleAlmFeature.class);
         verify(instrumentation).retransformClasses(PlatformEditionProvider.class);
         verify(instrumentation, times(3)).addTransformer(classFileTransformerArgumentCaptor.capture());

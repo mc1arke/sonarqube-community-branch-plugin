@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2023 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,14 +53,14 @@ import static org.mockito.Mockito.when;
 
 class ValidateBindingActionTest {
 
-    private final DbClient dbClient = mock(DbClient.class);
-    private final ComponentFinder componentFinder = mock(ComponentFinder.class);
-    private final UserSession userSession = mock(UserSession.class);
+    private final DbClient dbClient = mock();
+    private final ComponentFinder componentFinder = mock();
+    private final UserSession userSession = mock();
 
     @Test
     void testConfigureActionNoOperation() {
         ValidateBindingAction underTest = new ValidateBindingAction(dbClient, componentFinder, userSession, Collections.emptyList());
-        WebService.NewAction newAction = mock(WebService.NewAction.class);
+        WebService.NewAction newAction = mock();
         underTest.configureAction(newAction);
         verifyNoInteractions(newAction);
     }
@@ -69,12 +69,12 @@ class ValidateBindingActionTest {
     void testHandleProjectRequestSuccessWithNoFurtherOperationsWhenNoAlmConfigurationExistsForProject() {
         ValidateBindingAction underTest = new ValidateBindingAction(dbClient, componentFinder, userSession, Collections.emptyList());
 
-        ProjectDto projectDto = mock(ProjectDto.class);
-        Request request = mock(Request.class);
-        Response response = mock(Response.class);
-        DbSession dbSession = mock(DbSession.class);
+        ProjectDto projectDto = mock();
+        Request request = mock();
+        Response response = mock();
+        DbSession dbSession = mock();
 
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(dbSession, projectDto)).thenReturn(Optional.empty());
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
@@ -89,19 +89,19 @@ class ValidateBindingActionTest {
     void testHandleProjectRequestThrowsExceptionWhenAlmForProjectDoesNotExist() {
         ValidateBindingAction underTest = new ValidateBindingAction(dbClient, componentFinder, userSession, Collections.emptyList());
 
-        ProjectDto projectDto = mock(ProjectDto.class);
-        Request request = mock(Request.class);
-        Response response = mock(Response.class);
-        DbSession dbSession = mock(DbSession.class);
+        ProjectDto projectDto = mock();
+        Request request = mock();
+        Response response = mock();
+        DbSession dbSession = mock();
 
         String almUuid = "almUuid";
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn(almUuid);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(dbSession, projectDto)).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(dbSession, almUuid)).thenReturn(Optional.empty());
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
 
@@ -115,21 +115,21 @@ class ValidateBindingActionTest {
     void testHandleProjectRequestThrowsExceptionWhenNoValidatorExistsForAlm() {
         ValidateBindingAction underTest = new ValidateBindingAction(dbClient, componentFinder, userSession, Collections.emptyList());
 
-        ProjectDto projectDto = mock(ProjectDto.class);
-        Request request = mock(Request.class);
-        Response response = mock(Response.class);
-        DbSession dbSession = mock(DbSession.class);
+        ProjectDto projectDto = mock();
+        Request request = mock();
+        Response response = mock();
+        DbSession dbSession = mock();
 
         String almUuid = "almUuid";
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn(almUuid);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(dbSession, projectDto)).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getAlm()).thenReturn(ALM.AZURE_DEVOPS);
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(dbSession, almUuid)).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
 
@@ -141,26 +141,26 @@ class ValidateBindingActionTest {
 
     @Test
     void testHandleProjectRequestThrowsInvalidConfigurationExceptionWhenRuntimeExceptionThrownByValidator() {
-        Validator validator = mock(Validator.class);
+        Validator validator = mock();
         when(validator.alm()).thenReturn(Collections.singletonList(ALM.AZURE_DEVOPS));
         doThrow(new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "dummy")).when(validator).validate(any(), any());
         ValidateBindingAction underTest = new ValidateBindingAction(dbClient, componentFinder, userSession, Collections.singletonList(validator));
 
-        ProjectDto projectDto = mock(ProjectDto.class);
-        Request request = mock(Request.class);
-        Response response = mock(Response.class);
-        DbSession dbSession = mock(DbSession.class);
+        ProjectDto projectDto = mock();
+        Request request = mock();
+        Response response = mock();
+        DbSession dbSession = mock();
 
         String almUuid = "almUuid";
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn(almUuid);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(dbSession, projectDto)).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getAlm()).thenReturn(ALM.AZURE_DEVOPS);
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(dbSession, almUuid)).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
 
@@ -172,29 +172,29 @@ class ValidateBindingActionTest {
 
     @Test
     void testHandleProjectRequestHappyPath() {
-        Validator validator = mock(Validator.class);
+        Validator validator = mock();
         when(validator.alm()).thenReturn(Collections.singletonList(ALM.AZURE_DEVOPS));
         ValidateBindingAction underTest = new ValidateBindingAction(dbClient, componentFinder, userSession, Collections.singletonList(validator));
 
-        ProjectDto projectDto = mock(ProjectDto.class);
-        Request request = mock(Request.class);
-        Response response = mock(Response.class);
-        DbSession dbSession = mock(DbSession.class);
+        ProjectDto projectDto = mock();
+        Request request = mock();
+        Response response = mock();
+        DbSession dbSession = mock();
 
         when(dbClient.openSession(anyBoolean())).thenReturn(dbSession);
 
         when(componentFinder.getProjectByKey(dbSession, "project")).thenReturn(projectDto);
 
         String almUuid = "almUuid";
-        ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
+        ProjectAlmSettingDto projectAlmSettingDto = mock();
         when(projectAlmSettingDto.getAlmSettingUuid()).thenReturn(almUuid);
-        ProjectAlmSettingDao projectAlmSettingDao = mock(ProjectAlmSettingDao.class);
+        ProjectAlmSettingDao projectAlmSettingDao = mock();
         when(projectAlmSettingDao.selectByProject(dbSession, projectDto)).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+        AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getAlm()).thenReturn(ALM.AZURE_DEVOPS);
-        AlmSettingDao almSettingDao = mock(AlmSettingDao.class);
+        AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(dbSession, almUuid)).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
 

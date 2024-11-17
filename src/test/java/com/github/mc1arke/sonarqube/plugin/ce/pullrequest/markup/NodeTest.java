@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,27 +18,28 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-import org.junit.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
-public class NodeTest {
+import org.junit.jupiter.api.Test;
+
+class NodeTest {
 
     @Test
-    public void testExceptionThrownOnInvalidChild() {
-        assertThatThrownBy(() -> new BasicInvalidChildNodeImpl(new BasicValidChildNodeImpl()))
+    void shouldThrowExceptionOnInvalidChild() {
+        BasicValidChildNodeImpl childNode = new BasicValidChildNodeImpl();
+        assertThatThrownBy(() -> new BasicInvalidChildNodeImpl(childNode))
                 .isExactlyInstanceOf(IllegalArgumentException.class).hasMessage(
                 BasicValidChildNodeImpl.class.getName() + " is not a valid child of " +
                 BasicInvalidChildNodeImpl.class.getName());
     }
 
     @Test
-    public void testCorrectChildrenReturned() {
-        Node node1 = mock(Node.class);
-        Node node2 = mock(Node.class);
-        Node node3 = mock(Node.class);
+    void shouldReturnCorrectChildren() {
+        Node node1 = mock();
+        Node node2 = mock();
+        Node node3 = mock();
 
         assertThat(new BasicValidChildNodeImpl(node1, node2, node3).getChildren()).containsExactly(node1, node2, node3);
     }

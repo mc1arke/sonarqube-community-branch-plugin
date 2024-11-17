@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,20 +18,19 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
-public class DocumentTest {
+class DocumentTest {
 
     @Test
-    public void checkInvalidChild() {
-        assertFalse(new Document().isValidChild(new Document()));
+    void shouldNotAcceptDocumentAsValidChild() {
+        assertThat(new Document().isValidChild(new Document())).isFalse();
     }
 
     @Test
-    public void checkValidChild() {
-        assertTrue(new Document().isValidChild(new Text("")));
+    void shouldAcceptTextAsValidChild() {
+        assertThat(new Document().isValidChild(new Text(""))).isTrue();
     }
 }

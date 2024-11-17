@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,6 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
-import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Project;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.sonar.db.alm.setting.ALM;
@@ -39,9 +38,9 @@ import static org.mockito.Mockito.when;
 
 class GitlabValidatorTest {
 
-    private final GitlabClientFactory gitlabClientFactory = mock(GitlabClientFactory.class);
-    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
+    private final GitlabClientFactory gitlabClientFactory = mock();
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock();
+    private final AlmSettingDto almSettingDto = mock();
 
     @Test
     void testCorrectAlmReturnedForValidator() {
@@ -62,7 +61,7 @@ class GitlabValidatorTest {
     @Test
     void testInvalidConfigurationExceptionThrownIfRetrieveProjectFails() throws IOException {
         GitlabValidator underTest = new GitlabValidator(gitlabClientFactory);
-        GitlabClient gitlabClient = mock(GitlabClient.class);
+        GitlabClient gitlabClient = mock();
         when(gitlabClient.getProject(any())).thenThrow(new IllegalStateException("dummy"));
         when(gitlabClientFactory.createClient(any(), any())).thenReturn(gitlabClient);
         assertThatThrownBy(() -> underTest.validate(projectAlmSettingDto, almSettingDto))
@@ -84,8 +83,8 @@ class GitlabValidatorTest {
     @Test
     void testHappyPath() throws IOException {
         GitlabValidator underTest = new GitlabValidator(gitlabClientFactory);
-        GitlabClient gitlabClient = mock(GitlabClient.class);
-        when(gitlabClient.getProject(any())).thenReturn(mock(Project.class));
+        GitlabClient gitlabClient = mock();
+        when(gitlabClient.getProject(any())).thenReturn(mock());
         when(gitlabClientFactory.createClient(any(), any())).thenReturn(gitlabClient);
 
         underTest.validate(projectAlmSettingDto, almSettingDto);

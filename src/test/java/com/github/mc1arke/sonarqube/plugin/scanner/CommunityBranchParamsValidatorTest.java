@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,23 +18,20 @@
  */
 package com.github.mc1arke.sonarqube.plugin.scanner;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
-/**
- * @author Michael Clarke
- */
-public class CommunityBranchParamsValidatorTest {
+class CommunityBranchParamsValidatorTest {
 
     @Test
-    public void testNoMessagesOnValidate() {
+    void shouldReturnNoValidationMessageOnValidData() {
         List<String> messages = new ArrayList<>();
 
         new CommunityBranchParamsValidator().validate(messages);
-        assertEquals(0, messages.size());
+        assertThat(messages).isEmpty();
     }
 }

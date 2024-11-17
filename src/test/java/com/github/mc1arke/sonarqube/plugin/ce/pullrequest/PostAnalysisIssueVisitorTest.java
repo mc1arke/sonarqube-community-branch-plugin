@@ -19,8 +19,6 @@
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -32,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.sonar.api.issue.IssueStatus;
 import org.sonar.api.issue.impact.Severity;
 import org.sonar.api.issue.impact.SoftwareQuality;
@@ -42,7 +40,7 @@ import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
 import org.sonar.core.issue.DefaultIssue;
 import org.sonar.db.protobuf.DbIssues;
 
-public class PostAnalysisIssueVisitorTest {
+class PostAnalysisIssueVisitorTest {
 
     private static final String EXAMPLE_ISSUE_KEY = "key";
     private static final int EXAMPLE_ISSUE_LINE = 1000;
@@ -54,13 +52,13 @@ public class PostAnalysisIssueVisitorTest {
     private static final DbIssues.Locations EXAMPLE_ISSUE_LOCATIONS = DbIssues.Locations.getDefaultInstance();
 
     @Test
-    public void checkAllIssuesCollected() {
+    void checkAllIssuesCollected() {
         PostAnalysisIssueVisitor testCase = new PostAnalysisIssueVisitor();
 
         List<PostAnalysisIssueVisitor.ComponentIssue> expected = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            DefaultIssue issue = mock(DefaultIssue.class);
-            Component component = mock(Component.class);
+            DefaultIssue issue = mock();
+            Component component = mock();
             expected.add(new PostAnalysisIssueVisitor.ComponentIssue(component, new PostAnalysisIssueVisitor.LightIssue(issue)));
 
             testCase.onIssue(component, issue);
@@ -75,7 +73,7 @@ public class PostAnalysisIssueVisitorTest {
     }
 
     private DefaultIssue exampleDefaultIssue() {
-        DefaultIssue defaultIssue = mock(DefaultIssue.class);
+        DefaultIssue defaultIssue = mock();
         when(defaultIssue.key()).thenReturn(EXAMPLE_ISSUE_KEY);
         when(defaultIssue.getLine()).thenReturn(EXAMPLE_ISSUE_LINE);
         when(defaultIssue.getMessage()).thenReturn(EXAMPLE_ISSUE_MESSAGE);
@@ -88,10 +86,10 @@ public class PostAnalysisIssueVisitorTest {
     }
 
     @Test
-    public void testLightIssueMapping() {
+    void testLightIssueMapping() {
         // mock a DefaultIssue
         DefaultIssue defaultIssue = exampleDefaultIssue();
-        Component component = mock(Component.class);
+        Component component = mock();
 
         // map the DefaultIssue into a LightIssue (using PostAnalysisIssueVisitor to workaround private constructor)
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
@@ -123,9 +121,9 @@ public class PostAnalysisIssueVisitorTest {
     }
 
     @Test
-    public void testEqualLightIssues() {
+    void shouldReturnEqualsForSameIssueContents() {
         DefaultIssue defaultIssue = exampleDefaultIssue();
-        Component component = mock(Component.class);
+        Component component = mock();
 
         // map the DefaultIssue into two equal LightIssues
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
@@ -135,18 +133,18 @@ public class PostAnalysisIssueVisitorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue2 = visitor.getIssues().get(1).getIssue();
 
         // assert equality
-        assertEquals(lightIssue1, lightIssue2);
-        assertEquals(lightIssue1.hashCode(), lightIssue2.hashCode());
+        assertThat(lightIssue1).isEqualTo(lightIssue2)
+            .hasSameHashCodeAs(lightIssue2)
 
         // also assert equality on identity
-        assertEquals(lightIssue1, lightIssue1);
-        assertEquals(lightIssue1.hashCode(), lightIssue1.hashCode());
+            .isEqualTo(lightIssue1)
+            .hasSameHashCodeAs(lightIssue1);
     }
 
     @Test
-    public void testDifferentLightIssues() {
+    void shouldNotReturnEqualsForDifferentIssueContents() {
         DefaultIssue defaultIssue = exampleDefaultIssue();
-        Component component = mock(Component.class);
+        Component component = mock();
 
         // map the DefaultIssue into a first LightIssue
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
@@ -159,52 +157,52 @@ public class PostAnalysisIssueVisitorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue2 = visitor.getIssues().get(1).getIssue();
 
         // assert difference
-        assertNotEquals(lightIssue1, lightIssue2);
-        assertNotEquals(lightIssue1.hashCode(), lightIssue2.hashCode());
+        assertThat(lightIssue1).isNotEqualTo(lightIssue2)
+            .doesNotHaveSameHashCodeAs(lightIssue2)
 
         // also assert difference with unrelated objects, and null
-        assertNotEquals(lightIssue1, new Object());
-        assertNotEquals(lightIssue1, null);
+            .isNotEqualTo(new Object())
+            .isNotEqualTo(null);
         
     }
 
     @Test
-    public void shouldReturnScmInfoForFileComponent() {
-        Component component = mock(Component.class);
+    void shouldReturnScmInfoForFileComponent() {
+        Component component = mock();
         when(component.getType()).thenReturn(Component.Type.FILE);
-        ReportAttributes reportAttributes = mock(ReportAttributes.class);
+        ReportAttributes reportAttributes = mock();
         when(reportAttributes.getScmPath()).thenReturn(Optional.of("path"));
         when(component.getReportAttributes()).thenReturn(reportAttributes);
 
-        PostAnalysisIssueVisitor.LightIssue issue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue = mock();
         PostAnalysisIssueVisitor.ComponentIssue underTest = new PostAnalysisIssueVisitor.ComponentIssue(component, issue);
 
         assertThat(underTest.getScmPath()).contains("path");
     }
 
     @Test
-    public void shouldReturnNoScmInfoForNonFileComponent() {
-        Component component = mock(Component.class);
+    void shouldReturnNoScmInfoForNonFileComponent() {
+        Component component = mock();
         when(component.getType()).thenReturn(Component.Type.PROJECT);
-        ReportAttributes reportAttributes = mock(ReportAttributes.class);
+        ReportAttributes reportAttributes = mock();
         when(reportAttributes.getScmPath()).thenReturn(Optional.of("path"));
         when(component.getReportAttributes()).thenReturn(reportAttributes);
 
-        PostAnalysisIssueVisitor.LightIssue issue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue = mock();
         PostAnalysisIssueVisitor.ComponentIssue underTest = new PostAnalysisIssueVisitor.ComponentIssue(component, issue);
 
         assertThat(underTest.getScmPath()).isEmpty();
     }
 
     @Test
-    public void shouldReturnNoScmInfoForFileComponentWithNoInfo() {
-        Component component = mock(Component.class);
+    void shouldReturnNoScmInfoForFileComponentWithNoInfo() {
+        Component component = mock();
         when(component.getType()).thenReturn(Component.Type.FILE);
-        ReportAttributes reportAttributes = mock(ReportAttributes.class);
+        ReportAttributes reportAttributes = mock();
         when(reportAttributes.getScmPath()).thenReturn(Optional.empty());
         when(component.getReportAttributes()).thenReturn(reportAttributes);
 
-        PostAnalysisIssueVisitor.LightIssue issue = mock(PostAnalysisIssueVisitor.LightIssue.class);
+        PostAnalysisIssueVisitor.LightIssue issue = mock();
         PostAnalysisIssueVisitor.ComponentIssue underTest = new PostAnalysisIssueVisitor.ComponentIssue(component, issue);
 
         assertThat(underTest.getScmPath()).isEmpty();

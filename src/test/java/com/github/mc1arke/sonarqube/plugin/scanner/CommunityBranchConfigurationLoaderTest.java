@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Michael Clarke
+ * Copyright (C) 2020-2024 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,17 +42,17 @@ import org.sonar.scanner.scan.branch.ProjectBranches;
  */
 class CommunityBranchConfigurationLoaderTest {
 
-    private final System2 system2 = mock(System2.class);
-    private final BranchConfigurationFactory branchConfigurationFactory = mock(BranchConfigurationFactory.class);
-    private final BranchAutoConfigurer branchAutoConfigurer = mock(BranchAutoConfigurer.class);
+    private final System2 system2 = mock();
+    private final BranchConfigurationFactory branchConfigurationFactory = mock();
+    private final BranchAutoConfigurer branchAutoConfigurer = mock();
     private final BranchConfigurationLoader testCase = new CommunityBranchConfigurationLoader(system2, branchConfigurationFactory, List.of(branchAutoConfigurer));
 
     @Test
     void shouldReturnResultFromAutoConfigurerIfPresentAndNoParametersSpecified() {
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        BranchConfiguration branchConfiguration = mock();
         when(branchAutoConfigurer.detectConfiguration(any(), any())).thenReturn(Optional.of(branchConfiguration));
 
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         BranchConfiguration actual = testCase.load(Map.of(), projectBranches);
 
@@ -65,7 +65,7 @@ class CommunityBranchConfigurationLoaderTest {
     void shouldReturnDefaultBranchIfAutoConfigurerNoResultAndNoParametersSpecified() {
         when(branchAutoConfigurer.detectConfiguration(any(), any())).thenReturn(Optional.empty());
 
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
+        ProjectBranches projectBranches = mock();
 
         BranchConfiguration actual = testCase.load(Map.of(), projectBranches);
 
@@ -76,8 +76,8 @@ class CommunityBranchConfigurationLoaderTest {
 
     @Test
     void shouldCreateBranchConfigurationIfAnyBranchPropertiesSet() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        ProjectBranches projectBranches = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createBranchConfiguration(any(), any())).thenReturn(branchConfiguration);
 
         BranchConfiguration actual = testCase.load(Map.of("sonar.branch.name", "branch", "sonar.branch.target", "target"), projectBranches);
@@ -89,8 +89,8 @@ class CommunityBranchConfigurationLoaderTest {
 
     @Test
     void shouldCreatePullConfigurationIfAnyPullRequestPropertiesSet() {
-        ProjectBranches projectBranches = mock(ProjectBranches.class);
-        BranchConfiguration branchConfiguration = mock(BranchConfiguration.class);
+        ProjectBranches projectBranches = mock();
+        BranchConfiguration branchConfiguration = mock();
         when(branchConfigurationFactory.createPullRequestConfiguration(any(), any(), any(), any())).thenReturn(branchConfiguration);
 
         BranchConfiguration actual = testCase.load(Map.of("sonar.pullrequest.key", "key", "sonar.pullrequest.branch", "source", "sonar.pullrequest.base", "target"), projectBranches);
@@ -102,17 +102,17 @@ class CommunityBranchConfigurationLoaderTest {
 
     @Test
     void shouldThrowErrorIfBothBranchAndPullRequestParametersPresent() {
-        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.key", "key", "sonar.pullrequest.branch", "source", "sonar.branch.name", "branch"), mock(ProjectBranches.class))).hasMessage("sonar.pullrequest and sonar.branch parameters should not be specified in the same scan");
+        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.key", "key", "sonar.pullrequest.branch", "source", "sonar.branch.name", "branch"), mock())).hasMessage("sonar.pullrequest and sonar.branch parameters should not be specified in the same scan");
     }
 
     @Test
     void shouldThrowErrorIfPullRequestAnalysisWithoutPullRequestKey() {
-        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.base", "target"), mock(ProjectBranches.class))).hasMessage("sonar.pullrequest.key is required for a pull request analysis");
+        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.base", "target"), mock())).hasMessage("sonar.pullrequest.key is required for a pull request analysis");
     }
 
     @Test
     void shouldThrowErrorIfPullRequestAnalysisWithoutPullRequestBranch() {
-        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.key", "key"), mock(ProjectBranches.class))).hasMessage("sonar.pullrequest.branch is required for a pull request analysis");
+        assertThatThrownBy(() -> testCase.load(Map.of("sonar.pullrequest.key", "key"), mock())).hasMessage("sonar.pullrequest.branch is required for a pull request analysis");
     }
 
 }

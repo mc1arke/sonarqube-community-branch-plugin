@@ -74,25 +74,25 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
     private final String issueKeyVal = "issueKeyVal";
     private final String projectName = "Project Name";
 
-    private final ProjectAlmSettingDto projectAlmSettingDto = mock(ProjectAlmSettingDto.class);
-    private final AlmSettingDto almSettingDto = mock(AlmSettingDto.class);
-    private final ScmInfoRepository scmInfoRepository = mock(ScmInfoRepository.class);
-    private final Settings settings = mock(Settings.class);
-    private final Encryption encryption = mock(Encryption.class);
-    private final ReportGenerator reportGenerator = mock(ReportGenerator.class);
-    private final MarkdownFormatterFactory formatterFactory = mock(MarkdownFormatterFactory.class);
+    private final ProjectAlmSettingDto projectAlmSettingDto = mock();
+    private final AlmSettingDto almSettingDto = mock();
+    private final ScmInfoRepository scmInfoRepository = mock();
+    private final Settings settings = mock();
+    private final Encryption encryption = mock();
+    private final ReportGenerator reportGenerator = mock();
+    private final MarkdownFormatterFactory formatterFactory = mock();
     private final AzureDevOpsPullRequestDecorator pullRequestDecorator = new AzureDevOpsPullRequestDecorator(scmInfoRepository, new DefaultAzureDevopsClientFactory(settings), reportGenerator, formatterFactory);
-    private final AnalysisDetails analysisDetails = mock(AnalysisDetails.class);
+    private final AnalysisDetails analysisDetails = mock();
 
-    private final PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock(PostAnalysisIssueVisitor.ComponentIssue.class);
-    private final PostAnalysisIssueVisitor.LightIssue defaultIssue = mock(PostAnalysisIssueVisitor.LightIssue.class);
-    private final Component component = mock(Component.class);
+    private final PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
+    private final PostAnalysisIssueVisitor.LightIssue defaultIssue = mock();
+    private final Component component = mock();
 
     @BeforeEach
     void setUp() {
         when(settings.getEncryption()).thenReturn(encryption);
-        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(mock(AnalysisIssueSummary.class));
-        when(reportGenerator.createAnalysisSummary(any())).thenReturn(mock(AnalysisSummary.class));
+        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(mock());
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(mock());
     }
 
     private void configureTestDefaults() {
@@ -106,16 +106,16 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
         when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
         when(analysisDetails.getIssues()).thenReturn(List.of(componentIssue));
 
-        AnalysisSummary analysisSummary = mock(AnalysisSummary.class);
+        AnalysisSummary analysisSummary = mock();
         when(analysisSummary.format(any())).thenReturn("analysis summary");
         when(analysisSummary.getDashboardUrl()).thenReturn("http://sonar:9000/sonar/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId);
-        AnalysisIssueSummary analysisIssueSummary = mock(AnalysisIssueSummary.class);
+        AnalysisIssueSummary analysisIssueSummary = mock();
 
         when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
         when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
 
         DbIssues.Locations locate = DbIssues.Locations.newBuilder().build();
-        RuleKey ruleKey = mock(RuleKey.class);
+        RuleKey ruleKey = mock();
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
         when(componentIssue.getComponent()).thenReturn(component);
         when(componentIssue.getScmPath()).thenReturn(Optional.of("scmPath"));
@@ -127,9 +127,9 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
         when(defaultIssue.getMessage()).thenReturn(issueMessage);
         when(defaultIssue.getRuleKey()).thenReturn(ruleKey);
         when(defaultIssue.key()).thenReturn(issueKeyVal);
-        Changeset changeset = mock(Changeset.class);
+        Changeset changeset = mock();
         when(changeset.getRevision()).thenReturn("revisionId");
-        ScmInfo scmInfo = mock(ScmInfo.class);
+        ScmInfo scmInfo = mock();
         when(scmInfo.hasChangesetForLine(anyInt())).thenReturn(true);
         when(scmInfo.getChangesetForLine(anyInt())).thenReturn(changeset);
         when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
