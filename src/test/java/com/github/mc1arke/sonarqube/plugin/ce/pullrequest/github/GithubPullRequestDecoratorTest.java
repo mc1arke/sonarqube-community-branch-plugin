@@ -153,7 +153,7 @@ class GithubPullRequestDecoratorTest {
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(gitHub).getRepository("alm-repo");
-        verify(repository).createCheckRun("Project Name Sonarqube Results", "commit-sha");
+        verify(repository).createCheckRun("SonarQube Code Analysis", "commit-sha");
 
         ArgumentCaptor<GHCheckRunBuilder.Output> outputCaptor = ArgumentCaptor.captor();
 
@@ -214,7 +214,7 @@ class GithubPullRequestDecoratorTest {
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(gitHub).getRepository("alm-repo");
-        verify(repository).createCheckRun("Project Name Sonarqube Results", "commit-sha");
+        verify(repository).createCheckRun("SonarQube Code Analysis", "commit-sha");
 
         ArgumentCaptor<GHCheckRunBuilder.Output> outputCaptor = ArgumentCaptor.captor();
 

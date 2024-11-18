@@ -102,7 +102,7 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
             );
         }
 
-        repository.createCheckRun(String.format("%s Sonarqube Results", analysisDetails.getAnalysisProjectName()), analysisDetails.getCommitSha())
+        repository.createCheckRun("SonarQube Code Analysis", analysisDetails.getCommitSha())
             .withStartedAt(analysisDetails.getAnalysisDate())
             .withCompletedAt(Date.from(clock.instant()))
             .withStatus(GHCheckRun.Status.COMPLETED)
