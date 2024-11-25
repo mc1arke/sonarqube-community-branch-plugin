@@ -86,6 +86,7 @@ class GithubPullRequestDecoratorTest {
     @BeforeEach
     void setUp() throws IOException {
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("alm-repo");
+        when(projectAlmSettingDto.getMonorepo()).thenReturn(false);
         when(analysisDetails.getPullRequestId()).thenReturn("123");
         when(analysisDetails.getAnalysisDate()).thenReturn(Date.from(clock.instant()));
         when(analysisDetails.getAnalysisId()).thenReturn("analysis-id");
