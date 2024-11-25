@@ -86,6 +86,7 @@ class GithubPullRequestDecoratorTest {
     @BeforeEach
     void setUp() throws IOException {
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("alm-repo");
+        when(projectAlmSettingDto.getMonorepo()).thenReturn(false);
         when(analysisDetails.getPullRequestId()).thenReturn("123");
         when(analysisDetails.getAnalysisDate()).thenReturn(Date.from(clock.instant()));
         when(analysisDetails.getAnalysisId()).thenReturn("analysis-id");
@@ -153,7 +154,7 @@ class GithubPullRequestDecoratorTest {
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(gitHub).getRepository("alm-repo");
-        verify(repository).createCheckRun("Project Name Sonarqube Results", "commit-sha");
+        verify(repository).createCheckRun("SonarQube Code Analysis", "commit-sha");
 
         ArgumentCaptor<GHCheckRunBuilder.Output> outputCaptor = ArgumentCaptor.captor();
 
@@ -214,7 +215,7 @@ class GithubPullRequestDecoratorTest {
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(gitHub).getRepository("alm-repo");
-        verify(repository).createCheckRun("Project Name Sonarqube Results", "commit-sha");
+        verify(repository).createCheckRun("SonarQube Code Analysis", "commit-sha");
 
         ArgumentCaptor<GHCheckRunBuilder.Output> outputCaptor = ArgumentCaptor.captor();
 

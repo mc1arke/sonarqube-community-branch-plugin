@@ -51,6 +51,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator
 
 public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
+    private static final String DEFAULT_CHECK_RUN_NAME = "SonarQube Code Analysis";
     private final GithubClientFactory githubClientFactory;
     private final ReportGenerator reportGenerator;
     private final MarkdownFormatterFactory markdownFormatterFactory;
@@ -71,7 +72,8 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
             GitHub github = githubClientFactory.createClient(almSettingDto, projectAlmSettingDto);
             GHRepository repository = github.getRepository(projectAlmSettingDto.getAlmRepo());
 
-            GHPullRequest pullRequest = createCheckRun(repository,  analysisDetails, Optional.ofNullable(projectAlmSettingDto.getSummaryCommentEnabled()).orElse(false));
+            GHPullRequest pullRequest = createCheckRun(repository, analysisDetails, projectAlmSettingDto.getMonorepo(),
+                    Optional.ofNullable(projectAlmSettingDto.getSummaryCommentEnabled()).orElse(false));
 
             return DecorationResult.builder()
                     .withPullRequestUrl(pullRequest.getHtmlUrl().toExternalForm())
@@ -88,7 +90,8 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
     }
 
 
-    private GHPullRequest createCheckRun(GHRepository repository, AnalysisDetails analysisDetails, boolean postSummaryComment) throws IOException {
+    private GHPullRequest createCheckRun(GHRepository repository, AnalysisDetails analysisDetails,
+            boolean isMonorepo, boolean postSummaryComment) throws IOException {
         AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysisDetails);
         String summary = analysisSummary.format(markdownFormatterFactory);
 
@@ -102,7 +105,10 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
             );
         }
 
-        repository.createCheckRun(String.format("%s Sonarqube Results", analysisDetails.getAnalysisProjectName()), analysisDetails.getCommitSha())
+        String checkRunName = isMonorepo
+            ? String.format("[%s] %s", analysisDetails.getAnalysisProjectName(), DEFAULT_CHECK_RUN_NAME)
+            : DEFAULT_CHECK_RUN_NAME;
+        repository.createCheckRun(checkRunName, analysisDetails.getCommitSha())
             .withStartedAt(analysisDetails.getAnalysisDate())
             .withCompletedAt(Date.from(clock.instant()))
             .withStatus(GHCheckRun.Status.COMPLETED)
