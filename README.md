@@ -71,7 +71,7 @@ provided Dockerfile.
 A `docker-compose.yml` file is provided.
 It uses the env variables available in `.env`.
 
-To use it, clone the repository and execute `docker-compose up`. Note that you need to have docker-compose installed in your system and added to your PATH
+To use it, clone the repository, create a `.env` with `SONARQUBE_VERSION` defined, and execute `docker compose up`. Note that you need to have `docker compose` installed in your system and added to your PATH.
 
 ## Kubernetes with official Helm Chart
 
