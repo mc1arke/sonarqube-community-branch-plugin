@@ -174,7 +174,7 @@ class GithubPullRequestDecoratorTest {
             output.add(new GHCheckRunBuilder.Annotation(
                 "path" + i,
                 i,
-                GHCheckRun.AnnotationLevel.values()[i % GHCheckRun.AnnotationLevel.values().length],
+                GHCheckRun.AnnotationLevel.values()[i % Severity.values().length < 2 ? 0 : i % Severity.values().length > 2 ? 2 : 1],
                 "issue message " + i));
         }
 
@@ -235,7 +235,7 @@ class GithubPullRequestDecoratorTest {
             output.add(new GHCheckRunBuilder.Annotation(
                 "path" + i,
                 i,
-                GHCheckRun.AnnotationLevel.values()[i %  GHCheckRun.AnnotationLevel.values().length],
+                GHCheckRun.AnnotationLevel.values()[i % Severity.values().length < 2 ? 0 : i % Severity.values().length > 2 ? 2 : 1],
                 "issue message " + i));
         }
 

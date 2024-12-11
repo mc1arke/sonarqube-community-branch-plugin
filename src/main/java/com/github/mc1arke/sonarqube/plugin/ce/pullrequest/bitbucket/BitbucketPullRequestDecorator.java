@@ -185,6 +185,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
     private static String toBitbucketSeverity(Severity severity) {
         switch (severity) {
             case HIGH:
+            case BLOCKER:
                 return "HIGH";
             case MEDIUM:
                 return "MEDIUM";
