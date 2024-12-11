@@ -30,6 +30,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
@@ -40,8 +41,8 @@ import org.sonar.db.component.BranchDto;
 import org.sonar.db.component.BranchType;
 import org.sonar.db.component.SnapshotDao;
 import org.sonar.db.component.SnapshotDto;
-import org.sonar.db.measure.LiveMeasureDao;
-import org.sonar.db.measure.LiveMeasureDto;
+import org.sonar.db.measure.MeasureDao;
+import org.sonar.db.measure.MeasureDto;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.db.protobuf.DbProjectBranches;
 import org.sonar.server.component.ComponentFinder;
@@ -130,11 +131,11 @@ class ListActionTest {
             .setUuid("uuid2")
             .setKey("branch2Key")));
 
-        LiveMeasureDao liveMeasureDao = mock();
-        when(dbClient.liveMeasureDao()).thenReturn(liveMeasureDao);
-        when(liveMeasureDao.selectByComponentUuidsAndMetricKeys(any(), any(), any())).thenReturn(List.of(new LiveMeasureDto()
+        MeasureDao measureDao = mock();
+        when(dbClient.measureDao()).thenReturn(measureDao);
+        when(measureDao.selectByComponentUuidsAndMetricKeys(any(), any(), any())).thenReturn(List.of(new MeasureDto()
             .setComponentUuid("uuid1")
-            .setData("live measure")));
+            .addValue(CoreMetrics.ALERT_STATUS_KEY, "live measure")));
 
         SnapshotDao snapshotDao = mock();
         when(dbClient.snapshotDao()).thenReturn(snapshotDao);

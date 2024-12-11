@@ -145,10 +145,12 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
         Severity maxSeverity = sonarqubeSeverity.stream().max(Severity::compareTo).orElseThrow();
         switch (maxSeverity) {
             case LOW:
+            case INFO:
                 return GHCheckRun.AnnotationLevel.NOTICE;
             case MEDIUM:
                 return GHCheckRun.AnnotationLevel.WARNING;
             case HIGH:
+            case BLOCKER:
                 return GHCheckRun.AnnotationLevel.FAILURE;
             default:
                 throw new IllegalArgumentException("Unknown severity value: " + sonarqubeSeverity);
