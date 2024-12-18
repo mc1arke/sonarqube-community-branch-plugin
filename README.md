@@ -164,8 +164,9 @@ on GitHub Actions:
 ```yaml
 - name: SonarQube Scan
   uses: sonarsource/sonarqube-scan-action@<action version>
-  args: >
-    -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+  with:
+    args: >
+      -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
   env:
     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
