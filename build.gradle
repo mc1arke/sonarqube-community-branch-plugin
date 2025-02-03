@@ -66,7 +66,7 @@ dependencies {
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation('org.mockito:mockito-core:5.15.2')
     testImplementation('org.assertj:assertj-core:3.27.3')
-    testImplementation('org.wiremock:wiremock:3.10.0')
+    testImplementation('org.wiremock:wiremock:3.11.0')
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
     runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
