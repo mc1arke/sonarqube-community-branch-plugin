@@ -30,7 +30,6 @@ import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.AlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDao;
-import org.sonar.db.permission.ProjectPermission;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;

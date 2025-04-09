@@ -40,7 +40,7 @@ public abstract class ProjectWsAction implements AlmSettingsWsAction {
     private final ProjectPermission permission;
 
     protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
-        this(actionName, dbClient, componentFinder, userSession, ProjectPermission.ADMIN);
+        this(actionName, dbClient, componentFinder, userSession, UserRole.ADMIN);
     }
 
     protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, ProjectPermission permission) {

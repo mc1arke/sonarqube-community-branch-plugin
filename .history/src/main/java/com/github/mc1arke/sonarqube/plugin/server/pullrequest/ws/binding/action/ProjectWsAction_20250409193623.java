@@ -21,10 +21,10 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
+import org.sonar.db.permission.ProjectPermission;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.project.ProjectDto;
-import org.sonar.db.permission.ProjectPermission;
 import org.sonar.server.almsettings.ws.AlmSettingsWsAction;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
@@ -40,10 +40,10 @@ public abstract class ProjectWsAction implements AlmSettingsWsAction {
     private final ProjectPermission permission;
 
     protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
-        this(actionName, dbClient, componentFinder, userSession, ProjectPermission.ADMIN);
+        this(actionName, dbClient, componentFinder, userSession, UserRole.ADMIN);
     }
 
-    protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, ProjectPermission permission) {
+    protected ProjectWsAction(String actionName, DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, String permission) {
         super();
         this.actionName = actionName;
         this.dbClient = dbClient;
