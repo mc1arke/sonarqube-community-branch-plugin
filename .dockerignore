@@ -1,4 +1,9 @@
+# Java
 /build/
 /.idea/
 /.gradle/
 /out/
+
+# JavaScript
+node_modules/
+/sonarqube-webapp/libs/sq-server-addons

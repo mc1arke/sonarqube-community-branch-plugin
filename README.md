@@ -173,5 +173,8 @@ download the files from this location and host them themself.
 
 # Building the plugin from source
 
-If you want to try and test the current branch or build it for your development execute `./gradlew clean build`
-inside of the project directory. This will put the built jar under `libs/sonarqube-community-branch-plugin*.jar`
+Run the following command to build and run a container with the plugin and modified frontend code:
+
+```bash
+docker compose up --build
+```
