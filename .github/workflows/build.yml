@@ -73,8 +73,46 @@ jobs:
           name: snapshot
           path: build/libs/*.jar
 
-  release:
+  build-ui:
     needs: prep
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      -
+        name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: sonarqube-webapp/yarn.lock
+      -
+        name: Set up symlink
+        run: ./sonarqube-webapp-addons/setup.sh
+      -
+        name: Install dependencies
+        working-directory: sonarqube-webapp
+        run: yarn install --no-immutable
+      -
+        name: Build frontend
+        working-directory: sonarqube-webapp
+        run: yarn nx run sq-server:build
+      -
+        name: Create build artifact
+        working-directory: sonarqube-webapp/apps/sq-server/build/webapp
+        run: zip -r ${{ github.workspace }}/sonarqube-webapp.zip ./*
+      -
+        name: Archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-build
+          path: sonarqube-webapp.zip
+
+  release:
+    needs: [prep, build-ui]
     if: github.event_name != 'pull_request' && needs.prep.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -123,6 +161,12 @@ jobs:
           name: release
           path: build/libs/*.jar
       -
+        name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp-build
+          path: build/ui
+      -
         name: GitHub Release
         uses: softprops/action-gh-release@v2
         if: success()
@@ -132,6 +176,7 @@ jobs:
           draft: true
           files: |
             build/libs/*.jar
+            build/ui/sonarqube-webapp.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
