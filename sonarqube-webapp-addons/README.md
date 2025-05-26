@@ -7,6 +7,9 @@ Most code is refactored from the [`SonarSource/sonarqube-webapp@2025.1.0.10869`]
 ### Setup
 
 ```bash
+# Clone git submodule
+git submodule update --init --recursive
+
 # Create symlink for local development
 ./sonarqube-webapp-addons/setup.sh
 
