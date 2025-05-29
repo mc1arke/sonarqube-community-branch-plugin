@@ -19,40 +19,21 @@
  */
 
 import { Heading } from '@sonarsource/echoes-react';
-import { useMemo } from 'react';
-import { WithAvailableFeaturesProps } from '~sq-server-commons/context/available-features/withAvailableFeatures';
-import { sortBranches } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
-import { DEFAULT_NEW_CODE_DEFINITION_TYPE } from '~sq-server-commons/helpers/new-code-definition';
-import { useNewCodeDefinitionQuery } from '~sq-server-commons/queries/newCodeDefinition';
-import { isBranch } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
-import { AppState } from '~sq-server-commons/types/appstate';
-import { Branch, BranchLike } from '~sq-server-commons/types/branch-like';
-import { Component } from '~sq-server-commons/types/types';
-
+import type { Branch } from '~sq-server-commons/types/branch-like';
+import type { NewCodeDefinition } from '~sq-server-commons/types/new-code-definition';
+import type { Component } from '~sq-server-commons/types/types';
 import BranchList from './BranchList';
 
-interface ProjectNewCodeDefinitionAppProps extends WithAvailableFeaturesProps {
-  appState: AppState;
-  branchLike: Branch;
-  branchLikes: BranchLike[];
+interface Props {
+  branchList: Branch[];
   component: Component;
+  globalNewCodeDefinition: NewCodeDefinition;
+  projectNewCodeDefinition: NewCodeDefinition;
 }
 
-export default function BranchListSection(props: Readonly<ProjectNewCodeDefinitionAppProps>) {
-  const { component, branchLike, branchLikes } = props;
-
-  const { data: globalNewCodeDefinition = { type: DEFAULT_NEW_CODE_DEFINITION_TYPE } } =
-    useNewCodeDefinitionQuery();
-
-  const { data: projectNewCodeDefinition } = useNewCodeDefinitionQuery({
-    branchName: branchLike?.name,
-    projectKey: component.key,
-  });
-
-  const branchList = useMemo(() => {
-    return sortBranches(branchLikes.filter(isBranch));
-  }, [branchLikes]);
+export default function BranchListSection(props: Readonly<Props>) {
+  const { branchList, component, globalNewCodeDefinition, projectNewCodeDefinition } = props;
 
   return (
     <div className="sw-mt-6">
@@ -63,7 +44,7 @@ export default function BranchListSection(props: Readonly<ProjectNewCodeDefiniti
       <BranchList
         branchList={branchList}
         component={component}
-        inheritedSetting={projectNewCodeDefinition ?? globalNewCodeDefinition}
+        inheritedSetting={projectNewCodeDefinition}
         globalNewCodeDefinition={globalNewCodeDefinition}
       />
     </div>
