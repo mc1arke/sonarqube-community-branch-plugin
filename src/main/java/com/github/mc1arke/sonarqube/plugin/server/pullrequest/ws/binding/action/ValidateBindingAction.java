@@ -23,12 +23,12 @@ import com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator.Validato
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
-import org.sonar.api.web.UserRole;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import org.sonar.db.permission.ProjectPermission;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.exceptions.BadConfigurationException;
@@ -41,7 +41,7 @@ public class ValidateBindingAction extends ProjectWsAction {
     private final List<Validator> validators;
 
     public ValidateBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession, List<Validator> validators) {
-        super("validate_binding", dbClient, componentFinder, userSession, UserRole.USER);
+        super("validate_binding", dbClient, componentFinder, userSession, ProjectPermission.USER);
         this.validators = validators;
     }
 

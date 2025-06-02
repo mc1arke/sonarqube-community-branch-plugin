@@ -30,6 +30,7 @@ import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.alm.setting.AlmSettingDao;
 import org.sonar.db.alm.setting.ProjectAlmSettingDao;
+import org.sonar.db.permission.ProjectPermission;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.user.UserSession;
@@ -89,7 +90,7 @@ class DeleteBindingActionTest {
         verify(dbSession).commit();
         verify(projectAlmSettingDao).deleteByProject(dbSession, componentDto);
         verify(response).noContent();
-        verify(userSession).hasEntityPermission("admin", componentDto);
+        verify(userSession).hasEntityPermission(ProjectPermission.ADMIN, componentDto);
 
     }
 

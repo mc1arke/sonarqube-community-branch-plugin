@@ -25,6 +25,7 @@ import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.component.BranchDto;
 import org.sonar.db.component.BranchType;
+import org.sonar.db.permission.ProjectPermission;
 import org.sonar.db.project.ProjectDto;
 import org.sonar.server.component.ComponentCleanerService;
 import org.sonar.server.component.ComponentFinder;
@@ -53,7 +54,7 @@ public class DeleteAction extends ProjectWsAction {
 
     @Override
     public void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
-        userSession.checkLoggedIn().hasEntityPermission(UserRole.ADMIN, project);
+        userSession.checkLoggedIn().hasEntityPermission(ProjectPermission.ADMIN, project);
 
         String pullRequestId = request.mandatoryParam(PULL_REQUEST_PARAMETER);
 
