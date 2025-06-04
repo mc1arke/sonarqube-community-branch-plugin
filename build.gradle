@@ -64,7 +64,7 @@ dependencies {
     customTestRuntime('org.kohsuke:github-api-unbridged:1.327')
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
-    testImplementation('org.mockito:mockito-core:5.15.2')
+    testImplementation('org.mockito:mockito-core:5.18.0')
     testImplementation('org.assertj:assertj-core:3.27.3')
     testImplementation('org.wiremock:wiremock:3.13.0')
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
