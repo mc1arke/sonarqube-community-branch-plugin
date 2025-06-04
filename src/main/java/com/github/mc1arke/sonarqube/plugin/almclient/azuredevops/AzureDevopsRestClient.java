@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -132,7 +133,7 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
 
 
     private <T> T execute(String url, String method, String content, Class<T> type) throws IOException {
-        RequestBuilder requestBuilder = RequestBuilder.create(method)
+        RequestBuilder requestBuilder = RequestBuilder.create(method.toUpperCase(Locale.ENGLISH))
                 .setUri(url)
                 .addHeader("Authorization", "Basic " + authToken)
                 .addHeader("Content-type", ContentType.APPLICATION_JSON.withCharset(StandardCharsets.UTF_8).toString());

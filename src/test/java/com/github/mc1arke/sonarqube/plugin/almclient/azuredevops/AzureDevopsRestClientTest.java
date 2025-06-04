@@ -72,7 +72,7 @@ class AzureDevopsRestClientTest {
 
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
 
-        assertThat(request.getMethod()).isEqualTo("post");
+        assertThat(request.getMethod()).isEqualTo("POST");
         assertThat(request.getUri()).isEqualTo(URI.create("http://url.test/api/project/_apis/git/repositories/repo/pullRequests/101/statuses?api-version=4.1-preview"));
         assertThat(request.getEntity().getContent()).hasContent("json");
     }
@@ -95,7 +95,7 @@ class AzureDevopsRestClientTest {
 
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
 
-        assertThat(request.getMethod()).isEqualTo("post");
+        assertThat(request.getMethod()).isEqualTo("POST");
         assertThat(request.getUri()).isEqualTo(URI.create("http://url.test/api/project%20Id%20With%20Spaces/_apis/git/repositories/repository%20Name%20With%20Spaces/pullRequests/123/statuses?api-version=4.1-preview"));
         assertThat(request.getEntity().getContent()).hasContent("json");
     }
@@ -118,7 +118,7 @@ class AzureDevopsRestClientTest {
 
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
 
-        assertThat(request.getMethod()).isEqualTo("post");
+        assertThat(request.getMethod()).isEqualTo("POST");
         assertThat(request.getUri()).isEqualTo(URI.create("http://test.url/projectId/_apis/git/repositories/repository%20Name/pullRequests/123/threads/321/comments?api-version=4.1"));
         assertThat(request.getEntity().getContent()).hasContent("json");
     }
@@ -143,7 +143,7 @@ class AzureDevopsRestClientTest {
 
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
 
-        assertThat(request.getMethod()).isEqualTo("get");
+        assertThat(request.getMethod()).isEqualTo("GET");
         assertThat(request.getUri()).isEqualTo(URI.create("http://test.url/projectId/_apis/git/repositories/repository%20Name/pullRequests/123?api-version=4.1"));
         assertThat(request.getEntity()).isNull();
         assertThat(result).isSameAs(pullRequest);
