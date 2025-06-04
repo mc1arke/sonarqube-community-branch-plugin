@@ -34,7 +34,7 @@ import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.api.utils.DateUtils;
-import org.sonar.api.web.UserRole;
+import org.sonar.db.permission.ProjectPermission;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.component.BranchDao;
@@ -105,8 +105,8 @@ public class ListAction extends ProjectWsAction {
     }
 
     private static void checkPermission(ProjectDto project, UserSession userSession) {
-        if (userSession.hasEntityPermission(UserRole.USER, project) ||
-            userSession.hasEntityPermission(UserRole.SCAN, project) ||
+        if (userSession.hasEntityPermission(ProjectPermission.USER, project) ||
+            userSession.hasEntityPermission(ProjectPermission.SCAN, project) ||
             userSession.hasPermission(GlobalPermission.SCAN)) {
             return;
         }

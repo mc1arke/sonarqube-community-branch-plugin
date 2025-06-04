@@ -20,12 +20,12 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.ac
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
-import org.sonar.api.web.UserRole;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.component.BranchDto;
 import org.sonar.db.component.BranchType;
 import org.sonar.db.project.ProjectDto;
+import org.sonar.db.permission.ProjectPermission;
 import org.sonar.server.component.ComponentCleanerService;
 import org.sonar.server.component.ComponentFinder;
 import org.sonar.server.exceptions.NotFoundException;
@@ -53,7 +53,7 @@ public class DeleteAction extends ProjectWsAction {
 
     @Override
     public void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
-        userSession.checkLoggedIn().hasEntityPermission(UserRole.ADMIN, project);
+        userSession.checkLoggedIn().hasEntityPermission(ProjectPermission.ADMIN, project);
 
         String pullRequestId = request.mandatoryParam(PULL_REQUEST_PARAMETER);
 
