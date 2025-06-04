@@ -61,7 +61,7 @@ tasks.withType(JavaCompile) {
 
 
 dependencies {
-    customTestRuntime('org.kohsuke:github-api-unbridged:1.326')
+    customTestRuntime('org.kohsuke:github-api-unbridged:1.327')
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation('org.mockito:mockito-core:5.15.2')
