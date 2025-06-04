@@ -34,7 +34,8 @@ Older versions are listed on the Github release page but are no longer supported
 # Features
 
 The plugin is intended to support the
-[features and parameters from the SonarQube documentation](https://docs.sonarqube.org/latest/branches/overview/).
+features and parameters from the SonarQube [branch](https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/branch-analysis/introduction/)
+and [pull request](https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/pull-request-analysis/introduction/) documentation.
 
 # Installation
 
