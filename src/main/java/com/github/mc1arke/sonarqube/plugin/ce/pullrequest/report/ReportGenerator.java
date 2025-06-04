@@ -29,6 +29,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.issue.IssueStatus;
@@ -45,8 +47,11 @@ import org.sonar.server.measure.Rating;
 import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import org.sonar.server.metric.StandardToMQRMetrics;
 
 public class ReportGenerator {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReportGenerator.class);
 
     private static final String NO_DATA_IMAGE_PATH = "common/no-data-16px.png";
     private static final String PASSED_IMAGE_PATH = "common/passed-16px.png";
@@ -119,6 +124,8 @@ public class ReportGenerator {
                 .withNewDuplications(newDuplications)
                 .withFailedQualityGateConditions(failedConditions.stream()
                         .map(ReportGenerator::formatQualityGateCondition)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
                         .collect(Collectors.toList()))
                 .withStatusDescription(QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ? "Passed" : "Failed")
                 .withStatusImageUrl(QualityGate.Status.OK == analysisDetails.getQualityGateStatus()
@@ -164,24 +171,43 @@ public class ReportGenerator {
         return server.getPublicRootUrl() + "/dashboard?id=" + URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8) + "&pullRequest=" + analysisDetails.getPullRequestId();
     }
 
-    private static String formatQualityGateCondition(QualityGate.Condition condition) {
-        Metric<?> metric = CoreMetrics.getMetric(condition.getMetricKey());
+    private static Optional<String> formatQualityGateCondition(QualityGate.Condition condition) {
+        String key = condition.getMetricKey();
+        Optional<Metric> optionalMetric = findMetric(key);
+        if (optionalMetric.isEmpty()) {
+            LOGGER.info("No metric found for key {}, trying to map from MQR to Core equivalent", key);
+            Optional<String> alternativeKey = StandardToMQRMetrics.getEquivalentMetric(key);
+            if (alternativeKey.isPresent()) {
+                String alternative = alternativeKey.get();
+                LOGGER.info("Found alternative metric {} for key {}", alternative, key);
+                optionalMetric = findMetric(alternative);
+            }
+        }
+        if (optionalMetric.isEmpty()) {
+            LOGGER.warn("No alternative metric found for key {}", key);
+            return Optional.empty();
+        }
+        Metric<?> metric = optionalMetric.get();
         if (metric.getType() == Metric.ValueType.RATING) {
-            return String
+            return Optional.of(String
                     .format("%s %s (%s %s)", Rating.valueOf(Integer.parseInt(condition.getValue())), metric.getName(),
                             condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is worse than" :
-                                    "is better than", Rating.valueOf(Integer.parseInt(condition.getErrorThreshold())));
+                                    "is better than", Rating.valueOf(Integer.parseInt(condition.getErrorThreshold()))));
         } else if (metric.getType() == Metric.ValueType.PERCENT) {
             NumberFormat numberFormat = new DecimalFormat("#0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-            return String.format("%s%% %s (%s %s%%)", numberFormat.format(new BigDecimal(condition.getValue())),
+            return Optional.of(String.format("%s%% %s (%s %s%%)", numberFormat.format(new BigDecimal(condition.getValue())),
                     metric.getName(),
                     condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
-                            "is less than", numberFormat.format(new BigDecimal(condition.getErrorThreshold())));
+                            "is less than", numberFormat.format(new BigDecimal(condition.getErrorThreshold()))));
         } else {
-            return String.format("%s %s (%s %s)", condition.getValue(), metric.getName(),
+            return Optional.of(String.format("%s %s (%s %s)", condition.getValue(), metric.getName(),
                     condition.getOperator() == QualityGate.Operator.GREATER_THAN ? "is greater than" :
-                            "is less than", condition.getErrorThreshold());
+                            "is less than", condition.getErrorThreshold()));
         }
+    }
+
+    private static Optional<Metric> findMetric(String key) {
+        return CoreMetrics.getMetrics().stream().filter(metric -> metric.getKey().equals(key)).findFirst();
     }
 
 }

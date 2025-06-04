@@ -151,8 +151,22 @@ class ReportGeneratorTest {
         when(condition8.getOperator()).thenReturn(QualityGate.Operator.GREATER_THAN);
         when(condition8.getErrorThreshold()).thenReturn("1");
 
-        when(analysisDetails.findFailedQualityGateConditions()).thenReturn(Arrays.asList(condition1, condition2, condition3, condition4));
-        when(analysisDetails.findQualityGateCondition(any())).thenAnswer(i -> Stream.of(condition1, condition2, condition3, condition4, condition5, condition6, condition7, condition8)
+        QualityGate.Condition condition9 = mock();
+        when(condition9.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition9.getMetricKey()).thenReturn("unknown-key");
+        when(condition9.getValue()).thenReturn("2");
+        when(condition9.getOperator()).thenReturn(QualityGate.Operator.GREATER_THAN);
+        when(condition9.getErrorThreshold()).thenReturn("0");
+
+        QualityGate.Condition condition10 = mock();
+        when(condition10.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
+        when(condition10.getMetricKey()).thenReturn("software_quality_maintainability_rating");
+        when(condition10.getValue()).thenReturn("2");
+        when(condition10.getOperator()).thenReturn(QualityGate.Operator.GREATER_THAN);
+        when(condition10.getErrorThreshold()).thenReturn("1");
+
+        when(analysisDetails.findFailedQualityGateConditions()).thenReturn(Arrays.asList(condition1, condition2, condition3, condition4, condition9, condition10));
+        when(analysisDetails.findQualityGateCondition(any())).thenAnswer(i -> Stream.of(condition1, condition2, condition3, condition4, condition5, condition6, condition7, condition8, condition9, condition10)
             .filter(condition -> condition.getMetricKey().equals(i.getArgument(0, String.class)))
             .findFirst());
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
@@ -201,7 +215,8 @@ class ReportGeneratorTest {
                         .withFailedQualityGateConditions(List.of("19 Lines to Cover (is less than 20)",
                                 "2 Maintainability Issues (is greater than 0)",
                                 "68.00% Line Coverage (is less than 80.00%)",
-                                "E Security Rating on New Code (is worse than D)"))
+                                "E Security Rating on New Code (is worse than D)",
+                                "B Maintainability Rating (is worse than A)"))
                         .build();
 
         assertThat(underTest.createAnalysisSummary(analysisDetails))
