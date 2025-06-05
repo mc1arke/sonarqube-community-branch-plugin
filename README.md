@@ -46,7 +46,7 @@ __Please ensure you follow the installation instructions for the version of the 
 the README on the relevant release tag.__
 
 Either build the project
-or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases)
+or [download a compatible release version of the plugin JAR and associated sonarqube-webapp.zip](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases)
 .
 
 1. Copy the plugin JAR file to the `extensions/plugins/` directory of your SonarQube instance
@@ -57,7 +57,8 @@ or [download a compatible release version of the plugin JAR](https://github.com/
 3. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce` to
    the `sonar.ce.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
    e.g. `sonar.ce.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce`
-4. Start Sonarqube, and accept the warning about using third-party plugins
+4. Replace the contents of the `web` directory in your Sonarqube installation with the contents of the sonarqube-webapp Zip archive
+5. Start Sonarqube, and accept the warning about using third-party plugins
 
 ## Docker
 
@@ -80,48 +81,42 @@ To use it, clone the repository, create a `.env` with `SONARQUBE_VERSION` define
 
 When using
 [Sonarqube official Helm Chart](https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube),
-you need to add the following settings to your helm values, where `${version}` should be replaced with the plugin
-version (e.g. `1.11.0`). Beware of the changes made in helm chart version [6.1.0](https://github.com/SonarSource/helm-chart-sonarqube/blob/master/charts/sonarqube/CHANGELOG.md#610):
-
-### helm chart version < 6.1.0
+add the following settings to your helm values, where `${version}` should be replaced with the plugin
+version (e.g. `1.24.0`).
 
 ```yaml
-plugins:
-  install:
-    - https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-community-branch-plugin-${version}.jar
-  lib:
-    - sonarqube-community-branch-plugin-${version}.jar
-jvmOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=web"
-jvmCeOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=ce"
-```
+community:
+  enabled: true
 
-### helm chart version >= 6.1.0
-
-```yaml
 plugins:
   install:
     - https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-community-branch-plugin-${version}.jar
 sonarProperties:
   sonar.web.javaAdditionalOpts: "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web"
   sonar.ce.javaAdditionalOpts: "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce"
+
+extraVolumes:
+  - name: webapp
+    emptyDir:
+      sizeLimit: 500Mi
+extraVolumeMounts:
+  - name: webapp
+    mountPath: /opt/sonarqube/web
+extraInitContainers:
+  - name: download-webapp
+    image: busybox:1.37
+    volumeMounts:
+      - name: webapp
+        mountPath: /web
+    command:
+      - sh
+      - -c
+      - wget -O /tmp/sonarqube-webapp.zip https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-webapp.zip &&
+        unzip -o /tmp/sonarqube-webapp.zip -d /web &&
+        chmod -R 755 /web &&
+        chown -R 1000:0 /web &&
+        rm -f /tmp/sonarqube-webapp.zip
 ```
-
-### Issues with file path with persistency
-
-If you set `persistence.enabled=true` on SonarQube chart, the plugin might be copied to this path, based on the helm chart version, mentioned above (`${plugin-path}` equals `lib/common` or `extensions/plugins`):
-
-```
-/opt/sonarqube/${plugin-path}/sonarqube-community-branch-plugin-${version}.jar/sonarqube-community-branch-plugin-${version}.jar
-```
-
-instead of this:
-
-```
-/opt/sonarqube/${plugin-path}/sonarqube-community-branch-plugin-${version}.jar
-```
-
-As a workaround either change the paths in the config above, or exec into the container and move file up the directory
-to match the config.
 
 # Configuration
 
