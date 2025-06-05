@@ -154,6 +154,22 @@ sonar.pullrequest.base = target_branch_name (e.g master)
 pull-request. These properties indicate to sonar that a branch is being analyzed rather than a pull-request so no
 pull-request decoration will be executed.
 
+If you are scanning a GitHub pull request, you will also need to set the `sonar.scm.revision` argument.
+
+For example, using the official [SonarQube Scan](https://github.com/marketplace/actions/official-sonarqube-scan)
+on GitHub Actions:
+
+```yaml
+- name: SonarQube Scan
+  uses: sonarsource/sonarqube-scan-action@<action version>
+  with:
+    args: >
+      -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+  env:
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+```
+
 ## Serving images for PR decoration
 
 By default, images for PR decoration are served as static resources on the SonarQube server as a part of Community
