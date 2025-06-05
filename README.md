@@ -98,7 +98,7 @@ sonarProperties:
 extraVolumes:
   - name: webapp
     emptyDir:
-      sizeLimit: 500Mi
+      sizeLimit: 50Mi
 extraVolumeMounts:
   - name: webapp
     mountPath: /opt/sonarqube/web
