@@ -21,14 +21,14 @@ SonarQube branch features being untested.
 
 Use the following table to find the correct plugin version for each SonarQube version
 
-| SonarQube Version | Plugin Version |
-|-------------------|----------------|
-| 25.4              | 1.24.0         |
-| 24.12 (10.8)      | 1.23.0         |
-| 10.6 - 10.7       | 1.22.0         |
-| 10.5              | 1.20.0         |
-| 10.4              | 1.19.0         |
-| 9.9 (LTS)         | 1.14.0         |
+| SonarQube Version   | Plugin Version |
+| ------------------- | -------------- |
+| 25.3 - 25.5         | 1.24.0         |
+| 24.12 (10.8) - 25.2 | 1.23.0         |
+| 10.6 - 10.7         | 1.22.0         |
+| 10.5                | 1.20.0         |
+| 10.4                | 1.19.0         |
+| 9.9 (LTS)           | 1.14.0         |
 
 Older versions are listed on the Github release page but are no longer supported.
 
