@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.classloader;
 
 import org.sonar.api.Plugin;
-import org.sonar.api.rules.ActiveRule;
+import org.sonar.api.rule.Severity;
 
 import java.util.Arrays;
 
@@ -29,7 +29,7 @@ import java.util.Arrays;
         ElevatedClassLoaderFactory createFactory(Plugin.Context context) {
             return new ClassReferenceElevatedClassLoaderFactory(context.getBootConfiguration()
                                                                         .get(ElevatedClassLoaderFactoryProvider.class
-                                                                                     .getName() + ".targetType").orElse(ActiveRule.class.getName()));
+                                                                                     .getName() + ".targetType").orElse(Severity.class.getName()));
         }
     },
 
