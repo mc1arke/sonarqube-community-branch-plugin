@@ -1,7 +1,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=mc1arke_sonarqube-community-branch-plugin&metric=alert_status)](https://sonarcloud.io/dashboard?id=mc1arke_sonarqube-community-branch-plugin)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/mc1arke/sonarqube-community-branch-plugin/.github/workflows/build.yml?branch=master&logo=github)](https://github.com/mc1arke/sonarqube-community-branch-plugin?workflow=build)
 
-# Sonarqube Community Branch Plugin
+# SonarQube Community Branch Plugin
 
 A plugin for SonarQube to allow branch analysis in the Community version.
 
@@ -21,14 +21,14 @@ SonarQube branch features being untested.
 
 Use the following table to find the correct plugin version for each SonarQube version
 
-| SonarQube Version | Plugin Version |
-|-------------------|----------------|
-| 25.4              | 1.24.0         |
-| 24.12 (10.8)      | 1.23.0         |
-| 10.6 - 10.7       | 1.22.0         |
-| 10.5              | 1.20.0         |
-| 10.4              | 1.19.0         |
-| 9.9 (LTS)         | 1.14.0         |
+| SonarQube Version   | Plugin Version |
+| ------------------- | -------------- |
+| 25.3 - 25.4         | 1.24.0         |
+| 24.12 (10.8) - 25.2 | 1.23.0         |
+| 10.6 - 10.7         | 1.22.0         |
+| 10.5                | 1.20.0         |
+| 10.4                | 1.19.0         |
+| 9.9 (LTS)           | 1.14.0         |
 
 Older versions are listed on the Github release page but are no longer supported.
 
@@ -42,30 +42,31 @@ and [pull request](https://docs.sonarsource.com/sonarqube-server/latest/analyzin
 
 ## Manual Install
 
-__Please ensure you follow the installation instructions for the version of the plugin you're installing by looking at
-the README on the relevant release tag.__
+**Please ensure you follow the installation instructions for the version of the plugin you're installing by looking at
+the README on the relevant release tag.**
 
 Either build the project
-or [download a compatible release version of the plugin JAR](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases)
+or [download a compatible release version of the plugin JAR and associated sonarqube-webapp.zip](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases)
 .
 
 1. Copy the plugin JAR file to the `extensions/plugins/` directory of your SonarQube instance
 2. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web` to
-   the `sonar.web.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
+   the `sonar.web.javaAdditionalOpts` property in your SonarQube installation's `conf/sonar.properties` file,
    e.g. `sonar.web.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web`
    where ${version} is the version of the plugin being worked with. e.g `1.8.0`
 3. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce` to
-   the `sonar.ce.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
+   the `sonar.ce.javaAdditionalOpts` property in your SonarQube installation's `conf/sonar.properties` file,
    e.g. `sonar.ce.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce`
-4. Start Sonarqube, and accept the warning about using third-party plugins
+4. Replace the contents of the `web` directory in your SonarQube installation with the contents of the sonarqube-webapp zip archive
+5. Start SonarQube, and accept the warning about using third-party plugins
 
 ## Docker
 
 The plugin is distributed in
 the [mc1arke/sonarqube-with-community-branch-plugin](https://hub.docker.com/r/mc1arke/sonarqube-with-community-branch-plugin)
-Docker image, with the image versions matching the up-stream Sonarqube image version.
+Docker image, with the image versions matching the up-stream SonarQube image version.
 
-__Note:__ If you're setting the `SONAR_WEB_JAVAADDITIONALOPTS` or `SONAR_CE_JAVAADDITIONALOPTS` environment variables in
+**Note:** If you're setting the `SONAR_WEB_JAVAADDITIONALOPTS` or `SONAR_CE_JAVAADDITIONALOPTS` environment variables in
 your container launch then you'll need to add the `javaagent` configuration to your overrides to match what's in the
 provided Dockerfile.
 
@@ -76,52 +77,46 @@ It uses the env variables available in `.env`.
 
 To use it, clone the repository, create a `.env` with `SONARQUBE_VERSION` defined, and execute `docker compose up`. Note that you need to have `docker compose` installed in your system and added to your PATH.
 
-## Kubernetes with official Helm Chart
+## Kubernetes with the Official Helm Chart
 
-When using
-[Sonarqube official Helm Chart](https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube),
-you need to add the following settings to your helm values, where `${version}` should be replaced with the plugin
-version (e.g. `1.11.0`). Beware of the changes made in helm chart version [6.1.0](https://github.com/SonarSource/helm-chart-sonarqube/blob/master/charts/sonarqube/CHANGELOG.md#610):
-
-### helm chart version < 6.1.0
+When using the
+[SonarQube official Helm Chart](https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube),
+add the following settings to your helm values, where `${version}` should be replaced with the plugin
+version (e.g. `1.24.0`).
 
 ```yaml
-plugins:
-  install:
-    - https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-community-branch-plugin-${version}.jar
-  lib:
-    - sonarqube-community-branch-plugin-${version}.jar
-jvmOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=web"
-jvmCeOpts: "-javaagent:/opt/sonarqube/lib/common/sonarqube-community-branch-plugin-${version}.jar=ce"
-```
+community:
+  enabled: true
 
-### helm chart version >= 6.1.0
-
-```yaml
 plugins:
   install:
     - https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-community-branch-plugin-${version}.jar
 sonarProperties:
   sonar.web.javaAdditionalOpts: "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web"
   sonar.ce.javaAdditionalOpts: "-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce"
+
+extraVolumes:
+  - name: webapp
+    emptyDir:
+      sizeLimit: 50Mi
+extraVolumeMounts:
+  - name: webapp
+    mountPath: /opt/sonarqube/web
+extraInitContainers:
+  - name: download-webapp
+    image: busybox:1.37
+    volumeMounts:
+      - name: webapp
+        mountPath: /web
+    command:
+      - sh
+      - -c
+      - wget -O /tmp/sonarqube-webapp.zip https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/${version}/sonarqube-webapp.zip &&
+        unzip -o /tmp/sonarqube-webapp.zip -d /web &&
+        chmod -R 755 /web &&
+        chown -R 1000:0 /web &&
+        rm -f /tmp/sonarqube-webapp.zip
 ```
-
-### Issues with file path with persistency
-
-If you set `persistence.enabled=true` on SonarQube chart, the plugin might be copied to this path, based on the helm chart version, mentioned above (`${plugin-path}` equals `lib/common` or `extensions/plugins`):
-
-```
-/opt/sonarqube/${plugin-path}/sonarqube-community-branch-plugin-${version}.jar/sonarqube-community-branch-plugin-${version}.jar
-```
-
-instead of this:
-
-```
-/opt/sonarqube/${plugin-path}/sonarqube-community-branch-plugin-${version}.jar
-```
-
-As a workaround either change the paths in the config above, or exec into the container and move file up the directory
-to match the config.
 
 # Configuration
 
@@ -173,5 +168,8 @@ download the files from this location and host them themself.
 
 # Building the plugin from source
 
-If you want to try and test the current branch or build it for your development execute `./gradlew clean build`
-inside of the project directory. This will put the built jar under `libs/sonarqube-community-branch-plugin*.jar`
+Run the following command to build and run a container with the plugin and modified frontend code:
+
+```bash
+docker compose up --build
+```

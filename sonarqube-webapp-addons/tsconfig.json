@@ -1,0 +1,3 @@
+{
+  "extends": "../../apps/sq-server/tsconfig.json"
+}

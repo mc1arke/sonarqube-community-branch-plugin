@@ -1,0 +1,11 @@
+{
+  "name": "sq-server-addons",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/sq-server-addons/src",
+  "projectType": "library",
+  "tags": ["type:bridge", "visibility:public", "scope:server"],
+  "// targets": "to see all targets run: nx show project sq-server-addons --web",
+  "targets": {
+    "format-check": {}
+  }
+}

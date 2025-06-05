@@ -1,0 +1,3 @@
+[submodule "sonarqube-webapp"]
+path = sonarqube-webapp
+url = git@github.com:SonarSource/sonarqube-webapp.git
