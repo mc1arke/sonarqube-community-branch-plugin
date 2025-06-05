@@ -1,7 +1,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=mc1arke_sonarqube-community-branch-plugin&metric=alert_status)](https://sonarcloud.io/dashboard?id=mc1arke_sonarqube-community-branch-plugin)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/mc1arke/sonarqube-community-branch-plugin/.github/workflows/build.yml?branch=master&logo=github)](https://github.com/mc1arke/sonarqube-community-branch-plugin?workflow=build)
 
-# Sonarqube Community Branch Plugin
+# SonarQube Community Branch Plugin
 
 A plugin for SonarQube to allow branch analysis in the Community version.
 
@@ -42,8 +42,8 @@ and [pull request](https://docs.sonarsource.com/sonarqube-server/latest/analyzin
 
 ## Manual Install
 
-__Please ensure you follow the installation instructions for the version of the plugin you're installing by looking at
-the README on the relevant release tag.__
+**Please ensure you follow the installation instructions for the version of the plugin you're installing by looking at
+the README on the relevant release tag.**
 
 Either build the project
 or [download a compatible release version of the plugin JAR and associated sonarqube-webapp.zip](https://github.com/mc1arke/sonarqube-community-branch-plugin/releases)
@@ -51,22 +51,22 @@ or [download a compatible release version of the plugin JAR and associated sonar
 
 1. Copy the plugin JAR file to the `extensions/plugins/` directory of your SonarQube instance
 2. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web` to
-   the `sonar.web.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
+   the `sonar.web.javaAdditionalOpts` property in your SonarQube installation's `conf/sonar.properties` file,
    e.g. `sonar.web.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=web`
    where ${version} is the version of the plugin being worked with. e.g `1.8.0`
 3. Add `-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce` to
-   the `sonar.ce.javaAdditionalOpts` property in your Sonarqube installation's `conf/sonar.properties` file,
+   the `sonar.ce.javaAdditionalOpts` property in your SonarQube installation's `conf/sonar.properties` file,
    e.g. `sonar.ce.javaAdditionalOpts=-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${version}.jar=ce`
-4. Replace the contents of the `web` directory in your Sonarqube installation with the contents of the sonarqube-webapp Zip archive
-5. Start Sonarqube, and accept the warning about using third-party plugins
+4. Replace the contents of the `web` directory in your SonarQube installation with the contents of the sonarqube-webapp zip archive
+5. Start SonarQube, and accept the warning about using third-party plugins
 
 ## Docker
 
 The plugin is distributed in
 the [mc1arke/sonarqube-with-community-branch-plugin](https://hub.docker.com/r/mc1arke/sonarqube-with-community-branch-plugin)
-Docker image, with the image versions matching the up-stream Sonarqube image version.
+Docker image, with the image versions matching the up-stream SonarQube image version.
 
-__Note:__ If you're setting the `SONAR_WEB_JAVAADDITIONALOPTS` or `SONAR_CE_JAVAADDITIONALOPTS` environment variables in
+**Note:** If you're setting the `SONAR_WEB_JAVAADDITIONALOPTS` or `SONAR_CE_JAVAADDITIONALOPTS` environment variables in
 your container launch then you'll need to add the `javaagent` configuration to your overrides to match what's in the
 provided Dockerfile.
 
@@ -77,10 +77,10 @@ It uses the env variables available in `.env`.
 
 To use it, clone the repository, create a `.env` with `SONARQUBE_VERSION` defined, and execute `docker compose up`. Note that you need to have `docker compose` installed in your system and added to your PATH.
 
-## Kubernetes with official Helm Chart
+## Kubernetes with the Official Helm Chart
 
-When using
-[Sonarqube official Helm Chart](https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube),
+When using the
+[SonarQube official Helm Chart](https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube),
 add the following settings to your helm values, where `${version}` should be replaced with the plugin
 version (e.g. `1.24.0`).
 
