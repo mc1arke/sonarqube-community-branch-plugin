@@ -10,8 +10,7 @@ A plugin for SonarQube to allow branch analysis in the Community version.
 This plugin is not maintained or supported by SonarSource and has no official upgrade path for migrating from the
 SonarQube Community Edition to any of the Commercial Editions (Developer, Enterprise, or Data Center Edition). Support
 for any problems is only available through issues on the Github repository or through alternative channels (e.g.
-StackOverflow) and any attempt to request support for this plugin directly from SonarSource or an affiliated channel (
-e.g. Sonar Community forum) is likely to result in your request being closed or ignored.
+StackOverflow) and any attempt to request support for this plugin directly from SonarSource or an affiliated channel (e.g. Sonar Community forum) is likely to result in your request being closed or ignored.
 
 If you plan on migrating your SonarQube data to a commercial edition after using this plugin then please be aware that
 this may result in some or all of your data being lost due to this compatibility of this plugin and the official
@@ -21,14 +20,14 @@ SonarQube branch features being untested.
 
 Use the following table to find the correct plugin version for each SonarQube version
 
-| SonarQube Version   | Plugin Version |
-| ------------------- | -------------- |
-| 25.3 - 25.4         | 1.24.0         |
-| 24.12 (10.8) - 25.2 | 1.23.0         |
-| 10.6 - 10.7         | 1.22.0         |
-| 10.5                | 1.20.0         |
-| 10.4                | 1.19.0         |
-| 9.9 (LTS)           | 1.14.0         |
+| SonarQube Version                 | Plugin Version |
+| --------------------------------- | -------------- |
+| 25.3 - 25.4                       | 1.24.0         |
+| 24.12 (10.8), 25.1 (LTA) and 25.2 | 1.23.0         |
+| 10.6 - 10.7                       | 1.22.0         |
+| 10.5                              | 1.20.0         |
+| 10.4                              | 1.19.0         |
+| 9.9                               | 1.14.0         |
 
 Older versions are listed on the Github release page but are no longer supported.
 
