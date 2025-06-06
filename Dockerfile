@@ -13,7 +13,7 @@ FROM node:22.16-alpine AS webapp-builder
 ARG WORKDIR
 
 COPY ./sonarqube-webapp ${WORKDIR}
-COPY ./sonarqube-webapp-addons ${WORKDIR}/libs/sq-server-addons
+COPY ./sonarqube-webapp-addons ${WORKDIR}/libs/addons
 
 WORKDIR ${WORKDIR}
 RUN yarn install

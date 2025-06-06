@@ -22,11 +22,11 @@ import { Button, ButtonVariety } from '@sonarsource/echoes-react';
 import * as React from 'react';
 import { FormattedMessage } from 'react-intl';
 import { Modal } from '~design-system';
-import { getBranchLikeDisplayName } from '~sq-server-commons/helpers/branch-like';
-import { useDeletBranchMutation } from '~sq-server-commons/queries/branch';
-import { isPullRequest } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
-import { BranchLike } from '~sq-server-commons/types/branch-like';
-import { Component } from '~sq-server-commons/types/types';
+import { getBranchLikeDisplayName } from '~sq-server-shared/helpers/branch-like';
+import { useDeletBranchMutation } from '~sq-server-shared/queries/branch';
+import { isPullRequest } from '~sq-server-shared/sonar-aligned/helpers/branch-like';
+import { BranchLike } from '~sq-server-shared/types/branch-like';
+import { Component } from '~sq-server-shared/types/types';
 
 interface Props {
   branchLike: BranchLike;

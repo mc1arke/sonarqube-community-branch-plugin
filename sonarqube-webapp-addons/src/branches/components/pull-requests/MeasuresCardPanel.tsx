@@ -31,37 +31,37 @@ import {
   TrendDownCircleIcon,
   TrendUpCircleIcon,
 } from '~design-system';
-import { PullRequest } from '~shared/types/branch-like';
-import { MetricKey, MetricType } from '~shared/types/metrics';
-import { getLeakValue } from '~sq-server-commons/components/measure/utils';
-import { DEFAULT_ISSUES_QUERY } from '~sq-server-commons/components/shared/utils';
-import { findMeasure } from '~sq-server-commons/helpers/measures';
-import { getComponentDrilldownUrl } from '~sq-server-commons/helpers/urls';
-import { getBranchLikeQuery } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
-import { formatMeasure } from '~sq-server-commons/sonar-aligned/helpers/measures';
+import { PullRequest } from '~sq-server-shared/types/branch-like';
+import { MetricKey, MetricType } from '~sq-server-shared/sonar-aligned/types/metrics';
+import { getLeakValue } from '~sq-server-shared/components/measure/utils';
+import { DEFAULT_ISSUES_QUERY } from '~sq-server-shared/components/shared/utils';
+import { findMeasure } from '~sq-server-shared/helpers/measures';
+import { getComponentDrilldownUrl } from '~sq-server-shared/helpers/urls';
+import { getBranchLikeQuery } from '~sq-server-shared/sonar-aligned/helpers/branch-like';
+import { formatMeasure } from '~sq-server-shared/sonar-aligned/helpers/measures';
 import {
   getComponentIssuesUrl,
   getComponentSecurityHotspotsUrl,
-} from '~sq-server-commons/sonar-aligned/helpers/urls';
-import { QualityGateStatusConditionEnhanced } from '~sq-server-commons/types/quality-gates';
-import { Component, MeasureEnhanced, QualityGate } from '~sq-server-commons/types/types';
+} from '~sq-server-shared/sonar-aligned/helpers/urls';
+import { QualityGateStatusConditionEnhanced } from '~sq-server-shared/types/quality-gates';
+import { Component, MeasureEnhanced, QualityGate } from '~sq-server-shared/types/types';
 
 import {
   GridContainer,
   StyleMeasuresCard,
   StyleMeasuresCardRightBorder,
   StyledConditionsCard,
-} from '~sq-server-commons/components/overview/BranchSummaryStyles';
-import FailedConditions from '~sq-server-commons/components/overview/FailedConditions';
-import { IssueMeasuresCardInner } from '~sq-server-commons/components/overview/IssueMeasuresCardInner';
-import MeasuresCardNumber from '~sq-server-commons/components/overview/MeasuresCardNumber';
-import MeasuresCardPercent from '~sq-server-commons/components/overview/MeasuresCardPercent';
+} from '~sq-server-shared/components/overview/BranchSummaryStyles';
+import FailedConditions from '~sq-server-shared/components/overview/FailedConditions';
+import { IssueMeasuresCardInner } from '~sq-server-shared/components/overview/IssueMeasuresCardInner';
+import MeasuresCardNumber from '~sq-server-shared/components/overview/MeasuresCardNumber';
+import MeasuresCardPercent from '~sq-server-shared/components/overview/MeasuresCardPercent';
 import {
   MeasurementType,
-  QGStatusEnum as Status,
+  Status,
   getConditionRequiredLabel,
   getMeasurementMetricKey,
-} from '~sq-server-commons/utils/overview-utils';
+} from '~sq-server-shared/utils/overview-utils';
 
 interface Props {
   component: Component;

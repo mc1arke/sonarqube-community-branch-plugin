@@ -21,11 +21,11 @@
 import * as React from 'react';
 import { useIntl } from 'react-intl';
 import { HelperHintIcon, ItemDivider, ItemHeader } from '~design-system';
-import { isDefined } from '~shared/helpers/types';
-import { getBranchLikeKey, isSameBranchLike } from '~sq-server-commons/helpers/branch-like';
-import { translate } from '~sq-server-commons/helpers/l10n';
-import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
-import { BranchLike, BranchLikeTree } from '~sq-server-commons/types/branch-like';
+import { isDefined } from '~sq-server-shared/helpers/types';
+import { getBranchLikeKey, isSameBranchLike } from '~sq-server-shared/helpers/branch-like';
+import { translate } from '~sq-server-shared/helpers/l10n';
+import HelpTooltip from '~sq-server-shared/sonar-aligned/components/controls/HelpTooltip';
+import { BranchLike, BranchLikeTree } from '~sq-server-shared/types/branch-like';
 import MenuItem from './MenuItem';
 
 export interface MenuItemListProps {

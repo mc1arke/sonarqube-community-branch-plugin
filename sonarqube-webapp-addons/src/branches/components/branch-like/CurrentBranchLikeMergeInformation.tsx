@@ -20,8 +20,8 @@
 
 import * as React from 'react';
 import { FormattedMessage } from 'react-intl';
-import { PullRequest } from '~shared/types/branch-like';
-import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
+import { PullRequest } from '~sq-server-shared/types/branch-like';
+import { translate, translateWithParameters } from '~sq-server-shared/helpers/l10n';
 
 export interface CurrentBranchLikeMergeInformationProps {
   pullRequest: PullRequest;

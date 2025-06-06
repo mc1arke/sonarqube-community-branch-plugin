@@ -21,16 +21,16 @@
 import * as React from 'react';
 import { DropdownMenu, InputSearch, ItemDivider, Link } from '~design-system';
 import { ComponentQualifier } from '~shared/types/component';
-import { Router } from '~shared/types/router';
-import { getBrancheLikesAsTree, isSameBranchLike } from '~sq-server-commons/helpers/branch-like';
-import { KeyboardKeys } from '~sq-server-commons/helpers/keycodes';
-import { translate } from '~sq-server-commons/helpers/l10n';
-import { getBranchLikeUrl } from '~sq-server-commons/helpers/urls';
-import { withRouter } from '~sq-server-commons/sonar-aligned/components/hoc/withRouter';
-import { isBranch, isPullRequest } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
-import { queryToSearchString } from '~sq-server-commons/sonar-aligned/helpers/urls';
-import { BranchLike, BranchLikeTree } from '~sq-server-commons/types/branch-like';
-import { Component } from '~sq-server-commons/types/types';
+import { Router } from '~sq-server-shared/sonar-aligned/types/router';
+import { getBrancheLikesAsTree, isSameBranchLike } from '~sq-server-shared/helpers/branch-like';
+import { KeyboardKeys } from '~sq-server-shared/helpers/keycodes';
+import { translate } from '~sq-server-shared/helpers/l10n';
+import { getBranchLikeUrl } from '~sq-server-shared/helpers/urls';
+import { withRouter } from '~sq-server-shared/sonar-aligned/components/hoc/withRouter';
+import { isBranch, isPullRequest } from '~sq-server-shared/sonar-aligned/helpers/branch-like';
+import { queryToSearchString } from '~sq-server-shared/sonar-aligned/helpers/urls';
+import { BranchLike, BranchLikeTree } from '~sq-server-shared/types/branch-like';
+import { Component } from '~sq-server-shared/types/types';
 import MenuItemList from './MenuItemList';
 
 interface Props {
