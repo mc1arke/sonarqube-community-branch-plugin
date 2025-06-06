@@ -32,7 +32,7 @@ import {
   TrendUpCircleIcon,
 } from '~design-system';
 import { PullRequest } from '~sq-server-shared/types/branch-like';
-import { MetricKey, MetricType } from '~sq-server-shared/sonar-aligned/types/metrics';
+import { MetricKey, MetricType } from '~shared/types/metrics';
 import { getLeakValue } from '~sq-server-shared/components/measure/utils';
 import { DEFAULT_ISSUES_QUERY } from '~sq-server-shared/components/shared/utils';
 import { findMeasure } from '~sq-server-shared/helpers/measures';
@@ -58,7 +58,7 @@ import MeasuresCardNumber from '~sq-server-shared/components/overview/MeasuresCa
 import MeasuresCardPercent from '~sq-server-shared/components/overview/MeasuresCardPercent';
 import {
   MeasurementType,
-  Status,
+  QGStatusEnum as Status,
   getConditionRequiredLabel,
   getMeasurementMetricKey,
 } from '~sq-server-shared/utils/overview-utils';
