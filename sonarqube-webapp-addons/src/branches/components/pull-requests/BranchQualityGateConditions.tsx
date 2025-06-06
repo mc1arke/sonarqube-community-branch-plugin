@@ -26,25 +26,25 @@ import {
   DEFAULT_ISSUES_QUERY,
   isIssueMeasure,
   propsToIssueParams,
-} from '~sq-server-commons/components/shared/utils';
-import { getLocalizedMetricName, translate } from '~sq-server-commons/helpers/l10n';
-import { getShortType, isDiffMetric } from '~sq-server-commons/helpers/measures';
-import { getComponentDrilldownUrl } from '~sq-server-commons/helpers/urls';
-import { getBranchLikeQuery } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
-import { formatMeasure } from '~sq-server-commons/sonar-aligned/helpers/measures';
+} from '~sq-server-shared/components/shared/utils';
+import { getLocalizedMetricName, translate } from '~sq-server-shared/helpers/l10n';
+import { getShortType, isDiffMetric } from '~sq-server-shared/helpers/measures';
+import { getComponentDrilldownUrl } from '~sq-server-shared/helpers/urls';
+import { getBranchLikeQuery } from '~sq-server-shared/sonar-aligned/helpers/branch-like';
+import { formatMeasure } from '~sq-server-shared/sonar-aligned/helpers/measures';
 import {
   getComponentIssuesUrl,
   getComponentSecurityHotspotsUrl,
-} from '~sq-server-commons/sonar-aligned/helpers/urls';
-import { BranchLike } from '~sq-server-commons/types/branch-like';
-import { IssueType } from '~sq-server-commons/types/issues';
-import { QualityGateStatusConditionEnhanced } from '~sq-server-commons/types/quality-gates';
-import { Component } from '~sq-server-commons/types/types';
+} from '~sq-server-shared/sonar-aligned/helpers/urls';
+import { BranchLike } from '~sq-server-shared/types/branch-like';
+import { IssueType } from '~sq-server-shared/types/issues';
+import { QualityGateStatusConditionEnhanced } from '~sq-server-shared/types/quality-gates';
+import { Component } from '~sq-server-shared/types/types';
 import {
   METRICS_REPORTED_IN_OVERVIEW_CARDS,
   RATING_METRICS_MAPPING,
   RATING_TO_SEVERITIES_MAPPING,
-} from '~sq-server-commons/utils/overview-utils';
+} from '~sq-server-shared/utils/overview-utils';
 
 interface Props {
   branchLike?: BranchLike;

@@ -22,12 +22,12 @@ import { Button, ButtonVariety } from '@sonarsource/echoes-react';
 import * as React from 'react';
 import { FormattedMessage } from 'react-intl';
 import { FlagMessage, Modal } from '~design-system';
-import DocumentationLink from '~sq-server-commons/components/common/DocumentationLink';
-import { DocLink } from '~sq-server-commons/helpers/doc-links';
-import { translate } from '~sq-server-commons/helpers/l10n';
-import { useSetMainBranchMutation } from '~sq-server-commons/queries/branch';
-import { Branch } from '~sq-server-commons/types/branch-like';
-import { Component } from '~sq-server-commons/types/types';
+import DocumentationLink from '~sq-server-shared/components/common/DocumentationLink';
+import { DocLink } from '~sq-server-shared/helpers/doc-links';
+import { translate } from '~sq-server-shared/helpers/l10n';
+import { useSetMainBranchMutation } from '~sq-server-shared/queries/branch';
+import { Branch } from '~sq-server-shared/types/branch-like';
+import { Component } from '~sq-server-shared/types/types';
 
 interface SetAsMainBranchModalProps {
   branch: Branch;

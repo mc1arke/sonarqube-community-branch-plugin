@@ -19,10 +19,10 @@
  */
 
 import * as React from 'react';
-import { getValue } from '~sq-server-commons/api/settings';
-import withAppStateContext from '~sq-server-commons/context/app-state/withAppStateContext';
-import { AppState } from '~sq-server-commons/types/appstate';
-import { SettingsKey } from '~sq-server-commons/types/settings';
+import { getValue } from '~sq-server-shared/api/settings';
+import withAppStateContext from '~sq-server-shared/context/app-state/withAppStateContext';
+import { AppState } from '~sq-server-shared/types/appstate';
+import { SettingsKey } from '~sq-server-shared/types/settings';
 import LifetimeInformationRenderer from './LifetimeInformationRenderer';
 
 interface Props {
