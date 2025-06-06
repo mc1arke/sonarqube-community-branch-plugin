@@ -9,7 +9,8 @@ ENV PLUGIN_VERSION=${PLUGIN_VERSION}
 ADD --chown=sonarqube:root ${DOWNLOAD_BASE_URL}/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar /opt/sonarqube/extensions/plugins/
 
 USER root
-RUN apt-get --no-install-recommends -y install unzip && \
+RUN apt-get update && \
+    apt-get --no-install-recommends -y install unzip && \
     wget ${DOWNLOAD_BASE_URL}/sonarqube-webapp.zip && \
     rm -rf /opt/sonarqube/web/* && \
     unzip sonarqube-webapp.zip -d /opt/sonarqube/web && \
