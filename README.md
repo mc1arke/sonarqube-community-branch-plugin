@@ -3,7 +3,8 @@
 
 # SonarQube Community Branch Plugin
 
-A plugin for SonarQube to allow branch analysis in the Community version.
+A plugin for SonarQube to allow branch analysis and pull request decoration in the
+Community version.
 
 # Support
 
@@ -19,18 +20,10 @@ SonarQube branch features being untested.
 
 # Compatibility
 
-Use the following table to find the correct plugin version for each SonarQube version
-
-| SonarQube Version   | Plugin Version |
-| ------------------- | -------------- |
-| 25.3 - 25.4         | 1.24.0         |
-| 24.12 (10.8) - 25.2 | 1.23.0         |
-| 10.6 - 10.7         | 1.22.0         |
-| 10.5                | 1.20.0         |
-| 10.4                | 1.19.0         |
-| 9.9 (LTS)           | 1.14.0         |
-
-Older versions are listed on the Github release page but are no longer supported.
+The plugin major and minor versions match the SonarQube version it is compatible with,
+e.g. `25.4.0` of the plugin is compatible with SonarQube 25.4.x. Any older plugin
+version is not guaranteed to work, nor are newer SonarQube versions guaranteed to work
+with previous plugin versions.
 
 # Features
 
@@ -82,7 +75,7 @@ To use it, clone the repository, create a `.env` with `SONARQUBE_VERSION` define
 When using the
 [SonarQube official Helm Chart](https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube),
 add the following settings to your helm values, where `${version}` should be replaced with the plugin
-version (e.g. `1.24.0`).
+version (e.g. `25.4.0`).
 
 ```yaml
 community:
