@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2025 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -116,4 +116,11 @@ public interface BitbucketClient {
      * @throws IOException on any issue submitting the build status
      */
     void submitBuildStatus(String commitSha, BuildStatus buildStatus) throws IOException;
+
+    /**
+     * Perform any clean-up of the report key to make it valid for the Bitbucket API.
+     * @param reportKey the key for the current report
+     * @return the key modified to make it the right length or remove invalid characters
+     */
+    String normaliseReportKey(String reportKey);
 }

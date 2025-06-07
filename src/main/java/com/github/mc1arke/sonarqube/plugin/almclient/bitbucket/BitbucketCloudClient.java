@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2025 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -211,6 +211,11 @@ class BitbucketCloudClient implements BitbucketClient {
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
         }
+    }
+
+    @Override
+    public String normaliseReportKey(String reportKey) {
+        return reportKey;
     }
 
     void deleteExistingReport(String commit, String reportKey) throws IOException {

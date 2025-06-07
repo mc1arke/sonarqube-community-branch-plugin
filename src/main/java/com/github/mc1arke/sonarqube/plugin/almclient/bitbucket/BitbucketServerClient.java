@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2025 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -190,6 +190,14 @@ class BitbucketServerClient implements BitbucketClient {
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
         }
+    }
+
+    @Override
+    public String normaliseReportKey(String reportKey) {
+        if (reportKey.length() <= 50) {
+            return reportKey;
+        }
+        return "t-" + reportKey.substring(reportKey.length() - 48);
     }
 
     public ServerProperties getServerProperties() throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,8 @@ import okhttp3.ResponseBody;
 import okio.Buffer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -437,5 +439,15 @@ class BitbucketServerClientUnitTest {
         assertThat(request.url()).hasToString("https://my-server.org/rest/api/1.0/projects/project/repos/repository/commits/commit/builds");
 
         verify(mapper).writeValueAsString(buildStatus);
+    }
+
+    @CsvSource({"shortReportKey, shortReportKey", "fiftyCharactersLongReportKey123456789012, fiftyCharactersLongReportKey123456789012",
+            "moreThanFiftyCharactersLongReportKey12345678901234567890, t-FiftyCharactersLongReportKey12345678901234567890"})
+    @ParameterizedTest
+   void shouldNormaliseReportKeyToFiftyCharacters(String input, String expected) {
+        String result = underTest.normaliseReportKey(input);
+
+        assertThat(result).hasSizeLessThanOrEqualTo(50)
+                .isEqualTo(expected);
     }
 }

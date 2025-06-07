@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2025 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -105,8 +105,10 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisSummary.getSummaryImageUrl()).thenReturn(IMAGE_URL);
         when(analysisSummary.getDashboardUrl()).thenReturn(DASHBOARD_URL);
         when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+        when(client.normaliseReportKey(any())).thenReturn("reportKey");
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
+        verify(client).normaliseReportKey(REPORT_KEY);
         ArgumentCaptor<List<ReportData>> reportDataArgumentCaptor = ArgumentCaptor.captor();
         verify(client).createCodeInsightsAnnotation(ISSUE_KEY, ISSUE_LINE, ISSUE_LINK, ISSUE_MESSAGE, ISSUE_PATH, "HIGH", "BUG");
         verify(client).createLinkDataValue(DASHBOARD_URL);
@@ -115,7 +117,7 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisSummary.getFixedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 12));
         when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L));
         when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69));
-        verify(client).deleteAnnotations(COMMIT, REPORT_KEY);
+        verify(client).deleteAnnotations(COMMIT, "reportKey");
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
@@ -140,17 +142,19 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisSummary.getFixedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 1));
         when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L));
         when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69));
+        when(client.normaliseReportKey(REPORT_KEY)).thenReturn("reportKey");
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
+        verify(client).normaliseReportKey(REPORT_KEY);
         ArgumentCaptor<List<ReportData>> reportDataArgumentCaptor = ArgumentCaptor.captor();
         verify(client).createCodeInsightsAnnotation(ISSUE_KEY, ISSUE_LINE, ISSUE_LINK, ISSUE_MESSAGE, ISSUE_PATH, "HIGH", "BUG");
         verify(client).createLinkDataValue(DASHBOARD_URL);
         verify(client).createCodeInsightsReport(reportDataArgumentCaptor.capture(), eq("Quality Gate passed" + System.lineSeparator()), any(), eq(DASHBOARD_URL), eq(String.format("%s/common/icon.png", IMAGE_URL)), eq(ReportStatus.PASSED));
-        verify(client).deleteAnnotations(COMMIT, REPORT_KEY);
+        verify(client).deleteAnnotations(COMMIT, "reportKey");
 
         ArgumentCaptor<BuildStatus> buildStatusArgumentCaptor = ArgumentCaptor.captor();
         verify(client).submitBuildStatus(eq(COMMIT), buildStatusArgumentCaptor.capture());
-        assertThat(buildStatusArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(new BuildStatus(BuildStatus.State.SUCCESSFUL, REPORT_KEY, "SonarQube", DASHBOARD_URL));
+        assertThat(buildStatusArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(new BuildStatus(BuildStatus.State.SUCCESSFUL, "reportKey", "SonarQube", DASHBOARD_URL));
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()

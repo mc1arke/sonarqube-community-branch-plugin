@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -267,5 +267,11 @@ class BitbucketCloudClientUnitTest {
         assertThat(request.url()).hasToString("https://api.bitbucket.org/2.0/repositories/project/repository/commit/commit/statuses/build");
 
         verify(mapper).writeValueAsString(buildStatus);
+    }
+
+    @Test
+    void shouldReturnOriginalKeyFromNormalisation() {
+        assertThat(underTest.normaliseReportKey("MyVeryLongReportKeyThatWon'tBeModifiedByTheNormalisation"))
+                .isEqualTo("MyVeryLongReportKeyThatWon'tBeModifiedByTheNormalisation");
     }
 }
