@@ -20,7 +20,7 @@
 
 import { useIntl } from 'react-intl';
 import { PullRequest } from '~sq-server-shared/types/branch-like';
-import { MetricKey, MetricType } from '~sq-server-shared/sonar-aligned/types/metrics';
+import { MetricKey, MetricType } from '~shared/types/metrics';
 import { getLeakValue } from '~sq-server-shared/components/measure/utils';
 import { findMeasure } from '~sq-server-shared/helpers/measures';
 import { formatMeasure } from '~sq-server-shared/sonar-aligned/helpers/measures';

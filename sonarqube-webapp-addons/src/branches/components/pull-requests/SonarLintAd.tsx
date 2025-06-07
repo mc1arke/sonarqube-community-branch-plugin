@@ -32,11 +32,11 @@ import {
   SubTitle,
   SubnavigationFlowSeparator,
 } from '~design-system';
-import { Status } from '~shared/types/common';
+import { QGSStatus as Status } from '~shared/types/common';
 import { useCurrentUser } from '~sq-server-shared/context/current-user/CurrentUserContext';
 import useLocalStorage from '~sq-server-shared/hooks/useLocalStorage';
 import { isLoggedIn } from '~sq-server-shared/types/users';
-import { Status as QGStatus } from '~sq-server-shared/utils/overview-utils';
+import { QGStatusEnum as QGStatus } from '~sq-server-shared/utils/overview-utils';
 
 interface Props {
   status?: Status;

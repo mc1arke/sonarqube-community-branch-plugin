@@ -19,7 +19,7 @@
  */
 
 import { LinkStandalone } from '@sonarsource/echoes-react';
-import { Image } from '~sq-server-shared/sonar-aligned/components/common/Image';
+import { Image } from '~adapters/components/common/Image';
 import { isDefined } from '~sq-server-shared/helpers/types';
 import { translate, translateWithParameters } from '~sq-server-shared/helpers/l10n';
 import { isPullRequest } from '~sq-server-shared/sonar-aligned/helpers/branch-like';
