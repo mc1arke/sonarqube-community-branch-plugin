@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2025 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -94,7 +94,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                     analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? ReportStatus.PASSED : ReportStatus.FAILED
             );
 
-            String reportKey = Boolean.TRUE.equals(projectAlmSettingDto.getMonorepo()) ? analysisDetails.getAnalysisProjectKey() : REPORT_KEY;
+            String reportKey = client.normaliseReportKey(Boolean.TRUE.equals(projectAlmSettingDto.getMonorepo()) ? analysisDetails.getAnalysisProjectKey() : REPORT_KEY);
 
             client.uploadReport(analysisDetails.getCommitSha(), codeInsightsReport, reportKey);
 
