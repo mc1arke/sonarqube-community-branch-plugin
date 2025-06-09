@@ -20,12 +20,12 @@
 
 import { LinkStandalone } from '@sonarsource/echoes-react';
 import { Image } from '~adapters/components/common/Image';
-import { isDefined } from '~sq-server-shared/helpers/types';
-import { translate, translateWithParameters } from '~sq-server-shared/helpers/l10n';
-import { isPullRequest } from '~sq-server-shared/sonar-aligned/helpers/branch-like';
-import { AlmKeys } from '~sq-server-shared/types/alm-settings';
-import { BranchLike } from '~sq-server-shared/types/branch-like';
-import { Component } from '~sq-server-shared/types/types';
+import { isDefined } from '~shared/helpers/types';
+import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
+import { isPullRequest } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { AlmKeys } from '~sq-server-commons/types/alm-settings';
+import { BranchLike } from '~sq-server-commons/types/branch-like';
+import { Component } from '~sq-server-commons/types/types';
 
 function getPRUrlAlmKey(url = '') {
   const lowerCaseUrl = url.toLowerCase();

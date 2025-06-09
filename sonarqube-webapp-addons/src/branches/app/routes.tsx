@@ -19,7 +19,7 @@
  */
 
 import { Route } from 'react-router-dom';
-import { lazyLoadComponent } from '~sq-server-shared/sonar-aligned/helpers/lazyLoadComponent';
+import { lazyLoadComponent } from '~shared/helpers/lazyLoadComponent';
 
 const ProjectBranchesApp = lazyLoadComponent(() => import('./ProjectBranchesApp'));
 

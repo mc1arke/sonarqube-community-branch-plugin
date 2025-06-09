@@ -21,12 +21,12 @@
 import classNames from 'classnames';
 import * as React from 'react';
 import { Badge, ItemButton, TextBold, TextMuted } from '~design-system';
-import BranchLikeIcon from '~sq-server-shared/components/icon-mappers/BranchLikeIcon';
-import QualityGateStatus from '~sq-server-shared/components/nav/QualityGateStatus';
-import { getBranchLikeDisplayName } from '~sq-server-shared/helpers/branch-like';
-import { translate } from '~sq-server-shared/helpers/l10n';
-import { isMainBranch } from '~sq-server-shared/sonar-aligned/helpers/branch-like';
-import { BranchLike } from '~sq-server-shared/types/branch-like';
+import BranchLikeIcon from '~sq-server-commons/components/icon-mappers/BranchLikeIcon';
+import QualityGateStatus from '~sq-server-commons/components/nav/QualityGateStatus';
+import { getBranchLikeDisplayName } from '~sq-server-commons/helpers/branch-like';
+import { translate } from '~sq-server-commons/helpers/l10n';
+import { isMainBranch } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { BranchLike } from '~sq-server-commons/types/branch-like';
 
 export interface MenuItemProps {
   branchLike: BranchLike;

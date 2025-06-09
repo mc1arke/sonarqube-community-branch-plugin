@@ -21,8 +21,8 @@
 import * as React from 'react';
 import { FormattedMessage } from 'react-intl';
 import { Link, Spinner } from '~design-system';
-import { translate } from '~sq-server-shared/helpers/l10n';
-import { formatMeasure } from '~sq-server-shared/sonar-aligned/helpers/measures';
+import { translate } from '~sq-server-commons/helpers/l10n';
+import { formatMeasure } from '~sq-server-commons/sonar-aligned/helpers/measures';
 
 export interface LifetimeInformationRendererProps {
   branchAndPullRequestLifeTimeInDays?: string;

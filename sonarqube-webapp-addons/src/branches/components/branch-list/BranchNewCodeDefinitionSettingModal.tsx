@@ -22,24 +22,24 @@ import { Button, ButtonVariety, Label } from '@sonarsource/echoes-react';
 import { noop } from 'lodash';
 import * as React from 'react';
 import { Modal, Spinner } from '~design-system';
-import { setNewCodeDefinition } from '~sq-server-shared/api/newCodeDefinition';
-import NewCodeDefinitionDaysOption from '~sq-server-shared/components/new-code-definition/NewCodeDefinitionDaysOption';
-import NewCodeDefinitionPreviousVersionOption from '~sq-server-shared/components/new-code-definition/NewCodeDefinitionPreviousVersionOption';
-import NewCodeDefinitionSettingAnalysis from '~sq-server-shared/components/new-code-definition/NewCodeDefinitionSettingAnalysis';
-import NewCodeDefinitionSettingReferenceBranch from '~sq-server-shared/components/new-code-definition/NewCodeDefinitionSettingReferenceBranch';
+import { setNewCodeDefinition } from '~sq-server-commons/api/newCodeDefinition';
+import NewCodeDefinitionDaysOption from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionDaysOption';
+import NewCodeDefinitionPreviousVersionOption from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionPreviousVersionOption';
+import NewCodeDefinitionSettingAnalysis from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionSettingAnalysis';
+import NewCodeDefinitionSettingReferenceBranch from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionSettingReferenceBranch';
 import {
   getSettingValue,
   NewCodeDefinitionLevels,
   validateSetting,
-} from '~sq-server-shared/components/new-code-definition/utils';
-import { toISO8601WithOffsetString } from '~sq-server-shared/helpers/dates';
-import { translate, translateWithParameters } from '~sq-server-shared/helpers/l10n';
-import { getNumberOfDaysDefaultValue } from '~sq-server-shared/helpers/new-code-definition';
-import { Branch, BranchWithNewCodePeriod } from '~sq-server-shared/types/branch-like';
+} from '~sq-server-commons/components/new-code-definition/utils';
+import { toISO8601WithOffsetString } from '~sq-server-commons/helpers/dates';
+import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
+import { getNumberOfDaysDefaultValue } from '~sq-server-commons/helpers/new-code-definition';
+import { Branch, BranchWithNewCodePeriod } from '~sq-server-commons/types/branch-like';
 import {
   NewCodeDefinition,
   NewCodeDefinitionType,
-} from '~sq-server-shared/types/new-code-definition';
+} from '~sq-server-commons/types/new-code-definition';
 
 interface Props {
   branch: BranchWithNewCodePeriod;
