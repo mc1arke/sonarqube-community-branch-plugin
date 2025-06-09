@@ -19,10 +19,10 @@
  */
 
 import { Heading } from '@sonarsource/echoes-react';
-import { translate } from '~sq-server-shared/helpers/l10n';
-import type { Branch } from '~sq-server-shared/types/branch-like';
-import type { NewCodeDefinition } from '~sq-server-shared/types/new-code-definition';
-import type { Component } from '~sq-server-shared/types/types';
+import { translate } from '~sq-server-commons/helpers/l10n';
+import type { Branch } from '~sq-server-commons/types/branch-like';
+import type { NewCodeDefinition } from '~sq-server-commons/types/new-code-definition';
+import type { Component } from '~sq-server-commons/types/types';
 import BranchList from './BranchList';
 
 interface Props {

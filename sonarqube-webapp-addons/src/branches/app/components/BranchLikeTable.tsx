@@ -20,11 +20,11 @@
 
 import * as React from 'react';
 import { ActionCell, ContentCell, HelperHintIcon, Table, TableRow } from '~design-system';
-import { getBranchLikeKey } from '~sq-server-shared/helpers/branch-like';
-import { translate } from '~sq-server-shared/helpers/l10n';
-import HelpTooltip from '~sq-server-shared/sonar-aligned/components/controls/HelpTooltip';
-import { BranchLike } from '~sq-server-shared/types/branch-like';
-import { Component } from '~sq-server-shared/types/types';
+import { getBranchLikeKey } from '~sq-server-commons/helpers/branch-like';
+import { translate } from '~sq-server-commons/helpers/l10n';
+import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
+import { BranchLike } from '~sq-server-commons/types/branch-like';
+import { Component } from '~sq-server-commons/types/types';
 import BranchLikeRow from './BranchLikeRow';
 
 const COLUMN_WIDTHS_WITH_PURGE_SETTING = ['auto', '10%', '15%', '15%', '5%'];
