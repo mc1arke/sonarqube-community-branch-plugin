@@ -26,18 +26,18 @@ import {
 } from '@sonarsource/echoes-react';
 import * as React from 'react';
 import { ActionCell, Badge, ContentCell, TableRowInteractive } from '~design-system';
-import BranchLikeIcon from '~sq-server-shared/components/icon-mappers/BranchLikeIcon';
-import DateFromNow from '~sq-server-shared/components/intl/DateFromNow';
-import QualityGateStatus from '~sq-server-shared/components/nav/QualityGateStatus';
-import { getBranchLikeDisplayName } from '~sq-server-shared/helpers/branch-like';
-import { translate, translateWithParameters } from '~sq-server-shared/helpers/l10n';
+import BranchLikeIcon from '~sq-server-commons/components/icon-mappers/BranchLikeIcon';
+import DateFromNow from '~sq-server-commons/components/intl/DateFromNow';
+import QualityGateStatus from '~sq-server-commons/components/nav/QualityGateStatus';
+import { getBranchLikeDisplayName } from '~sq-server-commons/helpers/branch-like';
+import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
 import {
   isBranch,
   isMainBranch,
   isPullRequest,
-} from '~sq-server-shared/sonar-aligned/helpers/branch-like';
-import { BranchLike } from '~sq-server-shared/types/branch-like';
-import { Component } from '~sq-server-shared/types/types';
+} from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { BranchLike } from '~sq-server-commons/types/branch-like';
+import { Component } from '~sq-server-commons/types/types';
 import BranchPurgeSetting from './BranchPurgeSetting';
 
 export interface BranchLikeRowProps {

@@ -34,15 +34,15 @@ import {
   FlagWarningIcon,
   TableRowInteractive,
 } from '~design-system';
-import BranchLikeIcon from '~sq-server-shared/components/icon-mappers/BranchLikeIcon';
-import DateTimeFormatter from '~sq-server-shared/components/intl/DateTimeFormatter';
-import { translate, translateWithParameters } from '~sq-server-shared/helpers/l10n';
-import { isNewCodeDefinitionCompliant } from '~sq-server-shared/helpers/new-code-definition';
-import { BranchWithNewCodePeriod } from '~sq-server-shared/types/branch-like';
+import BranchLikeIcon from '~sq-server-commons/components/icon-mappers/BranchLikeIcon';
+import DateTimeFormatter from '~sq-server-commons/components/intl/DateTimeFormatter';
+import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
+import { isNewCodeDefinitionCompliant } from '~sq-server-commons/helpers/new-code-definition';
+import { BranchWithNewCodePeriod } from '~sq-server-commons/types/branch-like';
 import {
   NewCodeDefinition,
   NewCodeDefinitionType,
-} from '~sq-server-shared/types/new-code-definition';
+} from '~sq-server-commons/types/new-code-definition';
 
 export interface BranchListRowProps {
   branch: BranchWithNewCodePeriod;

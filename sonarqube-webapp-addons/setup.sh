@@ -21,9 +21,9 @@ EOF
 
 function main() {
     cd ./sonarqube-webapp
-    echo "Creating symlink for sonarqube-webapp/libs/addons"
-    rm -rf ./libs/addons
-    ln -s "${CURRENT_DIR}/sonarqube-webapp-addons" ./libs/addons
+    echo "Creating symlink for sonarqube-webapp/libs/sq-server-addons"
+    rm -rf ./libs/sq-server-addons
+    ln -s "${CURRENT_DIR}/sonarqube-webapp-addons" ./libs/sq-server-addons
     override_vite_config
 }
 

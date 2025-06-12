@@ -20,23 +20,23 @@
 
 import { uniq } from 'lodash';
 import { BasicSeparator, CenteredLayout, PageContentFontWrapper, Spinner } from '~design-system';
-import { isDefined } from '~sq-server-shared/helpers/types';
-import { PullRequest } from '~sq-server-shared/types/branch-like';
-import { AnalysisStatus } from '~sq-server-shared/components/overview/AnalysisStatus';
-import IgnoredConditionWarning from '~sq-server-shared/components/overview/IgnoredConditionWarning';
-import LastAnalysisLabel from '~sq-server-shared/components/overview/LastAnalysisLabel';
-import QGStatus from '~sq-server-shared/components/overview/QualityGateStatus';
+import { isDefined } from '~shared/helpers/types';
+import { PullRequest } from '~shared/types/branch-like';
+import { AnalysisStatus } from '~sq-server-commons/components/overview/AnalysisStatus';
+import IgnoredConditionWarning from '~sq-server-commons/components/overview/IgnoredConditionWarning';
+import LastAnalysisLabel from '~sq-server-commons/components/overview/LastAnalysisLabel';
+import QGStatus from '~sq-server-commons/components/overview/QualityGateStatus';
 import {
   enhanceConditionWithMeasure,
   enhanceMeasuresWithMetrics,
-} from '~sq-server-shared/helpers/measures';
-import { useBranchStatusQuery } from '~sq-server-shared/queries/branch';
-import { useMeasuresComponentQuery } from '~sq-server-shared/queries/measures';
-import { useComponentQualityGateQuery } from '~sq-server-shared/queries/quality-gates';
+} from '~sq-server-commons/helpers/measures';
+import { useBranchStatusQuery } from '~sq-server-commons/queries/branch';
+import { useMeasuresComponentQuery } from '~sq-server-commons/queries/measures';
+import { useComponentQualityGateQuery } from '~sq-server-commons/queries/quality-gates';
 
-import '~sq-server-shared/components/overview/styles.css';
-import { Component } from '~sq-server-shared/types/types';
-import { PR_METRICS } from '~sq-server-shared/utils/overview-utils';
+import '~sq-server-commons/components/overview/styles.css';
+import { Component } from '~sq-server-commons/types/types';
+import { PR_METRICS } from '~sq-server-commons/utils/overview-utils';
 import MeasuresCardPanel from './MeasuresCardPanel';
 import PullRequestMetaTopBar from './PullRequestMetaTopBar';
 import SonarLintAd from './SonarLintAd';

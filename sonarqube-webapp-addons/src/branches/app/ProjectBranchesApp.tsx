@@ -21,10 +21,10 @@
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { LargeCenteredLayout, PageContentFontWrapper, Title } from '~design-system';
-import withComponentContext from '~sq-server-shared/context/componentContext/withComponentContext';
-import { translate } from '~sq-server-shared/helpers/l10n';
-import { withBranchLikes } from '~sq-server-shared/queries/branch';
-import { Component } from '~sq-server-shared/types/types';
+import withComponentContext from '~sq-server-commons/context/componentContext/withComponentContext';
+import { translate } from '~sq-server-commons/helpers/l10n';
+import { withBranchLikes } from '~sq-server-commons/queries/branch';
+import { Component } from '~sq-server-commons/types/types';
 import BranchLikeTabs from './components/BranchLikeTabs';
 import LifetimeInformation from './components/LifetimeInformation';
 

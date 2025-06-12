@@ -22,16 +22,16 @@ import { IconGitBranch, IconPullrequest } from '@sonarsource/echoes-react';
 import { useState } from 'react';
 import { ToggleButton, getTabId, getTabPanelId } from '~design-system';
 import { PullRequest } from '~shared/types/branch-like';
-import { sortBranches, sortPullRequests } from '~sq-server-shared/helpers/branch-like';
-import { translate } from '~sq-server-shared/helpers/l10n';
-import { useBranchesQuery } from '~sq-server-shared/queries/branch';
+import { sortBranches, sortPullRequests } from '~sq-server-commons/helpers/branch-like';
+import { translate } from '~sq-server-commons/helpers/l10n';
+import { useBranchesQuery } from '~sq-server-commons/queries/branch';
 import {
   isBranch,
   isMainBranch,
   isPullRequest,
-} from '~sq-server-shared/sonar-aligned/helpers/branch-like';
-import { Branch, BranchLike } from '~sq-server-shared/types/branch-like';
-import { Component } from '~sq-server-shared/types/types';
+} from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { Branch, BranchLike } from '~sq-server-commons/types/branch-like';
+import { Component } from '~sq-server-commons/types/types';
 import BranchLikeTable from './BranchLikeTable';
 import DeleteBranchModal from './DeleteBranchModal';
 import RenameBranchModal from './RenameBranchModal';

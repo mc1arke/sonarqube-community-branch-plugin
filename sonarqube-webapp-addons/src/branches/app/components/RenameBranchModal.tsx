@@ -23,10 +23,10 @@ import * as React from 'react';
 import { useState } from 'react';
 import { FormattedMessage } from 'react-intl';
 import { FormField, InputField, Modal } from '~design-system';
-import { translate } from '~sq-server-shared/helpers/l10n';
-import { useRenameMainBranchMutation } from '~sq-server-shared/queries/branch';
-import { MainBranch } from '~sq-server-shared/types/branch-like';
-import { Component } from '~sq-server-shared/types/types';
+import { translate } from '~sq-server-commons/helpers/l10n';
+import { useRenameMainBranchMutation } from '~sq-server-commons/queries/branch';
+import { MainBranch } from '~sq-server-commons/types/branch-like';
+import { Component } from '~sq-server-commons/types/types';
 
 interface Props {
   branch: MainBranch;
