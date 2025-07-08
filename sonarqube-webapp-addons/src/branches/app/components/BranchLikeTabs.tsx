@@ -29,7 +29,7 @@ import {
   isBranch,
   isMainBranch,
   isPullRequest,
-} from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+} from '~shared/helpers/branch-like';
 import { Branch, BranchLike } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';
 import BranchLikeTable from './BranchLikeTable';

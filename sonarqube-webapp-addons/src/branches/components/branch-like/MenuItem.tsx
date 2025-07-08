@@ -25,7 +25,7 @@ import BranchLikeIcon from '~sq-server-commons/components/icon-mappers/BranchLik
 import QualityGateStatus from '~sq-server-commons/components/nav/QualityGateStatus';
 import { getBranchLikeDisplayName } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
-import { isMainBranch } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { isMainBranch } from '~shared/helpers/branch-like';
 import { BranchLike } from '~sq-server-commons/types/branch-like';
 
 export interface MenuItemProps {

@@ -32,7 +32,7 @@ import {
 import { sortBranches } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
 import { DEFAULT_NEW_CODE_DEFINITION_TYPE } from '~sq-server-commons/helpers/new-code-definition';
-import { isBranch } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { isBranch } from '~shared/helpers/branch-like';
 import { Branch, BranchLike, BranchWithNewCodePeriod } from '~sq-server-commons/types/branch-like';
 import { NewCodeDefinition } from '~sq-server-commons/types/new-code-definition';
 import { Component } from '~sq-server-commons/types/types';

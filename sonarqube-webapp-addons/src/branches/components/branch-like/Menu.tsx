@@ -26,8 +26,8 @@ import { getBrancheLikesAsTree, isSameBranchLike } from '~sq-server-commons/help
 import { KeyboardKeys } from '~sq-server-commons/helpers/keycodes';
 import { translate } from '~sq-server-commons/helpers/l10n';
 import { getBranchLikeUrl } from '~sq-server-commons/helpers/urls';
-import { withRouter } from '~sq-server-commons/sonar-aligned/components/hoc/withRouter';
-import { isBranch, isPullRequest } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { withRouter } from '~shared/components/hoc/withRouter';
+import { isBranch, isPullRequest } from '~shared/helpers/branch-like';
 import { queryToSearchString } from '~sq-server-commons/sonar-aligned/helpers/urls';
 import { BranchLike, BranchLikeTree } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';

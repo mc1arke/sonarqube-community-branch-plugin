@@ -22,7 +22,7 @@ import { LinkStandalone } from '@sonarsource/echoes-react';
 import { Image } from '~adapters/components/common/Image';
 import { isDefined } from '~shared/helpers/types';
 import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
-import { isPullRequest } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { isPullRequest } from '~shared/helpers/branch-like';
 import { AlmKeys } from '~sq-server-commons/types/alm-settings';
 import { BranchLike } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';

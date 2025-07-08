@@ -24,7 +24,7 @@ import { FormattedMessage } from 'react-intl';
 import { Modal } from '~design-system';
 import { getBranchLikeDisplayName } from '~sq-server-commons/helpers/branch-like';
 import { useDeletBranchMutation } from '~sq-server-commons/queries/branch';
-import { isPullRequest } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { isPullRequest } from '~shared/helpers/branch-like';
 import { BranchLike } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';
 

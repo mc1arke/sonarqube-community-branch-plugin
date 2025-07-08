@@ -35,7 +35,7 @@ import {
   TableRowInteractive,
 } from '~design-system';
 import BranchLikeIcon from '~sq-server-commons/components/icon-mappers/BranchLikeIcon';
-import DateTimeFormatter from '~sq-server-commons/components/intl/DateTimeFormatter';
+import DateTimeFormatter from '~shared/components/intl/DateTimeFormatter';
 import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
 import { isNewCodeDefinitionCompliant } from '~sq-server-commons/helpers/new-code-definition';
 import { BranchWithNewCodePeriod } from '~sq-server-commons/types/branch-like';
