@@ -31,7 +31,7 @@ import {
   enhanceMeasuresWithMetrics,
 } from '~sq-server-commons/helpers/measures';
 import { useBranchStatusQuery } from '~sq-server-commons/queries/branch';
-import { useMeasuresComponentQuery } from '~sq-server-commons/queries/measures';
+import { useMeasuresComponentQuery } from '~adapters/queries/measures';
 import { useComponentQualityGateQuery } from '~sq-server-commons/queries/quality-gates';
 
 import '~sq-server-commons/components/overview/styles.css';

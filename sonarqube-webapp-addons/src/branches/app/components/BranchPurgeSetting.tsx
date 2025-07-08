@@ -22,7 +22,7 @@ import { HelperHintIcon, Spinner, Switch } from '~design-system';
 import { translate } from '~sq-server-commons/helpers/l10n';
 import { useExcludeFromPurgeMutation } from '~sq-server-commons/queries/branch';
 import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
-import { isMainBranch } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { isMainBranch } from '~shared/helpers/branch-like';
 import { Branch } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';
 

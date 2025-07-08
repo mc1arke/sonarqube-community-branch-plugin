@@ -30,7 +30,7 @@ import {
 import { getLocalizedMetricName, translate } from '~sq-server-commons/helpers/l10n';
 import { getShortType, isDiffMetric } from '~sq-server-commons/helpers/measures';
 import { getComponentDrilldownUrl } from '~sq-server-commons/helpers/urls';
-import { getBranchLikeQuery } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { getBranchLikeQuery } from '~shared/helpers/branch-like';
 import { formatMeasure } from '~sq-server-commons/sonar-aligned/helpers/measures';
 import {
   getComponentIssuesUrl,

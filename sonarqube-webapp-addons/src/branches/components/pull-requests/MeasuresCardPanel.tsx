@@ -37,14 +37,15 @@ import { getLeakValue } from '~sq-server-commons/components/measure/utils';
 import { DEFAULT_ISSUES_QUERY } from '~sq-server-commons/components/shared/utils';
 import { findMeasure } from '~sq-server-commons/helpers/measures';
 import { getComponentDrilldownUrl } from '~sq-server-commons/helpers/urls';
-import { getBranchLikeQuery } from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+import { getBranchLikeQuery } from '~shared/helpers/branch-like';
 import { formatMeasure } from '~sq-server-commons/sonar-aligned/helpers/measures';
 import {
   getComponentIssuesUrl,
   getComponentSecurityHotspotsUrl,
 } from '~sq-server-commons/sonar-aligned/helpers/urls';
 import { QualityGateStatusConditionEnhanced } from '~sq-server-commons/types/quality-gates';
-import { Component, MeasureEnhanced, QualityGate } from '~sq-server-commons/types/types';
+import { Component, QualityGate } from '~sq-server-commons/types/types';
+import { MeasureEnhanced } from '~shared/types/measures';
 
 import {
   GridContainer,

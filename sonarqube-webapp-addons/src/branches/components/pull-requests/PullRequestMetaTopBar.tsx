@@ -24,7 +24,7 @@ import { MetricKey, MetricType } from '~shared/types/metrics';
 import { getLeakValue } from '~sq-server-commons/components/measure/utils';
 import { findMeasure } from '~sq-server-commons/helpers/measures';
 import { formatMeasure } from '~sq-server-commons/sonar-aligned/helpers/measures';
-import { MeasureEnhanced } from '~sq-server-commons/types/types';
+import { MeasureEnhanced } from '~shared/types/measures';
 import CurrentBranchLikeMergeInformation from '../branch-like/CurrentBranchLikeMergeInformation';
 
 interface Props {

@@ -27,7 +27,7 @@ import {
 import * as React from 'react';
 import { ActionCell, Badge, ContentCell, TableRowInteractive } from '~design-system';
 import BranchLikeIcon from '~sq-server-commons/components/icon-mappers/BranchLikeIcon';
-import DateFromNow from '~sq-server-commons/components/intl/DateFromNow';
+import DateFromNow from '~shared/components/intl/DateFromNow';
 import QualityGateStatus from '~sq-server-commons/components/nav/QualityGateStatus';
 import { getBranchLikeDisplayName } from '~sq-server-commons/helpers/branch-like';
 import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
@@ -35,7 +35,7 @@ import {
   isBranch,
   isMainBranch,
   isPullRequest,
-} from '~sq-server-commons/sonar-aligned/helpers/branch-like';
+} from '~shared/helpers/branch-like';
 import { BranchLike } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';
 import BranchPurgeSetting from './BranchPurgeSetting';
