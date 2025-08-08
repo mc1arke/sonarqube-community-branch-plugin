@@ -47,6 +47,8 @@ import org.sonar.server.measure.Rating;
 import com.github.mc1arke.sonarqube.plugin.CommunityBranchPlugin;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketPullRequestDecorator;
+
 import org.sonar.server.metric.StandardToMQRMetrics;
 
 public class ReportGenerator {
@@ -140,6 +142,10 @@ public class ReportGenerator {
                 .build();
     }
 
+    public boolean isPublishBuildStatus() {
+    	return configuration.getBoolean(BitbucketPullRequestDecorator.PUBLISH_BUILD_STATUS).orElse(true);
+    }
+    
     private String getComponentMeasuresUrlForCodeMetrics(AnalysisDetails analysisDetails, String codeMetricsKey) {
         // https://my-server:port/component_measures?id=some-key&metric=new_coverage&pullRequest=341&view=list
         return server.getPublicRootUrl() +

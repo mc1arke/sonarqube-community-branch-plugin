@@ -69,6 +69,8 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
     private final BitbucketClientFactory bitbucketClientFactory;
     private final ReportGenerator reportGenerator;
 
+	public static final String PUBLISH_BUILD_STATUS = "com.github.cporter259.sonarqube.plugin.branch.build-status";
+
     public BitbucketPullRequestDecorator(BitbucketClientFactory bitbucketClientFactory, ReportGenerator reportGenerator) {
         this.bitbucketClientFactory = bitbucketClientFactory;
         this.reportGenerator = reportGenerator;
@@ -100,8 +102,10 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
             updateAnnotations(client, analysisDetails, reportKey);
 
-            BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
-            client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
+            if (reportGenerator.isPublishBuildStatus()) { 
+	            BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
+	            client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
+            }
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }

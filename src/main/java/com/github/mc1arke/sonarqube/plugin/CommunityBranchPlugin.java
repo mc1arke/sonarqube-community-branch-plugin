@@ -34,6 +34,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.github.GithubClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultGitlabClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.DefaultLinkHeaderReader;
 import com.github.mc1arke.sonarqube.plugin.ce.CommunityReportAnalysisComponentProvider;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.bitbucket.BitbucketPullRequestDecorator;
 import com.github.mc1arke.sonarqube.plugin.scanner.BranchConfigurationFactory;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchConfigurationLoader;
 import com.github.mc1arke.sonarqube.plugin.scanner.CommunityBranchParamsValidator;
@@ -149,6 +150,20 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                                           .description("Base URL used to load the images for the PR comments (please use this only if images are not displayed properly).")
                                           .type(PropertyType.STRING)
                                           .build(),
+
+                                          PropertyDefinition
+                                                  .builder(BitbucketPullRequestDecorator.PUBLISH_BUILD_STATUS)
+                                                  .name("Publish BitBucket Build Status")
+                                                  .description("Publish the SonarQube analysis result as a Build Status to the BitBucket pull request. "
+                                                		  + "This may block the merging of the Pull Request, depending on the merge rules that "
+                                                		  + "are configured for the repository.")
+                                                  .category(CoreProperties.CATEGORY_GENERAL)
+                                                  .subCategory(CoreProperties.SUBCATEGORY_QUALITY_GATE)
+                                                  .type(PropertyType.BOOLEAN)
+                                                  .defaultValue("true")
+                                                  .onQualifiers(Qualifiers.APP, Qualifiers.PROJECT)
+                                                  .index(2)
+                                                  .build(),
                 MonoRepoFeature.class);
 
         }

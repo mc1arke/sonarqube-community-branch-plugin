@@ -6,7 +6,8 @@ ARG WORKDIR
 
 COPY . ${WORKDIR}
 WORKDIR ${WORKDIR}
-RUN gradle build -x test
+RUN cp -vf ${WORKDIR}/certs/cacerts /opt/java/openjdk/lib/security \
+    && gradle build -x test
 
 
 FROM node:22.16-alpine AS webapp-builder
@@ -16,6 +17,11 @@ COPY ./sonarqube-webapp ${WORKDIR}
 COPY ./sonarqube-webapp-addons ${WORKDIR}/libs/sq-server-addons
 
 WORKDIR ${WORKDIR}
+COPY certs/ca-cert-chain.crt ${WORKDIR}/cacert.crt
+RUN cat ${WORKDIR}/cacert.crt >> /etc/ssl/certs/ca-certificates.crt \
+    && apk add --no-cache make g++ python3 py3-pip 
+ENV NODE_EXTRA_CA_CERTS=${WORKDIR}/cacert.crt
+ENV NODEJS_ORG_MIRROR=https://nodejs.org/dist/
 RUN yarn install
 RUN yarn nx run sq-server:build
 

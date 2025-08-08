@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.IssueStatus;
 import org.sonar.api.issue.impact.Severity;
@@ -106,6 +108,7 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisSummary.getDashboardUrl()).thenReturn(DASHBOARD_URL);
         when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
         when(client.normaliseReportKey(any())).thenReturn("reportKey");
+        when(reportGenerator.isPublishBuildStatus()).thenReturn(false);
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(client).normaliseReportKey(REPORT_KEY);
@@ -118,6 +121,7 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L));
         when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69));
         verify(client).deleteAnnotations(COMMIT, "reportKey");
+        verify(client, never()).submitBuildStatus(ArgumentMatchers.any(), ArgumentMatchers.any());
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
@@ -143,6 +147,7 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L));
         when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69));
         when(client.normaliseReportKey(REPORT_KEY)).thenReturn("reportKey");
+        when(reportGenerator.isPublishBuildStatus()).thenReturn(true);
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(client).normaliseReportKey(REPORT_KEY);
