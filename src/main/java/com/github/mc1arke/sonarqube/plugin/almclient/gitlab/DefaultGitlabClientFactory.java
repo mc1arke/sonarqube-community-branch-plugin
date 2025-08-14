@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,19 +18,19 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
+import java.util.Optional;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
-
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.sonar.api.ce.ComputeEngineSide;
 import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
-
-import java.util.Optional;
 
 @ServerSide
 @ComputeEngineSide
@@ -56,6 +56,11 @@ public class DefaultGitlabClientFactory implements GitlabClientFactory {
                 .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "ALM URL must be specified"));
         String apiToken = almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption());
 
-        return new GitlabRestClient(apiURL, apiToken, linkHeaderReader, objectMapper, HttpClients::createSystem);
+        HttpClientBuilder builder = HttpClientBuilder.create().useSystemProperties().setDefaultRequestConfig(RequestConfig.custom()
+                .setConnectionRequestTimeout(30_000)
+                .setConnectTimeout(30_000)
+                .setSocketTimeout(30_000)
+                .build());
+        return new GitlabRestClient(apiURL, apiToken, linkHeaderReader, objectMapper, builder::build);
     }
 }
