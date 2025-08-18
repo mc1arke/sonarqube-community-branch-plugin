@@ -40,7 +40,7 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '25.7.0.110598'
+def sonarqubeVersion = '25.8.0.112029'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
@@ -64,8 +64,8 @@ dependencies {
     customTestRuntime('org.kohsuke:github-api-unbridged:1.327')
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
-    testImplementation('org.mockito:mockito-core:5.18.0')
-    testImplementation('org.assertj:assertj-core:3.27.3')
+    testImplementation('org.mockito:mockito-core:5.19.0')
+    testImplementation('org.assertj:assertj-core:3.27.4')
     testImplementation('org.wiremock:wiremock:3.13.1')
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
     runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.2')
