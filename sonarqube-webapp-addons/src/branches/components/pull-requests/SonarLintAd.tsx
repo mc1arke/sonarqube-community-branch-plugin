@@ -21,13 +21,12 @@
 import styled from '@emotion/styled';
 import React from 'react';
 import { useIntl } from 'react-intl';
+import { Text } from '@sonarsource/echoes-react';
 import {
   Card,
   CheckIcon,
   CloseIcon,
   DiscreetInteractiveIcon,
-  LightLabel,
-  ListItem,
   StandoutLink,
   SubTitle,
   SubnavigationFlowSeparator,
@@ -100,10 +99,10 @@ export default function SonarLintAd({ status }: Readonly<Props>) {
 
 function TickLink({ className, message }: Readonly<{ className?: string; message: string }>) {
   return (
-    <ListItem className={`sw-typo-default ${className}`}>
+    <li className={`sw-typo-default ${className}`}>
       <CheckIcon fill="iconTrendPositive" />
-      <LightLabel className="sw-pl-1">{message}</LightLabel>
-    </ListItem>
+      <Text className="sw-pl-1" isSubtle size="small">{message}</Text>
+    </li>
   );
 }
 
