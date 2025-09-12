@@ -20,7 +20,8 @@
 
 import classNames from 'classnames';
 import * as React from 'react';
-import { Badge, ItemButton, TextBold, TextMuted } from '~design-system';
+import { Text } from '@sonarsource/echoes-react';
+import { Badge, ItemButton } from '~design-system';
 import BranchLikeIcon from '~sq-server-commons/components/icon-mappers/BranchLikeIcon';
 import QualityGateStatus from '~sq-server-commons/components/nav/QualityGateStatus';
 import { getBranchLikeDisplayName } from '~sq-server-commons/helpers/branch-like';
@@ -54,12 +55,12 @@ export function MenuItem(props: Readonly<MenuItemProps>) {
 
           {isMainBranch(branchLike) && (
             <>
-              <TextBold name={displayName} className="sw-ml-4 sw-mr-2" />
+              <Text className="sw-ml-4 sw-mr-2" isHighlighted>{displayName}</Text>
               <Badge variant="default">{translate('branches.main_branch')}</Badge>
             </>
           )}
           {!isMainBranch(branchLike) && (
-            <TextMuted text={displayName} className="sw-ml-3 sw-mr-2" />
+            <Text className="sw-ml-3 sw-mr-2" isSubtle>{displayName}</Text>
           )}
         </div>
         <QualityGateStatus
