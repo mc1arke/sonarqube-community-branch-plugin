@@ -63,6 +63,11 @@ class SetAzureBindingActionTest {
         when(monoRepoParameter.setRequired(anyBoolean())).thenReturn(monoRepoParameter);
         when(newAction.createParam("monorepo")).thenReturn(monoRepoParameter);
 
+        WebService.NewParam inlineAnnotationsParameter = mock();
+        when(inlineAnnotationsParameter.setBooleanPossibleValues()).thenReturn(inlineAnnotationsParameter);
+        when(inlineAnnotationsParameter.setDefaultValue(any())).thenReturn(inlineAnnotationsParameter);
+        when(newAction.createParam("inlineAnnotationsEnabled")).thenReturn(inlineAnnotationsParameter);
+
         SetAzureBindingAction testCase = new SetAzureBindingAction(dbClient, componentFinder, userSession);
         testCase.configureAction(newAction);
 
@@ -71,6 +76,7 @@ class SetAzureBindingActionTest {
         verify(projectNameParameter).setRequired(true);
         verify(almSettingParameter).setRequired(true);
         verify(monoRepoParameter).setRequired(true);
+        verify(inlineAnnotationsParameter).setBooleanPossibleValues();
         verify(monoRepoParameter).setBooleanPossibleValues();
     }
 
@@ -83,11 +89,12 @@ class SetAzureBindingActionTest {
         Request request = mock();
         when(request.mandatoryParam("repositoryName")).thenReturn("repository");
         when(request.mandatoryParam("projectName")).thenReturn("project");
+        when(request.paramAsBoolean("inlineAnnotationsEnabled")).thenReturn(true);
 
         SetAzureBindingAction testCase = new SetAzureBindingAction(dbClient, componentFinder, userSession);
         ProjectAlmSettingDto result = testCase.createProjectAlmSettingDto("projectUuid", "settingsUuid", true, request);
 
-        assertThat(result).usingRecursiveComparison().isEqualTo(new ProjectAlmSettingDto().setProjectUuid("projectUuid").setAlmSettingUuid("settingsUuid").setAlmRepo("repository").setAlmSlug("project").setMonorepo(true));
+        assertThat(result).usingRecursiveComparison().isEqualTo(new ProjectAlmSettingDto().setProjectUuid("projectUuid").setAlmSettingUuid("settingsUuid").setAlmRepo("repository").setAlmSlug("project").setMonorepo(true).setInlineAnnotationsEnabled(true));
 
     }
 }
