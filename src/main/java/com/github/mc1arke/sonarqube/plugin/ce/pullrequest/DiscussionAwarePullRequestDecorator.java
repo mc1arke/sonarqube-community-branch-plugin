@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -72,38 +72,42 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
         C client = createClient(almSettingDto, projectAlmSettingDto);
         
         P pullRequest = getPullRequest(client, almSettingDto, projectAlmSettingDto, analysis);
-        U user = getCurrentUser(client);
-        List<PostAnalysisIssueVisitor.ComponentIssue> openSonarqubeIssues = analysis.getScmReportableIssues();
 
-        List<Triple<D, N, Optional<ProjectIssueIdentifier>>> currentProjectSonarqubeComments = findOpenSonarqubeComments(client,
-                pullRequest,
-                user)
-                .stream()
-                .filter(comment -> !projectAlmSettingDto.getMonorepo() || isCommentFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
-                .collect(Collectors.toList());
+        if (isInlineCommentsEnabled(projectAlmSettingDto)) {
+            U user = getCurrentUser(client);
 
-        List<String> commentKeysForOpenComments = closeOldDiscussionsAndExtractRemainingKeys(client,
-                user,
-                currentProjectSonarqubeComments,
-                openSonarqubeIssues,
-                pullRequest);
+            List<PostAnalysisIssueVisitor.ComponentIssue> openSonarqubeIssues = analysis.getScmReportableIssues();
 
-        List<String> commitIds = getCommitIdsForPullRequest(client, pullRequest);
-        List<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> uncommentedIssues = findIssuesWithoutComments(openSonarqubeIssues,
-                commentKeysForOpenComments)
-                .stream()
-                .map(DiscussionAwarePullRequestDecorator::loadScmPathsForIssues)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(issue -> isIssueFromCommitInCurrentRequest(issue.getLeft(), commitIds, scmInfoRepository))
-                .collect(Collectors.toList());
+            List<Triple<D, N, Optional<ProjectIssueIdentifier>>> currentProjectSonarqubeComments = findOpenSonarqubeComments(client,
+                    pullRequest,
+                    user)
+                    .stream()
+                    .filter(comment -> !projectAlmSettingDto.getMonorepo() || isCommentFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
+                    .collect(Collectors.toList());
 
-        uncommentedIssues.forEach(issue -> submitCommitNoteForIssue(client,
-                pullRequest,
-                issue.getLeft(),
-                issue.getRight(),
-                analysis,
-                reportGenerator.createAnalysisIssueSummary(issue.getLeft(), analysis)));
+            List<String> commentKeysForOpenComments = closeOldDiscussionsAndExtractRemainingKeys(client,
+                    user,
+                    currentProjectSonarqubeComments,
+                    openSonarqubeIssues,
+                    pullRequest);
+
+            List<String> commitIds = getCommitIdsForPullRequest(client, pullRequest);
+            List<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> uncommentedIssues = findIssuesWithoutComments(openSonarqubeIssues,
+                    commentKeysForOpenComments)
+                    .stream()
+                    .map(DiscussionAwarePullRequestDecorator::loadScmPathsForIssues)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(issue -> isIssueFromCommitInCurrentRequest(issue.getLeft(), commitIds, scmInfoRepository))
+                    .collect(Collectors.toList());
+
+            uncommentedIssues.forEach(issue -> submitCommitNoteForIssue(client,
+                    pullRequest,
+                    issue.getLeft(),
+                    issue.getRight(),
+                    analysis,
+                    reportGenerator.createAnalysisIssueSummary(issue.getLeft(), analysis)));
+        }
 
         AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysis);
         submitSummaryNote(client, pullRequest, analysis, analysisSummary);
@@ -113,6 +117,8 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
         createFrontEndUrl(pullRequest, analysis).ifPresent(builder::withPullRequestUrl);
         return builder.build();
     }
+
+    protected abstract boolean isInlineCommentsEnabled(ProjectAlmSettingDto projectAlmSettingDto);
 
     protected abstract C createClient(AlmSettingDto almSettingDto, ProjectAlmSettingDto projectAlmSettingDto);
 

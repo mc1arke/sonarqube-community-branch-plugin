@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Michael Clarke
+ * Copyright (C) 2020-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,8 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
+import java.util.Objects;
+
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
@@ -29,6 +31,7 @@ public class SetAzureBindingAction extends SetBindingAction {
 
     private static final String PROJECT_NAME_PARAMETER = "projectName";
     private static final String REPOSITORY_NAME_PARAMETER = "repositoryName";
+    private static final String INLINE_ANNOTATIONS_ENABLED_PARAMETER = "inlineAnnotationsEnabled";
 
     public SetAzureBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
         super(dbClient, componentFinder, userSession, "set_azure_binding");
@@ -40,6 +43,7 @@ public class SetAzureBindingAction extends SetBindingAction {
         super.configureAction(action);
         action.createParam(REPOSITORY_NAME_PARAMETER).setRequired(true).setMaximumLength(256);
         action.createParam(PROJECT_NAME_PARAMETER).setRequired(true).setMaximumLength(256);
+        action.createParam(INLINE_ANNOTATIONS_ENABLED_PARAMETER).setBooleanPossibleValues().setDefaultValue(true);
     }
 
     @Override
@@ -50,7 +54,8 @@ public class SetAzureBindingAction extends SetBindingAction {
                 .setAlmSettingUuid(settingsUuid)
                 .setAlmRepo(request.mandatoryParam(REPOSITORY_NAME_PARAMETER))
                 .setAlmSlug(request.mandatoryParam(PROJECT_NAME_PARAMETER))
-                .setMonorepo(monoRepo);
+                .setMonorepo(monoRepo)
+                .setInlineAnnotationsEnabled(Objects.requireNonNullElse(request.paramAsBoolean(INLINE_ANNOTATIONS_ENABLED_PARAMETER), true));
     }
 
 }

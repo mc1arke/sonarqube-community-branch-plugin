@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2025 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -79,6 +80,11 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     @Override
     public List<ALM> alm() {
         return Collections.singletonList(ALM.AZURE_DEVOPS);
+    }
+
+    @Override
+    protected boolean isInlineCommentsEnabled(ProjectAlmSettingDto projectAlmSettingDto) {
+        return Objects.requireNonNullElse(projectAlmSettingDto.getInlineAnnotationsEnabled(), true);
     }
 
     @Override
