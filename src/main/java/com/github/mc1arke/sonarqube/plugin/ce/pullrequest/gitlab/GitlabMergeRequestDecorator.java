@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2025 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,6 +65,11 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     @Override
     public List<ALM> alm() {
         return Collections.singletonList(ALM.GITLAB);
+    }
+
+    @Override
+    protected boolean isInlineCommentsEnabled(ProjectAlmSettingDto projectAlmSettingDto) {
+        return true;
     }
 
     @Override

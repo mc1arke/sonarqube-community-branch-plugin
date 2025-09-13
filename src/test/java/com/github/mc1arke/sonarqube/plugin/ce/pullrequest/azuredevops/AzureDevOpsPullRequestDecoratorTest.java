@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Michael Clarke
+ * Copyright (C) 2024-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -155,6 +155,7 @@ class AzureDevOpsPullRequestDecoratorTest {
         when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
         when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(true);
 
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
 
@@ -205,7 +206,7 @@ class AzureDevOpsPullRequestDecoratorTest {
     }
 
     @Test
-    void shouldAddNoteToSummaryCommentThreadIfOtherCommentsInDiscussion() throws IOException {
+    void shouldAddNoteToSummaryCommentThreadIfOtherCommentsInDiscussionAndInlineCommentsEnabled() throws IOException {
         String azureProject = "azure-project";
         String azureRepository = "azure-repo";
         int pullRequestId = 321;
@@ -216,6 +217,7 @@ class AzureDevOpsPullRequestDecoratorTest {
         when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
         when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(true);
 
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
 
@@ -277,6 +279,77 @@ class AzureDevOpsPullRequestDecoratorTest {
     }
 
     @Test
+    void shouldNotAddNoteToSummaryCommentThreadIfOtherCommentsInDiscussionAndInlineCommentsNotEnabled() throws IOException {
+        String azureProject = "azure-project";
+        String azureRepository = "azure-repo";
+        int pullRequestId = 321;
+
+        AnalysisSummary analysisSummary = mock();
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
+
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
+
+        PullRequest pullRequest = mock();
+        when(pullRequest.getId()).thenReturn(pullRequestId);
+        when(azureDevopsClient.retrievePullRequest(any(), any(), anyInt())).thenReturn(pullRequest);
+        Repository repository = mock();
+        Project project = mock();
+        when(pullRequest.getRepository()).thenReturn(repository);
+        when(repository.getProject()).thenReturn(project);
+        when(project.getName()).thenReturn(azureProject);
+        when(repository.getRemoteUrl()).thenReturn("https://remote.url/path/to/repo");
+        when(repository.getName()).thenReturn(azureRepository);
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+
+        IdentityRef sonarqubeUser = mock();
+        when(sonarqubeUser.getId()).thenReturn("sonarqube");
+
+        ConnectionData connectionData = mock();
+        ConnectionData.Identity authenticatedUser = mock();
+        when(authenticatedUser.getId()).thenReturn("sonarqube");
+        when(connectionData.getAuthenticatedUser()).thenReturn(authenticatedUser);
+        when(azureDevopsClient.getConnectionData()).thenReturn(connectionData);
+
+        Comment comment1 = mock();
+        when(comment1.getId()).thenReturn(101);
+        when(comment1.getAuthor()).thenReturn(sonarqubeUser);
+        when(comment1.getContent()).thenReturn("Summary comment" + System.lineSeparator() + "[View in SonarQube](http://host.domain/dashboard?id=projectKey&pullRequest=123)");
+        when(comment1.getCommentType()).thenReturn(CommentType.TEXT);
+
+        IdentityRef otherUser = mock();
+        when(otherUser.getId()).thenReturn("username");
+        Comment comment2 = mock();
+        when(comment2.getId()).thenReturn(102);
+        when(comment2.getAuthor()).thenReturn(otherUser);
+        when(comment2.getContent()).thenReturn("Another comment");
+        when(comment2.getCommentType()).thenReturn(CommentType.TEXT);
+
+        CommentThread discussion = mock();
+        when(discussion.getId()).thenReturn(101);
+        when(discussion.getComments()).thenReturn(List.of(comment1, comment2));
+
+        CommentThread newSummaryThread = mock();
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(newSummaryThread);
+
+        when(azureDevopsClient.retrieveThreads(any(), any(), anyInt())).thenReturn(List.of(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(azureDevopsClient, never()).addCommentToThread(any(), any(), anyInt(), anyInt(), any());
+        verify(azureDevopsClient, never()).deletePullRequestThreadComment(any(), any(), anyInt(), anyInt(), anyInt());
+        verify(azureDevopsClient, never()).retrieveThreads(any(), any(), anyInt());
+    }
+
+    @Test
     void shouldNotTryAndCleanupNonSummaryNote() throws IOException {
         String azureProject = "azure-project";
         String azureRepository = "azure-repo";
@@ -288,6 +361,7 @@ class AzureDevOpsPullRequestDecoratorTest {
         when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
         when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(true);
 
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
 
