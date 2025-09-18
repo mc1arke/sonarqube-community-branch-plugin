@@ -26,6 +26,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsight
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Repository;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.Annotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.BitbucketServerConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.CreateReportRequest;
@@ -193,6 +194,7 @@ class BitbucketServerClientUnitTest {
         assertEquals("GET", request.method());
         assertEquals("https://my-server.org/rest/api/1.0/application-properties", request.url().toString());
         assertEquals("5.0", result.getVersion());
+        assertEquals("no-check", request.header("x-atlassian-token"));
     }
 
     @Test
@@ -358,6 +360,7 @@ class BitbucketServerClientUnitTest {
         Request request = captor.getValue();
         assertEquals("DELETE", request.method());
         assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey/annotations", request.url().toString());
+        assertEquals("no-check", request.header("x-atlassian-token"));
     }
 
     @Test
@@ -449,5 +452,59 @@ class BitbucketServerClientUnitTest {
 
         assertThat(result).hasSizeLessThanOrEqualTo(50)
                 .isEqualTo(expected);
+    }
+
+
+    @Test
+    void shouldRetrieveRepositoryForServer() throws IOException {
+        // given
+        Repository repository = new Repository("repo-slug");
+
+        Call call = mock();
+        Response response = mock();
+        ObjectReader reader = mock();
+        ResponseBody responseBody = mock();
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
+
+        when(client.newCall(any())).thenReturn(call);
+        when(call.execute()).thenReturn(response);
+        when(response.isSuccessful()).thenReturn(true);
+        when(response.body()).thenReturn(responseBody);
+        when(responseBody.string()).thenReturn("{\"slug\": \"repo-slug\"}");
+
+        when(mapper.reader()).thenReturn(reader);
+        when(reader.forType(Repository.class)).thenReturn(reader);
+        when(reader.readValue(any(String.class))).thenReturn(repository);
+
+        // when
+        Repository result = underTest.retrieveRepository();
+
+        // then
+        verify(client).newCall(captor.capture());
+        Request request = captor.getValue();
+        assertEquals("GET", request.method());
+        assertEquals("https://my-server.org/rest/api/1.0/projects/project/repos/repository", request.url().toString());
+        assertEquals("repo-slug", result.getSlug());
+        assertEquals("no-check", request.header("x-atlassian-token"));
+    }
+
+    @Test
+    void shouldThrowExceptionIfRetrieveRepositoryReturnsNoResponse() throws IOException {
+        // given
+        Call call = mock();
+        Response response = mock();
+        ObjectReader reader = mock();
+
+        when(client.newCall(any())).thenReturn(call);
+        when(call.execute()).thenReturn(response);
+        when(response.isSuccessful()).thenReturn(true);
+        when(response.body()).thenReturn(null);
+
+        when(mapper.reader()).thenReturn(reader);
+        when(reader.forType(Repository.class)).thenReturn(reader);
+
+        // when, then
+        assertThatThrownBy(underTest::retrieveRepository)
+                .isInstanceOf(IllegalStateException.class);
     }
 }

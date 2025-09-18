@@ -38,13 +38,13 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,6 +56,8 @@ class BitbucketServerClient implements BitbucketClient {
     private static final String TITLE = "SonarQube";
     private static final String REPORTER = "SonarQube";
     private static final String LINK_TEXT = "Go to SonarQube";
+    private static final String X_ATLASSIAN_TOKEN_HEADER_NAME = "x-atlassian-token";
+    private static final String NO_CHECK_HEADER_VALUE = "no-check";
 
     private final BitbucketServerConfiguration config;
     private final ObjectMapper objectMapper;
@@ -96,6 +98,7 @@ class BitbucketServerClient implements BitbucketClient {
     public void deleteAnnotations(String commit, String reportKey) throws IOException {
         Request req = new Request.Builder()
                 .delete()
+                .header(X_ATLASSIAN_TOKEN_HEADER_NAME, NO_CHECK_HEADER_VALUE)
                 .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
@@ -148,7 +151,7 @@ class BitbucketServerClient implements BitbucketClient {
             if (server.hasCodeInsightsApi()) {
                 return true;
             } else {
-                LOGGER.atInfo().setMessage("Bitbucket Server version is to old. {} is the minimum version that supports Code Insights")
+                LOGGER.atInfo().setMessage("Bitbucket Server version is too old. {} is the minimum version that supports Code Insights")
                         .addArgument(ServerProperties.CODE_INSIGHT_VERSION)
                         .log();
             }
@@ -168,15 +171,19 @@ class BitbucketServerClient implements BitbucketClient {
     public Repository retrieveRepository() throws IOException {
         Request req = new Request.Builder()
                 .get()
+                .header(X_ATLASSIAN_TOKEN_HEADER_NAME, NO_CHECK_HEADER_VALUE)
                 .url(format("%s/rest/api/1.0/projects/%s/repos/%s", config.getUrl(), config.getProject(), config.getRepository()))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
 
-            return objectMapper.reader().forType(Repository.class)
-                    .readValue(Optional.ofNullable(response.body())
-                            .orElseThrow(() -> new IllegalStateException("No response body from BitBucket"))
-                            .string());
+            try (ResponseBody responseBody = response.body()) {
+                if (responseBody == null) {
+                    throw new IllegalStateException("No response body from BitBucket");
+                }
+                return objectMapper.reader().forType(Repository.class)
+                        .readValue(responseBody.string());
+            }
         }
     }
 
@@ -203,24 +210,30 @@ class BitbucketServerClient implements BitbucketClient {
     public ServerProperties getServerProperties() throws IOException {
         Request req = new Request.Builder()
                 .get()
+                .header(X_ATLASSIAN_TOKEN_HEADER_NAME, NO_CHECK_HEADER_VALUE)
                 .url(format("%s/rest/api/1.0/application-properties", config.getUrl()))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
 
-            return objectMapper.reader().forType(ServerProperties.class)
-                    .readValue(Optional.ofNullable(response.body())
-                            .orElseThrow(() -> new IllegalStateException("No response body from BitBucket"))
-                            .string());
+            try (ResponseBody responseBody = response.body()) {
+                if (responseBody == null) {
+                    throw new IllegalStateException("No response body from BitBucket");
+                }
+                return objectMapper.reader().forType(ServerProperties.class)
+                        .readValue(responseBody.string());
+            }
         }
     }
 
     void validate(Response response) throws IOException {
         if (!response.isSuccessful()) {
             ErrorResponse errors = null;
-            if (response.body() != null) {
-                errors = objectMapper.reader().forType(ErrorResponse.class)
-                        .readValue(response.body().string());
+            try (ResponseBody responseBody = response.body()) {
+                if (responseBody != null) {
+                    errors = objectMapper.reader().forType(ErrorResponse.class)
+                            .readValue(responseBody.string());
+                }
             }
             throw new BitbucketException(response.code(), errors);
         }
