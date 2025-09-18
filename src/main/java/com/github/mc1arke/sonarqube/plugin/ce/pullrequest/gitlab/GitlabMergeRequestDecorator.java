@@ -122,14 +122,15 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
 
     @Override
     protected void submitPipelineStatus(GitlabClient gitlabClient, MergeRequest mergeRequest, AnalysisDetails analysis,
-                                        AnalysisSummary analysisSummary) {
+                                        AnalysisSummary analysisSummary, ProjectAlmSettingDto projectAlmSettingDto) {
         Long pipelineId = analysis.getScannerProperty(PULLREQUEST_GITLAB_PIPELINE_ID)
                 .map(Long::parseLong)
                 .orElse(null);
 
         try {
-            PipelineStatus pipelineStatus = new PipelineStatus("SonarQube",
-                    "SonarQube Status",
+            boolean isMonorepo = Boolean.TRUE.equals(projectAlmSettingDto.getMonorepo());
+            PipelineStatus pipelineStatus = new PipelineStatus("SonarQube" + (isMonorepo ? " - " + analysis.getAnalysisProjectKey() : ""),
+                    "SonarQube Status" + (isMonorepo ? " - " + analysis.getAnalysisProjectName() : ""),
                     analysis.getQualityGateStatus() == QualityGate.Status.OK ? PipelineStatus.State.SUCCESS : PipelineStatus.State.FAILED,
                     analysisSummary.getDashboardUrl(),
                     analysisSummary.getNewCoverage(),
