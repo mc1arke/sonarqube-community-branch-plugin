@@ -73,20 +73,21 @@ class GitlabMergeRequestDecoratorIntegrationTest {
 
     @Test
     void decorateQualityGateStatusOk() {
-        decorateQualityGateStatus(QualityGate.Status.OK);
+        decorateQualityGateStatus(QualityGate.Status.OK, false);
     }
 
     @Test
     void decorateQualityGateStatusError() {
-        decorateQualityGateStatus(QualityGate.Status.ERROR);
+        decorateQualityGateStatus(QualityGate.Status.ERROR, true);
     }
 
-    private void decorateQualityGateStatus(QualityGate.Status status) {
+    private void decorateQualityGateStatus(QualityGate.Status status, boolean isMonorepo) {
         String user = "sonar_user";
         String repositorySlug = "repo/slug";
         String commitSha = "commitSha";
         long mergeRequestIid = 6;
         String projectKey = "projectKey";
+        String projectName = "project name";
         String sonarRootUrl = "http://sonar:9000/sonar";
         String discussionId = "6a9c1750b37d513a43987b574953fceb50b03ce7";
         String noteId = "1126";
@@ -95,16 +96,18 @@ class GitlabMergeRequestDecoratorIntegrationTest {
         int lineNumber = 5;
 
         ProjectAlmSettingDto projectAlmSettingDto = mock();
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
+        when(projectAlmSettingDto.getMonorepo()).thenReturn(isMonorepo);
+
         AlmSettingDto almSettingDto = mock();
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn("token");
         when(almSettingDto.getUrl()).thenReturn(wireMockExtension.baseUrl() + "/api/v4");
 
         AnalysisDetails analysisDetails = mock();
         when(almSettingDto.getUrl()).thenReturn(wireMockExtension.baseUrl() + "/api/v4");
-        when(projectAlmSettingDto.getAlmRepo()).thenReturn(repositorySlug);
-        when(projectAlmSettingDto.getMonorepo()).thenReturn(true);
         when(analysisDetails.getQualityGateStatus()).thenReturn(status);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(projectKey);
+        when(analysisDetails.getAnalysisProjectName()).thenReturn(projectName);
         when(analysisDetails.getPullRequestId()).thenReturn(Long.toString(mergeRequestIid));
         when(analysisDetails.getCommitSha()).thenReturn(commitSha);
 
@@ -215,9 +218,15 @@ class GitlabMergeRequestDecoratorIntegrationTest {
                 .withRequestBody(equalTo("body=" + urlEncode("This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
                 .willReturn(created()));
 
-        wireMockExtension.stubFor(post(urlEqualTo("/api/v4/projects/" + sourceProjectId + "/statuses/" + commitSha + "?state=" + (status == QualityGate.Status.OK ? "success" : "failed")))
-                .withRequestBody(equalTo("name=SonarQube&target_url=" + urlEncode(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + mergeRequestIid) + "&description=SonarQube+Status&coverage=10"))
-                .willReturn(created()));
+        if (isMonorepo) {
+            wireMockExtension.stubFor(post(urlEqualTo("/api/v4/projects/" + sourceProjectId + "/statuses/" + commitSha + "?state=" + (status == QualityGate.Status.OK ? "success" : "failed")))
+                    .withRequestBody(equalTo("name=SonarQube+-+projectKey&target_url=" + urlEncode(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + mergeRequestIid) + "&description=SonarQube+Status+-+project+name&coverage=10"))
+                    .willReturn(created()));
+        } else {
+            wireMockExtension.stubFor(post(urlEqualTo("/api/v4/projects/" + sourceProjectId + "/statuses/" + commitSha + "?state=" + (status == QualityGate.Status.OK ? "success" : "failed")))
+                    .withRequestBody(equalTo("name=SonarQube&target_url=" + urlEncode(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + mergeRequestIid) + "&description=SonarQube+Status&coverage=10"))
+                    .willReturn(created()));
+        }
 
         wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
                 .withRequestBody(equalTo("body=summary+comm%C3%A9nt%0A%0A%5Blink+text%5D"))
@@ -243,6 +252,13 @@ class GitlabMergeRequestDecoratorIntegrationTest {
                 .withQueryParam("resolved", equalTo("true"))
                 .willReturn(ok())
         );
+
+        if (!isMonorepo) {
+            wireMockExtension.stubFor(put(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 7))
+                    .withQueryParam("resolved", equalTo("true"))
+                    .willReturn(ok())
+            );
+        }
 
         LinkHeaderReader linkHeaderReader = mock();
         Settings settings = mock();

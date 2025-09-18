@@ -111,7 +111,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
         AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysis);
         submitSummaryNote(client, pullRequest, analysis, analysisSummary);
-        submitPipelineStatus(client, pullRequest, analysis, analysisSummary);
+        submitPipelineStatus(client, pullRequest, analysis, analysisSummary, projectAlmSettingDto);
 
         DecorationResult.Builder builder = DecorationResult.builder();
         createFrontEndUrl(pullRequest, analysis).ifPresent(builder::withPullRequestUrl);
@@ -130,7 +130,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
     protected abstract List<String> getCommitIdsForPullRequest(C client, P pullRequest);
 
-    protected abstract void submitPipelineStatus(C client, P pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary);
+    protected abstract void submitPipelineStatus(C client, P pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary, ProjectAlmSettingDto projectAlmSettingDto);
 
     protected abstract void submitCommitNoteForIssue(C client, P pullRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String filePath,
                                                      AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary);

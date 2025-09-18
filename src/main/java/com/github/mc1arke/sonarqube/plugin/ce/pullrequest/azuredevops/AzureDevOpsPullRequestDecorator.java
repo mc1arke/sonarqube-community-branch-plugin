@@ -144,7 +144,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     }
 
     @Override
-    protected void submitPipelineStatus(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary) {
+    protected void submitPipelineStatus(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary, ProjectAlmSettingDto projectAlmSettingDto) {
         try {
             GitPullRequestStatus gitPullRequestStatus = new GitPullRequestStatus(
                     GitStatusStateMapper.toGitStatusState(analysis.getQualityGateStatus()),
