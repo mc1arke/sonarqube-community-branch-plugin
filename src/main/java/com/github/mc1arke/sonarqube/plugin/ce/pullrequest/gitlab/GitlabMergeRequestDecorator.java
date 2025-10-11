@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecorator<GitlabClient, MergeRequest, User, Discussion, Note> {
 
@@ -114,7 +113,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
         try {
             return gitlabClient.getMergeRequestCommits(mergeRequest.getTargetProjectId(), mergeRequest.getIid()).stream()
                     .map(Commit::getId)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (IOException ex) {
             throw new IllegalStateException("Could not retrieve commit details for Merge Request", ex);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Michael Clarke
+ * Copyright (C) 2020-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,6 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.sonar.api.ce.posttask.Analysis;
 import org.sonar.api.ce.posttask.PostProjectAnalysisTask;
@@ -64,7 +63,7 @@ public class AnalysisDetails {
     public List<QualityGate.Condition> findFailedQualityGateConditions() {
         return qualityGate.getConditions().stream()
                 .filter(c -> c.getStatus() == QualityGate.EvaluationStatus.ERROR)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Optional<String> getScannerProperty(String propertyName) {
@@ -97,7 +96,7 @@ public class AnalysisDetails {
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
                 .filter(i -> i.getIssue().resolution() == null)
                 .filter(i -> i.getIssue().issueStatus() == IssueStatus.OPEN)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Optional<QualityGate.Condition> findQualityGateCondition(String metricKey) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Michael Clarke
+ * Copyright (C) 2020-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -69,7 +68,7 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         List<String> nonEmptyParameters = localSettings.entrySet().stream()
                 .filter(e -> StringUtils.isNotEmpty(e.getValue()))
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                .toList();
         boolean hasBranchParameters = BRANCH_ANALYSIS_PARAMETERS.stream()
                 .anyMatch(nonEmptyParameters::contains);
         boolean hasPullRequestParameters = PULL_REQUEST_ANALYSIS_PARAMETERS.stream()

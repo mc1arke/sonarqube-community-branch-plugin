@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Michael Clarke
+ * Copyright (C) 2022-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,33 +51,35 @@ import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 
 class GithubClientFactoryTest {
 
-    private static final String PRIVATE_KEY = "-----BEGIN RSA PRIVATE KEY-----\n" +
-        "MIIEpAIBAAKCAQEAoA3dIxtKx7qpUAhfoJeYAYZzVdRvOW9s3GtxJVuBI6GOob2V\n" +
-        "J7ia1i/h3za591NggqsW+QjjknmhPmqlENCKsyU5FQMkM8eV04xwHxFwjIk6SACB\n" +
-        "JigRSgw95b+EKN2p0caTeOiL/+LQ3pauAf+52iFqeWAKvgjxx3+rlSXzgWCBb9uk\n" +
-        "1XcDoeRzeXkXvOj9ZQ8wKn8FAounmyjKaIy+u7bJCgVWHRfXwjFWsIWZJ9UY1eAR\n" +
-        "ADoPHIHj4WrNmAvE/kOBXNSqmkY+Yu170tQA5iVeHgezrlkM08Qj4+4pqYOPHWZ2\n" +
-        "0TNsRn82fuGSyejLhKATbqiOxierHzECIGGUQQIDAQABAoIBADrJjNFRu3BL89dl\n" +
-        "E/aw55Cb2S4L1oSClDoLrqXZi7/SHcjzkN7jk9+a+7wYZkrdEYQ9IjV7WdcZnKuH\n" +
-        "0TQxXNh7EhHRMxFfu/zVRvNqXOwJlWIP6V/h9KO9hlimNP0rma3m4ZDV3WIx5aT0\n" +
-        "NFqgmptvjaOiLp/pOiEcGCIyq9N3UZgGTeJTRdvNiEJDiFPJaJvkJuspbCAIrqFT\n" +
-        "hzua3aJyi47GD0nebfAfJyC8Cq9VgKzvVYoKejU51cw9+ikCVSZZiOCVWOkZTPjU\n" +
-        "LCuhIAtPppG5s5DxvXtHdWUlpRKRbI1tIVaTk05kBm1SOH0a3H2GiEv4jQvsyZMz\n" +
-        "UQQQe78CgYEAw0Ixmsgy8meCKMxH8oWO/ceyZ4uVQCGy4C/q2JmGHL0DkHF6QrZi\n" +
-        "DuUrqDoI88lhBL/0JyGlRTy3Ddy2hZdjUdvd6HEyLJbQvy6BmUI5AGXU0+ICHfZ2\n" +
-        "YDP+3zY1m4SctM1duJ6XcPPefDapbl4WMxVLs1DTHCAK4dvI9HW9WYcCgYEA0dgY\n" +
-        "oihENXtew/s3vlBk+ZN+5xjnRwThUouxZFnzHBeCdE1237y6lUMK6UfjTmstGxWI\n" +
-        "g5KoawjZJScH8UDO7OiGTuI93TUzrR1Xi63dTynfE5z5BvKKGKjM4Y3aTvAsbk4q\n" +
-        "b+U65srTgvtZG4ASv/4vCxGL8wTJbd8oLWhu9fcCgYEArvUKA5ntZJzw2OOqeBnK\n" +
-        "dYVRS0ycMHnBkPX+pZRywh9vKSc1GL/Zf2VDSBqwWNkR0LK677FLKI3trEMfXPa4\n" +
-        "bOnondWH0sJUS2o9f/kBoGSeXji+EuD7UtpkPteRE0exLqRxnPKl2fT6XyyPhrBR\n" +
-        "jfY//W2nrCTd+2D3YGx7fNMCgYEAyGK6i0c2c3f/M9lXDvcIpcfyvE5stMX1QXVC\n" +
-        "jdjTrfTJT7SVmuxHpLej2MccSktQhHeYqERJbgTCD5dpHznLIDKf5v5nIzFlyp+l\n" +
-        "dS4vkyQh8UHKEJdVxlyTYaSrXww88YzVO4tEJxZyyrapDfjMbukVFVXJNeVRUQlz\n" +
-        "/YCnzVsCgYBipCwzPZzVlK7WdH8jsPC19ZEFd7UIbXM8kqiWhhQp4zL7kJ81Q+zf\n" +
-        "xmiRGsJl9uUjypDDOp1qLejoH5EObg3MlNoOq6aqSu1ZaY0rOnALlJwmZS10G2vC\n" +
-        "4eO4MsTrF0fH8PnJLK/nbrGX2Ll+PyY5Zn8rfKeTVvmwjSTMFPSORw==\n" +
-        "-----END RSA PRIVATE KEY-----";
+    private static final String PRIVATE_KEY = """
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEpAIBAAKCAQEAoA3dIxtKx7qpUAhfoJeYAYZzVdRvOW9s3GtxJVuBI6GOob2V
+            J7ia1i/h3za591NggqsW+QjjknmhPmqlENCKsyU5FQMkM8eV04xwHxFwjIk6SACB
+            JigRSgw95b+EKN2p0caTeOiL/+LQ3pauAf+52iFqeWAKvgjxx3+rlSXzgWCBb9uk
+            1XcDoeRzeXkXvOj9ZQ8wKn8FAounmyjKaIy+u7bJCgVWHRfXwjFWsIWZJ9UY1eAR
+            ADoPHIHj4WrNmAvE/kOBXNSqmkY+Yu170tQA5iVeHgezrlkM08Qj4+4pqYOPHWZ2
+            0TNsRn82fuGSyejLhKATbqiOxierHzECIGGUQQIDAQABAoIBADrJjNFRu3BL89dl
+            E/aw55Cb2S4L1oSClDoLrqXZi7/SHcjzkN7jk9+a+7wYZkrdEYQ9IjV7WdcZnKuH
+            0TQxXNh7EhHRMxFfu/zVRvNqXOwJlWIP6V/h9KO9hlimNP0rma3m4ZDV3WIx5aT0
+            NFqgmptvjaOiLp/pOiEcGCIyq9N3UZgGTeJTRdvNiEJDiFPJaJvkJuspbCAIrqFT
+            hzua3aJyi47GD0nebfAfJyC8Cq9VgKzvVYoKejU51cw9+ikCVSZZiOCVWOkZTPjU
+            LCuhIAtPppG5s5DxvXtHdWUlpRKRbI1tIVaTk05kBm1SOH0a3H2GiEv4jQvsyZMz
+            UQQQe78CgYEAw0Ixmsgy8meCKMxH8oWO/ceyZ4uVQCGy4C/q2JmGHL0DkHF6QrZi
+            DuUrqDoI88lhBL/0JyGlRTy3Ddy2hZdjUdvd6HEyLJbQvy6BmUI5AGXU0+ICHfZ2
+            YDP+3zY1m4SctM1duJ6XcPPefDapbl4WMxVLs1DTHCAK4dvI9HW9WYcCgYEA0dgY
+            oihENXtew/s3vlBk+ZN+5xjnRwThUouxZFnzHBeCdE1237y6lUMK6UfjTmstGxWI
+            g5KoawjZJScH8UDO7OiGTuI93TUzrR1Xi63dTynfE5z5BvKKGKjM4Y3aTvAsbk4q
+            b+U65srTgvtZG4ASv/4vCxGL8wTJbd8oLWhu9fcCgYEArvUKA5ntZJzw2OOqeBnK
+            dYVRS0ycMHnBkPX+pZRywh9vKSc1GL/Zf2VDSBqwWNkR0LK677FLKI3trEMfXPa4
+            bOnondWH0sJUS2o9f/kBoGSeXji+EuD7UtpkPteRE0exLqRxnPKl2fT6XyyPhrBR
+            jfY//W2nrCTd+2D3YGx7fNMCgYEAyGK6i0c2c3f/M9lXDvcIpcfyvE5stMX1QXVC
+            jdjTrfTJT7SVmuxHpLej2MccSktQhHeYqERJbgTCD5dpHznLIDKf5v5nIzFlyp+l
+            dS4vkyQh8UHKEJdVxlyTYaSrXww88YzVO4tEJxZyyrapDfjMbukVFVXJNeVRUQlz
+            /YCnzVsCgYBipCwzPZzVlK7WdH8jsPC19ZEFd7UIbXM8kqiWhhQp4zL7kJ81Q+zf
+            xmiRGsJl9uUjypDDOp1qLejoH5EObg3MlNoOq6aqSu1ZaY0rOnALlJwmZS10G2vC
+            4eO4MsTrF0fH8PnJLK/nbrGX2Ll+PyY5Zn8rfKeTVvmwjSTMFPSORw==
+            -----END RSA PRIVATE KEY-----
+            """;
 
     private final AlmSettingDto almSettingDto = mock();
     private final ProjectAlmSettingDto projectAlmSettingDto = mock();

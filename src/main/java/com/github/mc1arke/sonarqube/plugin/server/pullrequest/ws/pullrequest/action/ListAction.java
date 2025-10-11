@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2024 SonarSource SA (mailto:info AT sonarsource DOT com), Michael Clarke
+ * Copyright (C) 2009-2025 SonarSource SA (mailto:info AT sonarsource DOT com), Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -81,14 +81,14 @@ public class ListAction extends ProjectWsAction {
         BranchDao branchDao = getDbClient().branchDao();
         List<BranchDto> pullRequests = branchDao.selectByProject(dbSession, project).stream()
             .filter(b -> b.getBranchType() == BranchType.PULL_REQUEST)
-            .collect(Collectors.toList());
-        List<String> pullRequestUuids = pullRequests.stream().map(BranchDto::getUuid).collect(Collectors.toList());
+            .toList();
+        List<String> pullRequestUuids = pullRequests.stream().map(BranchDto::getUuid).toList();
 
         Map<String, BranchDto> mergeBranchesByUuid = branchDao
             .selectByUuids(dbSession, pullRequests.stream()
                 .map(BranchDto::getMergeBranchUuid)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList()))
+                .toList())
             .stream().collect(Collectors.toMap(BranchDto::getUuid, Function.identity()));
 
         Map<String, MeasureDto> qualityGateMeasuresByComponentUuids = getDbClient().measureDao()

@@ -183,28 +183,19 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
     }
 
     private static String toBitbucketSeverity(Severity severity) {
-        switch (severity) {
-            case HIGH:
-            case BLOCKER:
-                return "HIGH";
-            case MEDIUM:
-                return "MEDIUM";
-            default:
-                return "LOW";
-        }
+        return switch (severity) {
+            case HIGH, BLOCKER -> "HIGH";
+            case MEDIUM -> "MEDIUM";
+            default -> "LOW";
+        };
     }
 
     private static String toBitbucketType(SoftwareQuality sonarqubeType) {
-        switch (sonarqubeType) {
-            case SECURITY:
-                return "VULNERABILITY";
-            case MAINTAINABILITY:
-                return "CODE_SMELL";
-            case RELIABILITY:
-                return "BUG";
-            default:
-                throw new IllegalStateException(format("%s is not a valid ruleType.", sonarqubeType));
-        }
+        return switch (sonarqubeType) {
+            case SECURITY -> "VULNERABILITY";
+            case MAINTAINABILITY -> "CODE_SMELL";
+            case RELIABILITY -> "BUG";
+        };
     }
 
     private static String reportDescription(AnalysisDetails details, AnalysisSummary analysisSummary) {

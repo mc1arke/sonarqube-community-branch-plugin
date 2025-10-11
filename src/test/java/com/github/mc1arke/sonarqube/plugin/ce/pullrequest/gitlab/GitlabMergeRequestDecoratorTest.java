@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -125,7 +124,7 @@ class GitlabMergeRequestDecoratorTest {
         when(gitlabClient.getMergeRequest(PROJECT_PATH, MERGE_REQUEST_IID)).thenReturn(mergeRequest);
         when(gitlabClient.getMergeRequestCommits(PROJECT_ID, MERGE_REQUEST_IID)).thenReturn(Arrays.stream(new String[]{"ABC", "DEF", "GHI", "JKL"})
                 .map(Commit::new)
-                .collect(Collectors.toList()));
+                .toList());
         when(sonarqubeUser.getUsername()).thenReturn(SONARQUBE_USERNAME);
         when(gitlabClient.getCurrentUser()).thenReturn(sonarqubeUser);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(PROJECT_KEY);

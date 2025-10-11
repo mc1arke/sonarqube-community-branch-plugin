@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Michael Clarke
+ * Copyright (C) 2022-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -92,7 +91,7 @@ class ReportGeneratorTest {
                     mock();
             when(componentIssue.getIssue()).thenReturn(i);
             return componentIssue;
-        }).collect(Collectors.toList());
+        }).toList();
         when(analysisDetails.getIssues()).thenReturn(issues);
 
         QualityGate.Condition condition1 = mock();
