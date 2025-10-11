@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Michael Clarke
+ * Copyright (C) 2024-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.sonar.api.issue.IssueStatus;
 import org.sonar.ce.task.projectanalysis.analysis.AnalysisMetadataHolder;
@@ -68,13 +67,13 @@ public class PullRequestFixedIssuesIssueVisitor extends IssueVisitor {
             .filter(issue -> Optional.ofNullable(issue.issueStatus())
                 .map(NON_CLOSED_ISSUE_STATUSES::contains)
                 .orElse(false))
-            .collect(Collectors.toList());
+            .toList();
         Input<DefaultIssue> trackingIssues = new DefaultTrackingInput(nonClosedBaseIssues, baseIssues.getLineHashSequence(), baseIssues.getBlockHashSequence());
         NonClosedTracking<DefaultIssue, DefaultIssue> nonClosedTrackedBaseIssues = tracker.trackNonClosed(rawIssues, trackingIssues);
 
         List<DefaultIssue> fixedIssues = new ArrayList<>();
         fixedIssues.addAll(findFixedIssues(nonClosedTrackedBaseIssues));
-        fixedIssues.addAll(nonClosedTrackedBaseIssues.getUnmatchedBases().collect(Collectors.toList()));
+        fixedIssues.addAll(nonClosedTrackedBaseIssues.getUnmatchedBases().toList());
         return fixedIssues;
     }
 
@@ -82,7 +81,7 @@ public class PullRequestFixedIssuesIssueVisitor extends IssueVisitor {
         return nonClosedIssues.getMatchedRaws().entrySet().stream()
             .filter(issueEntry -> issueEntry.getKey().issueStatus() == IssueStatus.FIXED)
             .map(Map.Entry::getValue)
-            .collect(Collectors.toList());
+            .toList();
     }
 
 }

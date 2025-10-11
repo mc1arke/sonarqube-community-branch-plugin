@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,21 +30,20 @@ public class ClassReferenceElevatedClassLoaderFactory implements ElevatedClassLo
 
     private final String className;
 
-    /*package*/ ClassReferenceElevatedClassLoaderFactory(String className) {
+    public ClassReferenceElevatedClassLoaderFactory(String className) {
         super();
         this.className = className;
     }
 
     @Override
     public ClassLoader createClassLoader(Class<? extends Plugin> pluginClass) {
-        Class<?> coreClass;
         try {
-            coreClass = Class.forName(className);
+            Class<?> coreClass = Class.forName(className);
+            return createClassLoader(pluginClass.getClassLoader(), coreClass.getClassLoader());
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(
                     String.format("Could not load class '%s' from Plugin Classloader", className), e);
         }
-        return createClassLoader(pluginClass.getClassLoader(), coreClass.getClassLoader());
     }
 
 }

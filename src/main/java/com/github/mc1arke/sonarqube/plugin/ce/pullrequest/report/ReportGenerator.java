@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Michael Clarke
+ * Copyright (C) 2022-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,8 +27,8 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary.UrlIconMetric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.ce.posttask.QualityGate;
@@ -126,17 +126,17 @@ public class ReportGenerator {
                         .map(ReportGenerator::formatQualityGateCondition)
                         .filter(Optional::isPresent)
                         .map(Optional::get)
-                        .collect(Collectors.toList()))
+                        .toList())
                 .withStatusDescription(QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ? "Passed" : "Failed")
                 .withStatusImageUrl(QualityGate.Status.OK == analysisDetails.getQualityGateStatus()
                         ? baseImageUrl + "/checks/QualityGateBadge/passed-16px.png"
                         : baseImageUrl + "/checks/QualityGateBadge/failed-16px.png")
-                .withSecurityHotspots(new AnalysisSummary.UrlIconMetric<>(String.format("%s/security_hotspots?id=%s&pullRequest=%s", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)),
+                .withSecurityHotspots(new UrlIconMetric<>(String.format("%s/security_hotspots?id=%s&pullRequest=%s", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)),
                     baseImageUrl + "/" + PASSED_IMAGE_PATH,
                     findMeasure(CoreMetrics.SECURITY_HOTSPOTS_KEY).map(Measure::getIntValue).orElse(0)))
-                .withFixedIssues(new AnalysisSummary.UrlIconMetric<>(String.format("%s/project/issues?id=%s&fixedInPullRequest=%s", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/common/fixed-16px.png", fixedIssues))
-                .withNewIssues(new AnalysisSummary.UrlIconMetric<>(String.format("%s/project/issues?id=%s&pullRequest=%s&resolved=false", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/" + PASSED_IMAGE_PATH, newIssues))
-                .withAcceptedIssues(new AnalysisSummary.UrlIconMetric<>(String.format("%s/project/issues?id=%s&pullRequest=%s&issueStatus=ACCEPTED", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/common/accepted-16px.png", acceptedIssues))
+                .withFixedIssues(new UrlIconMetric<>(String.format("%s/project/issues?id=%s&fixedInPullRequest=%s", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/common/fixed-16px.png", fixedIssues))
+                .withNewIssues(new UrlIconMetric<>(String.format("%s/project/issues?id=%s&pullRequest=%s&resolved=false", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/" + PASSED_IMAGE_PATH, newIssues))
+                .withAcceptedIssues(new UrlIconMetric<>(String.format("%s/project/issues?id=%s&pullRequest=%s&issueStatus=ACCEPTED", server.getPublicRootUrl(), URLEncoder.encode(analysisDetails.getAnalysisProjectKey(), StandardCharsets.UTF_8), URLEncoder.encode(analysisDetails.getPullRequestId(), StandardCharsets.UTF_8)), baseImageUrl + "/common/accepted-16px.png", acceptedIssues))
                 .build();
     }
 
@@ -173,7 +173,7 @@ public class ReportGenerator {
 
     private static Optional<String> formatQualityGateCondition(QualityGate.Condition condition) {
         String key = condition.getMetricKey();
-        Optional<Metric> optionalMetric = findMetric(key);
+        Optional<Metric<?>> optionalMetric = findMetric(key);
         if (optionalMetric.isEmpty()) {
             LOGGER.info("No metric found for key {}, trying to map from MQR to Core equivalent", key);
             Optional<String> alternativeKey = StandardToMQRMetrics.getEquivalentMetric(key);
@@ -206,8 +206,8 @@ public class ReportGenerator {
         }
     }
 
-    private static Optional<Metric> findMetric(String key) {
-        return CoreMetrics.getMetrics().stream().filter(metric -> metric.getKey().equals(key)).findFirst();
+    private static Optional<Metric<?>> findMetric(String key) {
+        return CoreMetrics.getMetrics().stream().filter(metric -> metric.getKey().equals(key)).findFirst().map(metric -> (Metric<?>) metric);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,29 +18,25 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
-import com.github.mc1arke.sonarqube.plugin.classloader.DefaultElevatedClassLoaderFactoryProvider;
+import com.github.mc1arke.sonarqube.plugin.classloader.ClassReferenceElevatedClassLoaderFactory;
 import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactory;
-import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactoryProvider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.Plugin;
 import org.sonar.api.SonarQubeSide;
-
-import java.util.Objects;
+import org.sonar.api.rule.Severity;
 
 
 /**
  * The entry-point class used by SonarQube to launch this plugin. Since SonarQube runs all its plugin in isolated
  * ClassLoaders with limited access to SonarQube's core classes, this class works its way through the ClassLoader
  * chain used to load this class, and finds the 'API' ClassLoader used by SonarQube to filter out 'non-core' classes.
- * {@link DefaultElevatedClassLoaderFactoryProvider} is used to create a {@link ElevatedClassLoaderFactory} which generates a
- * suitable ClassLoader with access to this plugin's classes and SonarQube's core classes. This resulting ClassLoader is
- * used to load the class {@link CommunityBranchPlugin}, thereby allowing any instance generated from this class, and
- * any dependencies of this class to have access to classes from SonarQube core.
+ * {@link ElevatedClassLoaderFactory}  generates a suitable ClassLoader with access to this plugin's classes and SonarQube's
+ * core classes. This resulting ClassLoader is used to load the class {@link CommunityBranchPlugin}, thereby allowing
+ * any instance generated from this class, and any dependencies of this class to have access to classes from SonarQube core.
  *
  * @author Michael Clarke
- * @see DefaultElevatedClassLoaderFactoryProvider
  * @see ElevatedClassLoaderFactory
  * @see CommunityBranchPlugin
  */
@@ -48,16 +44,16 @@ public class CommunityBranchPluginBootstrap implements Plugin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommunityBranchPluginBootstrap.class);
 
-    private final ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider;
+    private final ElevatedClassLoaderFactory elevatedClassLoaderFactory;
     private final boolean available;
 
     public CommunityBranchPluginBootstrap() {
-        this(DefaultElevatedClassLoaderFactoryProvider.getInstance(), false);
+        this(new ClassReferenceElevatedClassLoaderFactory(Severity.class.getName()), false);
     }
 
-    /*package*/ CommunityBranchPluginBootstrap(ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider, boolean available) {
+    /*package*/ CommunityBranchPluginBootstrap(ElevatedClassLoaderFactory elevatedClassLoaderFactory, boolean available) {
         super();
-        this.elevatedClassLoaderFactoryProvider = elevatedClassLoaderFactoryProvider;
+        this.elevatedClassLoaderFactory = elevatedClassLoaderFactory;
         this.available = available;
     }
 
@@ -76,7 +72,7 @@ public class CommunityBranchPluginBootstrap implements Plugin {
         }
         try {
             ClassLoader classLoader =
-                    elevatedClassLoaderFactoryProvider.createFactory(context).createClassLoader(getClass());
+                    elevatedClassLoaderFactory.createClassLoader(getClass());
             Class<?> targetClass = classLoader.loadClass(getClass().getName().replace("Bootstrap", ""));
             Object instance = targetClass.getDeclaredConstructor().newInstance();
             if (!(instance instanceof Plugin)) {
@@ -88,24 +84,6 @@ public class CommunityBranchPluginBootstrap implements Plugin {
         } catch (ReflectiveOperationException ex) {
             throw new IllegalStateException("Could not create CommunityBranchPlugin instance", ex);
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        CommunityBranchPluginBootstrap that = (CommunityBranchPluginBootstrap) o;
-        return Objects.equals(elevatedClassLoaderFactoryProvider, that.elevatedClassLoaderFactoryProvider)
-            && available == that.available;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(elevatedClassLoaderFactoryProvider, available);
     }
 
     boolean isAvailable() {

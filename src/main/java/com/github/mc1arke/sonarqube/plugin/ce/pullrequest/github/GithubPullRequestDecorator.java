@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Michael Clarke
+ * Copyright (C) 2020-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -143,18 +143,11 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
 
     private static GHCheckRun.AnnotationLevel mapToGithubAnnotationLevel(Collection<Severity> sonarqubeSeverity) {
         Severity maxSeverity = sonarqubeSeverity.stream().max(Severity::compareTo).orElseThrow();
-        switch (maxSeverity) {
-            case LOW:
-            case INFO:
-                return GHCheckRun.AnnotationLevel.NOTICE;
-            case MEDIUM:
-                return GHCheckRun.AnnotationLevel.WARNING;
-            case HIGH:
-            case BLOCKER:
-                return GHCheckRun.AnnotationLevel.FAILURE;
-            default:
-                throw new IllegalArgumentException("Unknown severity value: " + sonarqubeSeverity);
-        }
+        return switch (maxSeverity) {
+            case LOW, INFO -> GHCheckRun.AnnotationLevel.NOTICE;
+            case MEDIUM -> GHCheckRun.AnnotationLevel.WARNING;
+            case HIGH, BLOCKER -> GHCheckRun.AnnotationLevel.FAILURE;
+        };
     }
 
 }

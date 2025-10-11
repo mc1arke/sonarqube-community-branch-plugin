@@ -83,7 +83,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                     user)
                     .stream()
                     .filter(comment -> !projectAlmSettingDto.getMonorepo() || isCommentFromCurrentProject(comment, analysis.getAnalysisProjectKey()))
-                    .collect(Collectors.toList());
+                    .toList();
 
             List<String> commentKeysForOpenComments = closeOldDiscussionsAndExtractRemainingKeys(client,
                     user,
@@ -99,7 +99,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .filter(issue -> isIssueFromCommitInCurrentRequest(issue.getLeft(), commitIds, scmInfoRepository))
-                    .collect(Collectors.toList());
+                    .toList();
 
             uncommentedIssues.forEach(issue -> submitCommitNoteForIssue(client,
                     pullRequest,
@@ -160,7 +160,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
         return openSonarqubeIssues.stream()
                 .filter(issue -> !openGitlabIssueIdentifiers.contains(issue.getIssue().key()))
                 .filter(issue -> issue.getIssue().getLine() != null)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static Optional<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> loadScmPathsForIssues(PostAnalysisIssueVisitor.ComponentIssue componentIssue) {
@@ -212,7 +212,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                                                                     P pullRequest) {
         List<String> openIssueKeys = openIssues.stream()
                 .map(issue -> issue.getIssue().key())
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> remainingCommentKeys = new ArrayList<>();
 

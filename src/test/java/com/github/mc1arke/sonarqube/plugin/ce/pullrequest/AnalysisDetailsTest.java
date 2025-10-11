@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Michael Clarke
+ * Copyright (C) 2020-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
@@ -191,7 +190,7 @@ class AnalysisDetailsTest {
             QualityGate.Condition condition = mock();
             when(condition.getMetricKey()).thenReturn("key" + i);
             return condition;
-        }).collect(Collectors.toList());
+        }).toList();
 
         when(qualityGate.getConditions()).thenReturn(conditions);
 

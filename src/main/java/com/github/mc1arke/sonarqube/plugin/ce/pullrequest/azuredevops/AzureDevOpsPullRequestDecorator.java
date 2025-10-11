@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -137,7 +136,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
         try {
             return client.getPullRequestCommits(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId()).stream()
                     .map(Commit::getCommitId)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (IOException ex) {
             throw new IllegalStateException("Could not retrieve commit details for Pull Request", ex);
         }

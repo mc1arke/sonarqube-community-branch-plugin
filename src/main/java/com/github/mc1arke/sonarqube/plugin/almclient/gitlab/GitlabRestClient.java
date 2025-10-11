@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -98,8 +98,7 @@ class GitlabRestClient implements GitlabClient {
         List<NameValuePair> requestContent = new ArrayList<>();
         requestContent.add(new BasicNameValuePair("body", mergeRequestNote.getContent()));
 
-        if (mergeRequestNote instanceof CommitNote) {
-            CommitNote commitNote = (CommitNote) mergeRequestNote;
+        if (mergeRequestNote instanceof CommitNote commitNote) {
             requestContent.addAll(Arrays.asList(
                 new BasicNameValuePair("position[base_sha]", commitNote.getBaseSha()),
                 new BasicNameValuePair("position[start_sha]", commitNote.getStartSha()),

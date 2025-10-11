@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Michael Clarke
+ * Copyright (C) 2019-2025 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,9 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin;
 
-import com.github.mc1arke.sonarqube.plugin.classloader.DefaultElevatedClassLoaderFactoryProvider;
 import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactory;
-import com.github.mc1arke.sonarqube.plugin.classloader.ElevatedClassLoaderFactoryProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,8 +33,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -71,11 +67,8 @@ class CommunityBranchPluginBootstrapTest {
         ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
-        when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
-
         CommunityBranchPluginBootstrap testCase =
-                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactory, true);
         testCase.define(context);
 
         assertThat(MockPlugin.invokedContext).isSameAs(context);
@@ -101,11 +94,8 @@ class CommunityBranchPluginBootstrapTest {
         ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
-        when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
-
         CommunityBranchPluginBootstrap testCase =
-                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactory, true);
         testCase.define(context);
 
         assertThat(MockPlugin.invokedContext).isNull();
@@ -132,13 +122,9 @@ class CommunityBranchPluginBootstrapTest {
         ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider =
-                mock();
-        when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
-
 
         CommunityBranchPluginBootstrap testCase =
-                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactory, true);
 
         assertThatThrownBy(() -> testCase.define(context))
             .isInstanceOf(IllegalStateException.class)
@@ -163,12 +149,8 @@ class CommunityBranchPluginBootstrapTest {
         ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
         when(elevatedClassLoaderFactory.createClassLoader(any())).thenReturn(classLoader);
 
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
-        when(elevatedClassLoaderFactoryProvider.createFactory(any())).thenReturn(elevatedClassLoaderFactory);
-
-
         CommunityBranchPluginBootstrap testCase =
-                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
+                new CommunityBranchPluginBootstrap(elevatedClassLoaderFactory, true);
 
         assertThatThrownBy(() -> testCase.define(context))
             .isInstanceOf(IllegalStateException.class)
@@ -183,9 +165,9 @@ class CommunityBranchPluginBootstrapTest {
         SonarRuntime sonarRuntime = mock();
         when(context.getRuntime()).thenReturn(sonarRuntime);
         when(sonarRuntime.getSonarQubeSide()).thenReturn(sonarQubeSide);
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
+        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
 
-        CommunityBranchPluginBootstrap underTest = new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, false);
+        CommunityBranchPluginBootstrap underTest = new CommunityBranchPluginBootstrap(elevatedClassLoaderFactory, false);
 
         assertThatThrownBy(() -> underTest.define(context))
             .isInstanceOf(IllegalStateException.class)
@@ -196,7 +178,7 @@ class CommunityBranchPluginBootstrapTest {
         verify(sonarRuntime).getSonarQubeSide();
         verifyNoMoreInteractions(context);
         verifyNoMoreInteractions(sonarRuntime);
-        verifyNoInteractions(elevatedClassLoaderFactoryProvider);
+        verifyNoInteractions(elevatedClassLoaderFactory);
     }
 
 
@@ -207,9 +189,9 @@ class CommunityBranchPluginBootstrapTest {
         SonarRuntime sonarRuntime = mock();
         when(context.getRuntime()).thenReturn(sonarRuntime);
         when(sonarRuntime.getSonarQubeSide()).thenReturn(sonarQubeSide);
-        ElevatedClassLoaderFactoryProvider elevatedClassLoaderFactoryProvider = mock();
+        ElevatedClassLoaderFactory elevatedClassLoaderFactory = mock();
 
-        CommunityBranchPluginBootstrap underTest = new CommunityBranchPluginBootstrap(elevatedClassLoaderFactoryProvider, true);
+        CommunityBranchPluginBootstrap underTest = new CommunityBranchPluginBootstrap(elevatedClassLoaderFactory, true);
 
         underTest.define(context);
 
@@ -217,25 +199,8 @@ class CommunityBranchPluginBootstrapTest {
         verify(sonarRuntime).getSonarQubeSide();
         verifyNoMoreInteractions(context);
         verifyNoMoreInteractions(sonarRuntime);
-        verifyNoInteractions(elevatedClassLoaderFactoryProvider);
+        verifyNoInteractions(elevatedClassLoaderFactory);
     }
-
-    @Test
-    void testNoArgsConstructor() {
-        assertEquals(new CommunityBranchPluginBootstrap(DefaultElevatedClassLoaderFactoryProvider.getInstance(), false),
-                     new CommunityBranchPluginBootstrap());
-        assertEquals(
-                new CommunityBranchPluginBootstrap(DefaultElevatedClassLoaderFactoryProvider.getInstance(), false).hashCode(),
-                new CommunityBranchPluginBootstrap().hashCode());
-
-    }
-
-    @Test
-    void testDifferentHashCode() {
-        assertNotEquals(new CommunityBranchPluginBootstrap(mock(), false).hashCode(),
-                        new CommunityBranchPluginBootstrap(mock(), true).hashCode());
-    }
-
 
     public static class MockPlugin implements Plugin {
 
