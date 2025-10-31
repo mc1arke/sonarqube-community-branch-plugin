@@ -68,7 +68,7 @@ dependencies {
     testImplementation('org.assertj:assertj-core:3.27.6')
     testImplementation('org.wiremock:wiremock:3.13.1')
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
-    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0')
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.1')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
     implementation('org.javassist:javassist:3.30.2-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:5.2.1')
