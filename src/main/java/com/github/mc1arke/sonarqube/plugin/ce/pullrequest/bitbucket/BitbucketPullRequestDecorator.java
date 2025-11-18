@@ -100,8 +100,10 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
             updateAnnotations(client, analysisDetails, reportKey);
 
-            BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
-            client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
+            if (!"true".equalsIgnoreCase(System.getenv("SONAR_BITBUCKET_SKIP_BUILD_STATUS"))) {
+                BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
+                client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
+            }
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }
