@@ -26,7 +26,6 @@ import java.io.Serializable;
 public class ServerProperties implements Serializable {
 
     public static final String CODE_INSIGHT_VERSION = "5.15";
-    public static final String CODE_INSIGHT_PULL_REQUEST_CHECK_VERSION = "6.9";
 
     private final String version;
 
@@ -41,10 +40,6 @@ public class ServerProperties implements Serializable {
 
     public boolean hasCodeInsightsApi() {
         return compareTo(CODE_INSIGHT_VERSION) >= 0;
-    }
-
-    public boolean hasCodeInsightsPullRequestCheckFeature() {
-        return compareTo(CODE_INSIGHT_PULL_REQUEST_CHECK_VERSION) >= 0;
     }
 
     private int compareTo(String other) {

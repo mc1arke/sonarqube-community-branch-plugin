@@ -166,30 +166,6 @@ class BitbucketPullRequestDecoratorTest {
                         new ReportData("Analysis details", null)));
     }
 
-    @Test
-    void testBuildStatusNotSubmittedWhenCodeInsightsPullRequestCheckFeatureSupported() throws IOException {
-        when(client.supportsCodeInsights()).thenReturn(true);
-        when(client.hasCodeInsightsPullRequestCheckFeature()).thenReturn(true);
-        AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(1000, 1000);
-        when(client.getAnnotationUploadLimit()).thenReturn(uploadLimit);
-
-        mockValidAnalysis();
-        when(analysisSummary.getNewDuplications()).thenReturn(BigDecimal.TEN);
-        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.ONE);
-        when(analysisSummary.getAcceptedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 0));
-        when(analysisSummary.getFixedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 12));
-        when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 666L));
-        when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 69));
-        when(analysisSummary.getSummaryImageUrl()).thenReturn(IMAGE_URL);
-        when(analysisSummary.getDashboardUrl()).thenReturn(DASHBOARD_URL);
-        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
-        when(client.normaliseReportKey(any())).thenReturn("reportKey");
-
-        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
-
-        verify(client, org.mockito.Mockito.never()).submitBuildStatus(any(), any());
-    }
-
     @ParameterizedTest(name = "{arguments}")
     @CsvSource({"100, 1000, 2",
             "1000, 1000, 1",

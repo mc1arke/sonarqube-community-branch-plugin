@@ -100,8 +100,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
             updateAnnotations(client, analysisDetails, reportKey);
 
-            if (!client.hasCodeInsightsPullRequestCheckFeature()) {
-                // If the Bitbucket server does not support the Pull Request Code Insight checks feature, fall back to using build-status
+            if (!"true".equalsIgnoreCase(System.getenv("SONAR_BITBUCKET_SKIP_BUILD_STATUS"))) {
                 BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
                 client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
             }
