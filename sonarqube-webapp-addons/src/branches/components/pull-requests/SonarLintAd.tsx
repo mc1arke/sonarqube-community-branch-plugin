@@ -33,7 +33,7 @@ import {
 } from '~design-system';
 import { QGStatus as Status } from '~shared/types/common';
 import { useCurrentUser } from '~sq-server-commons/context/current-user/CurrentUserContext';
-import useLocalStorage from '~sq-server-commons/hooks/useLocalStorage';
+import useLocalStorage from '~shared/helpers/useLocalStorage';
 import { isLoggedIn } from '~sq-server-commons/types/users';
 import { QGStatusEnum as QGStatus } from '~sq-server-commons/utils/overview-utils';
 
