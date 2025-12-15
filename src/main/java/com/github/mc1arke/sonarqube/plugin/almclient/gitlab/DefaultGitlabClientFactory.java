@@ -23,7 +23,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.sonar.api.ce.ComputeEngineSide;
