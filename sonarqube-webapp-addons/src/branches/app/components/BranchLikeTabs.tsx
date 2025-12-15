@@ -21,10 +21,10 @@
 import { IconGitBranch, IconPullrequest } from '@sonarsource/echoes-react';
 import { useState } from 'react';
 import { ToggleButton, getTabId, getTabPanelId } from '~design-system';
+import { useProjectBranchesQuery } from '~adapters/queries/branch';
 import { PullRequest } from '~shared/types/branch-like';
 import { sortBranches, sortPullRequests } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
-import { useBranchesQuery } from '~sq-server-commons/queries/branch';
 import {
   isBranch,
   isMainBranch,
@@ -96,7 +96,7 @@ export default function BranchLikeTabs(props: Props) {
     }
   };
 
-  const { data: branchLikes = [] } = useBranchesQuery(component);
+  const { data: branchLikes = [] } = useProjectBranchesQuery(component);
 
   const isBranchMode = currentTab === Tabs.Branch;
   const branchLikesToDisplay: BranchLike[] = isBranchMode

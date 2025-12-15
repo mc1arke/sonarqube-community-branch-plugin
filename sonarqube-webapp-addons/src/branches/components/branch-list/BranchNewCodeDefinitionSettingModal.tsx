@@ -23,10 +23,6 @@ import { noop } from 'lodash';
 import * as React from 'react';
 import { Modal, Spinner } from '~design-system';
 import { setNewCodeDefinition } from '~sq-server-commons/api/newCodeDefinition';
-import NewCodeDefinitionDaysOption from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionDaysOption';
-import NewCodeDefinitionPreviousVersionOption from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionPreviousVersionOption';
-import NewCodeDefinitionSettingAnalysis from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionSettingAnalysis';
-import NewCodeDefinitionSettingReferenceBranch from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionSettingReferenceBranch';
 import {
   getSettingValue,
   NewCodeDefinitionLevels,
@@ -40,6 +36,12 @@ import {
   NewCodeDefinition,
   NewCodeDefinitionType,
 } from '~sq-server-commons/types/new-code-definition';
+import {
+  NewCodeDefinitionDaysOption,
+  NewCodeDefinitionPreviousVersionOption,
+  NewCodeDefinitionSettingAnalysis,
+  NewCodeDefinitionSettingReferenceBranch,
+} from './NewCodeDefinitionComponents';
 
 interface Props {
   branch: BranchWithNewCodePeriod;

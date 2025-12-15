@@ -194,7 +194,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
                   side={TooltipSide.Top}
                 >
                   <span className="sw-typo-default sw-cursor-default">
-                    <IconQuestionMark color="echoes-color-icon-subdued" />
+                    <IconQuestionMark color="echoes-color-icon-subtle" />
                   </span>
                 </Tooltip>
               </>
