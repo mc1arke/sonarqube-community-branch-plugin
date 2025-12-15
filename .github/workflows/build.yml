@@ -162,7 +162,7 @@ jobs:
           path: build/libs/*.jar
       -
         name: Download frontend artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: webapp-build
           path: build/ui
