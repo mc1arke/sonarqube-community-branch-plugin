@@ -17,11 +17,7 @@ export const addons = {
     projectRoutes: () => null,
     licenseRoutes: () => stubElement,
   },
-  license: {
-    StartupLicenseCheckModal: stubComponent,
-    routes: () => stubElement,
-    LICENSE_ROUTE_NAME: '',
-  },
+  license: undefined,
   architecture: {
     spotlight: (_arg?: any) => null,
     ArchitectureAdminBanner: (_props?: any) => null,
