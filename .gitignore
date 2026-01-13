@@ -23,3 +23,7 @@
 #VSCode
 .project
 .history
+
+#Node
+node_modules/
+yarn.lock

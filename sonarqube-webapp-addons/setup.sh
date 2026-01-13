@@ -132,6 +132,52 @@ function patch_administration_sidebar_test() {
     echo "Successfully patched ${test_file}"
 }
 
+function patch_mode_tour() {
+    local file="./apps/sq-server/src/main/js/app/components/ModeTour.tsx"
+    
+    # Check if already patched
+    if grep -q "// Disabled for Community Edition" "$file" 2>/dev/null; then
+        echo "ModeTour already patched, skipping"
+        return
+    fi
+    
+    echo "Patching ${file} to disable ModeTour..."
+    
+    # Create backup if it doesn't exist
+    if [[ ! -f "${file}.bak" ]]; then
+        cp "$file" "${file}.bak"
+    fi
+    
+    # Insert return null after function declaration
+    # Use perl for cross-platform compatibility
+    perl -i -pe 's/(^export default function ModeTour\(\) \{$)/$1\n  \/\/ Disabled for Community Edition: server does not recognize showNewModesTour notice\n  return null;/' "$file"
+    
+    echo "Successfully patched ${file}"
+}
+
+function patch_license_api() {
+    local file="./libs/sq-server-commons/src/api/entitlements.ts"
+    
+    # Check if already patched
+    if grep -q "// Disabled for Community Edition" "$file" 2>/dev/null; then
+        echo "License API already patched, skipping"
+        return
+    fi
+    
+    echo "Patching ${file} to disable license API calls..."
+    
+    # Create backup if it doesn't exist
+    if [[ ! -f "${file}.bak" ]]; then
+        cp "$file" "${file}.bak"
+    fi
+    
+    # Insert return null after getCurrentLicense function opening brace
+    # Use perl for cross-platform compatibility
+    perl -i -pe 's/(^export async function getCurrentLicense\(\) \{$)/$1\n  \/\/ Disabled for Community Edition: endpoint does not exist\n  return null;/' "$file"
+    
+    echo "Successfully patched ${file}"
+}
+
 function main() {
     cd ./sonarqube-webapp
     echo "Creating symlink for sonarqube-webapp/libs/sq-server-addons"
@@ -141,6 +187,8 @@ function main() {
     patch_sq_server_vite_config
     patch_html_formatter_mock
     patch_administration_sidebar_test
+    patch_mode_tour
+    patch_license_api
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
