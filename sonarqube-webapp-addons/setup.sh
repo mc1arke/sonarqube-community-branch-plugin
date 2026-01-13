@@ -135,13 +135,19 @@ function patch_administration_sidebar_test() {
 function patch_mode_tour() {
     local file="./apps/sq-server/src/main/js/app/components/ModeTour.tsx"
     
+    # Skip if file doesn't exist (removed in later commits)
+    if [ ! -f "$file" ]; then
+        echo "ModeTour.tsx not found (removed in newer versions), skipping patch"
+        return
+    fi
+    
     # Check if already patched
     if grep -q "// Disabled for Community Edition" "$file" 2>/dev/null; then
         echo "ModeTour already patched, skipping"
         return
     fi
     
-    echo "Patching ${file} to disable ModeTour..."
+    echo "Patching ModeTour.tsx..."
     
     # Create backup if it doesn't exist
     if [[ ! -f "${file}.bak" ]]; then
@@ -152,30 +158,26 @@ function patch_mode_tour() {
     # Use perl for cross-platform compatibility
     perl -i -pe 's/(^export default function ModeTour\(\) \{$)/$1\n  \/\/ Disabled for Community Edition: server does not recognize showNewModesTour notice\n  return null;/' "$file"
     
-    echo "Successfully patched ${file}"
+    echo "ModeTour patched successfully"
 }
 
 function patch_license_api() {
     local file="./libs/sq-server-commons/src/api/entitlements.ts"
     
-    # Check if already patched
+    if [ ! -f "$file" ]; then
+        echo "entitlements.ts not found, skipping patch"
+        return
+    fi
+    
     if grep -q "// Disabled for Community Edition" "$file" 2>/dev/null; then
         echo "License API already patched, skipping"
         return
     fi
     
-    echo "Patching ${file} to disable license API calls..."
-    
-    # Create backup if it doesn't exist
-    if [[ ! -f "${file}.bak" ]]; then
-        cp "$file" "${file}.bak"
-    fi
-    
-    # Insert return null after getCurrentLicense function opening brace
-    # Use perl for cross-platform compatibility
-    perl -i -pe 's/(^export async function getCurrentLicense\(\) \{$)/$1\n  \/\/ Disabled for Community Edition: endpoint does not exist\n  return null;/' "$file"
-    
-    echo "Successfully patched ${file}"
+    echo "Patching entitlements.ts..."
+    # Match function with or without async, with any return type annotation
+    perl -i.bak -pe 's/(^export (?:async )?function getCurrentLicense\([^)]*\)(?::[^{]*)?\{$)/$1\n  \/\/ Disabled for Community Edition: endpoint does not exist\n  return null;/' "$file" && rm -f "$file.bak"
+    echo "License API patched successfully"
 }
 
 function main() {
