@@ -25,6 +25,9 @@ e.g. `25.4.0` of the plugin is compatible with SonarQube 25.4.x. Any older plugi
 version is not guaranteed to work, nor are newer SonarQube versions guaranteed to work
 with previous plugin versions.
 
+**WARNING:** The versions 25.x up until the version published in June 2026 will run with JAVA 17, later versions will require JAVA 21 (also on the client/scanner side).
+
+
 # Features
 
 The plugin is intended to support the

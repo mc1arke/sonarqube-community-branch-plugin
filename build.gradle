@@ -40,13 +40,15 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '26.1.0.118079'
+def sonarqubeVersion = '25.12.0.117093' //  # JAVA 17 compatibility
+// def sonarqubeVersion = '26.1.0.118079'   # Latest
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        // languageVersion = JavaLanguageVersion.of(21) # Starting 2026.4
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 configurations {
