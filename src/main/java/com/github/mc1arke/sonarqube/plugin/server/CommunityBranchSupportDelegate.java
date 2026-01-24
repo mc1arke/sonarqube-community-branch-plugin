@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Michael Clarke
+ * Copyright (C) 2020-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,7 +24,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.config.Configuration;
 import org.sonar.core.ce.CeTaskCharacteristics;
 import org.sonar.core.config.PurgeConstants;

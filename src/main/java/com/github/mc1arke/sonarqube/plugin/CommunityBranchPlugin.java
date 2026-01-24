@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Michael Clarke
+ * Copyright (C) 2020-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,15 +17,6 @@
  *
  */
 package com.github.mc1arke.sonarqube.plugin;
-
-import org.sonar.api.CoreProperties;
-import org.sonar.api.Plugin;
-import org.sonar.api.PropertyType;
-import org.sonar.api.SonarQubeSide;
-import org.sonar.api.config.PropertyDefinition;
-import org.sonar.api.config.PropertyDefinition.ConfigScope;
-import org.sonar.core.config.PurgeConstants;
-import org.sonar.core.extension.CoreExtension;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.DefaultAzureDevopsClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.DefaultBitbucketClientFactory;
@@ -63,6 +54,16 @@ import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.PullRequestWs;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.DeleteAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.ListAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.support.SupportWs;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.support.action.InfoWsAction;
+import org.sonar.api.CoreProperties;
+import org.sonar.api.Plugin;
+import org.sonar.api.PropertyType;
+import org.sonar.api.SonarQubeSide;
+import org.sonar.api.config.PropertyDefinition;
+import org.sonar.api.config.PropertyDefinition.ConfigScope;
+import org.sonar.core.config.PurgeConstants;
+import org.sonar.core.extension.CoreExtension;
 
 /**
  * @author Michael Clarke
@@ -103,6 +104,9 @@ public class CommunityBranchPlugin implements Plugin, CoreExtension {
                     DefaultGitlabClientFactory.class,
                     DefaultAzureDevopsClientFactory.class,
                     AzureDevopsValidator.class,
+
+                    InfoWsAction.class,
+                    SupportWs.class,
 
                 /* org.sonar.db.purge.PurgeConfiguration uses the value for the this property if it's configured, so it only
                 needs to be specified here, but doesn't need any additional classes to perform the relevant purge/cleanup

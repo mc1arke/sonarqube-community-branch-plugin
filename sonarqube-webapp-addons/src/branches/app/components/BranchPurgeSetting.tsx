@@ -18,7 +18,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { HelperHintIcon, Spinner, Switch } from '~design-system';
+import { HelperHintIcon, Spinner } from '~design-system';
+import { Switch } from '~adapters/components/common/Switch';
 import { translate } from '~sq-server-commons/helpers/l10n';
 import { useExcludeFromPurgeMutation } from '~sq-server-commons/queries/branch';
 import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
