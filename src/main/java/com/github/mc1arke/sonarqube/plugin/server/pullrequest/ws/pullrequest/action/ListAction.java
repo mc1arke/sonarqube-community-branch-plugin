@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2025 SonarSource SA (mailto:info AT sonarsource DOT com), Michael Clarke
+ * Copyright (C) 2009-2026 SonarSource SA (mailto:info AT sonarsource DOT com), Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Michael Clarke
+ * Copyright (C) 2020-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,6 +54,8 @@ import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action.
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.PullRequestWs;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.DeleteAction;
 import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.pullrequest.action.ListAction;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.support.SupportWs;
+import com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.support.action.InfoWsAction;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.sonar.api.Plugin;
@@ -150,6 +152,8 @@ class CommunityBranchPluginTest {
                 eq(DefaultGitlabClientFactory.class),
                 eq(DefaultAzureDevopsClientFactory.class),
                 eq(AzureDevopsValidator.class),
+                eq(InfoWsAction.class),
+                eq(SupportWs.class),
                 any(PropertyDefinition.class),
                 any(PropertyDefinition.class));
 
