@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         java:
-          - 17
+          - 21
     steps:
       -
         name: Checkout
@@ -67,7 +67,7 @@ jobs:
           ./gradlew clean build
       -
         name: Archive artifact
-        if: success() && matrix.java == '17'
+        if: success() && matrix.java == '21'
         uses: actions/upload-artifact@v6
         with:
           name: snapshot
@@ -125,7 +125,7 @@ jobs:
         name: Set up Java
         uses: actions/setup-java@v5
         with:
-          java-version: 17
+          java-version: 21
           java-package: jdk
           distribution: 'zulu'
       -
@@ -193,7 +193,7 @@ jobs:
         name: Set up Java
         uses: actions/setup-java@v5
         with:
-          java-version: 17
+          java-version: 21
           java-package: jdk
           distribution: 'zulu'
       -
