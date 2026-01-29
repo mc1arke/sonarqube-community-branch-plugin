@@ -24,7 +24,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.config.Configuration;
 import org.sonar.core.ce.CeTaskCharacteristics;
 import org.sonar.core.config.PurgeConstants;

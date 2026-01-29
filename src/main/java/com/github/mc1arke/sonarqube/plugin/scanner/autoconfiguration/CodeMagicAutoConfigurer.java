@@ -20,7 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.scanner.autoconfiguration;
 
 import com.github.mc1arke.sonarqube.plugin.scanner.BranchAutoConfigurer;
 import com.github.mc1arke.sonarqube.plugin.scanner.BranchConfigurationFactory;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.utils.System2;
 import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.ProjectBranches;
