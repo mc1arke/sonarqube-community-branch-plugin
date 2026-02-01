@@ -71,7 +71,7 @@ dependencies {
     runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.1')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
     implementation('org.javassist:javassist:3.30.2-GA')
-    implementation('com.squareup.okhttp3:logging-interceptor:5.3.1')
+    implementation('com.squareup.okhttp3:logging-interceptor:5.3.2')
     testImplementation(platform('org.junit:junit-bom:6.0.0'))
     testImplementation('org.junit.jupiter:junit-jupiter')
 }
