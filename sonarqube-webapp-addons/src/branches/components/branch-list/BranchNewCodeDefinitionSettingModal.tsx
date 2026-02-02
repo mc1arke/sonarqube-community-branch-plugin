@@ -19,14 +19,10 @@
  */
 
 import { Button, ButtonVariety, Label } from '@sonarsource/echoes-react';
-import { noop } from 'lodash';
 import * as React from 'react';
 import { Modal, Spinner } from '~design-system';
 import { setNewCodeDefinition } from '~sq-server-commons/api/newCodeDefinition';
-import NewCodeDefinitionDaysOption from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionDaysOption';
-import NewCodeDefinitionPreviousVersionOption from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionPreviousVersionOption';
-import NewCodeDefinitionSettingAnalysis from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionSettingAnalysis';
-import NewCodeDefinitionSettingReferenceBranch from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionSettingReferenceBranch';
+import NewCodeDefinitionSpecificGroup from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionSpecificGroup';
 import {
   getSettingValue,
   NewCodeDefinitionLevels,
@@ -170,7 +166,6 @@ export default class BranchNewCodeDefinitionSettingModal extends React.PureCompo
     const { branch, branchList } = this.props;
     const { analysis, days, isChanged, referenceBranch, saving, selectedNewCodeDefinitionType } =
       this.state;
-    const currentSetting = branch.newCodePeriod?.type;
 
     const header = translateWithParameters('baseline.new_code_period_for_branch_x', branch.name);
 
@@ -187,37 +182,23 @@ export default class BranchNewCodeDefinitionSettingModal extends React.PureCompo
             <Label>{translate('baseline.new_code_period_for_branch_x.question')}</Label>
           </legend>
           <div className="sw-flex sw-flex-col sw-mb-10 sw-gap-4" role="radiogroup">
-            <NewCodeDefinitionPreviousVersionOption
-              isDefault={false}
-              onSelect={this.handleSelectSetting}
-              selected={selectedNewCodeDefinitionType === NewCodeDefinitionType.PreviousVersion}
-            />
-            <NewCodeDefinitionDaysOption
-              days={days}
-              isValid={isValid}
-              onChangeDays={this.handleSelectDays}
-              onSelect={this.handleSelectSetting}
-              selected={selectedNewCodeDefinitionType === NewCodeDefinitionType.NumberOfDays}
-              settingLevel={NewCodeDefinitionLevels.Branch}
-            />
-            <NewCodeDefinitionSettingReferenceBranch
-              branchList={branchList.map(this.branchToOption)}
-              onChangeReferenceBranch={this.handleSelectReferenceBranch}
-              onSelect={this.handleSelectSetting}
-              referenceBranch={referenceBranch}
-              selected={selectedNewCodeDefinitionType === NewCodeDefinitionType.ReferenceBranch}
-              settingLevel={NewCodeDefinitionLevels.Branch}
-              inputSelectMenuPlacement="top"
-            />
-            {currentSetting === NewCodeDefinitionType.SpecificAnalysis && (
-              <NewCodeDefinitionSettingAnalysis
-                onSelect={noop}
-                analysis={analysis}
-                branch={branch.name}
-                component={this.props.component}
-                selected={selectedNewCodeDefinitionType === NewCodeDefinitionType.SpecificAnalysis}
+              <NewCodeDefinitionSpecificGroup
+                  analysis={analysis}
+                  ariaLabelledBy="specific-definition-label"
+                  branch={branch.name}
+                  branchList={branchList}
+                  branchesEnabled
+                  className="sw-mt-6"
+                  isValid={isValid}
+                  numberOfDaysInput={days}
+                  onNumberOfDaysChange={this.handleSelectDays}
+                  onReferenceBranchChange={this.handleSelectReferenceBranch}
+                  onTypeChange={this.handleSelectSetting}
+                  referenceBranchInput={referenceBranch}
+                  settingsLevel={NewCodeDefinitionLevels.Branch}
+                  typeValue={selectedNewCodeDefinitionType}
+                  projectKey={this.props.component}
               />
-            )}
           </div>
         </fieldset>
       </form>

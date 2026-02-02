@@ -1,7 +1,7 @@
 ARG SONARQUBE_VERSION="community"
 ARG WORKDIR="/home/build/project"
 
-FROM gradle:8.9-jdk17-jammy AS builder
+FROM gradle:8.9-jdk21-jammy AS builder
 ARG WORKDIR
 
 COPY . ${WORKDIR}
@@ -31,5 +31,5 @@ COPY --from=webapp-builder --chown=sonarqube:root ${WORKDIR}/apps/sq-server/buil
 RUN chmod -R 550 /opt/sonarqube/web
 
 ENV PLUGIN_VERSION=${PLUGIN_VERSION}
-ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=web"
-ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:./extensions/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=ce"
+ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=web"
+ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=ce"

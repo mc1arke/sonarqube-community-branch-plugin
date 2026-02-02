@@ -24,12 +24,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up Java
       uses: actions/setup-java@v5
       with:
-        java-version: 17
+        java-version: 21
         java-package: jdk
         distribution: 'zulu'
 

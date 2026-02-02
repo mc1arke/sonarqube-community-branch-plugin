@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Michael Clarke
+ * Copyright (C) 2020-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '25.10.0.114319'
+def sonarqubeVersion = '26.1.0.118079'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
@@ -61,18 +61,18 @@ tasks.withType(JavaCompile) {
 
 
 dependencies {
-    customTestRuntime('org.kohsuke:github-api-unbridged:1.327')
+    customTestRuntime('org.kohsuke:github-api-unbridged:1.330')
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
-    testImplementation('org.mockito:mockito-core:5.20.0')
-    testImplementation('org.assertj:assertj-core:3.27.6')
-    testImplementation('org.wiremock:wiremock:3.13.1')
+    testImplementation('org.mockito:mockito-core:5.21.0')
+    testImplementation('org.assertj:assertj-core:3.27.7')
+    testImplementation('org.wiremock:wiremock:3.13.2')
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
-    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0')
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.0')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
     implementation('org.javassist:javassist:3.30.2-GA')
-    implementation('com.squareup.okhttp3:logging-interceptor:5.2.1')
-    testImplementation(platform('org.junit:junit-bom:6.0.0'))
+    implementation('com.squareup.okhttp3:logging-interceptor:5.3.2')
+    testImplementation(platform('org.junit:junit-bom:6.0.2'))
     testImplementation('org.junit.jupiter:junit-jupiter')
 }
 

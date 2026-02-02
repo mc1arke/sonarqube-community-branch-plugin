@@ -21,17 +21,17 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       -
         name: Init
         id: init
         run: |
           VERSION=$(grep "version" gradle.properties | cut -d'=' -f2)
-          echo ::set-output name=version::${VERSION}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            echo ::set-output name=release::true
+            echo "release=true" >> $GITHUB_OUTPUT
           else
-            echo ::set-output name=release::false
+            echo "release=false" >> $GITHUB_OUTPUT
           fi
 
   snapshot:
@@ -41,11 +41,11 @@ jobs:
       fail-fast: false
       matrix:
         java:
-          - 17
+          - 21
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       -
         name: Set up Java ${{ matrix.java }}
         uses: actions/setup-java@v5
@@ -55,7 +55,7 @@ jobs:
           distribution: 'zulu'
       -
         name: Cache deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
@@ -67,8 +67,8 @@ jobs:
           ./gradlew clean build
       -
         name: Archive artifact
-        if: success() && matrix.java == '17'
-        uses: actions/upload-artifact@v4
+        if: success() && matrix.java == '21'
+        uses: actions/upload-artifact@v6
         with:
           name: snapshot
           path: build/libs/*.jar
@@ -79,7 +79,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: true
       -
@@ -106,7 +106,7 @@ jobs:
         run: zip -r ${{ github.workspace }}/sonarqube-webapp.zip ./*
       -
         name: Archive artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: webapp-build
           path: sonarqube-webapp.zip
@@ -118,19 +118,19 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       -
         name: Set up Java
         uses: actions/setup-java@v5
         with:
-          java-version: 17
+          java-version: 21
           java-package: jdk
           distribution: 'zulu'
       -
         name: Cache deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
@@ -156,13 +156,13 @@ jobs:
       -
         name: Archive artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release
           path: build/libs/*.jar
       -
         name: Download frontend artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: webapp-build
           path: build/ui
@@ -186,19 +186,19 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       -
         name: Set up Java
         uses: actions/setup-java@v5
         with:
-          java-version: 17
+          java-version: 21
           java-package: jdk
           distribution: 'zulu'
       -
         name: Cache deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
