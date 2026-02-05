@@ -45,6 +45,7 @@ import org.sonar.api.issue.impact.Severity;
 import org.sonar.api.issue.impact.SoftwareQuality;
 import org.sonar.ce.task.projectanalysis.component.Component;
 import org.sonar.ce.task.projectanalysis.component.ReportAttributes;
+import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
@@ -132,6 +133,7 @@ class BitbucketPullRequestDecoratorTest {
     @Test
     void testNullPercentagesReplacedWithZeroValues() throws IOException {
         when(client.supportsCodeInsights()).thenReturn(true);
+        when(almSettingDto.getAlm()).thenReturn(ALM.BITBUCKET_CLOUD);
         AnnotationUploadLimit uploadLimit = new AnnotationUploadLimit(1000, 1000);
         when(client.getAnnotationUploadLimit()).thenReturn(uploadLimit);
 
