@@ -40,7 +40,7 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '26.1.0.118079'
+def sonarqubeVersion = '26.2.0.119303'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
@@ -61,6 +61,7 @@ tasks.withType(JavaCompile) {
 
 
 dependencies {
+    customTestRuntime('org.wiremock:wiremock:3.13.2')
     customTestRuntime('org.kohsuke:github-api-unbridged:1.330')
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
     testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
