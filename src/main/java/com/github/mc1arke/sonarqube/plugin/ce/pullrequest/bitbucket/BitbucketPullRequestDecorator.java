@@ -100,8 +100,11 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
             updateAnnotations(client, analysisDetails, reportKey);
 
-            BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
-            client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
+            // Bitbucket Cloud ALM and Bitbucket Server ALM have different behavior. Bitbucket Cloud ALM submit both Build Status and Code Insights while the Bitbucket Server ALM only submit Code Insights (https://github.com/mc1arke/sonarqube-community-branch-plugin/pull/1168#issuecomment-3552674038)
+            if (almSettingDto.getAlm() == ALM.BITBUCKET_CLOUD) {
+                BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
+                client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
+            }
         } catch (IOException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }
