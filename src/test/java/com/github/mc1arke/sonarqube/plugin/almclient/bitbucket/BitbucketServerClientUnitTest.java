@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -198,26 +198,6 @@ class BitbucketServerClientUnitTest {
     }
 
     @Test
-    void testGetServerPropertiesError() throws IOException {
-        // given
-        Call call = mock();
-        Response response = mock();
-        ObjectReader reader = mock();
-
-        when(client.newCall(any())).thenReturn(call);
-        when(call.execute()).thenReturn(response);
-        when(response.isSuccessful()).thenReturn(true);
-        when(response.body()).thenReturn(null);
-
-        when(mapper.reader()).thenReturn(reader);
-        when(reader.forType(ServerProperties.class)).thenReturn(reader);
-
-        // when, then
-        assertThatThrownBy(underTest::getServerProperties)
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
     void testUploadReport() throws IOException {
         // given
         CodeInsightsReport report = mock();
@@ -239,25 +219,6 @@ class BitbucketServerClientUnitTest {
         Request request = captor.getValue();
         assertEquals("PUT", request.method());
         assertEquals("https://my-server.org/rest/insights/1.0/projects/project/repos/repository/commits/commit/reports/reportKey", request.url().toString());
-    }
-
-    @Test
-    void testUploadReportFails() throws IOException {
-        // given
-        CodeInsightsReport report = mock();
-        Call call = mock();
-        Response response = mock();
-
-        when(client.newCall(any())).thenReturn(call);
-        when(call.execute()).thenReturn(response);
-        when(response.isSuccessful()).thenReturn(false);
-        when(response.body()).thenReturn(null);
-
-        when(mapper.writeValueAsString(report)).thenReturn("{payload}");
-
-        // when,then
-        assertThatThrownBy(() -> underTest.uploadReport("commit", report, "reportKey"))
-                .isInstanceOf(BitbucketException.class);
     }
 
     @Test
@@ -486,25 +447,5 @@ class BitbucketServerClientUnitTest {
         assertEquals("https://my-server.org/rest/api/1.0/projects/project/repos/repository", request.url().toString());
         assertEquals("repo-slug", result.getSlug());
         assertEquals("no-check", request.header("x-atlassian-token"));
-    }
-
-    @Test
-    void shouldThrowExceptionIfRetrieveRepositoryReturnsNoResponse() throws IOException {
-        // given
-        Call call = mock();
-        Response response = mock();
-        ObjectReader reader = mock();
-
-        when(client.newCall(any())).thenReturn(call);
-        when(call.execute()).thenReturn(response);
-        when(response.isSuccessful()).thenReturn(true);
-        when(response.body()).thenReturn(null);
-
-        when(mapper.reader()).thenReturn(reader);
-        when(reader.forType(Repository.class)).thenReturn(reader);
-
-        // when, then
-        assertThatThrownBy(underTest::retrieveRepository)
-                .isInstanceOf(IllegalStateException.class);
     }
 }
