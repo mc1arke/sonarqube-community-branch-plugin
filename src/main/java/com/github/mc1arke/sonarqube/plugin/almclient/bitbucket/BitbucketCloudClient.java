@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2026 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,7 +46,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -79,8 +78,7 @@ class BitbucketCloudClient implements BitbucketClient {
                 .build();
 
         try (Response response = okHttpClient.newCall(request).execute()) {
-            BitbucketCloudClient.AuthToken authToken = objectMapper.readValue(
-                    Optional.ofNullable(response.body()).orElseThrow(() -> new IllegalStateException("No response returned by Bitbucket Oauth")).string(), BitbucketCloudClient.AuthToken.class);
+            BitbucketCloudClient.AuthToken authToken = objectMapper.readValue(response.body().string(), BitbucketCloudClient.AuthToken.class);
             return authToken.getAccessToken();
         } catch (IOException ex) {
             throw new IllegalStateException("Could not retrieve bearer token", ex);
@@ -193,9 +191,7 @@ class BitbucketCloudClient implements BitbucketClient {
             validate(response);
 
             return objectMapper.reader().forType(Repository.class)
-                    .readValue(Optional.ofNullable(response.body())
-                            .orElseThrow(() -> new IllegalStateException("No response body from BitBucket"))
-                            .string());
+                    .readValue(response.body().string());
         }
     }
 
@@ -227,20 +223,14 @@ class BitbucketCloudClient implements BitbucketClient {
         LOGGER.info("Deleting existing reports on bitbucket cloud");
 
         try (Response response = okHttpClient.newCall(req).execute()) {
-            // we dont need to validate the output here since most of the time this call will just return a 404
+            LOGGER.debug("Got status code {} when deleting existing report with key {}", response.code(), reportKey);
+            // we don't need to validate the output here since most of the time this call will just return a 404
         }
     }
 
-    void validate(Response response) {
+    void validate(Response response) throws IOException {
         if (!response.isSuccessful()) {
-            String error = Optional.ofNullable(response.body()).map(b -> {
-                try {
-                    return b.string();
-                } catch (IOException e) {
-                    throw new IllegalStateException("Could not retrieve response content", e);
-                }
-            }).orElse("Request failed but Bitbucket didn't respond with a proper error message");
-            throw new BitbucketCloudException(response.code(), error);
+            throw new BitbucketCloudException(response.code(), response.body().string());
         }
     }
 

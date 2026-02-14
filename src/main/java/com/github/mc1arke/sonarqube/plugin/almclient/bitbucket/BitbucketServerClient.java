@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2026 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -178,9 +178,6 @@ class BitbucketServerClient implements BitbucketClient {
             validate(response);
 
             try (ResponseBody responseBody = response.body()) {
-                if (responseBody == null) {
-                    throw new IllegalStateException("No response body from BitBucket");
-                }
                 return objectMapper.reader().forType(Repository.class)
                         .readValue(responseBody.string());
             }
@@ -217,9 +214,6 @@ class BitbucketServerClient implements BitbucketClient {
             validate(response);
 
             try (ResponseBody responseBody = response.body()) {
-                if (responseBody == null) {
-                    throw new IllegalStateException("No response body from BitBucket");
-                }
                 return objectMapper.reader().forType(ServerProperties.class)
                         .readValue(responseBody.string());
             }
@@ -228,14 +222,11 @@ class BitbucketServerClient implements BitbucketClient {
 
     void validate(Response response) throws IOException {
         if (!response.isSuccessful()) {
-            ErrorResponse errors = null;
             try (ResponseBody responseBody = response.body()) {
-                if (responseBody != null) {
-                    errors = objectMapper.reader().forType(ErrorResponse.class)
-                            .readValue(responseBody.string());
-                }
+                ErrorResponse errors = objectMapper.reader().forType(ErrorResponse.class)
+                        .readValue(responseBody.string());
+                throw new BitbucketException(response.code(), errors);
             }
-            throw new BitbucketException(response.code(), errors);
         }
     }
 }
