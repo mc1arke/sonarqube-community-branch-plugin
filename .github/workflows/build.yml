@@ -68,7 +68,7 @@ jobs:
       -
         name: Archive artifact
         if: success() && matrix.java == '21'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: snapshot
           path: build/libs/*.jar
@@ -106,7 +106,7 @@ jobs:
         run: zip -r ${{ github.workspace }}/sonarqube-webapp.zip ./*
       -
         name: Archive artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: webapp-build
           path: sonarqube-webapp.zip
@@ -156,7 +156,7 @@ jobs:
       -
         name: Archive artifact
         if: success()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: release
           path: build/libs/*.jar
