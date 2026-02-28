@@ -50,7 +50,7 @@ export function MenuItem(props: Readonly<MenuItemProps>) {
       }}
     >
       <div className="sw-flex sw-items-center sw-justify-between sw-truncate sw-flex-1">
-        <div className="sw-flex sw-items-center">
+        <div className="sw-flex sw-items-center sw-mr-2">
           <BranchLikeIcon branchLike={branchLike} />
 
           {isMainBranch(branchLike) && (
@@ -60,7 +60,7 @@ export function MenuItem(props: Readonly<MenuItemProps>) {
             </>
           )}
           {!isMainBranch(branchLike) && (
-            <Text className="sw-ml-3 sw-mr-2" isSubtle>{displayName}</Text>
+            <Text className="sw-ml-3" isSubtle>{displayName}</Text>
           )}
         </div>
         <QualityGateStatus
