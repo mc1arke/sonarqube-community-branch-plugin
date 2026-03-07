@@ -53,7 +53,7 @@ public class DeleteAction extends ProjectWsAction {
 
     @Override
     public void handleProjectRequest(ProjectDto project, Request request, Response response, DbSession dbSession) {
-        userSession.checkLoggedIn().hasEntityPermission(ProjectPermission.ADMIN, project);
+        userSession.checkLoggedIn().checkEntityPermission(ProjectPermission.ADMIN, project);
 
         String pullRequestId = request.mandatoryParam(PULL_REQUEST_PARAMETER);
 
