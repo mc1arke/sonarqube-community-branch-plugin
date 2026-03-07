@@ -130,7 +130,7 @@ class DeleteActionTest {
         when(componentFinder.getProjectByKey(any(), any())).thenReturn(new ProjectDto().setKey("projectKey").setUuid("uuid0"));
 
         when(userSession.checkLoggedIn()).thenReturn(userSession);
-        when(userSession.hasEntityPermission(any(), any(EntityDto.class))).thenThrow(new UnauthorizedException("Dummy"));
+        when(userSession.checkEntityPermission(any(), any(EntityDto.class))).thenThrow(new UnauthorizedException("Dummy"));
 
         Response response = mock();
 
