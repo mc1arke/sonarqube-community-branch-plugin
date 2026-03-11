@@ -157,7 +157,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
                     new GitStatusContext("sonarqube/qualitygate", sonarProjectKey),
                     analysisSummary.getDashboardUrl()
             );
-    
+
             client.submitPullRequestStatus(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), gitPullRequestStatus);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not update pipeline status in Azure DevOps", ex);
