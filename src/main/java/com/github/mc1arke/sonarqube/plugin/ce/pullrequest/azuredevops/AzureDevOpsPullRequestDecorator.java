@@ -148,7 +148,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
             GitPullRequestStatus gitPullRequestStatus = new GitPullRequestStatus(
                     GitStatusStateMapper.toGitStatusState(analysis.getQualityGateStatus()),
                     String.format("SonarQube Quality Gate - %s (%s)", analysis.getAnalysisProjectName(), analysis.getAnalysisProjectKey()),
-                    new GitStatusContext("sonarqube/qualitygate", analysis.getAnalysisProjectKey()),
+                    new GitStatusContext("SonarQube", "quality gate"),
                     analysisSummary.getDashboardUrl()
             );
 
