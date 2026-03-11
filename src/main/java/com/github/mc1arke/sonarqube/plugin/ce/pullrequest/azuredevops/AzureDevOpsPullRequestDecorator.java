@@ -145,10 +145,12 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     @Override
     protected void submitPipelineStatus(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary, ProjectAlmSettingDto projectAlmSettingDto) {
         try {
+            String description = analysis.getQualityGateStatus() == QualityGate.Status.OK ? "Quality Gate passed" : "Quality Gate failed";
+
             GitPullRequestStatus gitPullRequestStatus = new GitPullRequestStatus(
                     GitStatusStateMapper.toGitStatusState(analysis.getQualityGateStatus()),
-                    String.format("SonarQube Quality Gate - %s (%s)", analysis.getAnalysisProjectName(), analysis.getAnalysisProjectKey()),
-                    new GitStatusContext("sonarqube/qualitygate", analysis.getAnalysisProjectKey()),
+                    description,
+                    new GitStatusContext("SonarQube", "quality gate"),
                     analysisSummary.getDashboardUrl()
             );
 
