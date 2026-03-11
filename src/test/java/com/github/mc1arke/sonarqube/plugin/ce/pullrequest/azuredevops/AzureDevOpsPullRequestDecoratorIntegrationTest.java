@@ -393,7 +393,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
                 .withRequestBody(equalTo("{" +
                         "\"state\":\"SUCCEEDED\"," +
                         "\"description\":\"SonarQube Quality Gate - " + projectName + " (" + sonarProject + ")\"," +
-                        "\"context\":{\"genre\":\"sonarqube/qualitygate\",\"name\":\"" + sonarProject + "\"}," +
+                        "\"context\":{\"genre\":\"SonarQube\",\"name\":\"quality gate\"}," +
                         "\"targetUrl\":\"" + sonarRootUrl + "/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId + "\"" +
                         "}")
                 )
