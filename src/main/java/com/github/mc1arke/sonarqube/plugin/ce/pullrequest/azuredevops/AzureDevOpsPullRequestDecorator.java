@@ -147,7 +147,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
         try {
             String sonarProjectName = analysis.getAnalysisProjectName();
             String sonarProjectKey = analysis.getAnalysisProjectKey();
-            String title = sonarProjectName.equals(sonarProjectKey)
+            String title = (sonarProjectKey == null || sonarProjectKey.isBlank() || sonarProjectKey.equals(sonarProjectName))
                 ? String.format("SonarQube Quality Gate - %s", sonarProjectName)
                 : String.format("SonarQube Quality Gate - %s (%s)", sonarProjectName, sonarProjectKey);
     
