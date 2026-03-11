@@ -145,16 +145,22 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     @Override
     protected void submitPipelineStatus(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary, ProjectAlmSettingDto projectAlmSettingDto) {
         try {
+            String sonarProjectName = analysis.getAnalysisProjectName();
+            String sonarProjectKey = analysis.getAnalysisProjectKey();
+            String title = sonarProjectName.equals(sonarProjectKey)
+                ? String.format("SonarQube Quality Gate - %s", sonarProjectName)
+                : String.format("SonarQube Quality Gate - %s (%s)", sonarProjectName, sonarProjectKey);
+    
             GitPullRequestStatus gitPullRequestStatus = new GitPullRequestStatus(
                     GitStatusStateMapper.toGitStatusState(analysis.getQualityGateStatus()),
-                    String.format("SonarQube Quality Gate - %s (%s)", analysis.getAnalysisProjectName(), analysis.getAnalysisProjectKey()),
-                    new GitStatusContext("sonarqube/qualitygate", analysis.getAnalysisProjectKey()),
+                    title,
+                    new GitStatusContext("sonarqube/qualitygate", sonarProjectKey),
                     analysisSummary.getDashboardUrl()
             );
-
+    
             client.submitPullRequestStatus(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), gitPullRequestStatus);
         } catch (IOException ex) {
-            throw new IllegalStateException("Could not update pipeline status in Gitlab", ex);
+            throw new IllegalStateException("Could not update pipeline status in Azure DevOps", ex);
         }
     }
 
