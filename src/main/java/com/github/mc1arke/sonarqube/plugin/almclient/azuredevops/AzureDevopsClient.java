@@ -34,6 +34,8 @@ public interface AzureDevopsClient {
 
     PullRequest retrievePullRequest(String projectName, String repositoryName, int pullRequestId) throws IOException;
 
+    int retrieveLatestPullRequestIterationId(String projectName, String repositoryName, int pullRequestId) throws IOException;
+
     List<Commit> getPullRequestCommits(String projectName, String repositoryName, int pullRequestId) throws IOException;
 
     List<CommentThread> retrieveThreads(String projectName, String repositoryName, int pullRequestId) throws IOException;

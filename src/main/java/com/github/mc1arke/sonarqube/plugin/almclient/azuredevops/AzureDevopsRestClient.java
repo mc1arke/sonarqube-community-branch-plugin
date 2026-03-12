@@ -28,6 +28,8 @@ import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCom
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentThreadRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitPullRequestStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequestIteration;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequestIterationList;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.UpdateCommentThreadStatusRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.enums.CommentThreadStatus;
@@ -117,6 +119,13 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
     public PullRequest retrievePullRequest(String projectId, String repositoryName, int pullRequestId) throws IOException {
         String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         return execute(url, "get", null, PullRequest.class);
+    }
+
+    @Override
+    public int retrieveLatestPullRequestIterationId(String projectId, String repositoryName, int pullRequestId) throws IOException {
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/iterations?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
+        PullRequestIterationList iterationList = Objects.requireNonNull(execute(url, "get", null, PullRequestIterationList.class));
+        return iterationList.getValue().stream().mapToInt(PullRequestIteration::getId).max().orElse(1);
     }
 
     @Override
