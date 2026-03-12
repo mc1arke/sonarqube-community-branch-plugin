@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2026 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2026 Markus Heberling, Michael Clarke, Sebastiaan Speck
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -145,16 +145,25 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     @Override
     protected void submitPipelineStatus(AzureDevopsClient client, PullRequest pullRequest, AnalysisDetails analysis, AnalysisSummary analysisSummary, ProjectAlmSettingDto projectAlmSettingDto) {
         try {
+            String projectName = pullRequest.getRepository().getProject().getName();
+            String repositoryName = pullRequest.getRepository().getName();
+            int pullRequestId = pullRequest.getId();
+
+            int iterationId = pullRequest.doesSupportIterations()
+                    ? client.retrievePullRequestIterationIdForCommit(projectName, repositoryName, pullRequestId, analysis.getCommitSha())
+                    : 1;
+
             String description = analysis.getQualityGateStatus() == QualityGate.Status.OK ? "Quality Gate passed" : "Quality Gate failed";
 
             GitPullRequestStatus gitPullRequestStatus = new GitPullRequestStatus(
                     GitStatusStateMapper.toGitStatusState(analysis.getQualityGateStatus()),
                     description,
                     new GitStatusContext("SonarQube", "quality gate"),
-                    analysisSummary.getDashboardUrl()
+                    analysisSummary.getDashboardUrl(),
+                    iterationId
             );
 
-            client.submitPullRequestStatus(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), gitPullRequestStatus);
+            client.submitPullRequestStatus(projectName, repositoryName, pullRequestId, gitPullRequestStatus);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not update pipeline status in Gitlab", ex);
         }

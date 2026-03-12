@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke, Sebastiaan Speck
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,8 @@ import java.util.List;
 public interface AzureDevopsClient {
 
     PullRequest retrievePullRequest(String projectName, String repositoryName, int pullRequestId) throws IOException;
+
+    int retrievePullRequestIterationIdForCommit(String projectName, String repositoryName, int pullRequestId, String commitSha) throws IOException;
 
     List<Commit> getPullRequestCommits(String projectName, String repositoryName, int pullRequestId) throws IOException;
 

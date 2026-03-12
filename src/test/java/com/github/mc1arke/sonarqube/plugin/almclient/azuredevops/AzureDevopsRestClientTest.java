@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke, Sebastiaan Speck
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,8 @@ import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCom
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitPullRequestStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitStatusContext;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequestIteration;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequestIterationList;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.enums.GitStatusState;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -36,6 +38,7 @@ import org.mockito.ArgumentCaptor;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -88,7 +91,7 @@ class AzureDevopsRestClientTest {
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
         when(objectMapper.writeValueAsString(any())).thenReturn("json");
 
-        underTest.submitPullRequestStatus("project Id With Spaces", "repository Name With Spaces", 123, new GitPullRequestStatus(GitStatusState.SUCCEEDED, "description", new GitStatusContext("name", "genre"), "url"));
+        underTest.submitPullRequestStatus("project Id With Spaces", "repository Name With Spaces", 123, new GitPullRequestStatus(GitStatusState.SUCCEEDED, "description", new GitStatusContext("name", "genre"), "url", 2));
 
         ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
         verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
@@ -98,6 +101,55 @@ class AzureDevopsRestClientTest {
         assertThat(request.getMethod()).isEqualTo("POST");
         assertThat(request.getUri()).isEqualTo(URI.create("http://url.test/api/project%20Id%20With%20Spaces/_apis/git/repositories/repository%20Name%20With%20Spaces/pullRequests/123/statuses?api-version=4.1-preview"));
         assertThat(request.getEntity().getContent()).hasContent("json");
+    }
+
+    @Test
+    void checkGetPullRequestIterationIdForCommitReturnsMatchingIteration() throws IOException {
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
+
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
+        when(statusLine.getStatusCode()).thenReturn(200);
+        when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
+        when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity("content", StandardCharsets.UTF_8));
+        when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
+        PullRequestIterationList iterationList = new PullRequestIterationList(List.of(
+                new PullRequestIteration(1, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-aaa")),
+                new PullRequestIteration(2, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-bbb")),
+                new PullRequestIteration(3, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-ccc"))));
+        when(objectMapper.readValue(any(String.class), eq(PullRequestIterationList.class))).thenReturn(iterationList);
+
+        int result = underTest.retrievePullRequestIterationIdForCommit("projectId", "repository Name", 123, "sha-bbb");
+
+        ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
+        verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
+
+        RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
+
+        assertThat(request.getMethod()).isEqualTo("GET");
+        assertThat(request.getUri()).isEqualTo(URI.create("http://url.test/api/projectId/_apis/git/repositories/repository%20Name/pullRequests/123/iterations?includeCommits=true&api-version=4.1"));
+        assertThat(request.getEntity()).isNull();
+        assertThat(result).isEqualTo(2);
+    }
+
+    @Test
+    void checkGetPullRequestIterationIdForCommitReturnsOneWhenNoMatchFound() throws IOException {
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
+
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
+        when(statusLine.getStatusCode()).thenReturn(200);
+        when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
+        when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity("content", StandardCharsets.UTF_8));
+        when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
+        PullRequestIterationList iterationList = new PullRequestIterationList(List.of(
+                new PullRequestIteration(1, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-aaa")),
+                new PullRequestIteration(2, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-bbb"))));
+        when(objectMapper.readValue(any(String.class), eq(PullRequestIterationList.class))).thenReturn(iterationList);
+
+        int result = underTest.retrievePullRequestIterationIdForCommit("projectId", "repository Name", 123, "sha-unknown");
+
+        assertThat(result).isEqualTo(1);
     }
 
     @Test
