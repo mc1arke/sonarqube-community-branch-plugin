@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke, Sebastiaan Speck
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,8 @@ import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCom
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentThreadRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitPullRequestStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequestIteration;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequestIterationList;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.UpdateCommentThreadStatusRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.enums.CommentThreadStatus;
@@ -117,6 +119,17 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
     public PullRequest retrievePullRequest(String projectId, String repositoryName, int pullRequestId) throws IOException {
         String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         return execute(url, "get", null, PullRequest.class);
+    }
+
+    @Override
+    public int retrievePullRequestIterationIdForCommit(String projectId, String repositoryName, int pullRequestId, String commitSha) throws IOException {
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/iterations?includeCommits=true&api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
+        PullRequestIterationList iterationList = Objects.requireNonNull(execute(url, "get", null, PullRequestIterationList.class));
+        return iterationList.getValue().stream()
+                .filter(iteration -> iteration.getSourceRefCommit() != null && commitSha.equals(iteration.getSourceRefCommit().getCommitId()))
+                .mapToInt(PullRequestIteration::getId)
+                .findFirst()
+                .orElse(1);
     }
 
     @Override

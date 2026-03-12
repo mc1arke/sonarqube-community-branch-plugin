@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2026 Michael Clarke, Sebastiaan Speck
+ * Copyright (C) 2026 Sebastiaan Speck
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,29 +21,22 @@ package com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PullRequest {
+public class PullRequestIteration {
 
     private final int id;
-    private final Repository repository;
-    private final boolean supportsIterations;
+    private final Commit sourceRefCommit;
 
     @JsonCreator
-    public PullRequest(@JsonProperty("pullRequestId") int id, @JsonProperty("repository") Repository repository,
-                       @JsonProperty("supportsIterations") boolean supportsIterations) {
+    public PullRequestIteration(@JsonProperty("id") int id, @JsonProperty("sourceRefCommit") Commit sourceRefCommit) {
         this.id = id;
-        this.repository = repository;
-        this.supportsIterations = supportsIterations;
+        this.sourceRefCommit = sourceRefCommit;
     }
 
     public int getId() {
         return id;
     }
 
-    public Repository getRepository() {
-        return repository;
-    }
-
-    public boolean doesSupportIterations() {
-        return supportsIterations;
+    public Commit getSourceRefCommit() {
+        return sourceRefCommit;
     }
 }
