@@ -104,7 +104,7 @@ class AzureDevopsRestClientTest {
     }
 
     @Test
-    void checkGetLatestPullRequestIterationIdReturnsMaxIteration() throws IOException {
+    void checkGetPullRequestIterationIdForCommitReturnsMatchingIteration() throws IOException {
         AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
@@ -113,10 +113,13 @@ class AzureDevopsRestClientTest {
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity("content", StandardCharsets.UTF_8));
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
-        PullRequestIterationList iterationList = new PullRequestIterationList(List.of(new PullRequestIteration(1), new PullRequestIteration(2), new PullRequestIteration(3)));
+        PullRequestIterationList iterationList = new PullRequestIterationList(List.of(
+                new PullRequestIteration(1, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-aaa")),
+                new PullRequestIteration(2, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-bbb")),
+                new PullRequestIteration(3, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-ccc"))));
         when(objectMapper.readValue(any(String.class), eq(PullRequestIterationList.class))).thenReturn(iterationList);
 
-        int result = underTest.retrieveLatestPullRequestIterationId("projectId", "repository Name", 123);
+        int result = underTest.retrievePullRequestIterationIdForCommit("projectId", "repository Name", 123, "sha-bbb");
 
         ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
         verify(closeableHttpClient).execute(requestArgumentCaptor.capture());
@@ -124,9 +127,29 @@ class AzureDevopsRestClientTest {
         RequestBuilder request = RequestBuilder.copy(requestArgumentCaptor.getValue());
 
         assertThat(request.getMethod()).isEqualTo("GET");
-        assertThat(request.getUri()).isEqualTo(URI.create("http://url.test/api/projectId/_apis/git/repositories/repository%20Name/pullRequests/123/iterations?api-version=4.1"));
+        assertThat(request.getUri()).isEqualTo(URI.create("http://url.test/api/projectId/_apis/git/repositories/repository%20Name/pullRequests/123/iterations?includeCommits=true&api-version=4.1"));
         assertThat(request.getEntity()).isNull();
-        assertThat(result).isEqualTo(3);
+        assertThat(result).isEqualTo(2);
+    }
+
+    @Test
+    void checkGetPullRequestIterationIdForCommitReturnsOneWhenNoMatchFound() throws IOException {
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
+
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
+        when(statusLine.getStatusCode()).thenReturn(200);
+        when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
+        when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity("content", StandardCharsets.UTF_8));
+        when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
+        PullRequestIterationList iterationList = new PullRequestIterationList(List.of(
+                new PullRequestIteration(1, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-aaa")),
+                new PullRequestIteration(2, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-bbb"))));
+        when(objectMapper.readValue(any(String.class), eq(PullRequestIterationList.class))).thenReturn(iterationList);
+
+        int result = underTest.retrievePullRequestIterationIdForCommit("projectId", "repository Name", 123, "sha-unknown");
+
+        assertThat(result).isEqualTo(1);
     }
 
     @Test

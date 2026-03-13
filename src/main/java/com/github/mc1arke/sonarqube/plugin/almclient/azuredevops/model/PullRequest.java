@@ -25,11 +25,14 @@ public class PullRequest {
 
     private final int id;
     private final Repository repository;
+    private final boolean supportsIterations;
 
     @JsonCreator
-    public PullRequest(@JsonProperty("pullRequestId") int id, @JsonProperty("repository") Repository repository) {
+    public PullRequest(@JsonProperty("pullRequestId") int id, @JsonProperty("repository") Repository repository,
+                       @JsonProperty("supportsIterations") boolean supportsIterations) {
         this.id = id;
         this.repository = repository;
+        this.supportsIterations = supportsIterations;
     }
 
     public int getId() {
@@ -38,5 +41,9 @@ public class PullRequest {
 
     public Repository getRepository() {
         return repository;
+    }
+
+    public boolean doesSupportIterations() {
+        return supportsIterations;
     }
 }

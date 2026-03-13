@@ -24,13 +24,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class PullRequestIteration {
 
     private final int id;
+    private final Commit sourceRefCommit;
 
     @JsonCreator
-    public PullRequestIteration(@JsonProperty("id") int id) {
+    public PullRequestIteration(@JsonProperty("id") int id, @JsonProperty("sourceRefCommit") Commit sourceRefCommit) {
         this.id = id;
+        this.sourceRefCommit = sourceRefCommit;
     }
 
     public int getId() {
         return id;
+    }
+
+    public Commit getSourceRefCommit() {
+        return sourceRefCommit;
     }
 }

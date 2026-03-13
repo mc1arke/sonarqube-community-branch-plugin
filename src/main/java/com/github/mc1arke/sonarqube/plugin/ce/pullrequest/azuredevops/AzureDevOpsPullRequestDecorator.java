@@ -149,7 +149,9 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
             String repositoryName = pullRequest.getRepository().getName();
             int pullRequestId = pullRequest.getId();
 
-            int iterationId = client.retrieveLatestPullRequestIterationId(projectName, repositoryName, pullRequestId);
+            int iterationId = pullRequest.doesSupportIterations()
+                    ? client.retrievePullRequestIterationIdForCommit(projectName, repositoryName, pullRequestId, analysis.getCommitSha())
+                    : 1;
 
             GitPullRequestStatus gitPullRequestStatus = new GitPullRequestStatus(
                     GitStatusStateMapper.toGitStatusState(analysis.getQualityGateStatus()),

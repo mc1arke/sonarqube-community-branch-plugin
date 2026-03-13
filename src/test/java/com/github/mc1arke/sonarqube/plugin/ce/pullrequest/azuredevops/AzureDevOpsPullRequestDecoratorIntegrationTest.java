@@ -534,7 +534,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
                         "  }" + System.lineSeparator() +
                         "}")));
 
-        wireMockExtension.stubFor(get(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/" + pullRequestId + "/iterations?api-version=4.1"))
+        wireMockExtension.stubFor(get(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/" + pullRequestId + "/iterations?includeCommits=true&api-version=4.1"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Authorization", equalTo(authHeader))
                 .willReturn(aResponse().withStatus(200).withBody("{" + System.lineSeparator() +

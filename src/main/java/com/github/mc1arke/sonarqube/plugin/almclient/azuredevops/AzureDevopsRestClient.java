@@ -122,10 +122,14 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
     }
 
     @Override
-    public int retrieveLatestPullRequestIterationId(String projectId, String repositoryName, int pullRequestId) throws IOException {
-        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/iterations?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
+    public int retrievePullRequestIterationIdForCommit(String projectId, String repositoryName, int pullRequestId, String commitSha) throws IOException {
+        String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/iterations?includeCommits=true&api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
         PullRequestIterationList iterationList = Objects.requireNonNull(execute(url, "get", null, PullRequestIterationList.class));
-        return iterationList.getValue().stream().mapToInt(PullRequestIteration::getId).max().orElse(1);
+        return iterationList.getValue().stream()
+                .filter(iteration -> iteration.getSourceRefCommit() != null && commitSha.equals(iteration.getSourceRefCommit().getCommitId()))
+                .mapToInt(PullRequestIteration::getId)
+                .findFirst()
+                .orElse(1);
     }
 
     @Override

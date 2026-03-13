@@ -70,6 +70,7 @@ class AzureDevOpsPullRequestDecoratorTest {
     private PullRequest mockPullRequest(AzureDevopsClient azureDevopsClient, String azureProject, String azureRepository, int pullRequestId) throws IOException {
         PullRequest pullRequest = mock();
         when(pullRequest.getId()).thenReturn(pullRequestId);
+        when(pullRequest.doesSupportIterations()).thenReturn(true);
         when(azureDevopsClient.retrievePullRequest(any(), any(), anyInt())).thenReturn(pullRequest);
         Repository repository = mock();
         Project project = mock();
@@ -428,14 +429,16 @@ class AzureDevOpsPullRequestDecoratorTest {
     }
 
     @Test
-    void shouldSubmitPullRequestStatusWithLatestIterationId() throws IOException {
+    void shouldSubmitPullRequestStatusWithIterationIdForCommit() throws IOException {
         String azureProject = "azure-project";
         String azureRepository = "azure-repo";
         int pullRequestId = 321;
-        int latestIterationId = 3;
+        int iterationId = 2;
+        String commitSha = "abc123def456";
 
         when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(analysisDetails.getCommitSha()).thenReturn(commitSha);
         when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
         when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
@@ -448,7 +451,7 @@ class AzureDevOpsPullRequestDecoratorTest {
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
 
-        when(azureDevopsClient.retrieveLatestPullRequestIterationId(azureProject, azureRepository, pullRequestId)).thenReturn(latestIterationId);
+        when(azureDevopsClient.retrievePullRequestIterationIdForCommit(azureProject, azureRepository, pullRequestId, commitSha)).thenReturn(iterationId);
         when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
 
         AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
@@ -456,17 +459,18 @@ class AzureDevOpsPullRequestDecoratorTest {
 
         ArgumentCaptor<GitPullRequestStatus> statusCaptor = ArgumentCaptor.captor();
         verify(azureDevopsClient).submitPullRequestStatus(eq(azureProject), eq(azureRepository), eq(pullRequestId), statusCaptor.capture());
-        assertThat(statusCaptor.getValue().getIterationId()).isEqualTo(latestIterationId);
+        assertThat(statusCaptor.getValue().getIterationId()).isEqualTo(iterationId);
     }
 
     @Test
-    void shouldThrowIfLatestIterationIdCallFails() throws IOException {
+    void shouldThrowIfIterationIdForCommitCallFails() throws IOException {
         String azureProject = "azure-project";
         String azureRepository = "azure-repo";
         int pullRequestId = 321;
 
         when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(analysisDetails.getCommitSha()).thenReturn("abc123");
         when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
         when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
         when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
@@ -479,7 +483,7 @@ class AzureDevOpsPullRequestDecoratorTest {
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
 
-        when(azureDevopsClient.retrieveLatestPullRequestIterationId(any(), any(), anyInt())).thenThrow(new IOException("403 Forbidden"));
+        when(azureDevopsClient.retrievePullRequestIterationIdForCommit(any(), any(), anyInt(), any())).thenThrow(new IOException("403 Forbidden"));
         when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
 
         AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
@@ -489,5 +493,36 @@ class AzureDevOpsPullRequestDecoratorTest {
                 .hasMessage("Could not update pipeline status in Gitlab");
 
         verify(azureDevopsClient, never()).submitPullRequestStatus(any(), any(), anyInt(), any());
+    }
+
+    @Test
+    void shouldUseIterationIdOneWhenPullRequestDoesNotSupportIterations() throws IOException {
+        String azureProject = "azure-project";
+        String azureRepository = "azure-repo";
+        int pullRequestId = 321;
+
+        when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
+
+        AnalysisSummary analysisSummary = mock();
+        when(analysisSummary.getDashboardUrl()).thenReturn("http://sonar/dashboard");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
+        PullRequest pullRequest = mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
+        when(pullRequest.doesSupportIterations()).thenReturn(false);
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        ArgumentCaptor<GitPullRequestStatus> statusCaptor = ArgumentCaptor.captor();
+        verify(azureDevopsClient).submitPullRequestStatus(eq(azureProject), eq(azureRepository), eq(pullRequestId), statusCaptor.capture());
+        assertThat(statusCaptor.getValue().getIterationId()).isEqualTo(1);
+        verify(azureDevopsClient, never()).retrievePullRequestIterationIdForCommit(any(), any(), anyInt(), any());
     }
 }
