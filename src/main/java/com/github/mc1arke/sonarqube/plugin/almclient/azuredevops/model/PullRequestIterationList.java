@@ -21,29 +21,18 @@ package com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PullRequest {
+import java.util.List;
 
-    private final int id;
-    private final Repository repository;
-    private final boolean supportsIterations;
+public class PullRequestIterationList {
+
+    private final List<PullRequestIteration> value;
 
     @JsonCreator
-    public PullRequest(@JsonProperty("pullRequestId") int id, @JsonProperty("repository") Repository repository,
-                       @JsonProperty("supportsIterations") boolean supportsIterations) {
-        this.id = id;
-        this.repository = repository;
-        this.supportsIterations = supportsIterations;
+    public PullRequestIterationList(@JsonProperty("value") List<PullRequestIteration> value) {
+        this.value = value;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public Repository getRepository() {
-        return repository;
-    }
-
-    public boolean doesSupportIterations() {
-        return supportsIterations;
+    public List<PullRequestIteration> getValue() {
+        return value;
     }
 }

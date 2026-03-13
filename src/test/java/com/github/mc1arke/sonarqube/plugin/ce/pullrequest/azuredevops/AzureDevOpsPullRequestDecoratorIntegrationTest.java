@@ -394,7 +394,8 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
                         "\"state\":\"SUCCEEDED\"," +
                         "\"description\":\"SonarQube Quality Gate - " + projectName + " (" + sonarProject + ")\"," +
                         "\"context\":{\"genre\":\"sonarqube/qualitygate\",\"name\":\"" + sonarProject + "\"}," +
-                        "\"targetUrl\":\"" + sonarRootUrl + "/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId + "\"" +
+                        "\"targetUrl\":\"" + sonarRootUrl + "/dashboard?id=" + sonarProject + "&pullRequest=" + pullRequestId + "\"," +
+                        "\"iterationId\":1" +
                         "}")
                 )
                 .willReturn(ok()));
@@ -531,6 +532,18 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
                         "    \"customDisplayName\": \"Test User\"," + System.lineSeparator() +
                         "    \"emailAddress\": \"test.user@mail.domain\"" + System.lineSeparator() +
                         "  }" + System.lineSeparator() +
+                        "}")));
+
+        wireMockExtension.stubFor(get(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/" + pullRequestId + "/iterations?includeCommits=true&api-version=4.1"))
+                .withHeader("Accept", equalTo("application/json"))
+                .withHeader("Authorization", equalTo(authHeader))
+                .willReturn(aResponse().withStatus(200).withBody("{" + System.lineSeparator() +
+                        "    \"value\": [" + System.lineSeparator() +
+                        "        {" + System.lineSeparator() +
+                        "            \"id\": 1" + System.lineSeparator() +
+                        "        }" + System.lineSeparator() +
+                        "    ]," + System.lineSeparator() +
+                        "    \"count\": 1" + System.lineSeparator() +
                         "}")));
     }
 

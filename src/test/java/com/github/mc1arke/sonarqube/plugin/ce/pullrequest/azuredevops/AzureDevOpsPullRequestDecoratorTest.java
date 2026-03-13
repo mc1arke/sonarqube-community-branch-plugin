@@ -46,6 +46,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Comment;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CommentThread;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.ConnectionData;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentRequest;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitPullRequestStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.IdentityRef;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Project;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
@@ -66,6 +67,20 @@ class AzureDevOpsPullRequestDecoratorTest {
     private final ReportGenerator reportGenerator = mock();
     private final MarkdownFormatterFactory markdownFormatterFactory = mock();
 
+    private PullRequest mockPullRequest(AzureDevopsClient azureDevopsClient, String azureProject, String azureRepository, int pullRequestId) throws IOException {
+        PullRequest pullRequest = mock();
+        when(pullRequest.getId()).thenReturn(pullRequestId);
+        when(pullRequest.doesSupportIterations()).thenReturn(true);
+        when(azureDevopsClient.retrievePullRequest(any(), any(), anyInt())).thenReturn(pullRequest);
+        Repository repository = mock();
+        Project project = mock();
+        when(pullRequest.getRepository()).thenReturn(repository);
+        when(repository.getProject()).thenReturn(project);
+        when(project.getName()).thenReturn(azureProject);
+        when(repository.getRemoteUrl()).thenReturn("https://remote.url/path/to/repo");
+        when(repository.getName()).thenReturn(azureRepository);
+        return pullRequest;
+    }
 
     @Test
     void testDecorateQualityGateRepoSlugException() {
@@ -413,4 +428,101 @@ class AzureDevOpsPullRequestDecoratorTest {
         verify(azureDevopsClient).retrieveThreads(azureProject, azureRepository, pullRequestId);
     }
 
+    @Test
+    void shouldSubmitPullRequestStatusWithIterationIdForCommit() throws IOException {
+        String azureProject = "azure-project";
+        String azureRepository = "azure-repo";
+        int pullRequestId = 321;
+        int iterationId = 2;
+        String commitSha = "abc123def456";
+
+        when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(analysisDetails.getCommitSha()).thenReturn(commitSha);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
+
+        AnalysisSummary analysisSummary = mock();
+        when(analysisSummary.getDashboardUrl()).thenReturn("http://sonar/dashboard");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
+        mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
+
+        when(azureDevopsClient.retrievePullRequestIterationIdForCommit(azureProject, azureRepository, pullRequestId, commitSha)).thenReturn(iterationId);
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        ArgumentCaptor<GitPullRequestStatus> statusCaptor = ArgumentCaptor.captor();
+        verify(azureDevopsClient).submitPullRequestStatus(eq(azureProject), eq(azureRepository), eq(pullRequestId), statusCaptor.capture());
+        assertThat(statusCaptor.getValue().getIterationId()).isEqualTo(iterationId);
+    }
+
+    @Test
+    void shouldThrowIfIterationIdForCommitCallFails() throws IOException {
+        String azureProject = "azure-project";
+        String azureRepository = "azure-repo";
+        int pullRequestId = 321;
+
+        when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(analysisDetails.getCommitSha()).thenReturn("abc123");
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
+
+        AnalysisSummary analysisSummary = mock();
+        when(analysisSummary.getDashboardUrl()).thenReturn("http://sonar/dashboard");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
+        mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
+
+        when(azureDevopsClient.retrievePullRequestIterationIdForCommit(any(), any(), anyInt(), any())).thenThrow(new IOException("403 Forbidden"));
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+
+        assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not update pipeline status in Gitlab");
+
+        verify(azureDevopsClient, never()).submitPullRequestStatus(any(), any(), anyInt(), any());
+    }
+
+    @Test
+    void shouldUseIterationIdOneWhenPullRequestDoesNotSupportIterations() throws IOException {
+        String azureProject = "azure-project";
+        String azureRepository = "azure-repo";
+        int pullRequestId = 321;
+
+        when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
+
+        AnalysisSummary analysisSummary = mock();
+        when(analysisSummary.getDashboardUrl()).thenReturn("http://sonar/dashboard");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
+        PullRequest pullRequest = mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
+        when(pullRequest.doesSupportIterations()).thenReturn(false);
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        ArgumentCaptor<GitPullRequestStatus> statusCaptor = ArgumentCaptor.captor();
+        verify(azureDevopsClient).submitPullRequestStatus(eq(azureProject), eq(azureRepository), eq(pullRequestId), statusCaptor.capture());
+        assertThat(statusCaptor.getValue().getIterationId()).isEqualTo(1);
+        verify(azureDevopsClient, never()).retrievePullRequestIterationIdForCommit(any(), any(), anyInt(), any());
+    }
 }
