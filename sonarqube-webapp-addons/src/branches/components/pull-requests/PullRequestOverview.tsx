@@ -19,7 +19,7 @@
  */
 
 import { uniq } from 'lodash';
-import { BasicSeparator, CenteredLayout, PageContentFontWrapper, Spinner } from '~design-system';
+import { BasicSeparator, PageContentFontWrapper, Spinner } from '~design-system';
 import { isDefined } from '~shared/helpers/types';
 import { PullRequest } from '~shared/types/branch-like';
 import { AnalysisStatus } from '~sq-server-commons/components/overview/AnalysisStatus';
@@ -78,11 +78,9 @@ export default function PullRequestOverview(props: Readonly<Readonly<Props>>) {
 
   if (isLoading) {
     return (
-      <CenteredLayout>
         <div className="sw-p-6">
           <Spinner loading />
         </div>
-      </CenteredLayout>
     );
   }
 
@@ -95,7 +93,6 @@ export default function PullRequestOverview(props: Readonly<Readonly<Props>>) {
     .filter(isDefined);
 
   return (
-    <CenteredLayout>
       <PageContentFontWrapper className="it__pr-overview sw-mt-12 sw-mb-8 sw-grid sw-grid-cols-12 sw-typo-default">
         <div className="sw-col-start-2 sw-col-span-10">
           <PullRequestMetaTopBar pullRequest={pullRequest} measures={measures} />
@@ -121,6 +118,5 @@ export default function PullRequestOverview(props: Readonly<Readonly<Props>>) {
           <SonarLintAd status={status} />
         </div>
       </PageContentFontWrapper>
-    </CenteredLayout>
   );
 }

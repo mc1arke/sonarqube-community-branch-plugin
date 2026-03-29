@@ -2,8 +2,9 @@ import routes from './app/routes';
 import Menu from './components/branch-like/Menu';
 import PRLink from './components/branch-like/PRLink';
 import BranchListSection from './components/branch-list/BranchListSection';
-import PullRequestOverview from './components/pull-requests//PullRequestOverview';
+import PullRequestOverview from './components/pull-requests/PullRequestOverview';
+import ProjectBranchSelector from './components/project-branch-selector/ProjectBranchSelector';
 
-const branches = { routes, Menu, PRLink, BranchListSection, PullRequestOverview };
+const branches = { routes, Menu, PRLink, BranchListSection, PullRequestOverview, ProjectBranchSelector };
 
 export default branches;
