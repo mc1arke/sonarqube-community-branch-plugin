@@ -20,7 +20,7 @@
 
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { LargeCenteredLayout, PageContentFontWrapper, Title } from '~design-system';
+import { PageContentFontWrapper, Title } from '~design-system';
 import withComponentContext from '~sq-server-commons/context/componentContext/withComponentContext';
 import { translate } from '~sq-server-commons/helpers/l10n';
 import { withBranchLikes } from '~sq-server-commons/queries/branch';
@@ -37,7 +37,7 @@ function ProjectBranchesApp(props: ProjectBranchesAppProps) {
   const { component, fetchComponent } = props;
 
   return (
-    <LargeCenteredLayout id="project-branch-like">
+    <div id="project-branch-like">
       <PageContentFontWrapper className="sw-my-8 sw-typo-default">
         <header className="sw-mb-5">
           <Helmet defer={false} title={translate('project_branch_pull_request.page')} />
@@ -47,7 +47,7 @@ function ProjectBranchesApp(props: ProjectBranchesAppProps) {
 
         <BranchLikeTabs component={component} fetchComponent={fetchComponent} />
       </PageContentFontWrapper>
-    </LargeCenteredLayout>
+    </div>
   );
 }
 
