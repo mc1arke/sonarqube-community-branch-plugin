@@ -166,12 +166,12 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
         try {
             CreateCommentRequest comment = new CreateCommentRequest(analysisIssueSummary.format(markdownFormatterFactory));
             CommentPosition fileStart = new CommentPosition(
-                    location.getTextRange().getEndLine(),
-                    location.getTextRange().getEndOffset() + 1
-            );
-            CommentPosition fileEnd = new CommentPosition(
                     location.getTextRange().getStartLine(),
                     location.getTextRange().getStartOffset() + 1
+            );
+            CommentPosition fileEnd = new CommentPosition(
+                    location.getTextRange().getEndLine(),
+                    location.getTextRange().getEndOffset() + 1
             );
             String file = filePath.startsWith("/") ? filePath : "/" + filePath;
             CommentThreadContext commentThreadContext = new CommentThreadContext(file, fileStart, fileEnd);
