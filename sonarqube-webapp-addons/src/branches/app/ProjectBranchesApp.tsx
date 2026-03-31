@@ -37,7 +37,7 @@ function ProjectBranchesApp(props: ProjectBranchesAppProps) {
   const { component, fetchComponent } = props;
 
   return (
-    <div id="project-branch-like">
+    <div id="project-branch-like" className="sw-mx-auto sw-max-w-[1680px]">
       <PageContentFontWrapper className="sw-my-8 sw-typo-default">
         <header className="sw-mb-5">
           <Helmet defer={false} title={translate('project_branch_pull_request.page')} />
