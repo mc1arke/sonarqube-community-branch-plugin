@@ -18,14 +18,21 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { Layout, Spinner } from '@sonarsource/echoes-react';
 import { uniq } from 'lodash';
-import { BasicSeparator, PageContentFontWrapper, Spinner } from '~design-system';
+import { useIntl } from 'react-intl';
+import { useFlags } from '~adapters/helpers/feature-flags';
+import { BasicSeparator } from '~design-system';
+import { ProjectPageTemplate } from '~shared/components/pages/ProjectPageTemplate';
 import { isDefined } from '~shared/helpers/types';
 import { PullRequest } from '~shared/types/branch-like';
+import { ComponentNavBindingStatus } from '~sq-server-commons/components/nav/ComponentNavBindingStatus';
 import { AnalysisStatus } from '~sq-server-commons/components/overview/AnalysisStatus';
 import IgnoredConditionWarning from '~sq-server-commons/components/overview/IgnoredConditionWarning';
 import LastAnalysisLabel from '~sq-server-commons/components/overview/LastAnalysisLabel';
 import QGStatus from '~sq-server-commons/components/overview/QualityGateStatus';
+import '~sq-server-commons/components/overview/styles.css';
+import { useAvailableFeatures } from '~sq-server-commons/context/available-features/withAvailableFeatures';
 import {
   enhanceConditionWithMeasure,
   enhanceMeasuresWithMetrics,
@@ -33,11 +40,12 @@ import {
 import { useBranchStatusQuery } from '~sq-server-commons/queries/branch';
 import { useMeasuresComponentQuery } from '~adapters/queries/measures';
 import { useComponentQualityGateQuery } from '~sq-server-commons/queries/quality-gates';
-
-import '~sq-server-commons/components/overview/styles.css';
+import { Feature } from '~sq-server-commons/types/features';
 import { Component } from '~sq-server-commons/types/types';
 import { PR_METRICS } from '~sq-server-commons/utils/overview-utils';
+import PRLink from '../branch-like/PRLink';
 import MeasuresCardPanel from './MeasuresCardPanel';
+import { PullRequestMetaContentHeader } from './PullRequestMetaContentHeader';
 import PullRequestMetaTopBar from './PullRequestMetaTopBar';
 import SonarLintAd from './SonarLintAd';
 
@@ -48,7 +56,7 @@ interface Props {
 
 export default function PullRequestOverview(props: Readonly<Readonly<Props>>) {
   const { component, pullRequest } = props;
-
+  const intl = useIntl();
   const {
     data: { conditions, ignoredConditions, status } = {},
     isLoading: isLoadingBranchStatusesData,
@@ -57,6 +65,11 @@ export default function PullRequestOverview(props: Readonly<Readonly<Props>>) {
   const { data: qualityGate, isLoading: isLoadingQualityGate } = useComponentQualityGateQuery(
     component.key,
   );
+
+  const { frontEndEngineeringEnableSidebarNavigation } = useFlags();
+  const { hasFeature } = useAvailableFeatures();
+  const hasBranchSupport = hasFeature(Feature.BranchSupport);
+  const pageTitle = intl.formatMessage({ id: 'overview.page' });
 
   const { data: componentMeasures, isLoading: isLoadingMeasures } = useMeasuresComponentQuery(
     {
@@ -78,9 +91,9 @@ export default function PullRequestOverview(props: Readonly<Readonly<Props>>) {
 
   if (isLoading) {
     return (
-        <div className="sw-p-6">
-          <Spinner loading />
-        </div>
+        <ProjectPageTemplate disableQualityGateStatus title={pageTitle}>
+          <Spinner isLoading />
+        </ProjectPageTemplate>
     );
   }
 
@@ -93,30 +106,49 @@ export default function PullRequestOverview(props: Readonly<Readonly<Props>>) {
     .filter(isDefined);
 
   return (
-      <PageContentFontWrapper className="it__pr-overview sw-mt-12 sw-mb-8 sw-grid sw-grid-cols-12 sw-typo-default">
-        <div className="sw-col-start-2 sw-col-span-10">
-          <PullRequestMetaTopBar pullRequest={pullRequest} measures={measures} />
-          <BasicSeparator className="sw-my-4" />
+      <ProjectPageTemplate
+        actions={
+            <Layout.ContentHeader.Actions>
+              <ComponentNavBindingStatus
+                component={component}
+                prLinkAddon={
+                  hasBranchSupport && <PRLink component={component} pullRequest={pullRequest} />
+                }
+              />
+            </Layout.ContentHeader.Actions>
+          }
+        disableQualityGateStatus
+        metadata={<PullRequestMetaContentHeader measures={measures} pullRequest={pullRequest} />}
+        pageClassName="it__pr-overview"
+        title={pageTitle}
+      >
+        {!frontEndEngineeringEnableSidebarNavigation && (
+          <>
+            <PullRequestMetaTopBar measures={measures} pullRequest={pullRequest} />
+            <BasicSeparator className="sw-my-4" />
+          </>
+        )}
 
-          {ignoredConditions && <IgnoredConditionWarning />}
+        {ignoredConditions && <IgnoredConditionWarning />}
 
-          <div className="sw-flex sw-justify-between sw-items-start sw-my-6">
-            <QGStatus status={status} />
+        <div className="sw-flex sw-justify-between sw-items-start sw-my-6">
+          <QGStatus status={status} />
+          {!frontEndEngineeringEnableSidebarNavigation && (
             <LastAnalysisLabel analysisDate={pullRequest.analysisDate} />
-          </div>
-
-          <AnalysisStatus className="sw-mb-4" component={component} />
-
-          <MeasuresCardPanel
-            pullRequest={pullRequest}
-            component={component}
-            conditions={enhancedConditions}
-            qualityGate={qualityGate}
-            measures={measures}
-          />
-
-          <SonarLintAd status={status} />
+          )}
         </div>
-      </PageContentFontWrapper>
+
+        <AnalysisStatus className="sw-mb-4" component={component} />
+
+        <MeasuresCardPanel
+          pullRequest={pullRequest}
+          component={component}
+          conditions={enhancedConditions}
+          qualityGate={qualityGate}
+          measures={measures}
+        />
+
+        <SonarLintAd status={status} />
+      </ProjectPageTemplate>
   );
 }

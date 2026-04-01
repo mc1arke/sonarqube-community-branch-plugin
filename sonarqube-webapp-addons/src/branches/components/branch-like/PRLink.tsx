@@ -18,13 +18,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { LinkStandalone } from '@sonarsource/echoes-react';
+import { Button, LinkStandalone, Tooltip, TooltipSide } from '@sonarsource/echoes-react';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { Image } from '~adapters/components/common/Image';
-import { isDefined } from '~shared/helpers/types';
-import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
-import { isPullRequest } from '~shared/helpers/branch-like';
+import { isDefined, isStringDefined } from '~shared/helpers/types';
+import { PullRequest } from '~shared/types/branch-like';
 import { AlmKeys } from '~sq-server-commons/types/alm-settings';
-import { BranchLike } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';
 
 function getPRUrlAlmKey(url = '') {
@@ -47,21 +46,15 @@ function getPRUrlAlmKey(url = '') {
   return undefined;
 }
 
-export default function PRLink({
+export function PRLinkLegacy({
   currentBranchLike,
   component,
 }: Readonly<{
   component: Component;
-  currentBranchLike: BranchLike;
+  currentBranchLike: PullRequest;
 }>) {
-  if (!isPullRequest(currentBranchLike)) {
-    return null;
-  }
-
-  const almKey =
-    component.alm?.key ||
-    (isPullRequest(currentBranchLike) && getPRUrlAlmKey(currentBranchLike.url)) ||
-    '';
+  const intl = useIntl();
+  const almKey = component.alm?.key || getPRUrlAlmKey(currentBranchLike.url) || '';
 
   return (
     <>
@@ -73,16 +66,62 @@ export default function PRLink({
                 alt={almKey}
                 height={16}
                 src={`/images/alm/${almKey}.svg`}
-                title={translateWithParameters('branches.see_the_pr_on_x', translate(almKey))}
+                title={intl.formatMessage(
+                  { id: 'branches.see_the_pr_on_x' },
+                  { dop: intl.formatMessage({ id: `alm.${almKey}` }) },
+                )}
               />
             )
           }
           key={currentBranchLike.key}
           to={currentBranchLike.url}
         >
-          {almKey === '' && translate('branches.see_the_pr')}
+          {almKey === '' && <FormattedMessage id="branches.see_the_pr" />}
         </LinkStandalone>
       )}
     </>
+  );
+}
+
+interface Props {
+  component: Component;
+  pullRequest: PullRequest;
+}
+
+export default function PRLink({ pullRequest, component }: Readonly<Props>) {
+  const almKey = component.alm?.key || getPRUrlAlmKey(pullRequest.url);
+
+  if (!isDefined(pullRequest.url)) {
+    return null;
+  }
+
+  return (
+    <Tooltip
+      content={
+        <FormattedMessage
+          id="project_navigation.binding_status.bound_to_x"
+          values={{ dop: <FormattedMessage id={`alm.${almKey}`} /> }}
+        />
+      }
+      side={TooltipSide.Top}
+    >
+      <Button
+        prefix={
+          isStringDefined(almKey) && (
+            <Image alt={almKey} height={16} src={`/images/alm/${almKey}.svg`} width={16} />
+          )
+        }
+        to={pullRequest.url}
+      >
+        {isStringDefined(almKey) ? (
+          <FormattedMessage
+            id="branches.see_the_pr_on_x"
+            values={{ dop: <FormattedMessage id={`alm.${almKey}`} /> }}
+          />
+        ) : (
+          <FormattedMessage id="branches.see_the_pr" />
+        )}
+      </Button>
+    </Tooltip>
   );
 }

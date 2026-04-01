@@ -19,26 +19,24 @@
  */
 
 import styled from '@emotion/styled';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
-import { Text } from '@sonarsource/echoes-react';
+import { ButtonIcon, ButtonVariety, IconX, Text } from '@sonarsource/echoes-react';
 import {
   Card,
   CheckIcon,
-  CloseIcon,
-  DiscreetInteractiveIcon,
   StandoutLink,
   SubTitle,
   SubnavigationFlowSeparator,
 } from '~design-system';
-import { QGStatus as Status } from '~shared/types/common';
+import { QGStatus } from '~shared/types/common';
 import { useCurrentUser } from '~sq-server-commons/context/current-user/CurrentUserContext';
 import useLocalStorage from '~shared/helpers/useLocalStorage';
 import { isLoggedIn } from '~sq-server-commons/types/users';
-import { QGStatusEnum as QGStatus } from '~sq-server-commons/utils/overview-utils';
+import { QGStatusEnum } from '~sq-server-commons/utils/overview-utils';
 
 interface Props {
-  status?: Status;
+  status?: QGStatus;
 }
 
 const SONARLINT_PR_LS_KEY = 'sonarqube.pr_overview.show_sonarlint_promotion';
@@ -55,7 +53,7 @@ export default function SonarLintAd({ status }: Readonly<Props>) {
   if (
     !isLoggedIn(currentUser) ||
     currentUser.usingSonarLintConnectedMode ||
-    status !== QGStatus.ERROR ||
+    status !== QGStatusEnum.ERROR ||
     !showSLPromotion
   ) {
     return null;
@@ -67,23 +65,22 @@ export default function SonarLintAd({ status }: Readonly<Props>) {
         <SubTitle as="h2" className="sw-typo-lg-semibold">
           {intl.formatMessage({ id: 'overview.sonarlint_ad.header' })}
         </SubTitle>
-        <DiscreetInteractiveIcon
-          Icon={CloseIcon}
-          aria-label={intl.formatMessage({ id: 'overview.sonarlint_ad.close_promotion' })}
+        <ButtonIcon
+          Icon={IconX}
+          ariaLabel={intl.formatMessage({ id: 'overview.sonarlint_ad.close_promotion' })}
           onClick={onDismiss}
-          size="medium"
+          variety={ButtonVariety.DefaultGhost}
         />
       </div>
-      <ul>
-        <TickLink message={intl.formatMessage({ id: 'overview.sonarlint_ad.details_1' })} />
-        <TickLink message={intl.formatMessage({ id: 'overview.sonarlint_ad.details_2' })} />
-        <TickLink message={intl.formatMessage({ id: 'overview.sonarlint_ad.details_3' })} />
-        <TickLink message={intl.formatMessage({ id: 'overview.sonarlint_ad.details_4' })} />
-        <TickLink
-          className="sw-typo-semibold"
-          message={intl.formatMessage({ id: 'overview.sonarlint_ad.details_5' })}
-        />
-      </ul>
+      <Text as="ul" className="sw-list-none">
+        <TickLink>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_1' })}</TickLink>
+        <TickLink>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_2' })}</TickLink>
+        <TickLink>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_3' })}</TickLink>
+        <TickLink>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_4' })}</TickLink>
+        <TickLink>
+          <strong>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_5' })}</strong>
+        </TickLink>
+      </Text>
       <SubnavigationFlowSeparator className="sw-mb-4" />
       <div>
         <StandoutLink
@@ -97,11 +94,11 @@ export default function SonarLintAd({ status }: Readonly<Props>) {
   );
 }
 
-function TickLink({ className, message }: Readonly<{ className?: string; message: string }>) {
+function TickLink({ className, children }: Readonly<{ children: ReactNode; className?: string }>) {
   return (
-    <li className={`sw-typo-default ${className}`}>
+    <li className={className}>
       <CheckIcon fill="iconTrendPositive" />
-      <Text className="sw-pl-1" isSubtle size="small">{message}</Text>
+      <Text className="sw-pl-1" isSubtle>{children}</Text>
     </li>
   );
 }
