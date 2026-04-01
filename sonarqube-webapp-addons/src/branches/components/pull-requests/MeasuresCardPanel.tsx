@@ -21,7 +21,6 @@
 import {
   IconQuestionMark,
   Text,
-  TextSize,
   Tooltip,
   TooltipSide
 } from '@sonarsource/echoes-react';
@@ -32,7 +31,7 @@ import {
   Card,
   SnoozeCircleIcon,
   TrendDownCircleIcon,
-  TrendUpCircleIcon,
+  TrendUpCircleIcon
 } from '~design-system';
 import { PullRequest } from '~shared/types/branch-like';
 import { MetricKey, MetricType } from '~shared/types/metrics';
@@ -49,7 +48,6 @@ import {
 import { QualityGateStatusConditionEnhanced } from '~sq-server-commons/types/quality-gates';
 import { Component, QualityGate } from '~sq-server-commons/types/types';
 import { MeasureEnhanced } from '~shared/types/measures';
-
 import {
   GridContainer,
   StyleMeasuresCard,
@@ -62,7 +60,7 @@ import MeasuresCardNumber from '~sq-server-commons/components/overview/MeasuresC
 import MeasuresCardPercent from '~sq-server-commons/components/overview/MeasuresCardPercent';
 import {
   MeasurementType,
-  QGStatusEnum as Status,
+  QGStatusEnum,
   getConditionRequiredLabel,
   getMeasurementMetricKey,
 } from '~sq-server-commons/utils/overview-utils';
@@ -86,7 +84,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
 
   const issuesCount = getLeakValue(findMeasure(measures, MetricKey.new_violations));
   const issuesCondition = conditions.find((c) => c.metric === MetricKey.new_violations);
-  const isIssuesConditionFailed = issuesCondition?.level === Status.ERROR;
+  const isIssuesConditionFailed = issuesCondition?.level === QGStatusEnum.ERROR;
   const fixedCount = findMeasure(measures, MetricKey.pull_request_fixed_issues)?.value;
   const acceptedCount = getLeakValue(findMeasure(measures, MetricKey.new_accepted_issues));
 
@@ -103,7 +101,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
     issueStatuses: 'ACCEPTED',
   });
 
-  const totalFailedConditions = conditions.filter((condition) => condition.level === Status.ERROR);
+  const totalFailedConditions = conditions.filter((condition) => condition.level === QGStatusEnum.ERROR);
 
   return (
     <Card className="sw-py-8 sw-px-6">
@@ -136,11 +134,11 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
             footer={
               issuesCondition &&
               (isIssuesConditionFailed ? (
-                <Text colorOverride="echoes-color-text-danger" size={TextSize.Small}>
+                <Text colorOverride="echoes-color-text-danger" size="small">
                   {getConditionRequiredLabel(issuesCondition, intl, true)}
                 </Text>
               ) : (
-                <Text size={TextSize.Small}>
+                <Text isSubtle size="small">
                   {getConditionRequiredLabel(issuesCondition, intl)}
                 </Text>
               ))
@@ -165,7 +163,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
               )
             }
             footer={
-              <Text isSubtle size={TextSize.Small}>
+              <Text isSubtle size="small">
                 {intl.formatMessage({ id: 'overview.accepted_issues.help' })}
               </Text>
             }
@@ -194,7 +192,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
                   side={TooltipSide.Top}
                 >
                   <span className="sw-typo-default sw-cursor-default">
-                    <IconQuestionMark color="echoes-color-icon-subdued" />
+                    <IconQuestionMark color="echoes-color-icon-subtle" />
                   </span>
                 </Tooltip>
               </>
@@ -206,13 +204,13 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
             url={fixedUrl}
             icon={fixedCount !== undefined && fixedCount !== '0' && <TrendDownCircleIcon />}
             footer={
-              <Text isSubtle size={TextSize.Small}>
+              <Text isSubtle size="small">
                 {intl.formatMessage({ id: 'overview.pull_request.fixed_issues.help' })}
               </Text>
             }
           />
         </StyleMeasuresCard>
-        <StyleMeasuresCardRightBorder>
+        <StyleMeasuresCard>
           <MeasuresCardPercent
             componentKey={component.key}
             branchLike={pullRequest}
@@ -232,7 +230,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
             showRequired
             useDiffMetric
           />
-        </StyleMeasuresCardRightBorder>
+        </StyleMeasuresCard>
         <StyleMeasuresCardRightBorder>
           <MeasuresCardPercent
             componentKey={component.key}

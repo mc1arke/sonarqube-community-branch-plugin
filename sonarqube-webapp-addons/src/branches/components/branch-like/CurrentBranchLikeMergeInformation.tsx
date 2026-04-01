@@ -19,9 +19,8 @@
  */
 
 import * as React from 'react';
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { PullRequest } from '~shared/types/branch-like';
-import { translate, translateWithParameters } from '~sq-server-commons/helpers/l10n';
 
 export interface CurrentBranchLikeMergeInformationProps {
   pullRequest: PullRequest;
@@ -30,17 +29,20 @@ export interface CurrentBranchLikeMergeInformationProps {
 export function CurrentBranchLikeMergeInformation({
   pullRequest,
 }: Readonly<CurrentBranchLikeMergeInformationProps>) {
+  const intl = useIntl();
+
   return (
     <span
-      className="sw-max-w-[400px] sw-text-ellipsis sw-whitespace-nowrap sw-overflow-hidden sw-flex-shrink sw-min-w-0"
-      title={translateWithParameters(
-        'branch_like_navigation.for_merge_into_x_from_y.title',
-        pullRequest.target,
-        pullRequest.branch,
+      className="sw-max-w-[400px] sw-truncate"
+      title={intl.formatMessage(
+        { id: 'branch_like_navigation.for_merge_into_x_from_y.title' },
+        {
+          target: pullRequest.target,
+          branch: pullRequest.branch,
+        },
       )}
     >
       <FormattedMessage
-        defaultMessage={translate('branch_like_navigation.for_merge_into_x_from_y')}
         id="branch_like_navigation.for_merge_into_x_from_y"
         values={{
           target: <strong>{pullRequest.target}</strong>,

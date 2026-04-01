@@ -18,9 +18,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { Button, ButtonVariety, Label } from '@sonarsource/echoes-react';
+import { Button, ButtonVariety, Label, Modal, Spinner, toast } from '@sonarsource/echoes-react';
 import * as React from 'react';
-import { Modal, Spinner } from '~design-system';
+import { FormattedMessage } from 'react-intl';
 import { setNewCodeDefinition } from '~sq-server-commons/api/newCodeDefinition';
 import NewCodeDefinitionSpecificGroup from '~sq-server-commons/components/new-code-definition/NewCodeDefinitionSpecificGroup';
 import {
@@ -130,6 +130,9 @@ export default class BranchNewCodeDefinitionSettingModal extends React.PureCompo
               saving: false,
               isChanged: false,
             });
+            toast.success({
+              description: <FormattedMessage id="project_baseline.update_success" />,
+            });
             this.props.onClose(branch.name, {
               type,
               value,
@@ -179,51 +182,53 @@ export default class BranchNewCodeDefinitionSettingModal extends React.PureCompo
       <form id={FORM_ID} onSubmit={this.handleSubmit}>
         <fieldset>
           <legend className="sw-mb-2">
-            <Label>{translate('baseline.new_code_period_for_branch_x.question')}</Label>
+            <Label id="new_code_def_label">{translate('baseline.new_code_period_for_branch_x.question')}</Label>
           </legend>
-          <div className="sw-flex sw-flex-col sw-mb-10 sw-gap-4" role="radiogroup">
-              <NewCodeDefinitionSpecificGroup
-                  analysis={analysis}
-                  ariaLabelledBy="specific-definition-label"
-                  branch={branch.name}
-                  branchList={branchList}
-                  branchesEnabled
-                  className="sw-mt-6"
-                  isValid={isValid}
-                  numberOfDaysInput={days}
-                  onNumberOfDaysChange={this.handleSelectDays}
-                  onReferenceBranchChange={this.handleSelectReferenceBranch}
-                  onTypeChange={this.handleSelectSetting}
-                  referenceBranchInput={referenceBranch}
-                  settingsLevel={NewCodeDefinitionLevels.Branch}
-                  typeValue={selectedNewCodeDefinitionType}
-                  projectKey={this.props.component}
-              />
-          </div>
+          <NewCodeDefinitionSpecificGroup
+            analysis={analysis}
+            ariaLabelledBy="new_code_def_label"
+            branch={branch.name}
+            branchList={branchList}
+            branchesEnabled
+            className="sw-mt-2"
+            isValid={isValid}
+            numberOfDaysInput={days}
+            onNumberOfDaysChange={this.handleSelectDays}
+            onReferenceBranchChange={this.handleSelectReferenceBranch}
+            onTypeChange={this.handleSelectSetting}
+            referenceBranchInput={referenceBranch}
+            settingsLevel={NewCodeDefinitionLevels.Branch}
+            typeValue={selectedNewCodeDefinitionType}
+            projectKey={this.props.component}
+          />
         </fieldset>
       </form>
     );
 
     return (
       <Modal
-        headerTitle={header}
-        isLarge
-        onClose={this.requestClose}
-        body={formBody}
+        title={header}
+        isOpen
+        onOpenChange={this.requestClose}
+        content={formBody}
         primaryButton={
           <>
-            <Spinner loading={saving} />
+            <Spinner isLoading={saving} />
             <Button
               form={FORM_ID}
               isDisabled={!isChanged || saving || !isValid}
               type="submit"
               variety={ButtonVariety.Primary}
             >
-              {translate('save')}
+              <FormattedMessage id="save" />
             </Button>
           </>
         }
-        secondaryButtonLabel={translate('cancel')}
+        secondaryButton={
+          <Button isDisabled={saving} onClick={this.requestClose} variety={ButtonVariety.Default}>
+            <FormattedMessage id="cancel" />
+          </Button>
+        }
       />
     );
   }
