@@ -1,0 +1,97 @@
+/*
+ * SonarQube Community Branch Plugin
+ * PR Overview Layout Fix
+ *
+ * Restores layout styles that are lost during the plugin webapp build.
+ *
+ * Background:
+ *   MeasuresCardPanel uses Emotion styled components (GridContainer,
+ *   StyleMeasuresCard, StyleMeasuresCardRightBorder, StyledConditionsCard)
+ *   defined in sonarqube-webapp/libs/shared/src/components/overview/
+ *   BranchSummaryStyles.tsx. These declare `display:grid`, column templates,
+ *   and `:before` / `:after` separator borders.
+ *
+ *   In the vanilla SonarQube build, Emotion's Babel plugin emits full CSS
+ *   rules for these styled components. In the plugin's re-packaged webapp
+ *   build (which overlays sonarqube-webapp-addons as a symlink under
+ *   sonarqube-webapp/libs/sq-server-addons with preserveSymlinks:true),
+ *   the emitted CSS for these classes contains only `overflow:hidden` and
+ *   `position:relative` - the grid declarations, row/column gaps, and
+ *   border pseudo-elements are dropped.
+ *
+ *   The observed DOM has the expected Tailwind classes
+ *   (js-summary sw-grid-cols-3) plus the empty Emotion classes
+ *   (css-1abqi5m eyk7lnq3, css-11hhga6 eyk7lnq2, etc.), but the computed
+ *   `display` is neither grid nor flex and the cards collapse into a
+ *   stacked single column with overlapping text.
+ *
+ * Fix:
+ *   Apply the missing layout rules via a static CSS file that is imported
+ *   from PullRequestOverview.tsx. Targets only the PR overview container
+ *   (.it__pr-overview + .js-summary) so main branch Overview is untouched.
+ */
+
+/* Outer 12-column grid - restore from GridContainer base rules */
+.it__pr-overview.sw-grid.sw-grid-cols-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 1.5rem;
+  row-gap: 2rem;
+}
+
+/* The .js-summary inner container - restore grid layout and enable
+ * Tailwind sw-grid-cols-3 / sw-grid-cols-4 to work by ensuring the
+ * parent is display:grid */
+.js-summary {
+  display: grid;
+  column-gap: 1.5rem;
+  row-gap: 2rem;
+}
+
+.js-summary.sw-grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.js-summary.sw-grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Each direct child of .js-summary is a StyleMeasuresCard /
+ * StyleMeasuresCardRightBorder / StyledConditionsCard wrapper.
+ * Ensure min-width:0 so grid cells do not overflow. */
+.js-summary > div {
+  min-width: 0;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Restore the right separator border that Emotion :before pseudo-element
+ * would normally render (StyleMeasuresCard, StyleMeasuresCardRightBorder,
+ * StyledConditionsCard all have the same :before rule). */
+.js-summary > div:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -0.75rem; /* column-gap / -2 */
+  height: 100%;
+  width: 1px;
+  background: var(--echoes-color-border-weak, rgba(0, 0, 0, 0.08));
+}
+
+/* Ignore the :after bottom-border rule - it used `width: 100vw` which was
+ * buggy anyway (it overflows the container on narrow viewports). The grid
+ * row-gap already provides visual separation between rows. */
+
+/* Hide any <rect> with negative dimensions, which otherwise produces
+ * "A negative value is not valid" console errors during initial layout
+ * measurement of rating donut SVGs inside the PR overview. */
+.it__pr-overview svg rect[width^="-"],
+.it__pr-overview svg rect[height^="-"] {
+  display: none;
+}
+
+/* Standard flexbox min-width:0 hardening - ensure nested sw-flex children
+ * inside the PR overview never overflow their grid cells. */
+.it__pr-overview [class*="sw-flex"] > * {
+  min-width: 0;
+}

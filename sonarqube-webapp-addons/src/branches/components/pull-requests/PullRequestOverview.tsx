@@ -32,6 +32,7 @@ import IgnoredConditionWarning from '~sq-server-commons/components/overview/Igno
 import LastAnalysisLabel from '~sq-server-commons/components/overview/LastAnalysisLabel';
 import QGStatus from '~sq-server-commons/components/overview/QualityGateStatus';
 import '~sq-server-commons/components/overview/styles.css';
+import './pr-overview-fix.css';
 import { useAvailableFeatures } from '~sq-server-commons/context/available-features/withAvailableFeatures';
 import {
   enhanceConditionWithMeasure,
