@@ -288,7 +288,7 @@ class AzureDevOpsPullRequestDecoratorTest {
 
         ArgumentCaptor<CreateCommentRequest> commentRequestArgumentCaptor = ArgumentCaptor.captor();
         verify(azureDevopsClient).addCommentToThread(eq(azureProject), eq(azureRepository), eq(pullRequestId), eq(101), commentRequestArgumentCaptor.capture());
-        assertThat(commentRequestArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(new CreateCommentRequest("This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being being removed. Please manually resolve this discussion once the other comments have been reviewed."));
+        assertThat(commentRequestArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(new CreateCommentRequest("This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being removed. Please manually resolve this discussion once the other comments have been reviewed."));
         verify(azureDevopsClient, never()).deletePullRequestThreadComment(any(), any(), anyInt(), anyInt(), anyInt());
         verify(azureDevopsClient).retrieveThreads(azureProject, azureRepository, pullRequestId);
     }

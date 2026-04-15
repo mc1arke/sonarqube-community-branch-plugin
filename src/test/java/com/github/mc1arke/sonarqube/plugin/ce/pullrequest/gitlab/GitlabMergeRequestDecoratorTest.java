@@ -84,7 +84,7 @@ class GitlabMergeRequestDecoratorTest {
     private static final String MERGE_REQUEST_WEB_URL = "https://gitlab.dummy/path/to/mr";
     private static final String OLD_SONARQUBE_ISSUE_COMMENT = "This issue no longer exists in SonarQube, " +
             "but due to other comments being present in this discussion, " +
-            "the discussion is not being being closed automatically. " +
+            "the discussion is not being closed automatically. " +
             "Please manually resolve this discussion once the other comments have been reviewed.";
 
     private final GitlabClient gitlabClient = mock();
@@ -769,7 +769,7 @@ class GitlabMergeRequestDecoratorTest {
 
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
-        verify(gitlabClient).addMergeRequestDiscussionNote(PROJECT_ID, MERGE_REQUEST_IID, "discussionId", "This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being being removed. Please manually resolve this discussion once the other comments have been reviewed.");
+        verify(gitlabClient).addMergeRequestDiscussionNote(PROJECT_ID, MERGE_REQUEST_IID, "discussionId", "This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being removed. Please manually resolve this discussion once the other comments have been reviewed.");
         verify(gitlabClient, never()).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
         verify(gitlabClient).getMergeRequestDiscussions(PROJECT_ID, MERGE_REQUEST_IID);
     }

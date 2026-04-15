@@ -47,10 +47,10 @@ import java.util.stream.Collectors;
 public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> implements PullRequestBuildStatusDecorator {
 
     private static final String RESOLVED_ISSUE_NEEDING_CLOSED_MESSAGE =
-            "This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being being closed automatically. " +
+            "This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being closed automatically. " +
                     "Please manually resolve this discussion once the other comments have been reviewed.";
     private static final String RESOLVED_SUMMARY_NEEDING_CLOSED_MESSAGE =
-            "This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being being removed. " +
+            "This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being removed. " +
                     "Please manually resolve this discussion once the other comments have been reviewed.";
 
     private static final String VIEW_IN_SONARQUBE_LABEL = "View in SonarQube";

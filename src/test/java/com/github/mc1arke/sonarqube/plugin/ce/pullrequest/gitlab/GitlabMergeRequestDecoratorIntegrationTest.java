@@ -207,15 +207,15 @@ class GitlabMergeRequestDecoratorIntegrationTest {
                 .willReturn(noContent()));
 
         wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + "/notes"))
-                .withRequestBody(equalTo("body=" + urlEncode("This looks like a comment from an old SonarQube version, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
+                .withRequestBody(equalTo("body=" + urlEncode("This looks like a comment from an old SonarQube version, but due to other comments being present in this discussion, the discussion is not being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
                 .willReturn(created()));
 
         wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 2 + "/notes"))
-                .withRequestBody(equalTo("body=" + urlEncode("This looks like a comment from an old SonarQube version, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
+                .withRequestBody(equalTo("body=" + urlEncode("This looks like a comment from an old SonarQube version, but due to other comments being present in this discussion, the discussion is not being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
                 .willReturn(created()));
 
         wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId + 6 + "/notes"))
-                .withRequestBody(equalTo("body=" + urlEncode("This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
+                .withRequestBody(equalTo("body=" + urlEncode("This issue no longer exists in SonarQube, but due to other comments being present in this discussion, the discussion is not being closed automatically. Please manually resolve this discussion once the other comments have been reviewed.")))
                 .willReturn(created()));
 
         if (isMonorepo) {
