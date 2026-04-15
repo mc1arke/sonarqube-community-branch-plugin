@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -770,6 +770,41 @@ class GitlabMergeRequestDecoratorTest {
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(gitlabClient).addMergeRequestDiscussionNote(PROJECT_ID, MERGE_REQUEST_IID, "discussionId", "This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being removed. Please manually resolve this discussion once the other comments have been reviewed.");
+        verify(gitlabClient, never()).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
+        verify(gitlabClient).getMergeRequestDiscussions(PROJECT_ID, MERGE_REQUEST_IID);
+    }
+
+    @Test
+    void shouldNotAddNoteToSummaryCommentThreadIfOtherCommentsInDiscussionAndNoteAlreadyPresent() throws IOException {
+        Note note = mock();
+        when(note.getId()).thenReturn(101L);
+        when(note.getAuthor()).thenReturn(sonarqubeUser);
+        when(note.getBody()).thenReturn("Summary comment" + System.lineSeparator() + "[View in SonarQube](http://host.domain/dashboard?id=projectKey&pullRequest=123)");
+        when(note.isSystem()).thenReturn(false);
+
+        User otherUser = mock();
+        when(otherUser.getUsername()).thenReturn("username");
+        Note note2 = mock();
+        when(note2.getId()).thenReturn(102L);
+        when(note2.getAuthor()).thenReturn(otherUser);
+        when(note2.getBody()).thenReturn("Another comment");
+        when(note2.isSystem()).thenReturn(false);
+
+        Note note3 = mock();
+        when(note3.getId()).thenReturn(102L);
+        when(note3.getAuthor()).thenReturn(sonarqubeUser);
+        when(note3.getBody()).thenReturn("This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being removed. Please manually resolve this discussion once the other comments have been reviewed.");
+        when(note3.isSystem()).thenReturn(false);
+
+        Discussion discussion = mock();
+        when(discussion.getId()).thenReturn("discussionId");
+        when(discussion.getNotes()).thenReturn(List.of(note, note2, note3));
+
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
         verify(gitlabClient, never()).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
         verify(gitlabClient).getMergeRequestDiscussions(PROJECT_ID, MERGE_REQUEST_IID);
     }
