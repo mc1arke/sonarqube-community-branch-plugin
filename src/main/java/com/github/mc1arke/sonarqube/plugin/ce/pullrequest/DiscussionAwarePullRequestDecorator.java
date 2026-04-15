@@ -191,19 +191,12 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                     return commentsForDiscussion.stream()
                         .findFirst()
                         .filter(note -> isNoteFromCurrentUser(note, currentUser))
-                        .filter(note -> !isResolved(client, discussion, commentsForDiscussion, currentUser) || isSummaryComment(client, commentsForDiscussion.stream().findFirst().orElse(null)))
+                        .filter(note -> !isResolved(client, discussion, commentsForDiscussion, currentUser))
                         .map(note -> new ImmutableTriple<>(discussion, note, parseIssueDetails(client, note)));
                 })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
-    }
-
-    private boolean isSummaryComment(C client, N note) {
-        return Optional.of(note)
-            .flatMap(message -> parseIssueDetails(client, message))
-            .filter(projectIssueIdentifier -> DECORATOR_SUMMARY_COMMENT.equals(projectIssueIdentifier.getIssueKey()))
-            .isPresent();
     }
 
     private List<String> closeOldDiscussionsAndExtractRemainingKeys(C client, U currentUser,
