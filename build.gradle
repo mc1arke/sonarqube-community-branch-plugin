@@ -71,7 +71,7 @@ dependencies {
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
     runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.2')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
-    implementation('org.javassist:javassist:3.30.2-GA')
+    implementation('org.javassist:javassist:3.31.0-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:5.3.2')
     testImplementation(platform('org.junit:junit-bom:6.0.3'))
     testImplementation('org.junit.jupiter:junit-jupiter')
