@@ -18,6 +18,8 @@
  */
 package com.github.mc1arke.sonarqube.plugin.server.pullrequest.ws.binding.action;
 
+import java.util.Objects;
+
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.WebService;
 import org.sonar.db.DbClient;
@@ -27,6 +29,7 @@ import org.sonar.server.user.UserSession;
 
 public class SetGitlabBindingAction extends SetBindingAction {
     private static final String REPOSITORY_PARAMETER = "repository";
+    private static final String INLINE_ANNOTATIONS_ENABLED_PARAMETER = "inlineAnnotationsEnabled";
 
     public SetGitlabBindingAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
         super(dbClient, componentFinder, userSession, "set_gitlab_binding");
@@ -36,6 +39,7 @@ public class SetGitlabBindingAction extends SetBindingAction {
     protected void configureAction(WebService.NewAction action) {
         super.configureAction(action);
         action.createParam(REPOSITORY_PARAMETER);
+        action.createParam(INLINE_ANNOTATIONS_ENABLED_PARAMETER).setBooleanPossibleValues().setDefaultValue(false);
     }
 
     @Override
@@ -45,7 +49,8 @@ public class SetGitlabBindingAction extends SetBindingAction {
                 .setProjectUuid(projectUuid)
                 .setAlmSettingUuid(settingsUuid)
                 .setAlmRepo(request.param(REPOSITORY_PARAMETER))
-                .setMonorepo(monoRepo);
+                .setMonorepo(monoRepo)
+                .setInlineAnnotationsEnabled(Objects.requireNonNullElse(request.paramAsBoolean(INLINE_ANNOTATIONS_ENABLED_PARAMETER), false));
     }
 
 }
