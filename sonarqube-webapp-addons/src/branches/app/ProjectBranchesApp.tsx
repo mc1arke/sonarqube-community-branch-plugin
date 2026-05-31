@@ -19,10 +19,9 @@
  */
 
 import * as React from 'react';
-import { Helmet } from 'react-helmet-async';
-import { PageContentFontWrapper, Title } from '~design-system';
+import { useIntl } from 'react-intl';
+import { ProjectPageTemplate } from '~shared/components/pages/ProjectPageTemplate';
 import withComponentContext from '~sq-server-commons/context/componentContext/withComponentContext';
-import { translate } from '~sq-server-commons/helpers/l10n';
 import { withBranchLikes } from '~sq-server-commons/queries/branch';
 import { Component } from '~sq-server-commons/types/types';
 import BranchLikeTabs from './components/BranchLikeTabs';
@@ -35,19 +34,16 @@ export interface ProjectBranchesAppProps {
 
 function ProjectBranchesApp(props: ProjectBranchesAppProps) {
   const { component, fetchComponent } = props;
+  const intl = useIntl();
+
+  const title = intl.formatMessage({ id: 'project_branch_pull_request.page' });
 
   return (
-    <div id="project-branch-like" className="sw-mx-auto sw-max-w-[1680px]">
-      <PageContentFontWrapper className="sw-my-8 sw-typo-default">
-        <header className="sw-mb-5">
-          <Helmet defer={false} title={translate('project_branch_pull_request.page')} />
-          <Title className="sw-mb-4">{translate('project_branch_pull_request.page')}</Title>
-          <LifetimeInformation />
-        </header>
-
+    <ProjectPageTemplate description={<LifetimeInformation />} disableBranchSelector title={title}>
+      <div id="project-branch-like">
         <BranchLikeTabs component={component} fetchComponent={fetchComponent} />
-      </PageContentFontWrapper>
-    </div>
+      </div>
+    </ProjectPageTemplate>
   );
 }
 
