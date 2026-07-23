@@ -47,6 +47,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CommentTh
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.ConnectionData;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitPullRequestStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitStatusContext;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.IdentityRef;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Project;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullRequest;
@@ -602,5 +603,72 @@ class AzureDevOpsPullRequestDecoratorTest {
         verify(azureDevopsClient).submitPullRequestStatus(eq(azureProject), eq(azureRepository), eq(pullRequestId), statusCaptor.capture());
         assertThat(statusCaptor.getValue().getIterationId()).isEqualTo(1);
         verify(azureDevopsClient, never()).retrievePullRequestIterationIdForCommit(any(), any(), anyInt(), any());
+    }
+
+    @Test
+    void shouldUseGenericContextNameWhenNotMonorepo() throws IOException {
+        String azureProject = "azure-project";
+        String azureRepository = "azure-repo";
+        int pullRequestId = 321;
+
+        when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
+        when(projectAlmSettingDto.getMonorepo()).thenReturn(false);
+
+        AnalysisSummary analysisSummary = mock();
+        when(analysisSummary.getDashboardUrl()).thenReturn("http://sonar/dashboard");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
+        PullRequest pullRequest = mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
+        when(pullRequest.doesSupportIterations()).thenReturn(false);
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        ArgumentCaptor<GitPullRequestStatus> statusCaptor = ArgumentCaptor.captor();
+        verify(azureDevopsClient).submitPullRequestStatus(eq(azureProject), eq(azureRepository), eq(pullRequestId), statusCaptor.capture());
+        GitStatusContext context = statusCaptor.getValue().getContext();
+        assertThat(context.getGenre()).isEqualTo("SonarQube");
+        assertThat(context.getName()).isEqualTo("quality gate");
+    }
+
+    @Test
+    void shouldIncludeProjectKeyInContextNameWhenMonorepo() throws IOException {
+        String azureProject = "azure-project";
+        String azureRepository = "azure-repo";
+        int pullRequestId = 321;
+
+        when(analysisDetails.getPullRequestId()).thenReturn(Integer.toString(pullRequestId));
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        when(analysisDetails.getAnalysisProjectKey()).thenReturn("monorepo-project-fe");
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn(azureProject);
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn(azureRepository);
+        when(projectAlmSettingDto.getInlineAnnotationsEnabled()).thenReturn(false);
+        when(projectAlmSettingDto.getMonorepo()).thenReturn(true);
+
+        AnalysisSummary analysisSummary = mock();
+        when(analysisSummary.getDashboardUrl()).thenReturn("http://sonar/dashboard");
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
+
+        AzureDevopsClient azureDevopsClient = mock();
+        when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
+        PullRequest pullRequest = mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
+        when(pullRequest.doesSupportIterations()).thenReturn(false);
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
+
+        AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        ArgumentCaptor<GitPullRequestStatus> statusCaptor = ArgumentCaptor.captor();
+        verify(azureDevopsClient).submitPullRequestStatus(eq(azureProject), eq(azureRepository), eq(pullRequestId), statusCaptor.capture());
+        GitStatusContext context = statusCaptor.getValue().getContext();
+        assertThat(context.getGenre()).isEqualTo("SonarQube");
+        assertThat(context.getName()).isEqualTo("quality gate - monorepo-project-fe");
     }
 }
