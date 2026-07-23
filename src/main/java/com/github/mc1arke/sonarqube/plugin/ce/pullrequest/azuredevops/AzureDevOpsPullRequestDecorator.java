@@ -155,10 +155,13 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
 
             String description = analysis.getQualityGateStatus() == QualityGate.Status.OK ? "Quality Gate passed" : "Quality Gate failed";
 
+            boolean isMonorepo = Boolean.TRUE.equals(projectAlmSettingDto.getMonorepo());
+            String contextName = "quality gate" + (isMonorepo ? " - " + analysis.getAnalysisProjectKey() : "");
+
             GitPullRequestStatus gitPullRequestStatus = new GitPullRequestStatus(
                     GitStatusStateMapper.toGitStatusState(analysis.getQualityGateStatus()),
                     description,
-                    new GitStatusContext("SonarQube", "quality gate"),
+                    new GitStatusContext("SonarQube", contextName),
                     analysisSummary.getDashboardUrl(),
                     iterationId
             );
