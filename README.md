@@ -28,8 +28,8 @@ with previous plugin versions.
 # Features
 
 The plugin is intended to support the
-features and parameters from the SonarQube [branch](https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/branch-analysis/introduction/)
-and [pull request](https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/pull-request-analysis/introduction/) documentation.
+features and parameters from the SonarQube [branch](https://docs.sonarsource.com/sonarqube-server/discovering/code-analysis/branch-analysis)
+and [pull request](https://docs.sonarsource.com/sonarqube-server/discovering/code-analysis/pull-request-analysis) documentation.
 
 # Installation
 
@@ -115,7 +115,7 @@ extraInitContainers:
 
 ## Global configuration
 
-Make sure `sonar.core.serverBaseURL` in SonarQube [/admin/settings](http://localhost:9000/admin/settings) is properly
+Make sure `sonar.core.serverBaseURL` in SonarQube [/admin/settings](https://docs.sonarsource.com/sonarqube-server/instance-administration/server-base-url) is properly
 set in order to for the links in the comment to work.
 
 Set all other properties that you can define globally for all of your projects.
@@ -133,7 +133,7 @@ parameters. Otherwise, the analysis needs the following setting:
 ### Run analysis of the PR branch
 
 Carefully read the official SonarQube guide
-for [pull request decoration](https://docs.sonarqube.org/latest/analysis/pull-request/)
+for [pull request decoration](https://docs.sonarsource.com/sonarqube-server/discovering/code-analysis/pull-request-analysis#decoration)
 
 In there you'll find the following properties that need to be set, unless your CI support auto-configuration.
 
