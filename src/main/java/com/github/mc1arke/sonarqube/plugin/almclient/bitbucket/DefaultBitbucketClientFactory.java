@@ -70,7 +70,7 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client ID must be set in configuration"));
             String clientSecret = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getDecryptedClientSecret(settings.getEncryption())))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client Secret must be set in configuration"));
-            String bearerToken = BitbucketCloudClient.negotiateBearerToken(clientId, clientSecret, objectMapper, clientBuilder.build());
+            String bearerToken = BitbucketCloudClient.negotiateBearerToken(clientId, clientSecret, objectMapper, httpClientBuilderFactory.createClientBuilder().build());
             return new BitbucketCloudClient(objectMapper, createAuthorisingClient(clientBuilder, bearerToken), new BitbucketConfiguration(appId, almRepo));
         } else {
             String almSlug = Optional.ofNullable(StringUtils.trimToNull(projectAlmSettingDto.getAlmSlug()))
@@ -93,6 +93,7 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
     private static OkHttpClient.Builder createBaseClientBuilder(HttpClientBuilderFactory httpClientBuilderFactory) {
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(LOGGER::debug);
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        httpLoggingInterceptor.redactHeader("Authorization");
         return httpClientBuilderFactory.createClientBuilder().addInterceptor(httpLoggingInterceptor);
     }
 
