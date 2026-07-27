@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2023 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2026 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,7 +61,7 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                 .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "ALM Repo must be set in configuration"));
 
         ObjectMapper objectMapper = createObjectMapper();
-        OkHttpClient.Builder clientBuilder = createBaseClientBuilder(httpClientBuilderFactory);
+        OkHttpClient.Builder clientBuilder = createBaseClientBuilder(httpClientBuilderFactory, HttpLoggingInterceptor.Level.BODY);
 
         if (almSettingDto.getAlm() == ALM.BITBUCKET_CLOUD) {
             String appId = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getAppId()))
@@ -70,7 +70,7 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client ID must be set in configuration"));
             String clientSecret = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getDecryptedClientSecret(settings.getEncryption())))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client Secret must be set in configuration"));
-            String bearerToken = BitbucketCloudClient.negotiateBearerToken(clientId, clientSecret, objectMapper, clientBuilder.build());
+            String bearerToken = BitbucketCloudClient.negotiateBearerToken(clientId, clientSecret, objectMapper, createBaseClientBuilder(httpClientBuilderFactory, HttpLoggingInterceptor.Level.BASIC).build());
             return new BitbucketCloudClient(objectMapper, createAuthorisingClient(clientBuilder, bearerToken), new BitbucketConfiguration(appId, almRepo));
         } else {
             String almSlug = Optional.ofNullable(StringUtils.trimToNull(projectAlmSettingDto.getAlmSlug()))
@@ -90,9 +90,10 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                 .findAndRegisterModules();
     }
 
-    private static OkHttpClient.Builder createBaseClientBuilder(HttpClientBuilderFactory httpClientBuilderFactory) {
+    private static OkHttpClient.Builder createBaseClientBuilder(HttpClientBuilderFactory httpClientBuilderFactory, HttpLoggingInterceptor.Level level) {
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(LOGGER::debug);
-        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        httpLoggingInterceptor.setLevel(level);
+        httpLoggingInterceptor.redactHeader("Authorization");
         return httpClientBuilderFactory.createClientBuilder().addInterceptor(httpLoggingInterceptor);
     }
 

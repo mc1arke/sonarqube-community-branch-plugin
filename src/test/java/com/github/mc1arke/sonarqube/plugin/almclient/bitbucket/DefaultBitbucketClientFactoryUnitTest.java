@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Marvin Wichmann, Michael Clarke
+ * Copyright (C) 2020-2026 Marvin Wichmann, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,7 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -33,6 +34,7 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,12 +54,16 @@ class DefaultBitbucketClientFactoryUnitTest {
                 .setClientSecret("clientSecret");
         ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto()
                 .setAlmRepo("almRepo");
-        OkHttpClient.Builder builder = mock(OkHttpClient.Builder.class, Mockito.RETURNS_DEEP_STUBS);
-        when(builder.addInterceptor(any())).thenReturn(builder);
+
+        OkHttpClient.Builder mainClientBuilder = mock(Mockito.RETURNS_DEEP_STUBS);
+        OkHttpClient.Builder tokenClientBuilder = mock(Mockito.RETURNS_DEEP_STUBS);
+
+        when(mainClientBuilder.addInterceptor(any())).thenReturn(mainClientBuilder);
+        when(tokenClientBuilder.addInterceptor(any())).thenReturn(tokenClientBuilder);
 
         ResponseBody responseBody = mock();
         when(responseBody.string()).thenReturn("{\"access_token\": \"dummy\"}");
-        when(builder.build().newCall(any()).execute().body()).thenReturn(responseBody);
+        when(tokenClientBuilder.build().newCall(any()).execute().body()).thenReturn(responseBody);
 
         Settings settings = mock();
         Encryption encryption = mock();
@@ -65,14 +71,35 @@ class DefaultBitbucketClientFactoryUnitTest {
         // when
         when(settings.getEncryption()).thenReturn(encryption);
         HttpClientBuilderFactory httpClientBuilderFactory = mock();
-        when(httpClientBuilderFactory.createClientBuilder()).then(i -> builder);
+        when(httpClientBuilderFactory.createClientBuilder())
+                .thenReturn(mainClientBuilder)
+                .thenReturn(tokenClientBuilder);
         BitbucketClient client = new DefaultBitbucketClientFactory(settings, httpClientBuilderFactory).createClient(projectAlmSettingDto, almSettingDto);
 
         // then
         assertThat(client).isInstanceOf(BitbucketCloudClient.class);
 
-        ArgumentCaptor<Interceptor> interceptorArgumentCaptor = ArgumentCaptor.captor();
-        verify(builder, times(2)).addInterceptor(interceptorArgumentCaptor.capture());
+        ArgumentCaptor<Interceptor> mainInterceptorsCaptor = ArgumentCaptor.captor();
+        verify(mainClientBuilder, times(2)).addInterceptor(mainInterceptorsCaptor.capture());
+
+        List<Interceptor> mainInterceptors = mainInterceptorsCaptor.getAllValues();
+        HttpLoggingInterceptor mainLoggingInterceptor = (HttpLoggingInterceptor) mainInterceptors.stream()
+                .filter(HttpLoggingInterceptor.class::isInstance)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("HttpLoggingInterceptor missing from main client builder"));
+
+        assertThat(mainLoggingInterceptor.getLevel()).isEqualTo(HttpLoggingInterceptor.Level.BODY);
+
+        ArgumentCaptor<Interceptor> tokenInterceptorsCaptor = ArgumentCaptor.captor();
+        verify(tokenClientBuilder).addInterceptor(tokenInterceptorsCaptor.capture());
+
+        HttpLoggingInterceptor tokenLoggingInterceptor = (HttpLoggingInterceptor) tokenInterceptorsCaptor.getValue();
+        assertThat(tokenLoggingInterceptor.getLevel()).isEqualTo(HttpLoggingInterceptor.Level.BASIC);
+
+        Interceptor authInterceptor = mainInterceptors.stream()
+                .filter(i -> !(i instanceof HttpLoggingInterceptor))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Authentication interceptor missing from main client"));
 
         Interceptor.Chain chain = mock();
         Request request = mock();
@@ -81,14 +108,13 @@ class DefaultBitbucketClientFactoryUnitTest {
         when(requestBuilder.addHeader(any(), any())).thenReturn(requestBuilder);
         when(request.newBuilder()).thenReturn(requestBuilder);
 
-        Request request2 = mock();
-        when(requestBuilder.build()).thenReturn(request2);
+        Request boundRequest = mock();
+        when(requestBuilder.build()).thenReturn(boundRequest);
 
-        interceptorArgumentCaptor.getValue().intercept(chain);
-
+        authInterceptor.intercept(chain);
         verify(requestBuilder).addHeader("Authorization", "Bearer dummy");
         verify(requestBuilder).addHeader("Accept", "application/json");
-        verify(chain).proceed(request2);
+        verify(chain).proceed(boundRequest);
     }
 
     @Test
