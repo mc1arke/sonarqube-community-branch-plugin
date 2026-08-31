@@ -2,6 +2,7 @@
 /build/
 /.idea/
 /.gradle/
+/sonarqube-lib/
 /out/
 
 # JavaScript
