@@ -34,6 +34,7 @@ import {
   TrendUpCircleIcon
 } from '~design-system';
 import { PullRequest } from '~shared/types/branch-like';
+import { MeasurementType, getMeasurementMetricKey } from '~shared/helpers/overview';
 import { MetricKey, MetricType } from '~shared/types/metrics';
 import { getLeakValue } from '~sq-server-commons/components/measure/utils';
 import { DEFAULT_ISSUES_QUERY } from '~sq-server-commons/components/shared/utils';
@@ -59,10 +60,8 @@ import { IssueMeasuresCardInner } from '~sq-server-commons/components/overview/I
 import MeasuresCardNumber from '~sq-server-commons/components/overview/MeasuresCardNumber';
 import MeasuresCardPercent from '~sq-server-commons/components/overview/MeasuresCardPercent';
 import {
-  MeasurementType,
   QGStatusEnum,
   getConditionRequiredLabel,
-  getMeasurementMetricKey,
 } from '~sq-server-commons/utils/overview-utils';
 
 interface Props {
