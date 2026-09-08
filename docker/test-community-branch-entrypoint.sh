@@ -6,7 +6,7 @@ repository_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 test_root=$(mktemp -d)
 trap 'rm -rf "${test_root}"' EXIT HUP INT TERM
 
-plugin_version="26.8.0-SNAPSHOT"
+plugin_version="26.9.0-SNAPSHOT"
 plugin_name="sonarqube-community-branch-plugin-${plugin_version}.jar"
 plugin_source="${test_root}/lib/community-branch-plugin/${plugin_name}"
 plugin_directory="${test_root}/extensions/plugins"
