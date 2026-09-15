@@ -810,6 +810,91 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
+    void shouldDeleteResolvedSummaryCommentIfNoOtherCommentsInDiscussion() throws IOException {
+        Note note = mock();
+        when(note.getId()).thenReturn(101L);
+        when(note.getAuthor()).thenReturn(sonarqubeUser);
+        when(note.getBody()).thenReturn("Summary comment" + System.lineSeparator() + "[View in SonarQube](http://host.domain/dashboard?id=projectKey&pullRequest=123)");
+        when(note.isSystem()).thenReturn(false);
+        when(note.isResolved()).thenReturn(true);
+
+        Discussion discussion = mock();
+        when(discussion.getId()).thenReturn("discussionId");
+        when(discussion.getNotes()).thenReturn(Collections.singletonList(note));
+
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(gitlabClient).deleteMergeRequestDiscussionNote(PROJECT_ID, MERGE_REQUEST_IID, "discussionId", 101);
+        verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
+    }
+
+    @Test
+    void shouldAddNoteToResolvedSummaryCommentThreadIfOtherCommentsInDiscussion() throws IOException {
+        Note note = mock();
+        when(note.getId()).thenReturn(101L);
+        when(note.getAuthor()).thenReturn(sonarqubeUser);
+        when(note.getBody()).thenReturn("Summary comment" + System.lineSeparator() + "[View in SonarQube](http://host.domain/dashboard?id=projectKey&pullRequest=123)");
+        when(note.isSystem()).thenReturn(false);
+        when(note.isResolved()).thenReturn(true);
+
+        User otherUser = mock();
+        when(otherUser.getUsername()).thenReturn("username");
+        Note note2 = mock();
+        when(note2.getId()).thenReturn(102L);
+        when(note2.getAuthor()).thenReturn(otherUser);
+        when(note2.getBody()).thenReturn("Another comment");
+        when(note2.isSystem()).thenReturn(false);
+
+        Discussion discussion = mock();
+        when(discussion.getId()).thenReturn("discussionId");
+        when(discussion.getNotes()).thenReturn(List.of(note, note2));
+
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(gitlabClient).addMergeRequestDiscussionNote(PROJECT_ID, MERGE_REQUEST_IID, "discussionId", "This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being removed. Please manually resolve this discussion once the other comments have been reviewed.");
+        verify(gitlabClient, never()).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
+    }
+
+    @Test
+    void shouldNotRepostOutdatedNoteToResolvedSummaryCommentThreadIfAlreadyPresent() throws IOException {
+        Note note = mock();
+        when(note.getId()).thenReturn(101L);
+        when(note.getAuthor()).thenReturn(sonarqubeUser);
+        when(note.getBody()).thenReturn("Summary comment" + System.lineSeparator() + "[View in SonarQube](http://host.domain/dashboard?id=projectKey&pullRequest=123)");
+        when(note.isSystem()).thenReturn(false);
+        when(note.isResolved()).thenReturn(true);
+
+        User otherUser = mock();
+        when(otherUser.getUsername()).thenReturn("username");
+        Note note2 = mock();
+        when(note2.getId()).thenReturn(102L);
+        when(note2.getAuthor()).thenReturn(otherUser);
+        when(note2.getBody()).thenReturn("Another comment");
+        when(note2.isSystem()).thenReturn(false);
+
+        Note note3 = mock();
+        when(note3.getId()).thenReturn(103L);
+        when(note3.getAuthor()).thenReturn(sonarqubeUser);
+        when(note3.getBody()).thenReturn("This summary note is outdated, but due to other comments being present in this discussion, the discussion is not being removed. Please manually resolve this discussion once the other comments have been reviewed.");
+        when(note3.isSystem()).thenReturn(false);
+
+        Discussion discussion = mock();
+        when(discussion.getId()).thenReturn("discussionId");
+        when(discussion.getNotes()).thenReturn(List.of(note, note2, note3));
+
+        when(gitlabClient.getMergeRequestDiscussions(anyLong(), anyLong())).thenReturn(Collections.singletonList(discussion));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
+        verify(gitlabClient, never()).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
+    }
+
+    @Test
     void shouldNotTryAndCleanupNonSummaryNote() throws IOException {
         Note note = mock();
         when(note.getId()).thenReturn(101L);

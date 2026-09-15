@@ -70,7 +70,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
     public DecorationResult decorateQualityGateStatus(AnalysisDetails analysis, AlmSettingDto almSettingDto,
                                                       ProjectAlmSettingDto projectAlmSettingDto) {
         C client = createClient(almSettingDto, projectAlmSettingDto);
-        
+
         P pullRequest = getPullRequest(client, almSettingDto, projectAlmSettingDto, analysis);
 
         if (isInlineCommentsEnabled(projectAlmSettingDto)) {
@@ -191,7 +191,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                     return commentsForDiscussion.stream()
                         .findFirst()
                         .filter(note -> isNoteFromCurrentUser(note, currentUser))
-                        .filter(note -> !isResolved(client, discussion, commentsForDiscussion, currentUser))
+                        .filter(note -> !isResolved(client, discussion, commentsForDiscussion, currentUser) || isSummaryComment(client, note))
                         .map(note -> new ImmutableTriple<>(discussion, note, parseIssueDetails(client, note)));
                 })
                 .filter(Optional::isPresent)
@@ -236,6 +236,12 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                 .anyMatch(content -> RESOLVED_ISSUE_NEEDING_CLOSED_MESSAGE.equals(content) || RESOLVED_SUMMARY_NEEDING_CLOSED_MESSAGE.equals(content));
     }
 
+    private boolean isSummaryComment(C client, N note) {
+        return parseIssueDetails(client, note)
+                .map(identifier -> DECORATOR_SUMMARY_COMMENT.equals(identifier.getIssueKey()))
+                .orElse(false);
+    }
+
     private void resolveOrPlaceFinalCommentOnDiscussion(C client, U currentUser, D discussion, P pullRequest) {
         if (getNotesForDiscussion(client, discussion).stream()
                 .filter(this::isUserNote)
@@ -249,6 +255,16 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
     private void deleteOrPlaceFinalCommentOnDiscussion(C client, U currentUser, D discussion, P pullRequest) {
         List<N> notesForDiscussion = getNotesForDiscussion(client, discussion);
+        boolean outdatedMessageAlreadyPresent = notesForDiscussion.stream()
+                .filter(this::isUserNote)
+                .filter(note -> isNoteFromCurrentUser(note, currentUser))
+                .map(note -> getNoteContent(client, note))
+                .anyMatch(RESOLVED_SUMMARY_NEEDING_CLOSED_MESSAGE::equals);
+
+        if (outdatedMessageAlreadyPresent) {
+            return;
+        }
+
         if (notesForDiscussion.stream()
             .filter(this::isUserNote)
             .anyMatch(note -> !isNoteFromCurrentUser(note, currentUser))) {
