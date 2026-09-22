@@ -15,7 +15,7 @@ on:
 
 jobs:
   integration-test:
-    name: SonarQube plugin smoke test
+    name: SonarQube branch integration test
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -25,5 +25,5 @@ jobs:
         with:
           submodules: true
 
-      - name: Run integration smoke test
+      - name: Run branch integration test
         run: bash scripts/integration-test.sh
