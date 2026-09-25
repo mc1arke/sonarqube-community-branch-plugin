@@ -64,7 +64,11 @@ dependencies {
     customTestRuntime('org.wiremock:wiremock:3.13.2')
     customTestRuntime('org.kohsuke:github-api-unbridged:1.330')
     compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
-    testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
+    // sonar-application and sonar-scanner-engine both bundle unshaded protobuf-java at different versions.
+    // Keep the scanner engine last so the server runtime is loaded, otherwise server-generated protobuf
+    // classes (e.g. DbIssues) fail with ProtobufRuntimeVersionException depending on file ordering.
+    testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: ['extensions/*.jar', 'scanner/*.jar']))
+    testImplementation(fileTree(dir: "${sonarLibraries}/scanner", include: '*.jar'))
     testImplementation('org.mockito:mockito-core:5.23.0')
     testImplementation('org.assertj:assertj-core:3.27.7')
     testImplementation('org.wiremock:wiremock:3.13.2')
