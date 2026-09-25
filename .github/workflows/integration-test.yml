@@ -1,3 +1,5 @@
+# Runs the release-candidate integration harness when changes can affect the
+# plugin binary, patched SonarQube webapp, Docker image, or target SQ version.
 name: integration-test-poc
 
 on:
@@ -6,8 +8,13 @@ on:
     paths:
       - 'src/**'
       - 'sonarqube-webapp-addons/**'
+      - 'sonarqube-webapp' # submodule gitlink; intentionally not a glob
+      - 'docker/**'
       - 'Dockerfile'
+      - 'release.Dockerfile'
       - 'docker-compose.yml'
+      - '.env'
+      - '.gitmodules'
       - 'build.gradle'
       - 'gradle.properties'
       - 'scripts/integration-test.sh'
@@ -15,15 +22,18 @@ on:
 
 jobs:
   integration-test:
-    name: SonarQube branch integration test
+    # Tests the candidate in a real SonarQube instance rather than only checking
+    # compilation/unit tests. The script covers main, branch and PR analyses and
+    # waits for their server-side Compute Engine processing to complete.
+    name: SonarQube branch and PR integration test
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout
+      - name: Checkout candidate including SonarQube webapp submodule
         uses: actions/checkout@v6
         with:
           submodules: true
 
-      - name: Run branch integration test
+      - name: Run release-candidate integration test
         run: bash scripts/integration-test.sh
