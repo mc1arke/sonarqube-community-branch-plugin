@@ -40,12 +40,12 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '26.5.0.122743'
+def sonarqubeVersion = '26.9.0.129388'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-java.targetCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
+java.targetCompatibility = JavaVersion.VERSION_21
 configurations {
     zip
     customTestRuntime

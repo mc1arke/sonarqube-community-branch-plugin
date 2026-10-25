@@ -20,9 +20,9 @@
 
 import * as React from 'react';
 import { ActionCell, ContentCell, HelperHintIcon, Table, TableRow } from '~design-system';
+import Tooltip from '~sq-server-commons/components/controls/Tooltip';
 import { getBranchLikeKey } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
-import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
 import { BranchLike } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';
 import BranchLikeRow from './BranchLikeRow';
@@ -54,14 +54,15 @@ function BranchLikeTable(props: BranchLikeTableProps) {
             <span>
               {translate('project_branch_pull_request.branch.auto_deletion.keep_when_inactive')}
             </span>
-            <HelpTooltip
-              className="sw-ml-1"
-              overlay={translate(
-                'project_branch_pull_request.branch.auto_deletion.keep_when_inactive.tooltip',
-              )}
-            >
-              <HelperHintIcon />
-            </HelpTooltip>
+            <span className="sw-ml-1">
+              <Tooltip
+                content={translate(
+                  'project_branch_pull_request.branch.auto_deletion.keep_when_inactive.tooltip',
+                )}
+              >
+                <HelperHintIcon />
+              </Tooltip>
+            </span>
           </div>
         </ContentCell>
       )}

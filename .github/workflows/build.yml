@@ -66,6 +66,9 @@ jobs:
         run: |
           ./gradlew clean build
       -
+        name: Test Docker plugin upgrade handling
+        run: ./docker/test-community-branch-entrypoint.sh
+      -
         name: Archive artifact
         if: success() && matrix.java == '21'
         uses: actions/upload-artifact@v7
