@@ -1,21 +1,22 @@
 ARG SONARQUBE_VERSION="community"
 ARG WORKDIR="/home/build/project"
 
-FROM gradle:8.9-jdk21-jammy AS builder
+FROM eclipse-temurin:21-jdk-jammy AS builder
 ARG WORKDIR
 
 COPY . ${WORKDIR}
 WORKDIR ${WORKDIR}
-RUN gradle build -x test
+RUN chmod +x gradlew && ./gradlew build -x test --no-daemon
 
 
-FROM node:22.16-alpine AS webapp-builder
+FROM node:24-alpine AS webapp-builder
 ARG WORKDIR
 
 COPY ./sonarqube-webapp ${WORKDIR}
 COPY ./sonarqube-webapp-addons ${WORKDIR}/libs/sq-server-addons
 
 WORKDIR ${WORKDIR}
+RUN corepack enable
 RUN yarn install
 RUN yarn nx run sq-server:build
 
