@@ -18,13 +18,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { ToggleTip } from '@sonarsource/echoes-react';
 import * as React from 'react';
 import { useIntl } from 'react-intl';
-import { HelperHintIcon, ItemDivider, ItemHeader } from '~design-system';
+import { ItemDivider, ItemHeader } from '~design-system';
 import { isDefined } from '~shared/helpers/types';
 import { getBranchLikeKey, isSameBranchLike } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
-import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
 import { BranchLike, BranchLikeTree } from '~sq-server-commons/types/branch-like';
 import MenuItem from './MenuItem';
 
@@ -121,12 +121,10 @@ export function MenuItemList(props: MenuItemListProps) {
           <ItemDivider aria-hidden />
           <ItemHeader>
             {translate('branch_like_navigation.orphan_pull_requests')}
-            <HelpTooltip
+            <ToggleTip
               className="sw-ml-1"
-              overlay={translate('branch_like_navigation.orphan_pull_requests.tooltip')}
-            >
-              <HelperHintIcon />
-            </HelpTooltip>
+              description={translate('branch_like_navigation.orphan_pull_requests.tooltip')}
+            />
           </ItemHeader>
           <ItemDivider aria-hidden />
           {branchLikeTree.orphanPullRequests.map((pr) => renderItem(pr))}
