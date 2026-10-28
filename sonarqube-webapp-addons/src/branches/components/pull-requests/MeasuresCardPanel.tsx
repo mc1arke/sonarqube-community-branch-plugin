@@ -58,12 +58,8 @@ import FailedConditions from '~sq-server-commons/components/overview/FailedCondi
 import { IssueMeasuresCardInner } from '~sq-server-commons/components/overview/IssueMeasuresCardInner';
 import MeasuresCardNumber from '~sq-server-commons/components/overview/MeasuresCardNumber';
 import MeasuresCardPercent from '~sq-server-commons/components/overview/MeasuresCardPercent';
-import {
-  MeasurementType,
-  QGStatusEnum,
-  getConditionRequiredLabel,
-  getMeasurementMetricKey,
-} from '~sq-server-commons/utils/overview-utils';
+import { MeasurementType, getMeasurementMetricKey } from '~shared/helpers/overview';
+import { QGStatusEnum, getConditionRequiredLabel } from '~sq-server-commons/utils/overview-utils';
 
 interface Props {
   component: Component;
@@ -155,11 +151,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
             url={acceptedUrl}
             icon={
               acceptedCount !== undefined && (
-                <SnoozeCircleIcon
-                  color={
-                    acceptedCount === '0' ? 'overviewCardDefaultIcon' : 'overviewCardWarningIcon'
-                  }
-                />
+                <SnoozeCircleIcon disabled={acceptedCount === '0'} />
               )
             }
             footer={

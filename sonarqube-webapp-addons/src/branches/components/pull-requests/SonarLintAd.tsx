@@ -97,7 +97,7 @@ export default function SonarLintAd({ status }: Readonly<Props>) {
 function TickLink({ className, children }: Readonly<{ children: ReactNode; className?: string }>) {
   return (
     <li className={className}>
-      <CheckIcon fill="iconTrendPositive" />
+      <CheckIcon fill="var(--echoes-color-icon-success)" />
       <Text className="sw-pl-1" isSubtle>{children}</Text>
     </li>
   );

@@ -19,7 +19,8 @@
  */
 
 import * as React from 'react';
-import { ActionCell, ContentCell, Spinner, Table, TableRow } from '~design-system';
+import { Spinner } from '@sonarsource/echoes-react';
+import { ActionCell, ContentCell, Table, TableRow } from '~design-system';
 import {
   listBranchesNewCodeDefinition,
   resetNewCodeDefinition,
@@ -163,7 +164,7 @@ export default class BranchList extends React.PureComponent<Props, State> {
     }
 
     if (loading) {
-      return <Spinner />;
+      return <Spinner isLoading />;
     }
 
     const header = (
