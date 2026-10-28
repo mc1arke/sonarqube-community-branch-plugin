@@ -20,13 +20,14 @@ package com.github.mc1arke.sonarqube.plugin.scanner;
 
 import org.junit.jupiter.api.Test;
 import org.sonar.api.utils.MessageException;
-import org.sonar.scanner.http.ScannerWsClient;
+import org.sonar.scanner.http.service.HttpResponseException;
+import org.sonar.scanner.http.service.ServiceClient;
+import org.sonar.scanner.http.transport.HttpMethod;
+import org.sonar.scanner.http.transport.HttpResponse;
 import org.sonar.scanner.protocol.GsonHelper;
 import org.sonar.scanner.scan.branch.BranchInfo;
 import org.sonar.scanner.scan.branch.BranchType;
 import org.sonar.scanner.scan.branch.ProjectBranches;
-import org.sonarqube.ws.client.HttpException;
-import org.sonarqube.ws.client.WsResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,32 +38,35 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CommunityRepositoryBranchesLoaderTest {
 
-    private final ScannerWsClient scannerWsClient = mock();
+    private final ServiceClient serviceClient = mock();
 
     @Test
     void shouldReturnEmptyBranchesOnEmptyServerResponse() {
-        WsResponse mockResponse = mock();
-        when(scannerWsClient.call(any())).thenReturn(mockResponse);
+        HttpResponse mockResponse = mock();
+        when(serviceClient.getOrFail(anyString())).thenReturn(mockResponse);
 
         StringReader stringReader = new StringReader(
                 GsonHelper.create().toJson(new CommunityProjectBranchesLoader.BranchesResponse(new ArrayList<>())));
-        when(mockResponse.contentReader()).thenReturn(stringReader);
+        when(mockResponse.bodyReader()).thenReturn(stringReader);
 
-        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
+        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(serviceClient);
         ProjectBranches response = testCase.load("projectKey");
         assertThat(response.isEmpty()).isTrue();
+        verify(serviceClient).getOrFail("/api/project_branches/list?project=projectKey");
+        verify(mockResponse).close();
     }
 
     @Test
     void shouldReturnAllBranchesFromNonEmptyServerResponse() {
-        WsResponse mockResponse = mock();
-        when(scannerWsClient.call(any())).thenReturn(mockResponse);
+        HttpResponse mockResponse = mock();
+        when(serviceClient.getOrFail(anyString())).thenReturn(mockResponse);
 
         List<BranchInfo> infos = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
@@ -71,9 +75,9 @@ class CommunityRepositoryBranchesLoaderTest {
 
         StringReader stringReader = new StringReader(
                 GsonHelper.create().toJson(new CommunityProjectBranchesLoader.BranchesResponse(infos)));
-        when(mockResponse.contentReader()).thenReturn(stringReader);
+        when(mockResponse.bodyReader()).thenReturn(stringReader);
 
-        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
+        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(serviceClient);
         ProjectBranches response = testCase.load("key");
         assertThat(response.isEmpty()).isFalse();
         for (BranchInfo info : infos) {
@@ -88,8 +92,8 @@ class CommunityRepositoryBranchesLoaderTest {
 
     @Test
     void shouldThrowMessageExceptionOnIOException() {
-        WsResponse mockResponse = mock();
-        when(scannerWsClient.call(any())).thenReturn(mockResponse);
+        HttpResponse mockResponse = mock();
+        when(serviceClient.getOrFail(anyString())).thenReturn(mockResponse);
 
         Reader mockReader = new BufferedReader(new StringReader(
                 GsonHelper.create().toJson(new CommunityProjectBranchesLoader.BranchesResponse(new ArrayList<>())))) {
@@ -98,9 +102,9 @@ class CommunityRepositoryBranchesLoaderTest {
                 throw new IOException("Dummy IO Exception");
             }
         };
-        when(mockResponse.contentReader()).thenReturn(mockReader);
+        when(mockResponse.bodyReader()).thenReturn(mockReader);
 
-        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
+        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(serviceClient);
         assertThatThrownBy(() -> testCase.load("project"))
             .isInstanceOf(MessageException.class)
             .hasMessage("Could not load branches from server")
@@ -110,31 +114,22 @@ class CommunityRepositoryBranchesLoaderTest {
 
     @Test
     void shouldThrowExceptionOnNon404HttpResponse() {
-        WsResponse mockResponse = mock();
-        when(scannerWsClient.call(any())).thenReturn(mockResponse);
+        HttpResponseException httpResponseException = new HttpResponseException(HttpMethod.GET, "url", 500, null, "content");
+        when(serviceClient.getOrFail(anyString())).thenThrow(httpResponseException);
 
-        Reader mockReader = new BufferedReader(new StringReader(
-                GsonHelper.create().toJson(new CommunityProjectBranchesLoader.BranchesResponse(new ArrayList<>())))) {
-            @Override
-            public void close() {
-                throw new HttpException("url", 12, "content");
-            }
-        };
-        when(mockResponse.contentReader()).thenReturn(mockReader);
-
-        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
-        assertThatThrownBy(() ->testCase.load("project"))
+        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(serviceClient);
+        assertThatThrownBy(() -> testCase.load("project"))
             .isInstanceOf(MessageException.class)
             .hasMessage("Could not load branches from server")
-            .hasCause(new HttpException("url", 12, "content"));
+            .hasCause(httpResponseException);
     }
 
 
     @Test
     void shouldReturnEmptyListOn404HttpResponse() {
-        when(scannerWsClient.call(any())).thenThrow(new HttpException("url", 404, "content"));
+        when(serviceClient.getOrFail(anyString())).thenThrow(new HttpResponseException(HttpMethod.GET, "url", 404, null, "content"));
 
-        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(scannerWsClient);
+        CommunityProjectBranchesLoader testCase = new CommunityProjectBranchesLoader(serviceClient);
         assertThat(testCase.load("project").isEmpty()).isTrue();
     }
 }

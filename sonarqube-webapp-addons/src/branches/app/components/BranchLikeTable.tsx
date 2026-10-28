@@ -18,11 +18,11 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { ToggleTip } from '@sonarsource/echoes-react';
 import * as React from 'react';
-import { ActionCell, ContentCell, HelperHintIcon, Table, TableRow } from '~design-system';
+import { ActionCell, ContentCell, Table, TableRow } from '~design-system';
 import { getBranchLikeKey } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
-import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
 import { BranchLike } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';
 import BranchLikeRow from './BranchLikeRow';
@@ -54,14 +54,12 @@ function BranchLikeTable(props: BranchLikeTableProps) {
             <span>
               {translate('project_branch_pull_request.branch.auto_deletion.keep_when_inactive')}
             </span>
-            <HelpTooltip
+            <ToggleTip
               className="sw-ml-1"
-              overlay={translate(
+              description={translate(
                 'project_branch_pull_request.branch.auto_deletion.keep_when_inactive.tooltip',
               )}
-            >
-              <HelperHintIcon />
-            </HelpTooltip>
+            />
           </div>
         </ContentCell>
       )}
