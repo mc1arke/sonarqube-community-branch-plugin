@@ -18,7 +18,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { HelperHintIcon, Spinner } from '~design-system';
+import { Spinner } from '@sonarsource/echoes-react';
+import { HelperHintIcon } from '~design-system';
 import { Switch } from '~adapters/components/common/Switch';
 import { translate } from '~sq-server-commons/helpers/l10n';
 import { useExcludeFromPurgeMutation } from '~sq-server-commons/queries/branch';
@@ -51,7 +52,7 @@ export default function BranchPurgeSetting(props: Props) {
         onChange={handleOnChange}
         value={branch.excludedFromPurge}
       />
-      <Spinner loading={isPending} className="sw-ml-1" />
+      <Spinner isLoading={isPending} className="sw-ml-1" />
       {isTheMainBranch && (
         <HelpTooltip
           className="sw-ml-1"
