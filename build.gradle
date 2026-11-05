@@ -48,7 +48,6 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
 configurations {
     zip
-    customTestRuntime
 }
 
 compileJava {
@@ -61,23 +60,24 @@ tasks.withType(JavaCompile) {
 
 
 dependencies {
-    customTestRuntime('org.wiremock:wiremock:3.13.2')
-    customTestRuntime('org.kohsuke:github-api-unbridged:1.330')
-    compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
-    testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
+    testImplementation('org.wiremock:wiremock-standalone:3.13.2')
+    testRuntimeOnly('org.kohsuke:github-api-unbridged:1.330')
+
     testImplementation('org.mockito:mockito-core:5.24.0')
     testImplementation('org.assertj:assertj-core:3.27.7')
-    testImplementation('org.wiremock:wiremock:3.13.2')
+    testImplementation(platform('org.junit:junit-bom:6.1.3'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+
+    compileOnly(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: 'extensions/*.jar'))
+    testImplementation(fileTree(dir: sonarLibraries, include: '**/*.jar', exclude: ['extensions/*.jar', 'scanner/*.jar']))
+    testImplementation(fileTree(dir: "${sonarLibraries}/scanner", include: '*.jar'))
+
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
     runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.4')
     compileOnly('com.google.code.findbugs:jsr305:3.0.2')
     implementation('org.javassist:javassist:3.33.0-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:5.5.1')
-    testImplementation(platform('org.junit:junit-bom:6.1.3'))
-    testImplementation('org.junit.jupiter:junit-jupiter')
 }
-
-sourceSets.test.runtimeClasspath = configurations.customTestRuntime + sourceSets.test.runtimeClasspath
 
 project.afterEvaluate {
     if (file("${sonarLibraries}").exists()) {
