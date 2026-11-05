@@ -2,8 +2,12 @@
 /build/
 /.idea/
 /.gradle/
+/sonarqube-lib/
 /out/
 
 # JavaScript
 node_modules/
+**/node_modules/
+**/.yarn/cache/
+sonarqube-webapp/apps/sq-server/build/
 /sonarqube-webapp/libs/sq-server-addons

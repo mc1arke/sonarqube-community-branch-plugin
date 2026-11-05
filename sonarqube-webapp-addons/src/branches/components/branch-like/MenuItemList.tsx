@@ -24,7 +24,7 @@ import { HelperHintIcon, ItemDivider, ItemHeader } from '~design-system';
 import { isDefined } from '~shared/helpers/types';
 import { getBranchLikeKey, isSameBranchLike } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
-import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
+import Tooltip from '~sq-server-commons/components/controls/Tooltip';
 import { BranchLike, BranchLikeTree } from '~sq-server-commons/types/branch-like';
 import MenuItem from './MenuItem';
 
@@ -121,12 +121,11 @@ export function MenuItemList(props: MenuItemListProps) {
           <ItemDivider aria-hidden />
           <ItemHeader>
             {translate('branch_like_navigation.orphan_pull_requests')}
-            <HelpTooltip
-              className="sw-ml-1"
-              overlay={translate('branch_like_navigation.orphan_pull_requests.tooltip')}
-            >
-              <HelperHintIcon />
-            </HelpTooltip>
+            <span className="sw-ml-1">
+              <Tooltip content={translate('branch_like_navigation.orphan_pull_requests.tooltip')}>
+                <HelperHintIcon />
+              </Tooltip>
+            </span>
           </ItemHeader>
           <ItemDivider aria-hidden />
           {branchLikeTree.orphanPullRequests.map((pr) => renderItem(pr))}
