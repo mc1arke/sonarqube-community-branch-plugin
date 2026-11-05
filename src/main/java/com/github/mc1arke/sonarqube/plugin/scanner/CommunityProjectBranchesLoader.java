@@ -20,18 +20,18 @@ package com.github.mc1arke.sonarqube.plugin.scanner;
 
 import com.google.gson.Gson;
 import org.sonar.api.utils.MessageException;
-import org.sonar.scanner.http.ScannerWsClient;
+import org.sonar.scanner.http.service.HttpResponseException;
+import org.sonar.scanner.http.service.ServiceClient;
+import org.sonar.scanner.http.transport.HttpResponse;
 import org.sonar.scanner.protocol.GsonHelper;
 import org.sonar.scanner.scan.branch.BranchInfo;
 import org.sonar.scanner.scan.branch.ProjectBranches;
 import org.sonar.scanner.scan.branch.ProjectBranchesLoader;
 import org.sonar.server.branch.ws.ProjectBranchesParameters;
-import org.sonarqube.ws.client.GetRequest;
-import org.sonarqube.ws.client.HttpException;
-import org.sonarqube.ws.client.WsResponse;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -48,34 +48,31 @@ public class CommunityProjectBranchesLoader implements ProjectBranchesLoader {
             String.format("/%s/%s?%s=", ProjectBranchesParameters.CONTROLLER, ProjectBranchesParameters.ACTION_LIST,
                           ProjectBranchesParameters.PARAM_PROJECT);
 
-    private final ScannerWsClient scannerWsClient;
+    private final ServiceClient serviceClient;
     private final Gson gson;
 
-    public CommunityProjectBranchesLoader(ScannerWsClient scannerWsClient) {
+    public CommunityProjectBranchesLoader(ServiceClient serviceClient) {
         super();
-        this.scannerWsClient = scannerWsClient;
+        this.serviceClient = serviceClient;
         this.gson = GsonHelper.create();
     }
 
     @Override
     public ProjectBranches load(String projectKey) {
-        try {
-            GetRequest branchesGetRequest =
-                    new GetRequest(PROJECT_BRANCHES_URL + URLEncoder.encode(projectKey, StandardCharsets.UTF_8.name()));
-            try (WsResponse branchesResponse = scannerWsClient
-                    .call(branchesGetRequest); Reader reader = branchesResponse
-                .contentReader()) {
-                BranchesResponse parsedResponse = gson.fromJson(reader, BranchesResponse.class);
-                return new ProjectBranches(parsedResponse.getBranches());
-            }
-        } catch (IOException e) {
-            throw MessageException.of("Could not load branches from server", e);
-        } catch (HttpException e) {
+        String path = PROJECT_BRANCHES_URL + URLEncoder.encode(projectKey, StandardCharsets.UTF_8);
+        try (HttpResponse branchesResponse = serviceClient.getOrFail(path);
+             Reader reader = branchesResponse.bodyReader()) {
+            BranchesResponse parsedResponse = gson.fromJson(reader, BranchesResponse.class);
+            return new ProjectBranches(parsedResponse.getBranches());
+        } catch (HttpResponseException e) {
             if (404 == e.code()) {
                 return new ProjectBranches(new ArrayList<>());
-            } else {
-                throw MessageException.of("Could not load branches from server", e);
             }
+            throw MessageException.of("Could not load branches from server", e);
+        } catch (IOException e) {
+            throw MessageException.of("Could not load branches from server", e);
+        } catch (UncheckedIOException e) {
+            throw MessageException.of("Could not load branches from server", e.getCause());
         }
     }
 
