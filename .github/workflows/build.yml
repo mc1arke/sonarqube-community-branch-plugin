@@ -37,20 +37,15 @@ jobs:
   snapshot:
     needs: prep
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        java:
-          - 21
     steps:
       -
         name: Checkout
         uses: actions/checkout@v7
       -
-        name: Set up Java ${{ matrix.java }}
+        name: Set up Java
         uses: actions/setup-java@v6
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 21
           java-package: jdk
           distribution: 'zulu'
       -
@@ -67,7 +62,6 @@ jobs:
           ./gradlew clean build
       -
         name: Archive artifact
-        if: success() && matrix.java == '21'
         uses: actions/upload-artifact@v7
         with:
           name: snapshot
