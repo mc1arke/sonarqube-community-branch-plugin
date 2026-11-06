@@ -60,6 +60,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatt
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
+import tools.jackson.core.JacksonException;
 
 public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestDecorator<AzureDevopsClient, PullRequest, String, CommentThread, Comment> implements PullRequestBuildStatusDecorator {
 
@@ -115,7 +116,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
         String repositoryName = Optional.ofNullable(StringUtils.trimToNull(projectAlmSettingDto.getAlmRepo())).orElseThrow(() -> new IllegalStateException("Repository name must be provided"));
         try {
             return client.retrievePullRequest(projectName, repositoryName, pullRequestId);
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not retrieve Pull Request details", ex);
         }
     }
@@ -137,7 +138,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
             return client.getPullRequestCommits(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId()).stream()
                     .map(Commit::getCommitId)
                     .toList();
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not retrieve commit details for Pull Request", ex);
         }
     }
@@ -167,7 +168,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
             );
 
             client.submitPullRequestStatus(projectName, repositoryName, pullRequestId, gitPullRequestStatus);
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not update pipeline status in Gitlab", ex);
         }
     }
@@ -191,7 +192,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
             CommentThreadContext commentThreadContext = new CommentThreadContext(file, fileStart, fileEnd);
             CreateCommentThreadRequest thread = new CreateCommentThreadRequest(commentThreadContext, Collections.singletonList(comment), CommentThreadStatus.ACTIVE);
             client.createThread(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), thread);
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not submit commit comment to Azure Devops", ex);
         }
     }
@@ -206,7 +207,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
             if (analysis.getQualityGateStatus() == QualityGate.Status.OK) {
                 client.resolvePullRequestThread(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), summaryComment.getId());
             }
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not submit summary comment to Azure Devops", ex);
         }
     }
@@ -214,7 +215,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     protected List<CommentThread> getDiscussions(AzureDevopsClient client, PullRequest pullRequest) {
         try {
             return client.retrieveThreads(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId());
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not retrieve discussions from Azure Devops", ex);
         }
     }
@@ -248,7 +249,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     protected void addNoteToDiscussion(AzureDevopsClient client, CommentThread discussion, PullRequest pullRequest, String note) {
         try {
             client.addCommentToThread(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), discussion.getId(), new CreateCommentRequest(note));
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not add note to Pull Request comment thread on Azure Devops", ex);
         }
     }
@@ -257,7 +258,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
     protected void resolveDiscussion(AzureDevopsClient client, CommentThread discussion, PullRequest pullRequest) {
         try {
             client.resolvePullRequestThread(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), discussion.getId());
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not resolve Pull Request comment thread on Azure Devops", ex);
         }
     }
@@ -268,7 +269,7 @@ public class AzureDevOpsPullRequestDecorator extends DiscussionAwarePullRequestD
             for (Comment note : notesForDiscussion) {
                 client.deletePullRequestThreadComment(pullRequest.getRepository().getProject().getName(), pullRequest.getRepository().getName(), pullRequest.getId(), discussion.getId(), note.getId());
             }
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not delete Pull Request comment thread on Azure Devops", ex);
         }
     }

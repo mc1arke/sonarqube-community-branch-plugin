@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -28,6 +27,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 
@@ -42,11 +42,11 @@ class GitlabRestClientTest {
 
     private final CloseableHttpClient closeableHttpClient = mock();
     private final LinkHeaderReader linkHeaderReader = mock();
-    private final ObjectMapper objectMapper = mock();
+    private final JsonMapper jsonMapper = mock();
 
     @Test
     void checkErrorThrownOnNonSuccessResponseStatus() throws IOException {
-        GitlabRestClient underTest = new GitlabRestClient("http://url.test/api", "token", linkHeaderReader, objectMapper, () -> closeableHttpClient);
+        GitlabRestClient underTest = new GitlabRestClient("http://url.test/api", "token", linkHeaderReader, jsonMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
         StatusLine statusLine = mock();
@@ -84,7 +84,7 @@ class GitlabRestClientTest {
 
         MergeRequestNote mergeRequestNote = new MergeRequestNote("Merge request note");
 
-        GitlabRestClient underTest = new GitlabRestClient("http://api.url", "token", linkHeaderReader, objectMapper, () -> closeableHttpClient);
+        GitlabRestClient underTest = new GitlabRestClient("http://api.url", "token", linkHeaderReader, jsonMapper, () -> closeableHttpClient);
         underTest.addMergeRequestDiscussion(123, 321, mergeRequestNote);
 
         ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();

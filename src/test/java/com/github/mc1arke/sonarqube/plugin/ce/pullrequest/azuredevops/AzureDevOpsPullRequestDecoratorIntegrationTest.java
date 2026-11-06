@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.azuredevops;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.patch;
@@ -72,7 +73,6 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
     private final int pullRequestId = 8513;
     private final String azureRepository = "my Repository";
     private final String issueKeyVal = "issueKeyVal";
-    private final String projectName = "Project Name";
 
     private final ProjectAlmSettingDto projectAlmSettingDto = mock();
     private final AlmSettingDto almSettingDto = mock();
@@ -100,6 +100,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn(token);
         when(almSettingDto.getUrl()).thenReturn(wireMockExtension.baseUrl());
 
+        String projectName = "Project Name";
         when(analysisDetails.getAnalysisProjectName()).thenReturn(projectName);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(sonarProject);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
@@ -331,7 +332,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
-                .withRequestBody(equalTo("{\"content\":\"Issue has been closed in SonarQube\"}")
+                .withRequestBody(equalToJson("{\"content\":\"Issue has been closed in SonarQube\"}")
                 )
                 .willReturn(ok()));
 
@@ -390,7 +391,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
         wireMockExtension.stubFor(post(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/"+ pullRequestId +"/statuses?api-version=4.1-preview"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
-                .withRequestBody(equalTo("{" +
+                .withRequestBody(equalToJson("{" +
                         "\"state\":\"SUCCEEDED\"," +
                         "\"description\":\"Quality Gate passed\"," +
                         "\"context\":{\"genre\":\"SonarQube\",\"name\":\"quality gate\"}," +
@@ -404,7 +405,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
-                .withRequestBody(equalTo("{\"comments\":[{\"content\":\"analysis summary\"}],\"status\":\"active\"}"))
+                .withRequestBody(equalToJson("{\"comments\":[{\"content\":\"analysis summary\"}],\"status\":\"active\"}"))
                 .willReturn(aResponse().withStatus(200).withBody("{" + System.lineSeparator() +
                         "  \"pullRequestThreadContext\": {" + System.lineSeparator() +
                         "    \"iterationContext\": {" + System.lineSeparator() +
@@ -461,7 +462,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
-                .withRequestBody(equalTo("{\"threadContext\":{\"filePath\":\"/scmPath\",\"rightFileStart\":{\"line\":0,\"offset\":1},\"rightFileEnd\":{\"line\":0,\"offset\":1}},\"comments\":[{\"content\":\"issue summary\"}],\"status\":\"active\"}"))
+                .withRequestBody(equalToJson("{\"threadContext\":{\"filePath\":\"/scmPath\",\"rightFileStart\":{\"line\":0,\"offset\":1},\"rightFileEnd\":{\"line\":0,\"offset\":1}},\"comments\":[{\"content\":\"issue summary\"}],\"status\":\"active\"}"))
                 .willReturn(aResponse().withStatus(200).withBody("{" + System.lineSeparator() +
                         "  \"pullRequestThreadContext\": {" + System.lineSeparator() +
                         "    \"iterationContext\": {" + System.lineSeparator() +
@@ -517,7 +518,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
         wireMockExtension.stubFor(patch(urlEqualTo("/azure%20Project/_apis/git/repositories/my%20Repository/pullRequests/" + pullRequestId + "/threads/" + threadId + "?api-version=4.1"))
                 .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
                 .withHeader("Authorization", equalTo(authHeader))
-                .withRequestBody(equalTo("{" +
+                .withRequestBody(equalToJson("{" +
                         "\"status\":\"closed\"" +
                         "}")
                 )
