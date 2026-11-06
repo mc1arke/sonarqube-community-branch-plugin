@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.azuredevops;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CommentThread;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CommentThreadResponse;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit;
@@ -41,6 +40,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -59,21 +59,21 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
 
     private final String authToken;
     private final String apiUrl;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     private final Supplier<CloseableHttpClient> httpClientFactory;
 
-    AzureDevopsRestClient(String apiUrl, String authToken, ObjectMapper objectMapper, Supplier<CloseableHttpClient> httpClientFactory) {
+    AzureDevopsRestClient(String apiUrl, String authToken, JsonMapper jsonMapper, Supplier<CloseableHttpClient> httpClientFactory) {
         super();
         this.apiUrl = apiUrl;
         this.authToken = authToken;
-        this.objectMapper = objectMapper;
+        this.jsonMapper = jsonMapper;
         this.httpClientFactory = httpClientFactory;
     }
 
     @Override
     public void submitPullRequestStatus(String projectId, String repositoryName, int pullRequestId, GitPullRequestStatus status) throws IOException {
         String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/statuses?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION_PREVIEW);
-        execute(url, "post", objectMapper.writeValueAsString(status), null);
+        execute(url, "post", jsonMapper.writeValueAsString(status), null);
     }
 
     @Override
@@ -91,13 +91,13 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
     @Override
     public CommentThread createThread(String projectId, String repositoryName, int pullRequestId, CreateCommentThreadRequest thread) throws IOException {
         String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, API_VERSION);
-        return execute(url, "post", objectMapper.writeValueAsString(thread), CommentThread.class);
+        return execute(url, "post", jsonMapper.writeValueAsString(thread), CommentThread.class);
     }
 
     @Override
     public void addCommentToThread(String projectId, String repositoryName, int pullRequestId, int threadId, CreateCommentRequest comment) throws IOException {
         String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads/%s/comments?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, threadId, API_VERSION);
-        execute(url, "post", objectMapper.writeValueAsString(comment), null);
+        execute(url, "post", jsonMapper.writeValueAsString(comment), null);
     }
 
     @Override
@@ -105,7 +105,7 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
         String url = String.format("%s/%s/_apis/git/repositories/%s/pullRequests/%s/threads/%s?api-version=%s", apiUrl, encode(projectId), encode(repositoryName), pullRequestId, threadId, API_VERSION);
 
         UpdateCommentThreadStatusRequest commentThread = new UpdateCommentThreadStatusRequest(CommentThreadStatus.CLOSED);
-        execute(url, "patch", objectMapper.writeValueAsString(commentThread), null);
+        execute(url, "patch", jsonMapper.writeValueAsString(commentThread), null);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
             if (null == type) {
                 return null;
             }
-            return objectMapper.readValue(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8), type);
+            return jsonMapper.readValue(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8), type);
         }
     }
 
