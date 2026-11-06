@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.sonar.api.ce.ComputeEngineSide;
 import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
@@ -37,6 +38,8 @@ import java.util.Optional;
 @ServerSide
 @ComputeEngineSide
 public class DefaultAzureDevopsClientFactory implements AzureDevopsClientFactory {
+
+    private static final int TIMEOUT_MILLISECONDS = 30_000;
 
     private final ObjectMapper objectMapper;
     private final Settings settings;
@@ -55,6 +58,11 @@ public class DefaultAzureDevopsClientFactory implements AzureDevopsClientFactory
     public AzureDevopsClient createClient(ProjectAlmSettingDto projectAlmSettingDto, AlmSettingDto almSettingDto) {
         String apiUrl = Optional.ofNullable(almSettingDto.getUrl()).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("ALM URL must be provided"));
         String accessToken = Optional.ofNullable(almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption())).map(StringUtils::trimToNull).orElseThrow(() -> new IllegalStateException("Personal Access Token must be provided"));
-        return new AzureDevopsRestClient(apiUrl, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), objectMapper, HttpClients::createSystem);
+        HttpClientBuilder builder = HttpClientBuilder.create().useSystemProperties().setDefaultRequestConfig(RequestConfig.custom()
+                .setConnectionRequestTimeout(TIMEOUT_MILLISECONDS)
+                .setConnectTimeout(TIMEOUT_MILLISECONDS)
+                .setSocketTimeout(TIMEOUT_MILLISECONDS)
+                .build());
+        return new AzureDevopsRestClient(apiUrl, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), objectMapper, builder::build);
     }
 }
