@@ -48,6 +48,7 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
 configurations {
     zip
+    githubApiUnbridged
 }
 
 compileJava {
@@ -61,7 +62,7 @@ tasks.withType(JavaCompile) {
 
 dependencies {
     testImplementation('org.wiremock:wiremock-standalone:3.13.2')
-    testImplementation('org.kohsuke:github-api-unbridged:1.330')
+    githubApiUnbridged('org.kohsuke:github-api-unbridged:1.330')
 
     testImplementation('org.mockito:mockito-core:5.24.0')
     testImplementation('org.assertj:assertj-core:3.27.7')
@@ -78,6 +79,11 @@ dependencies {
     implementation('org.javassist:javassist:3.33.0-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:5.5.1')
 }
+
+// Sonarqube's sonar-application JAR bundles a bridged github-api where methods such as
+// GHIssue.comment(String) exist with both void and GHIssueComment return types, which makes
+// Mockito stubbing non-deterministic. Put the unbridged github-api first so its classes win.
+sourceSets.test.runtimeClasspath = configurations.githubApiUnbridged + sourceSets.test.runtimeClasspath
 
 project.afterEvaluate {
     if (file("${sonarLibraries}").exists()) {
@@ -107,12 +113,6 @@ jar {
           'Plugin-Name': 'Community Branch Plugin',
           'Premain-Class': 'com.github.mc1arke.sonarqube.plugin.CommunityBranchAgent',
           'Can-Retransform-Classes': 'true'
-    }
-}
-
-configurations.matching { it.name.startsWith("test") }.all {
-    resolutionStrategy.dependencySubstitution {
-        substitute module('org.kohsuke:github-api') using module('org.kohsuke:github-api-unbridged:1.326') because 'Testing requires unbridged version for mocking'
     }
 }
 
