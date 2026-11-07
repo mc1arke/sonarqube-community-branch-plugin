@@ -20,8 +20,6 @@ package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
@@ -31,12 +29,14 @@ import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 @ServerSide
 @ComputeEngineSide
 public class DefaultGitlabClientFactory implements GitlabClientFactory {
 
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     private final LinkHeaderReader linkHeaderReader;
     private final Settings settings;
 
@@ -44,10 +44,12 @@ public class DefaultGitlabClientFactory implements GitlabClientFactory {
         super();
         this.linkHeaderReader = linkHeaderReader;
         this.settings = settings;
-        this.objectMapper = new ObjectMapper()
+        this.jsonMapper = JsonMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
                 .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .build();
     }
 
     @Override
@@ -61,6 +63,6 @@ public class DefaultGitlabClientFactory implements GitlabClientFactory {
                 .setConnectTimeout(30_000)
                 .setSocketTimeout(30_000)
                 .build());
-        return new GitlabRestClient(apiURL, apiToken, linkHeaderReader, objectMapper, builder::build);
+        return new GitlabRestClient(apiURL, apiToken, linkHeaderReader, jsonMapper, builder::build);
     }
 }

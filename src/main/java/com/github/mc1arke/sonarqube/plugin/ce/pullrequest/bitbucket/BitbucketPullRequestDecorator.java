@@ -58,6 +58,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSu
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import com.google.common.annotations.VisibleForTesting;
+import tools.jackson.core.JacksonException;
 
 public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDecorator {
 
@@ -105,7 +106,7 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                 BuildStatus buildStatus = new BuildStatus(analysisDetails.getQualityGateStatus() == QualityGate.Status.OK ? BuildStatus.State.SUCCESSFUL : BuildStatus.State.FAILED, reportKey, "SonarQube", analysisSummary.getDashboardUrl());
                 client.submitBuildStatus(analysisDetails.getCommitSha(),buildStatus);
             }
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             LOGGER.error("Could not decorate pull request for project {}", analysisDetails.getAnalysisProjectKey(), e);
         }
 

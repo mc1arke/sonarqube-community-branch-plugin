@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.azuredevops;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.CreateCommentRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitPullRequestStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.GitStatusContext;
@@ -34,6 +33,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -50,19 +50,19 @@ import static org.mockito.Mockito.when;
 
 class AzureDevopsRestClientTest {
 
-    private final ObjectMapper objectMapper = mock();
+    private final JsonMapper jsonMapper = mock();
     private final CloseableHttpClient closeableHttpClient = mock();
 
     @Test
     void checkErrorThrownOnNonSuccessResponseStatus() throws IOException {
-        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", jsonMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
         StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(500);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
-        when(objectMapper.writeValueAsString(any())).thenReturn("json");
+        when(jsonMapper.writeValueAsString(any())).thenReturn("json");
 
         GitPullRequestStatus gitPullRequestStatus = mock();
         assertThatThrownBy(() -> underTest.submitPullRequestStatus("project", "repo", 101, gitPullRequestStatus))
@@ -82,14 +82,14 @@ class AzureDevopsRestClientTest {
 
     @Test
     void checkSubmitPullRequestStatusSubmitsCorrectContent() throws IOException {
-        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", jsonMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
         StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(200);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
-        when(objectMapper.writeValueAsString(any())).thenReturn("json");
+        when(jsonMapper.writeValueAsString(any())).thenReturn("json");
 
         underTest.submitPullRequestStatus("project Id With Spaces", "repository Name With Spaces", 123, new GitPullRequestStatus(GitStatusState.SUCCEEDED, "description", new GitStatusContext("name", "genre"), "url", 2));
 
@@ -105,7 +105,7 @@ class AzureDevopsRestClientTest {
 
     @Test
     void checkGetPullRequestIterationIdForCommitReturnsMatchingIteration() throws IOException {
-        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", jsonMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
         StatusLine statusLine = mock();
@@ -117,7 +117,7 @@ class AzureDevopsRestClientTest {
                 new PullRequestIteration(1, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-aaa")),
                 new PullRequestIteration(2, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-bbb")),
                 new PullRequestIteration(3, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-ccc"))));
-        when(objectMapper.readValue(any(String.class), eq(PullRequestIterationList.class))).thenReturn(iterationList);
+        when(jsonMapper.readValue(any(String.class), eq(PullRequestIterationList.class))).thenReturn(iterationList);
 
         int result = underTest.retrievePullRequestIterationIdForCommit("projectId", "repository Name", 123, "sha-bbb");
 
@@ -134,7 +134,7 @@ class AzureDevopsRestClientTest {
 
     @Test
     void checkGetPullRequestIterationIdForCommitReturnsOneWhenNoMatchFound() throws IOException {
-        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", objectMapper, () -> closeableHttpClient);
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", jsonMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
         StatusLine statusLine = mock();
@@ -145,7 +145,7 @@ class AzureDevopsRestClientTest {
         PullRequestIterationList iterationList = new PullRequestIterationList(List.of(
                 new PullRequestIteration(1, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-aaa")),
                 new PullRequestIteration(2, new com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Commit("sha-bbb"))));
-        when(objectMapper.readValue(any(String.class), eq(PullRequestIterationList.class))).thenReturn(iterationList);
+        when(jsonMapper.readValue(any(String.class), eq(PullRequestIterationList.class))).thenReturn(iterationList);
 
         int result = underTest.retrievePullRequestIterationIdForCommit("projectId", "repository Name", 123, "sha-unknown");
 
@@ -154,14 +154,14 @@ class AzureDevopsRestClientTest {
 
     @Test
     void checkAddCommentToThreadSubmitsCorrectContent() throws IOException {
-        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://test.url", "authToken", objectMapper, () -> closeableHttpClient);
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://test.url", "authToken", jsonMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
         StatusLine statusLine = mock();
         when(statusLine.getStatusCode()).thenReturn(200);
         when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
-        when(objectMapper.writeValueAsString(any())).thenReturn("json");
+        when(jsonMapper.writeValueAsString(any())).thenReturn("json");
 
         underTest.addCommentToThread("projectId", "repository Name", 123, 321, new CreateCommentRequest("comment"));
 
@@ -177,7 +177,7 @@ class AzureDevopsRestClientTest {
 
     @Test
     void checkRetrievePullRequestReturnsCorrectContent() throws IOException {
-        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://test.url", "authToken", objectMapper, () -> closeableHttpClient);
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://test.url", "authToken", jsonMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
         StatusLine statusLine = mock();
@@ -186,7 +186,7 @@ class AzureDevopsRestClientTest {
         when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity("content", StandardCharsets.UTF_8));
         when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
         PullRequest pullRequest = mock();
-        when(objectMapper.readValue(any(String.class), eq(PullRequest.class))).thenReturn(pullRequest);
+        when(jsonMapper.readValue(any(String.class), eq(PullRequest.class))).thenReturn(pullRequest);
 
         PullRequest result = underTest.retrievePullRequest("projectId", "repository Name", 123);
 

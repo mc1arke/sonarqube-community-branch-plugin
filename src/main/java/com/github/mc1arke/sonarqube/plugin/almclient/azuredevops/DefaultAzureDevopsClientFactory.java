@@ -19,9 +19,6 @@
 package com.github.mc1arke.sonarqube.plugin.almclient.azuredevops;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -30,6 +27,9 @@ import org.sonar.api.config.internal.Settings;
 import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -41,17 +41,19 @@ public class DefaultAzureDevopsClientFactory implements AzureDevopsClientFactory
 
     private static final int TIMEOUT_MILLISECONDS = 30_000;
 
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     private final Settings settings;
 
     public DefaultAzureDevopsClientFactory(Settings settings) {
         this.settings = settings;
-        objectMapper = new ObjectMapper()
+        jsonMapper = JsonMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
                 .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
                 .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+                .changeDefaultPropertyInclusion(inclusion -> inclusion.withValueInclusion(JsonInclude.Include.NON_NULL))
+                .build();
     }
 
     @Override
@@ -63,6 +65,6 @@ public class DefaultAzureDevopsClientFactory implements AzureDevopsClientFactory
                 .setConnectTimeout(TIMEOUT_MILLISECONDS)
                 .setSocketTimeout(TIMEOUT_MILLISECONDS)
                 .build());
-        return new AzureDevopsRestClient(apiUrl, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), objectMapper, builder::build);
+        return new AzureDevopsRestClient(apiUrl, Base64.getEncoder().encodeToString((":" + accessToken).getBytes(StandardCharsets.UTF_8)), jsonMapper, builder::build);
     }
 }

@@ -18,8 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
@@ -44,6 +42,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -65,7 +66,9 @@ import static org.mockito.Mockito.when;
 
 class BitbucketServerClientUnitTest {
 
-    private final ObjectMapper mapper = spy();
+    private final JsonMapper mapper = spy(JsonMapper.builder()
+            .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false)
+            .build());
     private final OkHttpClient client = mock();
     private final BitbucketServerClient underTest = new BitbucketServerClient(new BitbucketServerConfiguration("project", "repository", "https://my-server.org"), mapper, client);
 
