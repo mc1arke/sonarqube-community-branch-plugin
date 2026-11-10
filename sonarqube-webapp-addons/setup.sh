@@ -12,10 +12,21 @@ function override_vite_config() {
     echo "Overriding config vite.config.base.ts"
     mv ./vite.config.base.ts ./vite.config.src.ts
     cat <<EOF >vite.config.base.ts
+import { resolve } from 'node:path';
 import { baseViteConfig as config } from './vite.config.src';
 
 export * from './vite.config.src';
-export const baseViteConfig = { ...config, resolve: { preserveSymlinks: true } };
+export const baseViteConfig = {
+  ...config,
+  resolve: {
+    ...config.resolve,
+    preserveSymlinks: true,
+    alias: {
+      ...config.resolve?.alias,
+      '~sq-server-commons': resolve(__dirname, 'libs/sq-server-commons/src'),
+    },
+  },
+};
 EOF
 }
 

@@ -21,9 +21,9 @@
 import { Spinner } from '@sonarsource/echoes-react';
 import { HelperHintIcon } from '~design-system';
 import { Switch } from '~adapters/components/common/Switch';
+import Tooltip from '~sq-server-commons/components/controls/Tooltip';
 import { translate } from '~sq-server-commons/helpers/l10n';
 import { useExcludeFromPurgeMutation } from '~sq-server-commons/queries/branch';
-import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
 import { isMainBranch } from '~shared/helpers/branch-like';
 import { Branch } from '~sq-server-commons/types/branch-like';
 import { Component } from '~sq-server-commons/types/types';
@@ -54,14 +54,15 @@ export default function BranchPurgeSetting(props: Props) {
       />
       <Spinner isLoading={isPending} className="sw-ml-1" />
       {isTheMainBranch && (
-        <HelpTooltip
-          className="sw-ml-1"
-          overlay={translate(
-            'project_branch_pull_request.branch.auto_deletion.main_branch_tooltip',
-          )}
-        >
-          <HelperHintIcon aria-label={translate('help')} />
-        </HelpTooltip>
+        <span className="sw-ml-1">
+          <Tooltip
+            content={translate(
+              'project_branch_pull_request.branch.auto_deletion.main_branch_tooltip',
+            )}
+          >
+            <HelperHintIcon aria-label={translate('help')} />
+          </Tooltip>
+        </span>
       )}
     </>
   );
