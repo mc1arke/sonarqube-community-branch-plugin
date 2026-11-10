@@ -38,33 +38,33 @@ export function ProjectBranchSelectorItem(props: Readonly<Props>) {
 
     return (
         <Tooltip content={getBranchLikeDisplayName(branchLike)} side="right">
-            <StyledBranchLikeLink className="sw-pl-1 -sw-ml-1 sw-pr-2 -sw-mr-2" to={targetPath}>
-                <div className="sw-flex sw-items-center sw-py-2 sw-pr-3 sw-gap-2 sw-min-w-0">
+            <StyledBranchLikeLink className="sw:pl-1 sw:-ml-1 sw:pr-2 sw:-mr-2" to={targetPath}>
+                <div className="sw:flex sw:items-center sw:py-2 sw:pr-3 sw:gap-2 sw:min-w-0">
                     <Text size="default">
                         <IconCheck
-                            className={classNames({ 'sw-invisible': !isChecked })}
+                            className={classNames({ 'sw:invisible': !isChecked })}
                             color="echoes-color-icon-selected"
                         />
                     </Text>
 
                     <BranchLikeIcon
                         branchLike={branchLike}
-                        className="sw-shrink-0"
+                        className="sw:shrink-0"
                         color={isChecked ? 'echoes-color-icon-default' : 'echoes-color-icon-subtle'}
                     />
 
-                    <Text className="sw-truncate" isHighlighted={isChecked}>
+                    <Text className="sw:truncate" isHighlighted={isChecked}>
                         {getBranchLikeDisplayName(branchLike)}
                     </Text>
                 </div>
 
-                <div className="sw-flex sw-items-center sw-py-2">
+                <div className="sw:flex sw:items-center sw:py-2">
                     <QualityGateIndicator
-                        className="sw-mr-2"
+                        className="sw:mr-2"
                         size="sm"
                         status={branchLike.status?.qualityGateStatus ?? 'NONE'}
                     />
-                    <div className="sw-min-w-800">
+                    <div className="sw:min-w-800">
                         <FormattedMessage
                             id={`metric.level.${branchLike.status?.qualityGateStatus ?? 'NONE'}`}
                         />

@@ -56,18 +56,18 @@ function BranchLikeRow(props: BranchLikeRowProps) {
   return (
     <TableRowInteractive>
       <ContentCell>
-        <BranchLikeIcon branchLike={branchLike} className="sw-mr-1" />
+        <BranchLikeIcon branchLike={branchLike} className="sw:mr-1" />
         <span title={branchLikeDisplayName}>{branchLikeDisplayName}</span>
         <span>
           {isMainBranch(branchLike) && (
-            <Badge className="sw-ml-2">{translate('branches.main_branch')}</Badge>
+            <Badge className="sw:ml-2">{translate('branches.main_branch')}</Badge>
           )}
         </span>
       </ContentCell>
       <ContentCell>
         <QualityGateStatus
           branchLike={branchLike}
-          className="sw-flex sw-items-center sw-w-24"
+          className="sw:flex sw:items-center sw:w-24"
           showStatusText
         />
       </ContentCell>

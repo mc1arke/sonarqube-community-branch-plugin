@@ -78,16 +78,16 @@ export default function ProjectBranchSelector(props: Readonly<ProjectBranchSelec
     return (
         <StyledPopover
             extraContent={
-                <div className="sw-mt-4">
+                <div className="sw:mt-4">
                     <SearchInput
                         ariaLabel={formatMessage({ id: 'project_branch_selector.search' })}
-                        className="sw-mb-4 sw-max-w-5000"
+                        className="sw:mb-4 sw:max-w-5000"
                         onChange={setQuery}
                         placeholderLabel={formatMessage({ id: 'project_branch_selector.search' })}
                         value={query}
                     />
 
-                    <div className="sw-flex sw-justify-between sw-items-center sw-mb-3">
+                    <div className="sw:flex sw:justify-between sw:items-center sw:mb-3">
                         <PRMessage almKey={getComponentAlmKey(component)} message="{pull_requests}">
                             {(prLabel) => (
                                 <>
@@ -122,7 +122,7 @@ export default function ProjectBranchSelector(props: Readonly<ProjectBranchSelec
                     </div>
 
                     {branchLikesToDisplay.length > 0 ? (
-                        <ul className="sw-w-full">
+                        <ul className="sw:w-full">
                             {branchLikesToDisplay.map((branchLike) => (
                                 <li key={getBranchLikeDisplayName(branchLike)}>
                                     <ProjectBranchSelectorItem
@@ -134,7 +134,7 @@ export default function ProjectBranchSelector(props: Readonly<ProjectBranchSelec
                             ))}
                         </ul>
                     ) : (
-                        <div className="sw-flex sw-items-center sw-justify-center sw-my-4">
+                        <div className="sw:flex sw:items-center sw:justify-center sw:my-4">
                             <FormattedMessage id="project_branch_selector.none" />
                         </div>
                     )}
@@ -143,7 +143,7 @@ export default function ProjectBranchSelector(props: Readonly<ProjectBranchSelec
             title={<FormattedMessage id="project_branch_selector.title" />}
         >
             <Button
-                className={classNames(className, 'sw-max-w-5000')}
+                className={classNames(className, 'sw:max-w-5000')}
                 prefix={<BranchLikeIcon branchLike={currentBranchLike} />}
                 size="medium"
                 suffix={<IconChevronDown />}
