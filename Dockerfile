@@ -1,7 +1,7 @@
 ARG SONARQUBE_VERSION="community"
 ARG WORKDIR="/home/build/project"
 
-FROM gradle:9.8.2-jdk21-jammy AS builder
+FROM gradle:9.9.1-jdk21-jammy AS builder
 ARG WORKDIR
 
 COPY . ${WORKDIR}
