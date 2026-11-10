@@ -12,10 +12,14 @@ RUN gradle build -x test
 FROM node:22.16-alpine AS webapp-builder
 ARG WORKDIR
 
-COPY ./sonarqube-webapp ${WORKDIR}
-COPY ./sonarqube-webapp-addons ${WORKDIR}/libs/sq-server-addons
+COPY ./sonarqube-webapp ${WORKDIR}/sonarqube-webapp
+COPY ./sonarqube-webapp-addons ${WORKDIR}/sonarqube-webapp-addons
 
 WORKDIR ${WORKDIR}
+RUN apk add --no-cache bash
+RUN ./sonarqube-webapp-addons/setup.sh
+
+WORKDIR ${WORKDIR}/sonarqube-webapp
 RUN yarn install
 RUN yarn nx run sq-server:build
 
@@ -27,7 +31,7 @@ ARG WORKDIR
 COPY --from=builder --chown=sonarqube:root ${WORKDIR}/build/libs/sonarqube-community-branch-plugin-*.jar /opt/sonarqube/extensions/plugins/
 
 RUN chmod -R 770 /opt/sonarqube/web && rm -rf /opt/sonarqube/web/*
-COPY --from=webapp-builder --chown=sonarqube:root ${WORKDIR}/apps/sq-server/build/webapp /opt/sonarqube/web
+COPY --from=webapp-builder --chown=sonarqube:root ${WORKDIR}/sonarqube-webapp/apps/sq-server/build/webapp /opt/sonarqube/web
 RUN chmod -R 550 /opt/sonarqube/web
 
 ENV PLUGIN_VERSION=${PLUGIN_VERSION}
