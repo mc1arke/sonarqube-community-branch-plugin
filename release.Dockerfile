@@ -20,13 +20,14 @@ ARG PLUGIN_VERSION
 USER root
 RUN rm -rf /opt/sonarqube/web/*
 
-COPY --from=downloader --chown=sonarqube:root /tmp/sonarqube-community-branch-plugin.jar /opt/sonarqube/lib/community-branch-plugin/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar
+COPY --from=downloader --chown=sonarqube:root /tmp/sonarqube-community-branch-plugin.jar /opt/sonarqube/lib/community-branch-plugin/sonarqube-community-branch-plugin.jar
 COPY --chmod=755 docker/community-branch-entrypoint.sh /opt/sonarqube/docker/community-branch-entrypoint.sh
 COPY --from=downloader --chmod=550 --chown=sonarqube:root /opt/sonarqube/web /opt/sonarqube/web
 
 
 USER sonarqube
 ENV PLUGIN_VERSION=${PLUGIN_VERSION}
-ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=web"
-ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar=ce"
+ENV PLUGIN_JAR_NAME=sonarqube-community-branch-plugin.jar
+ENV SONAR_WEB_JAVAADDITIONALOPTS="-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar=web"
+ENV SONAR_CE_JAVAADDITIONALOPTS="-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin.jar=ce"
 ENTRYPOINT ["/opt/sonarqube/docker/community-branch-entrypoint.sh"]

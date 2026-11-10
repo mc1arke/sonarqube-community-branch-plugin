@@ -47,6 +47,20 @@ SONARQUBE_HOME="${test_root}" PLUGIN_VERSION="${plugin_version}" \
 cmp "${plugin_source}" "${plugin_directory}/${plugin_name}"
 test "$(find "${plugin_directory}" -name 'sonarqube-community-branch-plugin*.jar' | wc -l | tr -d ' ')" = "1"
 
+# A fixed plugin name, as in the release image, disables versioned copies and is replaced on upgrade.
+fixed_name="sonarqube-community-branch-plugin.jar"
+fixed_source="$(dirname "${plugin_source}")/${fixed_name}"
+for release_plugin in 'release plugin' 'release plugin after upgrade'; do
+  printf '%s\n' "${release_plugin}" > "${fixed_source}"
+  SONARQUBE_HOME="${test_root}" PLUGIN_VERSION="${plugin_version}" PLUGIN_JAR_NAME="${fixed_name}" \
+    sh "${repository_root}/docker/community-branch-entrypoint.sh"
+
+  cmp "${fixed_source}" "${plugin_directory}/${fixed_name}"
+  test ! -e "${plugin_directory}/${plugin_name}"
+  test -f "${disabled_directory}/${plugin_name}.disabled"
+  test "$(find "${plugin_directory}" -name 'sonarqube-community-branch-plugin*.jar' | wc -l | tr -d ' ')" = "1"
+done
+
 # Both image variants must install the immutable source and use the migration entrypoint.
 for dockerfile in Dockerfile release.Dockerfile; do
   grep -Fq '/opt/sonarqube/lib/community-branch-plugin/' "${repository_root}/${dockerfile}"

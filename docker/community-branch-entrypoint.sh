@@ -2,7 +2,7 @@
 
 set -eu
 
-plugin_name="sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar"
+plugin_name="${PLUGIN_JAR_NAME:-sonarqube-community-branch-plugin-${PLUGIN_VERSION}.jar}"
 sonarqube_home="${SONARQUBE_HOME:-/opt/sonarqube}"
 plugin_source="${sonarqube_home}/lib/community-branch-plugin/${plugin_name}"
 plugin_directory="${sonarqube_home}/extensions/plugins"
