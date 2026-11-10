@@ -5,12 +5,11 @@ set -Eeuo pipefail
 CURRENT_DIR=$(pwd)
 
 function override_vite_config() {
-    if [[ -f ./vite.config.src.ts ]]; then
-        echo "vite.config.src.ts exists, skipping override"
-        return
+    if [[ ! -f ./vite.config.src.ts ]]; then
+        echo "Moving vite.config.base.ts to vite.config.src.ts"
+        mv ./vite.config.base.ts ./vite.config.src.ts
     fi
     echo "Overriding config vite.config.base.ts"
-    mv ./vite.config.base.ts ./vite.config.src.ts
     cat <<EOF >vite.config.base.ts
 import { resolve } from 'node:path';
 import { baseViteConfig as config } from './vite.config.src';
