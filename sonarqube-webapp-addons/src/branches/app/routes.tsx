@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { Route } from 'react-router-dom';
+import { Route } from 'react-router';
 import { lazyLoadComponent } from '~shared/helpers/lazyLoadComponent';
 
 const ProjectBranchesApp = lazyLoadComponent(() => import('./ProjectBranchesApp'));

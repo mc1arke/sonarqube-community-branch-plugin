@@ -14,7 +14,7 @@ import {
     Link,
     useResolvedPath,
     useSearchParams,
-} from 'react-router-dom';
+} from 'react-router';
 import { QualityGateIndicator } from '~adapters/components/ui/QualityGateIndicator';
 import { BranchLikeIcon } from '~shared/components/icon-mappers/BranchLikeIcon';
 import {
