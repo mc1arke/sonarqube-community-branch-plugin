@@ -43,3 +43,5 @@ for dockerfile in Dockerfile release.Dockerfile; do
   grep -Fq 'docker/community-branch-entrypoint.sh' "${repository_root}/${dockerfile}"
   grep -Fq 'ENTRYPOINT ["/opt/sonarqube/docker/community-branch-entrypoint.sh"]' "${repository_root}/${dockerfile}"
 done
+
+echo "All checks passed"
