@@ -510,7 +510,7 @@ class GitlabMergeRequestDecoratorTest {
         ArgumentCaptor<MergeRequestNote> mergeRequestNoteArgumentCaptor = ArgumentCaptor.captor();
         verify(gitlabClient, times(2)).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), mergeRequestNoteArgumentCaptor.capture());
 
-        assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(0))
+        assertThat(mergeRequestNoteArgumentCaptor.getAllValues().getFirst())
                 .usingRecursiveComparison()
                 .isEqualTo(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
         assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(1)).isNotInstanceOf(CommitNote.class);

@@ -100,7 +100,7 @@ class PullRequestFixedIssuesIssueVisitorTest {
         NonClosedTracking<DefaultIssue, DefaultIssue> nonClosedTracking = mock();
         Map<DefaultIssue, DefaultIssue> matchedRaws = Map.of(mockIssue(IssueStatus.OPEN), baseIssueList.get(1), mockIssue(IssueStatus.FIXED), baseIssueList.get(3));
         when(nonClosedTracking.getMatchedRaws()).thenReturn(matchedRaws);
-        Stream<DefaultIssue> unmatchedBaseIssues = Stream.of(baseIssueList.get(0), baseIssueList.get(2));
+        Stream<DefaultIssue> unmatchedBaseIssues = Stream.of(baseIssueList.getFirst(), baseIssueList.get(2));
         when(nonClosedTracking.getUnmatchedBases()).thenReturn(unmatchedBaseIssues);
         when(tracker.trackNonClosed(any(), any())).thenReturn(nonClosedTracking);
 
@@ -113,7 +113,7 @@ class PullRequestFixedIssuesIssueVisitorTest {
         assertThat(trackingIssuesCaptor.getValue().getIssues()).containsExactly(baseIssueList.get(1), baseIssueList.get(3));
         verify(nonClosedTracking).getUnmatchedBases();
 
-        verify(pullRequestFixedIssuesRepository).addFixedIssue(baseIssueList.get(0));
+        verify(pullRequestFixedIssuesRepository).addFixedIssue(baseIssueList.getFirst());
         verify(pullRequestFixedIssuesRepository).addFixedIssue(baseIssueList.get(2));
         verify(pullRequestFixedIssuesRepository).addFixedIssue(baseIssueList.get(3));
     }
