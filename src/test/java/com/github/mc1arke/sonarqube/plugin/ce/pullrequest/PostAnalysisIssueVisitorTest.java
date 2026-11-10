@@ -94,7 +94,7 @@ class PostAnalysisIssueVisitorTest {
         // map the DefaultIssue into a LightIssue (using PostAnalysisIssueVisitor to workaround private constructor)
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
         visitor.onIssue(component, defaultIssue);
-        PostAnalysisIssueVisitor.LightIssue lightIssue = visitor.getIssues().get(0).getIssue();
+        PostAnalysisIssueVisitor.LightIssue lightIssue = visitor.getIssues().getFirst().getIssue();
 
         // check values equality, twice (see below)
         for (int i = 0; i < 2; i++) {
@@ -129,7 +129,7 @@ class PostAnalysisIssueVisitorTest {
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
         visitor.onIssue(component, defaultIssue);
         visitor.onIssue(component, defaultIssue);
-        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().get(0).getIssue();
+        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().getFirst().getIssue();
         PostAnalysisIssueVisitor.LightIssue lightIssue2 = visitor.getIssues().get(1).getIssue();
 
         // assert equality
@@ -149,7 +149,7 @@ class PostAnalysisIssueVisitorTest {
         // map the DefaultIssue into a first LightIssue
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
         visitor.onIssue(component, defaultIssue);
-        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().get(0).getIssue();
+        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().getFirst().getIssue();
 
         // map a slightly different DefaultIssue into another LightIssue
         doReturn("another message").when(defaultIssue).getMessage();

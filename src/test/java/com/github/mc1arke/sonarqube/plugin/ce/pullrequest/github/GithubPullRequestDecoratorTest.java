@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -146,7 +146,7 @@ class GithubPullRequestDecoratorTest {
         when(pullRequest.getComments()).thenReturn(List.of(comment1, comment2, comment3, comment4, comment5, summaryComment));
         when(pullRequest.comment(any(String.class))).thenReturn(summaryComment);
         when(repository.getPullRequest(anyInt())).thenReturn(pullRequest);
-        when(pullRequest.getHtmlUrl()).thenReturn(new URL("http://url.of/pull/request"));
+        when(pullRequest.getHtmlUrl()).thenReturn(URI.create("http://url.of/pull/request").toURL());
         Formatter<Document> documentFormatter = mock();
         when(documentFormatter.format(any())).thenReturn("**Project ID:** project-key");
         when(markdownFormatterFactory.documentFormatter()).thenReturn(documentFormatter);
@@ -206,7 +206,7 @@ class GithubPullRequestDecoratorTest {
         when(repository.createCheckRun(any(), any())).thenReturn(checkRunBuilder);
         GHPullRequest pullRequest = mock();
         when(repository.getPullRequest(anyInt())).thenReturn(pullRequest);
-        when(pullRequest.getHtmlUrl()).thenReturn(new URL("http://url.of/pull/request"));
+        when(pullRequest.getHtmlUrl()).thenReturn(URI.create("http://url.of/pull/request").toURL());
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
 
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);

@@ -96,8 +96,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                     commentKeysForOpenComments)
                     .stream()
                     .map(DiscussionAwarePullRequestDecorator::loadScmPathsForIssues)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(Optional::stream)
                     .filter(issue -> isIssueFromCommitInCurrentRequest(issue.getLeft(), commitIds, scmInfoRepository))
                     .toList();
 
@@ -194,8 +193,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                         .filter(note -> !isResolved(client, discussion, commentsForDiscussion, currentUser) || isSummaryComment(client, note))
                         .map(note -> new ImmutableTriple<>(discussion, note, parseIssueDetails(client, note)));
                 })
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .collect(Collectors.toList());
     }
 
@@ -288,8 +286,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
             return reader.lines()
                     .filter(line -> line.contains(label))
                     .map(line -> parseIssueLineDetails(line, pattern))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(Optional::stream)
                     .findFirst();
         } catch (IOException ex) {
             throw new IllegalStateException("Could not parse details from note", ex);

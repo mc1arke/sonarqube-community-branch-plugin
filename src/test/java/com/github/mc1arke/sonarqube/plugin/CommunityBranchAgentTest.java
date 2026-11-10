@@ -74,7 +74,7 @@ class CommunityBranchAgentTest {
 
         try (InputStream inputStream = MultipleAlmFeature.class.getResourceAsStream(MultipleAlmFeature.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
-            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(getClass().getClassLoader(), CommunityBranchPluginBootstrap.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().getFirst().transform(getClass().getClassLoader(), CommunityBranchPluginBootstrap.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
             Object instance =  classLoader.loadClass(CommunityBranchPluginBootstrap.class.getName(), result).getConstructor().newInstance();
 
@@ -219,7 +219,7 @@ class CommunityBranchAgentTest {
 
         try (InputStream inputStream = MultipleAlmFeature.class.getResourceAsStream(MultipleAlmFeature.class.getSimpleName() + ".class")) {
             byte[] input = IOUtils.toByteArray(inputStream);
-            byte[] result = classFileTransformerArgumentCaptor.getAllValues().get(0).transform(getClass().getClassLoader(), CommunityBranchPluginBootstrap.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
+            byte[] result = classFileTransformerArgumentCaptor.getAllValues().getFirst().transform(getClass().getClassLoader(), CommunityBranchPluginBootstrap.class.getName().replaceAll("\\.", "/"), getClass(), getClass().getProtectionDomain(), input);
 
             CustomClassloader classLoader = new CustomClassloader();
 
