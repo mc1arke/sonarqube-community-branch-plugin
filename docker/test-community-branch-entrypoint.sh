@@ -19,6 +19,15 @@ chmod +x "${test_root}/docker/entrypoint.sh"
 printf '%s\n' 'current plugin' > "${plugin_source}"
 printf '%s\n' 'legacy generic plugin' > "${plugin_directory}/sonarqube-community-branch-plugin.jar"
 printf '%s\n' 'legacy versioned plugin' > "${plugin_directory}/sonarqube-community-branch-plugin-26.7.0.jar"
+printf '%s\n' 'legacy renamed plugin' > "${plugin_directory}/sonarqube-community-branch-plugin_old.jar"
+
+# A missing plugin source fails before any installed plugin is disabled.
+if SONARQUBE_HOME="${test_root}" PLUGIN_VERSION="missing" \
+  sh "${repository_root}/docker/community-branch-entrypoint.sh" 2>/dev/null; then
+  exit 1
+fi
+test -f "${plugin_directory}/sonarqube-community-branch-plugin.jar"
+test ! -e "${disabled_directory}/sonarqube-community-branch-plugin.jar.disabled"
 
 SONARQUBE_HOME="${test_root}" PLUGIN_VERSION="${plugin_version}" \
   sh "${repository_root}/docker/community-branch-entrypoint.sh"
@@ -28,6 +37,7 @@ test ! -e "${plugin_directory}/sonarqube-community-branch-plugin.jar"
 test ! -e "${plugin_directory}/sonarqube-community-branch-plugin-26.7.0.jar"
 test -f "${disabled_directory}/sonarqube-community-branch-plugin.jar.disabled"
 test -f "${disabled_directory}/sonarqube-community-branch-plugin-26.7.0.jar.disabled"
+test -f "${disabled_directory}/sonarqube-community-branch-plugin_old.jar.disabled"
 
 # A restart refreshes the managed copy without duplicating or disabling it.
 printf '%s\n' 'current plugin after restart' > "${plugin_source}"
