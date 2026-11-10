@@ -73,6 +73,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
         P pullRequest = getPullRequest(client, almSettingDto, projectAlmSettingDto, analysis);
 
+        List<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> uncommentedIssues = List.of();
         if (isInlineCommentsEnabled(projectAlmSettingDto)) {
             U user = getCurrentUser(client);
 
@@ -92,29 +93,34 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                     pullRequest);
 
             List<String> commitIds = getCommitIdsForPullRequest(client, pullRequest);
-            List<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> uncommentedIssues = findIssuesWithoutComments(openSonarqubeIssues,
+            uncommentedIssues = findIssuesWithoutComments(openSonarqubeIssues,
                     commentKeysForOpenComments)
                     .stream()
                     .map(DiscussionAwarePullRequestDecorator::loadScmPathsForIssues)
                     .flatMap(Optional::stream)
                     .filter(issue -> isIssueFromCommitInCurrentRequest(issue.getLeft(), commitIds, scmInfoRepository))
                     .toList();
-
-            uncommentedIssues.forEach(issue -> submitCommitNoteForIssue(client,
-                    pullRequest,
-                    issue.getLeft(),
-                    issue.getRight(),
-                    analysis,
-                    reportGenerator.createAnalysisIssueSummary(issue.getLeft(), analysis)));
         }
 
         AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysis);
-        submitSummaryNote(client, pullRequest, analysis, analysisSummary);
+        submitNewComments(client, pullRequest, analysis, uncommentedIssues, analysisSummary);
         submitPipelineStatus(client, pullRequest, analysis, analysisSummary, projectAlmSettingDto);
 
         DecorationResult.Builder builder = DecorationResult.builder();
         createFrontEndUrl(pullRequest, analysis).ifPresent(builder::withPullRequestUrl);
         return builder.build();
+    }
+
+    protected void submitNewComments(C client, P pullRequest, AnalysisDetails analysis,
+                                     List<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> issues,
+                                     AnalysisSummary analysisSummary) {
+        issues.forEach(issue -> submitCommitNoteForIssue(client, pullRequest, issue.getLeft(), issue.getRight(),
+                analysis, createAnalysisIssueSummary(issue.getLeft(), analysis)));
+        submitSummaryNote(client, pullRequest, analysis, analysisSummary);
+    }
+
+    protected AnalysisIssueSummary createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue issue, AnalysisDetails analysis) {
+        return reportGenerator.createAnalysisIssueSummary(issue, analysis);
     }
 
     protected abstract boolean isInlineCommentsEnabled(ProjectAlmSettingDto projectAlmSettingDto);

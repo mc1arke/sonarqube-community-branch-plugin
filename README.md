@@ -163,6 +163,31 @@ on GitHub Actions:
     SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 ```
 
+## Batched GitLab review notifications
+
+By default, GitLab decorations publish each inline comment and the analysis summary immediately.
+To publish new inline comments and the summary together as one GitLab review, set this scanner property:
+
+```properties
+sonar.pullrequest.gitlab.batchComments=true
+```
+
+Each finding remains a separate discussion at its original diff position. GitLab sends a single review
+notification to each eligible recipient, subject to their notification settings. Existing discussion cleanup
+and replies are unchanged and can generate additional notifications. Successful summaries are still resolved.
+
+This opt-in mode requires the GitLab Draft Notes API, including diff positions and `bulk_publish`.
+Use a dedicated GitLab account and serialize decorations for the same merge request across projects/analyses.
+GitLab bulk publication includes **all** pending drafts of the authenticated account on the merge request;
+it cannot atomically publish only the drafts of one analysis. The plugin refuses publication if existing or
+unexpected drafts are detected, but the final check and publication are not atomic. Do not use the same account
+for manual draft reviews or concurrent decorations on the same merge request.
+
+If draft preparation fails, the plugin attempts to delete only the drafts created by that attempt.
+If publication fails, it does not retry or fall back to individual comments: the server might already have
+published the review. Check the merge request and any remaining drafts before running analysis again.
+Unsupported APIs fail decoration rather than silently reverting to per-comment notifications.
+
 ## Serving images for PR decoration
 
 By default, images for PR decoration are served as static resources on the SonarQube server as a part of Community
