@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Markus Heberling
+ * Copyright (C) 2026 Roman Haleev
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

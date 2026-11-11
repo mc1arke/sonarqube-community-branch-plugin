@@ -160,23 +160,14 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
             notes.add(createCommitNote(mergeRequest, issue.getLeft(), issue.getRight(),
                     createAnalysisIssueSummary(issue.getLeft(), analysis)));
         }
-        String summary = analysisSummary.format(formatterFactory);
-        notes.add(new MergeRequestNote(summary));
-        try {
-            new GitlabReviewPublisher().publish(client, mergeRequest.getTargetProjectId(), mergeRequest.getIid(), notes);
-            if (analysis.getQualityGateStatus() == QualityGate.Status.OK) {
-                User user = client.getCurrentUser();
-                for (Discussion discussion : client.getMergeRequestDiscussions(mergeRequest.getTargetProjectId(), mergeRequest.getIid())) {
-                    Optional<Note> firstNote = discussion.getNotes().stream().findFirst();
-                    if (firstNote.filter(note -> note.isResolvable() && !note.isResolved()
-                            && isNoteFromCurrentUser(note, user) && summary.equals(note.getBody())).isPresent()) {
-                        client.resolveMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(), discussion.getId());
-                    }
-                }
+        if (!notes.isEmpty()) {
+            try {
+                new GitlabReviewPublisher().publish(client, mergeRequest.getTargetProjectId(), mergeRequest.getIid(), notes);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Could not publish SonarQube review to Gitlab", ex);
             }
-        } catch (IOException ex) {
-            throw new IllegalStateException("Could not publish SonarQube review to Gitlab", ex);
         }
+        submitSummaryNote(client, mergeRequest, analysis, analysisSummary);
     }
 
     private CommitNote createCommitNote(MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue,

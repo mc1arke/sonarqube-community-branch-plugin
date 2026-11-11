@@ -166,15 +166,16 @@ on GitHub Actions:
 ## Batched GitLab review notifications
 
 By default, GitLab decorations publish each inline comment and the analysis summary immediately.
-To publish new inline comments and the summary together as one GitLab review, set this scanner property:
+To publish new inline comments as one GitLab review, set this scanner property:
 
 ```properties
 sonar.pullrequest.gitlab.batchComments=true
 ```
 
 Each finding remains a separate discussion at its original diff position. GitLab sends a single review
-notification to each eligible recipient, subject to their notification settings. Existing discussion cleanup
-and replies are unchanged and can generate additional notifications. Successful summaries are still resolved.
+notification for the findings to each eligible recipient. The analysis summary is published as a separate
+resolvable discussion and may generate its own notification. The plugin resolves successful summaries by
+discussion ID and leaves failed summaries open. Existing discussion cleanup and replies may also notify users.
 
 This opt-in mode requires the GitLab Draft Notes API, including diff positions and `bulk_publish`.
 Use a dedicated GitLab account and serialize decorations for the same merge request across projects/analyses.

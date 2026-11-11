@@ -924,7 +924,7 @@ class GitlabMergeRequestDecoratorTest {
         verify(gitlabClient).getMergeRequestDiscussions(PROJECT_ID, MERGE_REQUEST_IID);
     }
     @Test
-    void batchesNewInlineCommentsAndSummaryWhenEnabled() throws IOException {
+    void batchesFindingsAndPostsFailedSummaryAsAnOpenDiscussion() throws IOException {
         when(analysisDetails.getScannerProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_BATCH_COMMENTS)).thenReturn(Optional.of("true"));
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
@@ -942,34 +942,40 @@ class GitlabMergeRequestDecoratorTest {
         when(scmInfo.hasChangesetForLine(999)).thenReturn(true);
         when(scmInfo.getChangesetForLine(999)).thenReturn(changeset);
         when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
-        when(gitlabClient.getMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID)).thenReturn(List.of()).thenReturn(List.of(new DraftNote(11),
-                        new DraftNote(12)));
-        when(gitlabClient.addMergeRequestDraftNote(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), any())).thenReturn(
-                new DraftNote(11),
-                new DraftNote(12));
+        when(gitlabClient.getMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID))
+                .thenReturn(List.of()).thenReturn(List.of(new DraftNote(11)));
+        when(gitlabClient.addMergeRequestDraftNote(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), any()))
+                .thenReturn(new DraftNote(11));
+
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
         ArgumentCaptor<MergeRequestNote> captor = ArgumentCaptor.captor();
-        verify(gitlabClient, times(2)).addMergeRequestDraftNote(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), captor.capture());
-        assertThat(captor.getAllValues().getFirst()).usingRecursiveComparison()
+        verify(gitlabClient).addMergeRequestDraftNote(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), captor.capture());
+        assertThat(captor.getValue()).usingRecursiveComparison()
                 .isEqualTo(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
-        assertThat(captor.getAllValues().getLast()).usingRecursiveComparison().isEqualTo(new MergeRequestNote("Summary Comment"));
         verify(gitlabClient).publishMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID);
-        verify(gitlabClient, never()).addMergeRequestDiscussion(anyLong(), anyLong(), any());
+        verify(gitlabClient).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID),
+                org.mockito.ArgumentMatchers.refEq(new MergeRequestNote("Summary Comment")));
+        verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
     }
 
     @Test
-    void batchesSummaryEvenWhenThereAreNoNewIssuesAndResolvesItOnSuccess() throws IOException {
-        when(analysisDetails.getScannerProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_BATCH_COMMENTS)).thenReturn(Optional.of("true"));
+    void resolvesOnlyTheNewSuccessfulSummaryWithoutPublishingAnEmptyReview() throws IOException {
+        when(analysisDetails.getScannerProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_BATCH_COMMENTS))
+                .thenReturn(Optional.of("true"));
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
-        when(gitlabClient.getMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID)).thenReturn(List.of()).thenReturn(List.of(new DraftNote(11)));
-        when(gitlabClient.addMergeRequestDraftNote(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), any())).thenReturn(
-                new DraftNote(11));
         Note summary = new Note(10, false, sonarqubeUser, "Summary Comment", false, true);
-        when(gitlabClient.getMergeRequestDiscussions(PROJECT_ID, MERGE_REQUEST_IID)).thenReturn(List.of()).thenReturn(List.of(new Discussion("summary-id", List.of(summary))));
+        when(gitlabClient.getMergeRequestDiscussions(PROJECT_ID, MERGE_REQUEST_IID))
+                .thenReturn(List.of(new Discussion("older-summary", List.of(summary))));
+        when(gitlabClient.addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), any()))
+                .thenReturn(new Discussion("new-summary", List.of(summary)));
+
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
-        verify(gitlabClient).publishMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID);
-        verify(gitlabClient).resolveMergeRequestDiscussion(PROJECT_ID, MERGE_REQUEST_IID, "summary-id");
-        verify(gitlabClient, never()).addMergeRequestDiscussion(anyLong(), anyLong(), any());
+
+        verify(gitlabClient, never()).getMergeRequestDraftNotes(anyLong(), anyLong());
+        verify(gitlabClient, never()).publishMergeRequestDraftNotes(anyLong(), anyLong());
+        verify(gitlabClient).resolveMergeRequestDiscussion(PROJECT_ID, MERGE_REQUEST_IID, "new-summary");
+        verify(gitlabClient, never()).resolveMergeRequestDiscussion(PROJECT_ID, MERGE_REQUEST_IID, "older-summary");
     }
 
 }
