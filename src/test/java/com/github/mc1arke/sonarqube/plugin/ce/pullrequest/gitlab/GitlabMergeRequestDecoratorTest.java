@@ -440,7 +440,7 @@ class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-        when(lightIssue.getLine()).thenReturn(999);
+        when(lightIssue.getLine()).thenReturn(Optional.of(999));
 
         Component component = mock();
 
@@ -482,7 +482,7 @@ class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-        when(lightIssue.getLine()).thenReturn(999);
+        when(lightIssue.getLine()).thenReturn(Optional.of(999));
 
         Component component = mock();
 
@@ -521,7 +521,7 @@ class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-        when(lightIssue.getLine()).thenReturn(999);
+        when(lightIssue.getLine()).thenReturn(Optional.of(999));
 
         Component component = mock();
 
@@ -566,7 +566,7 @@ class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-        when(lightIssue.getLine()).thenReturn(null);
+        when(lightIssue.getLine()).thenReturn(Optional.empty());
 
         Component component = mock();
 

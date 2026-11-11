@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2026 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -200,9 +200,9 @@ class BitbucketPullRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue defaultIssue = mock();
         when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         when(defaultIssue.impacts()).thenReturn(Map.of(SoftwareQuality.RELIABILITY, Severity.HIGH));
-        when(defaultIssue.getLine()).thenReturn(ISSUE_LINE);
+        when(defaultIssue.getLine()).thenReturn(Optional.of(ISSUE_LINE));
         when(defaultIssue.key()).thenReturn(ISSUE_KEY);
-        when(defaultIssue.getMessage()).thenReturn(ISSUE_MESSAGE);
+        when(defaultIssue.getMessage()).thenReturn(Optional.of(ISSUE_MESSAGE));
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
         when(componentIssue.getIssue()).thenReturn(defaultIssue);

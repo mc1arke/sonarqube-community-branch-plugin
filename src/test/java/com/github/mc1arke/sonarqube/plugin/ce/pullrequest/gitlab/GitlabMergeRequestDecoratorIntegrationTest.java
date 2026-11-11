@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 Markus Heberling, Michael Clarke
+ * Copyright (C) 2019-2026 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -118,7 +118,7 @@ class GitlabMergeRequestDecoratorIntegrationTest {
             PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
             PostAnalysisIssueVisitor.LightIssue defaultIssue = mock();
             when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-            when(defaultIssue.getLine()).thenReturn(lineNumber);
+            when(defaultIssue.getLine()).thenReturn(Optional.of(lineNumber));
             when(defaultIssue.key()).thenReturn("issueKey" + i);
             when(componentIssue.getIssue()).thenReturn(defaultIssue);
             Component component = mock();

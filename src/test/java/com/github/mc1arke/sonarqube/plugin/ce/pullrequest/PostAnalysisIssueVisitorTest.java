@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 Michael Clarke
+ * Copyright (C) 2019-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -99,9 +99,9 @@ class PostAnalysisIssueVisitorTest {
         // check values equality, twice (see below)
         for (int i = 0; i < 2; i++) {
             assertThat(lightIssue.key()).isEqualTo(EXAMPLE_ISSUE_KEY);
-            assertThat(lightIssue.getLine()).isEqualTo(EXAMPLE_ISSUE_LINE);
-            assertThat(lightIssue.getMessage()).isEqualTo(EXAMPLE_ISSUE_MESSAGE);
-            assertThat(lightIssue.resolution()).isEqualTo(EXAMPLE_ISSUE_RESOLUTION);
+            assertThat(lightIssue.getLine()).hasValue(EXAMPLE_ISSUE_LINE);
+            assertThat(lightIssue.getMessage()).hasValue(EXAMPLE_ISSUE_MESSAGE);
+            assertThat(lightIssue.resolution()).hasValue(EXAMPLE_ISSUE_RESOLUTION);
             assertThat(lightIssue.impacts()).isEqualTo(EXAMPLE_IMPACTS);
             assertThat(lightIssue.issueStatus()).isEqualTo(EXAMPLE_ISSUE_STATUS);
             assertThat(lightIssue.getRuleKey()).isEqualTo(EXAMPLE_ISSUE_RULEKEY);
