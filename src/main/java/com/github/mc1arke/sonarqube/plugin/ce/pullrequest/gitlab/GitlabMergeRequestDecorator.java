@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabReviewPublisher;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
@@ -35,6 +36,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatt
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
+import org.apache.commons.lang3.tuple.Pair;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
@@ -42,6 +44,7 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +54,8 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     public static final String PULLREQUEST_GITLAB_PROJECT_URL = "sonar.pullrequest.gitlab.projectUrl";
     public static final String PULLREQUEST_GITLAB_PIPELINE_ID =
             "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId";
+
+    public static final String PULLREQUEST_GITLAB_BATCH_COMMENTS = "sonar.pullrequest.gitlab.batchComments";
 
     private final GitlabClientFactory gitlabClientFactory;
     private final MarkdownFormatterFactory formatterFactory;
@@ -142,18 +147,42 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     }
 
     @Override
-    protected void submitCommitNoteForIssue(GitlabClient client, MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String path, AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary) {
-        Integer line = Optional.ofNullable(issue.getIssue().getLine()).orElseThrow(() -> new IllegalStateException("No line is associated with this issue"));
+    protected void submitNewComments(GitlabClient client, MergeRequest mergeRequest, AnalysisDetails analysis,
+                                     List<Pair<PostAnalysisIssueVisitor.ComponentIssue, String>> issues,
+                                     AnalysisSummary analysisSummary) {
+        if (!Boolean.parseBoolean(analysis.getScannerProperty(PULLREQUEST_GITLAB_BATCH_COMMENTS).orElse("false"))) {
+            super.submitNewComments(client, mergeRequest, analysis, issues, analysisSummary);
+            return;
+        }
 
+        List<MergeRequestNote> notes = new ArrayList<>();
+        for (Pair<PostAnalysisIssueVisitor.ComponentIssue, String> issue : issues) {
+            notes.add(createCommitNote(mergeRequest, issue.getLeft(), issue.getRight(),
+                    createAnalysisIssueSummary(issue.getLeft(), analysis)));
+        }
+        if (!notes.isEmpty()) {
+            try {
+                new GitlabReviewPublisher().publish(client, mergeRequest.getTargetProjectId(), mergeRequest.getIid(), notes);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Could not publish SonarQube review to Gitlab", ex);
+            }
+        }
+        submitSummaryNote(client, mergeRequest, analysis, analysisSummary);
+    }
+
+    private CommitNote createCommitNote(MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue,
+                                        String path, AnalysisIssueSummary analysisIssueSummary) {
+        Integer line = Optional.ofNullable(issue.getIssue().getLine()).orElseThrow(() -> new IllegalStateException("No line is associated with this issue"));
+        return new CommitNote(analysisIssueSummary.format(formatterFactory),
+                mergeRequest.getDiffRefs().getBaseSha(), mergeRequest.getDiffRefs().getStartSha(),
+                mergeRequest.getDiffRefs().getHeadSha(), path, path, line);
+    }
+
+    @Override
+    protected void submitCommitNoteForIssue(GitlabClient client, MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String path, AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary) {
         try {
             client.addMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(),
-                    new CommitNote(analysisIssueSummary.format(formatterFactory),
-                    mergeRequest.getDiffRefs().getBaseSha(),
-                    mergeRequest.getDiffRefs().getStartSha(),
-                    mergeRequest.getDiffRefs().getHeadSha(),
-                    path,
-                    path,
-                    line));
+                    createCommitNote(mergeRequest, issue, path, analysisIssueSummary));
         } catch (IOException ex) {
             throw new IllegalStateException("Could not submit commit comment to Gitlab", ex);
         }

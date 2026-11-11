@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.DraftNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.PipelineStatus;
@@ -95,8 +96,17 @@ class GitlabRestClient implements GitlabClient {
     public Discussion addMergeRequestDiscussion(long projectId, long mergeRequestIid, MergeRequestNote mergeRequestNote) throws IOException {
         String targetUrl = String.format("%s/projects/%s/merge_requests/%s/discussions", baseGitlabApiUrl, projectId, mergeRequestIid);
 
+        List<NameValuePair> requestContent = noteFields(mergeRequestNote, "body");
+
+        HttpPost httpPost = new HttpPost(targetUrl);
+        httpPost.addHeader("Content-type", ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
+        httpPost.setEntity(new UrlEncodedFormEntity(requestContent, StandardCharsets.UTF_8));
+        return entity(httpPost, Discussion.class, httpResponse -> validateResponse(httpResponse, 201, "Discussion successfully created"));
+    }
+
+    private static List<NameValuePair> noteFields(MergeRequestNote mergeRequestNote, String contentField) {
         List<NameValuePair> requestContent = new ArrayList<>();
-        requestContent.add(new BasicNameValuePair("body", mergeRequestNote.getContent()));
+        requestContent.add(new BasicNameValuePair(contentField, mergeRequestNote.getContent()));
 
         if (mergeRequestNote instanceof CommitNote commitNote) {
             requestContent.addAll(Arrays.asList(
@@ -110,10 +120,35 @@ class GitlabRestClient implements GitlabClient {
             );
         }
 
-        HttpPost httpPost = new HttpPost(targetUrl);
-        httpPost.addHeader("Content-type", ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
-        httpPost.setEntity(new UrlEncodedFormEntity(requestContent, StandardCharsets.UTF_8));
-        return entity(httpPost, Discussion.class, httpResponse -> validateResponse(httpResponse, 201, "Discussion successfully created"));
+        return requestContent;
+    }
+
+    @Override
+    public List<DraftNote> getMergeRequestDraftNotes(long projectId, long mergeRequestIid) throws IOException {
+        return entities(new HttpGet(draftNotesUrl(projectId, mergeRequestIid)), DraftNote.class);
+    }
+
+    @Override
+    public DraftNote addMergeRequestDraftNote(long projectId, long mergeRequestIid, MergeRequestNote note) throws IOException {
+        HttpPost request = new HttpPost(draftNotesUrl(projectId, mergeRequestIid));
+        request.setEntity(new UrlEncodedFormEntity(noteFields(note, "note"), StandardCharsets.UTF_8));
+        return entity(request, DraftNote.class, response -> validateResponse(response, 201, "Draft note created"));
+    }
+
+    @Override
+    public void deleteMergeRequestDraftNote(long projectId, long mergeRequestIid, long draftNoteId) throws IOException {
+        entity(new HttpDelete(draftNotesUrl(projectId, mergeRequestIid) + "/" + draftNoteId), null,
+                response -> validateResponse(response, 204, "Draft note deleted"));
+    }
+
+    @Override
+    public void publishMergeRequestDraftNotes(long projectId, long mergeRequestIid) throws IOException {
+        entity(new HttpPost(draftNotesUrl(projectId, mergeRequestIid) + "/bulk_publish"), null,
+                response -> validateResponse(response, 204, "Review published"));
+    }
+
+    private String draftNotesUrl(long projectId, long mergeRequestIid) {
+        return String.format("%s/projects/%s/merge_requests/%s/draft_notes", baseGitlabApiUrl, projectId, mergeRequestIid);
     }
 
     @Override
