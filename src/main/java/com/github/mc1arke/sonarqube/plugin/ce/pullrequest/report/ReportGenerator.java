@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Michael Clarke
+ * Copyright (C) 2022-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -75,7 +75,7 @@ public class ReportGenerator {
 
         return AnalysisIssueSummary.builder()
                 .withIssueUrl(getIssueUrl(issue, analysisDetails))
-                .withMessage(issue.getMessage())
+                .withMessage(issue.getMessage().orElse(null))
                 .build();
     }
 

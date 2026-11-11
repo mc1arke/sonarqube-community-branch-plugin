@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Markus Heberling, Michael Clarke
+ * Copyright (C) 2020-2026 Markus Heberling, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -143,7 +143,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
 
     @Override
     protected void submitCommitNoteForIssue(GitlabClient client, MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String path, AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary) {
-        Integer line = Optional.ofNullable(issue.getIssue().getLine()).orElseThrow(() -> new IllegalStateException("No line is associated with this issue"));
+        Integer line = issue.getIssue().getLine().orElseThrow(() -> new IllegalStateException("No line is associated with this issue"));
 
         try {
             client.addMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(),

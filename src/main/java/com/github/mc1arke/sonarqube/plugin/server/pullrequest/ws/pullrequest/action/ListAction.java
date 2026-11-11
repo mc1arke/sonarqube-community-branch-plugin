@@ -26,8 +26,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
-
 import org.apache.commons.lang3.StringUtils;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.server.ws.Request;
@@ -114,7 +112,7 @@ public class ListAction extends ProjectWsAction {
     }
 
     private static void addPullRequest(ProjectPullRequests.ListWsResponse.Builder response, BranchDto branch, Map<String, BranchDto> mergeBranchesByUuid,
-                                       @Nullable MeasureDto qualityGateMeasure, @Nullable String analysisDate) {
+                                       MeasureDto qualityGateMeasure, String analysisDate) {
         Optional<BranchDto> mergeBranch = Optional.ofNullable(mergeBranchesByUuid.get(branch.getMergeBranchUuid()));
 
         ProjectPullRequests.PullRequest.Builder builder = ProjectPullRequests.PullRequest.newBuilder();
@@ -147,7 +145,7 @@ public class ListAction extends ProjectWsAction {
         response.addPullRequests(builder);
     }
 
-    private static void setQualityGate(ProjectPullRequests.PullRequest.Builder builder, @Nullable MeasureDto qualityGateMeasure) {
+    private static void setQualityGate(ProjectPullRequests.PullRequest.Builder builder, MeasureDto qualityGateMeasure) {
         ProjectPullRequests.Status.Builder statusBuilder = ProjectPullRequests.Status.newBuilder();
         if (qualityGateMeasure != null) {
             Optional.ofNullable(qualityGateMeasure.getString(CoreMetrics.ALERT_STATUS_KEY)).ifPresent(statusBuilder::setQualityGateStatus);

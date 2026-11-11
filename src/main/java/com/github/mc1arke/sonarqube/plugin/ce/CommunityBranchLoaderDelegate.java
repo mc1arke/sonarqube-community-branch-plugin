@@ -29,7 +29,6 @@ import org.sonar.db.component.BranchType;
 import org.sonar.scanner.protocol.output.ScannerReport;
 import org.sonar.server.project.Project;
 
-import javax.annotation.Nonnull;
 import java.util.Optional;
 
 /**
@@ -46,7 +45,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
     }
 
     @Override
-    public void load(@Nonnull ScannerReport.Metadata metadata) {
+    public void load(ScannerReport.Metadata metadata) {
         Branch branch = load(metadata, metadataHolder.getProject(), dbClient);
 
         metadataHolder.setBranch(branch);

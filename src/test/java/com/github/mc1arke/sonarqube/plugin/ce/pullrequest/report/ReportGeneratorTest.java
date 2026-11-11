@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Michael Clarke
+ * Copyright (C) 2022-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -244,8 +244,8 @@ class ReportGeneratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issue-key");
         when(lightIssue.impacts()).thenReturn(Map.of(ruleType, Severity.HIGH));
-        when(lightIssue.getMessage()).thenReturn("message");
-        when(lightIssue.resolution()).thenReturn("FIXED");
+        when(lightIssue.getMessage()).thenReturn(Optional.of("message"));
+        when(lightIssue.resolution()).thenReturn(Optional.of("FIXED"));
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
         when(componentIssue.getIssue()).thenReturn(lightIssue);
 

@@ -72,7 +72,6 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
     private final int pullRequestId = 8513;
     private final String azureRepository = "my Repository";
     private final String issueKeyVal = "issueKeyVal";
-    private final String projectName = "Project Name";
 
     private final ProjectAlmSettingDto projectAlmSettingDto = mock();
     private final AlmSettingDto almSettingDto = mock();
@@ -100,6 +99,7 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
         when(almSettingDto.getDecryptedPersonalAccessToken(any())).thenReturn(token);
         when(almSettingDto.getUrl()).thenReturn(wireMockExtension.baseUrl());
 
+        String projectName = "Project Name";
         when(analysisDetails.getAnalysisProjectName()).thenReturn(projectName);
         when(analysisDetails.getAnalysisProjectKey()).thenReturn(sonarProject);
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
@@ -121,10 +121,10 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
         when(componentIssue.getScmPath()).thenReturn(Optional.of("scmPath"));
         when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         int lineNumber = 5;
-        when(defaultIssue.getLine()).thenReturn(lineNumber);
+        when(defaultIssue.getLine()).thenReturn(Optional.of(lineNumber));
         when(defaultIssue.getLocations()).thenReturn(locate);
         String issueMessage = "issueMessage";
-        when(defaultIssue.getMessage()).thenReturn(issueMessage);
+        when(defaultIssue.getMessage()).thenReturn(Optional.of(issueMessage));
         when(defaultIssue.getRuleKey()).thenReturn(ruleKey);
         when(defaultIssue.key()).thenReturn(issueKeyVal);
         Changeset changeset = mock();

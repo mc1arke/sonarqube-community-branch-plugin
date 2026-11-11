@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2026 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -146,9 +146,9 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
                     AnalysisIssueSummary analysisIssueSummary = reportGenerator.createAnalysisIssueSummary(componentIssue, analysisDetails);
                     Map.Entry<SoftwareQuality, Severity> highestSeverity = findHighestSeverity(componentIssue.getIssue().impacts());
                     return client.createCodeInsightsAnnotation(componentIssue.getIssue().key(),
-                            Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0),
+                            componentIssue.getIssue().getLine().orElse(0),
                             analysisIssueSummary.getIssueUrl(),
-                            componentIssue.getIssue().getMessage(),
+                            componentIssue.getIssue().getMessage().orElse(null),
                             path,
                             toBitbucketSeverity(highestSeverity.getValue()),
                             toBitbucketType(highestSeverity.getKey()));
