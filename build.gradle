@@ -74,7 +74,7 @@ dependencies {
     testImplementation(fileTree(dir: "${sonarLibraries}/scanner", include: '*.jar'))
 
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
-    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.4')
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.23.0')
     implementation('org.javassist:javassist:3.33.0-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:5.5.1')
 }
