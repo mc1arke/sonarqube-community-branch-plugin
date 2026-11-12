@@ -27,3 +27,5 @@
 #Local docker overrides
 docker-compose.override.yml
 compose.override.yml
+docker-compose.override.yaml
+compose.override.yaml
