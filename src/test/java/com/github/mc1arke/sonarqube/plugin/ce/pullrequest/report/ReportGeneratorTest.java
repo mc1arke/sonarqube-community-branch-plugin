@@ -53,10 +53,11 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisit
 
 class ReportGeneratorTest {
 
-    @CsvSource({"98, passed-16px.png, 1, passed-16px.png",
-            ",no-data-16px.png,,no-data-16px.png"})
+    @CsvSource({"10, 98, passed-16px.png, 1, passed-16px.png",
+            ", 50, no-data-16px.png, 1, passed-16px.png",
+            ",,no-data-16px.png,,no-data-16px.png"})
     @ParameterizedTest
-    void shouldProduceCorrectAnalysisSummary(String coverage, String coverageImage, String duplications, String duplicationsImage) {
+    void shouldProduceCorrectAnalysisSummary(String newCoverage, String coverage, String coverageImage, String duplications, String duplicationsImage) {
         AnalysisDetails analysisDetails = mock();
         when(analysisDetails.getPullRequestId()).thenReturn("5");
         when(analysisDetails.getAnalysisProjectKey()).thenReturn("projectKey");
@@ -132,7 +133,7 @@ class ReportGeneratorTest {
         QualityGate.Condition condition6 = mock();
         when(condition6.getStatus()).thenReturn(QualityGate.EvaluationStatus.ERROR);
         when(condition6.getMetricKey()).thenReturn(CoreMetrics.NEW_COVERAGE.getKey());
-        when(condition6.getValue()).thenReturn(coverage);
+        when(condition6.getValue()).thenReturn(newCoverage);
         when(condition6.getOperator()).thenReturn(QualityGate.Operator.GREATER_THAN);
         when(condition6.getErrorThreshold()).thenReturn("15");
 
@@ -199,7 +200,8 @@ class ReportGeneratorTest {
 
         AnalysisSummary expected = AnalysisSummary.builder()
                         .withCoverage(new AnalysisSummary.UrlIconMetric<>("http://localhost:9000/component_measures?id=projectKey&metric=new_coverage&pullRequest=5&view=list", "http://localhost:9000/static/communityBranchPlugin/common/" + coverageImage, null == coverage ? null : new BigDecimal(coverage)))
-                        .withNewCoverage(null == coverage ? null : new BigDecimal(coverage))
+                        .withTotalCoverage(null == coverage ? null : new BigDecimal(coverage))
+                        .withNewCoverage(null == newCoverage ? null : new BigDecimal(newCoverage))
                         .withDuplications(new AnalysisSummary.UrlIconMetric<>("http://localhost:9000/component_measures?id=projectKey&metric=new_duplicated_lines_density&pullRequest=5&view=list", "http://localhost:9000/static/communityBranchPlugin/common/" + duplicationsImage, null == duplications ? null : new BigDecimal(duplications).setScale(1, RoundingMode.CEILING)))
                         .withNewDuplications(null == duplications ? null : new BigDecimal(duplications))
                         .withDashboardUrl("http://localhost:9000/dashboard?id=projectKey&pullRequest=5")

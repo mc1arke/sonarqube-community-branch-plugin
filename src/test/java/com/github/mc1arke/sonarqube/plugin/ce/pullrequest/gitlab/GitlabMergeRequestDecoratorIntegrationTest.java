@@ -139,7 +139,7 @@ class GitlabMergeRequestDecoratorIntegrationTest {
 
         ReportGenerator reportGenerator = mock();
         AnalysisSummary analysisSummary = mock();
-        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.TEN);
+        when(analysisSummary.getTotalCoverage()).thenReturn(BigDecimal.TEN);
         when(analysisSummary.getDashboardUrl()).thenReturn(sonarRootUrl + "/dashboard?id=" + projectKey + "&pullRequest=" + mergeRequestIid);
         when(analysisSummary.format(any())).thenReturn("summary commént\n\n[link text]");
         when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);

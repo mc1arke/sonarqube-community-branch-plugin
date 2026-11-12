@@ -119,6 +119,7 @@ public class ReportGenerator {
                 .withSummaryImageUrl(baseImageUrl + "/common/icon.png")
                 .withCoverage(new AnalysisSummary.UrlIconMetric<>(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_COVERAGE_KEY), baseImageUrl + "/" + (newCoverage == null ? NO_DATA_IMAGE_PATH : PASSED_IMAGE_PATH), coverage))
                 .withNewCoverage(newCoverage)
+                .withTotalCoverage(coverage)
                 .withDashboardUrl(getDashboardUrl(analysisDetails))
                 .withDuplications(new AnalysisSummary.UrlIconMetric<>(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY), baseImageUrl + "/" + (newDuplications == null ? NO_DATA_IMAGE_PATH : PASSED_IMAGE_PATH), duplications))
                 .withNewDuplications(newDuplications)
