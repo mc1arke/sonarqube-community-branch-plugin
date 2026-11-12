@@ -20,7 +20,8 @@
 
 import styled from '@emotion/styled';
 import { useIntl } from 'react-intl';
-import { Badge, ButtonSecondary, themeBorder, themeColor } from '~design-system';
+import { cssVar } from '@sonarsource/echoes-react';
+import { Badge, ButtonSecondary } from '~design-system';
 import { MetricType } from '~shared/types/metrics';
 import {
   DEFAULT_ISSUES_QUERY,
@@ -213,9 +214,9 @@ function getQGConditionUrl(
 }
 
 const StyledConditionButton = styled(ButtonSecondary)`
-  --border: ${themeBorder('default')};
+  --border: ${cssVar('border-width-default')} solid ${cssVar('color-border-weak')};
 `;
 
 const SpanDanger = styled.span`
-  color: ${themeColor('danger')};
+  color: ${cssVar('color-text-danger')};
 `;
