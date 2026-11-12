@@ -132,7 +132,7 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
                     "SonarQube Status" + (isMonorepo ? " - " + analysis.getAnalysisProjectName() : ""),
                     analysis.getQualityGateStatus() == QualityGate.Status.OK ? PipelineStatus.State.SUCCESS : PipelineStatus.State.FAILED,
                     analysisSummary.getDashboardUrl(),
-                    analysisSummary.getNewCoverage(),
+                    analysisSummary.getTotalCoverage(),
                     pipelineId);
 
             gitlabClient.setMergeRequestPipelineStatus(mergeRequest.getTargetProjectId(), analysis.getCommitSha(), pipelineStatus);
