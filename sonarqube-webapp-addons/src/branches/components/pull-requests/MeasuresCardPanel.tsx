@@ -154,11 +154,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
             url={acceptedUrl}
             icon={
               acceptedCount !== undefined && (
-                <SnoozeCircleIcon
-                  color={
-                    acceptedCount === '0' ? 'overviewCardDefaultIcon' : 'overviewCardWarningIcon'
-                  }
-                />
+                <SnoozeCircleIcon disabled={acceptedCount === '0'} />
               )
             }
             footer={
