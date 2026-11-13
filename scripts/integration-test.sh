@@ -51,6 +51,11 @@ export COMPOSE_FILE
 # shellcheck source=scripts/integration-test/alm.sh
 source scripts/integration-test/alm.sh
 
+# Results for the CI summary and report (scripts/integration-test/report.py).
+RESULTS_DIR="build/integration-test"
+rm -rf "$RESULTS_DIR/ui" "$RESULTS_DIR/alm" "$RESULTS_DIR/analysis.json"
+mkdir -p "$RESULTS_DIR"
+
 cleanup() {
   # Remove containers, networks and volumes so repeated/local runs start clean.
   docker compose down -v --remove-orphans
@@ -202,6 +207,8 @@ echo "3/3: Running pull-request analysis '${TEST_PR_KEY}'..."
 analyse   -Dsonar.pullrequest.key="${TEST_PR_KEY}"   -Dsonar.pullrequest.branch="${TEST_PR_BRANCH}"   -Dsonar.pullrequest.base="${TEST_PR_BASE}"
 assert_quality_gate "pullRequest=${TEST_PR_KEY}"
 
+printf '{"ok": true, "checks": ["main-branch analysis", "branch analysis %s", "pull request analysis %s"]}\n' \
+  "$TEST_BRANCH" "$TEST_PR_KEY" > "$RESULTS_DIR/analysis.json"
 echo "Branch and pull request analysis checks passed:"
 echo "  - main-branch analysis completed in the Compute Engine"
 echo "  - named branch analysis completed and produced a quality gate"

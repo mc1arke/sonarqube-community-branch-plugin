@@ -7,8 +7,12 @@ Expected values come from SonarQube itself: the lines of the open issues on the
 pull request and its quality gate status. The fixture adds issues, so the gate is
 expected to fail; the test checks the plugin reports exactly those issue lines
 inline, posts a summary, and marks the pull request as failed.
+
+The outcome is also written to result-<alm>.json next to the request log, for the
+CI summary and report (scripts/integration-test/report.py).
 """
 import json
+import os
 import sys
 from urllib.parse import parse_qs
 
@@ -87,6 +91,10 @@ elif alm == "bitbucketcloud":
     check(len(builds) == 1 and builds[0].get("state") == "FAILED", f"expected one FAILED build status, got {builds}")
 else:
     failures.append(f"unknown ALM {alm}")
+
+with open(os.path.join(os.path.dirname(log_path), f"result-{alm}.json"), "w") as result:
+    json.dump({"alm": alm, "ok": not failures, "calls": len(requests), "issue_lines": expected_lines,
+               "quality_gate": gate, "failures": failures}, result, indent=2)
 
 if failures:
     print(f"ALM decoration {alm}: FAILED", file=sys.stderr)

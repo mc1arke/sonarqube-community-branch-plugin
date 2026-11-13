@@ -52,6 +52,30 @@ jobs:
       - name: Run release-candidate integration test
         run: bash scripts/integration-test.sh
 
+      - name: Build test report
+        if: always()
+        run: python3 scripts/integration-test/report.py
+
+      # Uploaded unzipped (single file), so it opens directly in the browser from the run.
+      - name: Upload test report with screenshots
+        id: report
+        if: always() && hashFiles('build/integration-test/integration-test-report.html') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          path: build/integration-test/integration-test-report.html
+          archive: false
+
+      - name: Write job summary
+        if: always() && hashFiles('build/integration-test/summary.md') != ''
+        env:
+          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
+        run: |
+          if [ -n "$REPORT_URL" ]; then
+            echo "📸 [Open the test report with screenshots]($REPORT_URL)" >> "$GITHUB_STEP_SUMMARY"
+            echo >> "$GITHUB_STEP_SUMMARY"
+          fi
+          cat build/integration-test/summary.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Keep screenshots and recorded ALM calls
         if: always()
         uses: actions/upload-artifact@v7
@@ -62,4 +86,5 @@ jobs:
             build/integration-test/alm/requests-*.jsonl
             build/integration-test/alm/issues-*.json
             build/integration-test/alm/qualitygate-*.json
+            build/integration-test/alm/result-*.json
           if-no-files-found: ignore

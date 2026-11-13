@@ -10,9 +10,11 @@
 //   * missing expected content (case-insensitive, as wording varies per version).
 // Individual utility classes in the webapp's own syntax that have no CSS rule are
 // reported as warnings: older webapps never generated some addon-only classes.
-// Screenshots of every page are written to $UI_OUT for the CI artifacts.
+// Screenshots of every page and a results.json with the outcome per page are
+// written to $UI_OUT, for the CI artifacts and report (scripts/integration-test/report.py).
 //
 // Environment: SONARQUBE_URL, UI_LOGIN, UI_PASSWORD, UI_PROJECT, UI_OUT.
+const fs = require('fs');
 const { chromium } = require('playwright');
 
 const BASE = process.env.SONARQUBE_URL || 'http://localhost:9000';
@@ -69,11 +71,14 @@ function undefinedUtilityClasses() {
   const origin = new URL(BASE).origin;
   const failures = [];
   const warnings = [];
+  const results = { login: { failures: [], warnings: [] } };
   let current = 'login';
-  page.on('pageerror', (error) => failures.push(`${current}: JavaScript error: ${String(error).split('\n')[0]}`));
+  const fail = (message) => { failures.push(`${current}: ${message}`); results[current].failures.push(message); };
+  const warn = (message) => { warnings.push(`${current}: ${message}`); results[current].warnings.push(message); };
+  page.on('pageerror', (error) => fail(`JavaScript error: ${String(error).split('\n')[0]}`));
   page.on('response', (response) => {
     if (response.status() >= 400 && response.url().startsWith(origin)) {
-      failures.push(`${current}: HTTP ${response.status()} for ${response.url().replace(origin, '')}`);
+      fail(`HTTP ${response.status()} for ${response.url().replace(origin, '')}`);
     }
   });
 
@@ -84,6 +89,7 @@ function undefinedUtilityClasses() {
 
   for (const spec of PAGES) {
     current = spec.name;
+    results[current] = { failures: [], warnings: [], screenshot: `${spec.name}.png` };
     await page.goto(BASE + spec.path, { waitUntil: 'networkidle', timeout: 60000 });
     await page.waitForTimeout(1500);
     for (const label of ['Dismiss', 'Got it']) {
@@ -93,26 +99,27 @@ function undefinedUtilityClasses() {
     }
     if (spec.action) {
       try { await spec.action(page); await page.waitForTimeout(1500); } catch (e) {
-        failures.push(`${current}: could not interact with the page: ${String(e).split('\n')[0]}`);
+        fail(`could not interact with the page: ${String(e).split('\n')[0]}`);
       }
     }
     const text = (await page.locator('body').innerText()).toLowerCase();
     for (const expected of spec.expect) {
-      if (!text.includes(expected.toLowerCase())) failures.push(`${current}: expected text "${expected}" not found`);
+      if (!text.includes(expected.toLowerCase())) fail(`expected text "${expected}" not found`);
     }
     const { webappSyntax, missing } = await page.evaluate(undefinedUtilityClasses);
     const otherSyntax = missing.filter((token) => !token.replace(/^-/, '').startsWith(webappSyntax));
     const sameSyntax = missing.filter((token) => !otherSyntax.includes(token));
     if (otherSyntax.length) {
-      failures.push(`${current}: ${otherSyntax.length} utility classes use a different prefix syntax than the webapp's '${webappSyntax}' and have no CSS: ${otherSyntax.join(' ')}`);
+      fail(`${otherSyntax.length} utility classes use a different prefix syntax than the webapp's '${webappSyntax}' and have no CSS: ${otherSyntax.join(' ')}`);
     }
-    if (sameSyntax.length) warnings.push(`${current}: ${sameSyntax.length} utility classes without CSS: ${sameSyntax.join(' ')}`);
+    if (sameSyntax.length) warn(`${sameSyntax.length} utility classes without CSS: ${sameSyntax.join(' ')}`);
     await page.screenshot({ path: `${OUT}/${spec.name}.png` });
     console.log(`UI ${spec.name}: checked`);
   }
   await browser.close();
 
   for (const warning of warnings) console.log(`UI warning: ${warning}`);
+  writeResults(results);
 
   if (failures.length) {
     console.error('UI check: FAILED');
@@ -120,4 +127,14 @@ function undefinedUtilityClasses() {
     process.exit(1);
   }
   console.log(`UI check: OK (${PAGES.length} pages, screenshots in ${OUT})`);
-})().catch((error) => { console.error('UI check: FAILED', error); process.exit(1); });
+})().catch((error) => {
+  console.error('UI check: FAILED', error);
+  writeResults({ run: { failures: [String(error).split('\n')[0]], warnings: [] } });
+  process.exit(1);
+});
+
+function writeResults(results) {
+  // Drop the login entry when nothing went wrong there.
+  if (results.login && !results.login.failures.length && !results.login.warnings.length) delete results.login;
+  fs.writeFileSync(`${OUT}/results.json`, JSON.stringify(results, null, 2));
+}
