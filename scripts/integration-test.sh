@@ -165,18 +165,20 @@ docker compose up -d --build
 
 echo "Waiting for SonarQube at ${SONARQUBE_URL}..."
 deadline=$((SECONDS + STARTUP_TIMEOUT_SECONDS))
+sonarqube_up=false
 
 while (( SECONDS < deadline )); do
   response="$(curl --silent --show-error --fail --max-time "$(remaining_seconds "$deadline")" \
     "${SONARQUBE_URL}/api/system/status" 2>/dev/null || true)"
   if [[ "$response" == *'"status":"UP"'* ]]; then
     echo "SonarQube is UP."
+    sonarqube_up=true
     break
   fi
   sleep "$POLL_INTERVAL_SECONDS"
 done
 
-if (( SECONDS >= deadline )); then
+if [[ "$sonarqube_up" != "true" ]]; then
   echo "SonarQube did not become UP within ${STARTUP_TIMEOUT_SECONDS}s." >&2
   exit 1
 fi

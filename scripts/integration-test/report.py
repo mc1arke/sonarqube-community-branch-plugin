@@ -42,7 +42,13 @@ def load(path):
 
 
 def enabled(variable):
-    return os.environ.get(variable, "true") != "false"
+    # Same rule as scripts/integration-test.sh: a suite runs only when its toggle
+    # is unset or exactly "true".
+    return os.environ.get(variable, "true") == "true"
+
+
+def toggle(variable):
+    return f"{variable}={os.environ.get(variable, '')}"
 
 
 rows = []  # (section, check, status, details)
@@ -55,7 +61,7 @@ rows.append(("Analyses", "Main branch, branch and pull request analysis",
 for alm in ALMS:
     name = ALM_NAMES.get(alm, alm)
     if not enabled("INTEGRATION_ALM"):
-        rows.append(("ALM decoration", name, "not run", "INTEGRATION_ALM=false"))
+        rows.append(("ALM decoration", name, "not run", toggle("INTEGRATION_ALM")))
         continue
     result = load(f"alm/result-{alm}.json")
     if result is None:
@@ -69,7 +75,7 @@ for alm in ALMS:
 ui = load("ui/results.json") if enabled("INTEGRATION_UI") else None
 for page in UI_PAGES + sorted(k for k in (ui or {}) if k not in UI_PAGES):
     if not enabled("INTEGRATION_UI"):
-        rows.append(("UI", page, "not run", "INTEGRATION_UI=false"))
+        rows.append(("UI", page, "not run", toggle("INTEGRATION_UI")))
         continue
     result = (ui or {}).get(page)
     if result is None:
