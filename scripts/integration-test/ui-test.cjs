@@ -4,9 +4,12 @@
 // and a pull request, and fails on:
 //   * JavaScript errors on the page,
 //   * failed (>= 400) requests to SonarQube itself (e.g. missing images),
-//   * utility classes on the page that have no CSS rule (catches Tailwind
-//     prefix/version mismatches between the addons and the webapp),
-//   * missing expected content.
+//   * utility classes written in a different prefix syntax than the webapp's
+//     own CSS uses (e.g. Tailwind 3 'sw-flex' against Tailwind 4 'sw:flex'),
+//     which leaves whole components unstyled,
+//   * missing expected content (case-insensitive, as wording varies per version).
+// Individual utility classes in the webapp's own syntax that have no CSS rule are
+// reported as warnings: older webapps never generated some addon-only classes.
 // Screenshots of every page are written to $UI_OUT for the CI artifacts.
 //
 // Environment: SONARQUBE_URL, UI_LOGIN, UI_PASSWORD, UI_PROJECT, UI_OUT.
@@ -31,7 +34,8 @@ const PAGES = [
   },
 ];
 
-// Collect every utility class used on the page and the class names that have a CSS rule.
+// Collect every utility class used on the page that has no CSS rule, and the prefix
+// syntax ('sw:' for Tailwind 4, 'sw-' for Tailwind 3) the webapp's own CSS uses.
 function undefinedUtilityClasses() {
   const used = new Set();
   for (const element of document.querySelectorAll('[class]')) {
@@ -53,7 +57,9 @@ function undefinedUtilityClasses() {
   for (const sheet of document.styleSheets) {
     try { collect(sheet.cssRules); } catch (e) { /* cross-origin sheet */ }
   }
-  return [...used].filter((token) => !defined.has(token)).sort();
+  const webappSyntax = [...defined].some((name) => /^-?sw:/.test(name)) ? 'sw:' : 'sw-';
+  const missing = [...used].filter((token) => !defined.has(token)).sort();
+  return { webappSyntax, missing };
 }
 
 (async () => {
@@ -62,6 +68,7 @@ function undefinedUtilityClasses() {
   const page = await context.newPage();
   const origin = new URL(BASE).origin;
   const failures = [];
+  const warnings = [];
   let current = 'login';
   page.on('pageerror', (error) => failures.push(`${current}: JavaScript error: ${String(error).split('\n')[0]}`));
   page.on('response', (response) => {
@@ -89,16 +96,23 @@ function undefinedUtilityClasses() {
         failures.push(`${current}: could not interact with the page: ${String(e).split('\n')[0]}`);
       }
     }
-    const text = await page.locator('body').innerText();
+    const text = (await page.locator('body').innerText()).toLowerCase();
     for (const expected of spec.expect) {
-      if (!text.includes(expected)) failures.push(`${current}: expected text "${expected}" not found`);
+      if (!text.includes(expected.toLowerCase())) failures.push(`${current}: expected text "${expected}" not found`);
     }
-    const missing = await page.evaluate(undefinedUtilityClasses);
-    if (missing.length) failures.push(`${current}: ${missing.length} utility classes without CSS: ${missing.join(' ')}`);
+    const { webappSyntax, missing } = await page.evaluate(undefinedUtilityClasses);
+    const otherSyntax = missing.filter((token) => !token.replace(/^-/, '').startsWith(webappSyntax));
+    const sameSyntax = missing.filter((token) => !otherSyntax.includes(token));
+    if (otherSyntax.length) {
+      failures.push(`${current}: ${otherSyntax.length} utility classes use a different prefix syntax than the webapp's '${webappSyntax}' and have no CSS: ${otherSyntax.join(' ')}`);
+    }
+    if (sameSyntax.length) warnings.push(`${current}: ${sameSyntax.length} utility classes without CSS: ${sameSyntax.join(' ')}`);
     await page.screenshot({ path: `${OUT}/${spec.name}.png` });
     console.log(`UI ${spec.name}: checked`);
   }
   await browser.close();
+
+  for (const warning of warnings) console.log(`UI warning: ${warning}`);
 
   if (failures.length) {
     console.error('UI check: FAILED');
