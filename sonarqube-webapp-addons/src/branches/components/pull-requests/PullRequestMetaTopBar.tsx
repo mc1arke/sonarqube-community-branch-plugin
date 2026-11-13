@@ -37,7 +37,7 @@ export default function PullRequestMetaTopBar({ pullRequest, measures }: Readonl
 
   const leftSection = (
     <div>
-      <strong className="sw-typo-semibold sw-mr-1">
+      <strong className="sw:typo-semibold sw:mr-1">
         {formatMeasure(
           getLeakValue(findMeasure(measures, MetricKey.new_lines)),
           MetricType.ShortInteger,
@@ -47,13 +47,13 @@ export default function PullRequestMetaTopBar({ pullRequest, measures }: Readonl
     </div>
   );
   const rightSection = (
-    <div className="sw-flex sw-items-center sw-gap-2">
+    <div className="sw:flex sw:items-center sw:gap-2">
       <CurrentBranchLikeMergeInformation pullRequest={pullRequest} />
     </div>
   );
 
   return (
-    <div className="sw-flex sw-justify-between sw-whitespace-nowrap sw-typo-default">
+    <div className="sw:flex sw:justify-between sw:whitespace-nowrap sw:typo-default">
       {leftSection}
       {rightSection}
     </div>

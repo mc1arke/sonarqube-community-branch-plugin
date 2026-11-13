@@ -54,7 +54,7 @@ const TABS = [
     label: (
       <>
         <IconGitBranch />
-        <span className="sw-ml-2">{translate('project_branch_pull_request.tabs.branches')}</span>
+        <span className="sw:ml-2">{translate('project_branch_pull_request.tabs.branches')}</span>
       </>
     ),
   },
@@ -64,7 +64,7 @@ const TABS = [
     label: (
       <>
         <IconPullrequest />
-        <span className="sw-ml-2">
+        <span className="sw:ml-2">
           {translate('project_branch_pull_request.tabs.pull_requests')}
         </span>
       </>

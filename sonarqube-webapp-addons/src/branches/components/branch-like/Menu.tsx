@@ -158,12 +158,12 @@ export class Menu extends React.PureComponent<Props, State> {
 
     return (
       <DropdownMenu
-        className="sw-overflow-y-auto sw-overflow-x-hidden sw-min-w-abs-350 it__branch-like-navigation-menu"
+        className="sw:overflow-y-auto sw:overflow-x-hidden sw:min-w-abs-350 it__branch-like-navigation-menu"
         maxHeight="38rem"
         size="auto"
       >
         <InputSearch
-          className="sw-mx-3 sw-my-2"
+          className="sw:mx-3 sw:my-2"
           autoFocus
           onChange={this.handleSearchChange}
           onKeyDown={this.handleKeyDown}
@@ -182,7 +182,7 @@ export class Menu extends React.PureComponent<Props, State> {
         {showManageLink && (
           <>
             <ItemDivider />
-            <li className="sw-px-3 sw-py-2">
+            <li className="sw:px-3 sw:py-2">
               <Link
                 onClick={() => {
                   onClose();

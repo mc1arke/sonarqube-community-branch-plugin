@@ -70,16 +70,16 @@ export function MenuItemList(props: MenuItemListProps) {
   return (
     <ul
       aria-label={`- ${translate('branch_like_navigation.list')}`}
-      className="item-list sw-overflow-y-auto sw-overflow-x-hidden"
+      className="item-list sw:overflow-y-auto sw:overflow-x-hidden"
     >
       <output>
         {!hasResults && (
-          <div className="sw-px-3 sw-py-2">
+          <div className="sw:px-3 sw:py-2">
             <span>{intl.formatMessage({ id: 'no_results_for_x' }, { '0': search })}</span>
           </div>
         )}
         {hasResults && (
-          <span className="sw-sr-only">
+          <span className="sw:sr-only">
             {intl.formatMessage({ id: 'results_shown_x' }, { count: total })}
           </span>
         )}
@@ -121,7 +121,7 @@ export function MenuItemList(props: MenuItemListProps) {
           <ItemDivider aria-hidden />
           <ItemHeader>
             {translate('branch_like_navigation.orphan_pull_requests')}
-            <span className="sw-ml-1">
+            <span className="sw:ml-1">
               <Tooltip content={translate('branch_like_navigation.orphan_pull_requests.tooltip')}>
                 <HelperHintIcon />
               </Tooltip>

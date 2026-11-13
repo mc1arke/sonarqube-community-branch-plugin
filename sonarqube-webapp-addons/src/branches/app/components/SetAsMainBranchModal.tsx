@@ -55,20 +55,20 @@ export default function SetAsMainBranchModal(props: SetAsMainBranchModalProps) {
       headerTitle={
         <FormattedMessage
           id="project_branch_pull_request.branch.set_x_as_main"
-          values={{ branch: <span className="sw-break-all">{branch.name}</span> }}
+          values={{ branch: <span className="sw:break-all">{branch.name}</span> }}
         />
       }
       loading={isPending}
       onClose={onClose}
       body={
         <form id={FORM_ID} onSubmit={handleSubmit}>
-          <p className="sw-mb-4">
+          <p className="sw:mb-4">
             <FormattedMessage
               id="project_branch_pull_request.branch.main_branch.are_you_sure"
-              values={{ branch: <span className="sw-break-all">{branch.name}</span> }}
+              values={{ branch: <span className="sw:break-all">{branch.name}</span> }}
             />
           </p>
-          <p className="sw-mb-4">
+          <p className="sw:mb-4">
             <FormattedMessage
               id="project_branch_pull_request.branch.main_branch.learn_more"
               values={{
