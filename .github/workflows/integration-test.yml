@@ -18,16 +18,19 @@ on:
       - 'build.gradle'
       - 'gradle.properties'
       - 'scripts/integration-test.sh'
+      - 'scripts/integration-test/**'
       - '.github/workflows/integration-test.yml'
 
 jobs:
   integration-test:
     # Tests the candidate in a real SonarQube instance rather than only checking
     # compilation/unit tests. The script covers main, branch and PR analyses and
-    # waits for their server-side Compute Engine processing to complete.
+    # waits for their server-side Compute Engine processing to complete, then
+    # checks pull request decoration against a mock of every supported ALM and
+    # the plugin's webapp addons in a browser.
     name: SonarQube branch and PR integration test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout candidate including SonarQube webapp submodule
@@ -35,5 +38,28 @@ jobs:
         with:
           submodules: true
 
+      - name: Set up Node.js for the UI check
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install Playwright and Chromium for the UI check
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/playwright" playwright@1.65.0
+          "$RUNNER_TEMP/playwright/node_modules/.bin/playwright" install --with-deps chromium
+          echo "NODE_PATH=$RUNNER_TEMP/playwright/node_modules" >> "$GITHUB_ENV"
+
       - name: Run release-candidate integration test
         run: bash scripts/integration-test.sh
+
+      - name: Keep screenshots and recorded ALM calls
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-test-results
+          path: |
+            build/integration-test/ui/
+            build/integration-test/alm/requests-*.jsonl
+            build/integration-test/alm/issues-*.json
+            build/integration-test/alm/qualitygate-*.json
+          if-no-files-found: ignore

@@ -32,6 +32,25 @@ TEST_PR_KEY="1"
 TEST_PR_BRANCH="feature/x"
 TEST_PR_BASE="main"
 
+# Additional suites (each can be switched off with "false"):
+#   INTEGRATION_ALM - pull request decoration against a recording mock of every
+#                     supported ALM (scripts/integration-test/alm.sh)
+#   INTEGRATION_UI  - browser check of the plugin's webapp addons
+#                     (scripts/integration-test/ui-test.cjs, needs Node.js + Playwright)
+# INTEGRATION_EXTRA_COMPOSE_FILES adds local compose overrides (':'-separated).
+INTEGRATION_ALM="${INTEGRATION_ALM:-true}"
+INTEGRATION_UI="${INTEGRATION_UI:-true}"
+COMPOSE_FILE="docker-compose.yml"
+if [[ "$INTEGRATION_ALM" == "true" ]]; then
+  COMPOSE_FILE="${COMPOSE_FILE}:scripts/integration-test/compose.alm-mock.yml"
+fi
+if [[ -n "${INTEGRATION_EXTRA_COMPOSE_FILES:-}" ]]; then
+  COMPOSE_FILE="${COMPOSE_FILE}:${INTEGRATION_EXTRA_COMPOSE_FILES}"
+fi
+export COMPOSE_FILE
+# shellcheck source=scripts/integration-test/alm.sh
+source scripts/integration-test/alm.sh
+
 cleanup() {
   # Remove containers, networks and volumes so repeated/local runs start clean.
   docker compose down -v --remove-orphans
@@ -41,6 +60,9 @@ dump_logs() {
   # Keep the server-side failure visible in GitHub Actions when a test fails.
   echo "::group::SonarQube Docker logs"
   docker compose logs --no-color sonarqube || true
+  if [[ "$INTEGRATION_ALM" == "true" ]]; then
+    docker compose exec -T sonarqube sh -c 'tail -n 200 /opt/sonarqube/logs/ce.log' || true
+  fi
   echo "::endgroup::"
 }
 
@@ -106,11 +128,16 @@ analyse() {
   local out
   local task_id
 
-  out="$(docker run --rm --network host     -v "$PWD/build/integration-test-project:/usr/src"     "$SCANNER_IMAGE"     -Dsonar.host.url="${SONARQUBE_URL}"     -Dsonar.token="$token"     "$@" | tee /dev/stderr)"
+  out="$(docker run --rm --network host     -v "$PWD/build/integration-test-project:/usr/src"     "$SCANNER_IMAGE"     -Dsonar.host.url="${SONARQUBE_URL}"     -Dsonar.token="$token"     "$@" | tee -a /dev/stderr)"
 
   task_id="$(sed -n 's|.*api/ce/task?id=\([^[:space:]]*\).*|\1|p' <<<"$out" | tail -1)"
   wait_for_ce_task "$task_id"
 }
+
+if [[ "$INTEGRATION_ALM" == "true" ]]; then
+  echo "Preparing the ALM mock, its TLS material and the git fixture..."
+  alm_prepare
+fi
 
 echo "Building and starting SonarQube with the candidate plugin..."
 docker compose up -d --build
@@ -179,3 +206,25 @@ echo "PoC integration test passed:"
 echo "  - main-branch analysis completed in the Compute Engine"
 echo "  - named branch analysis completed and produced a quality gate"
 echo "  - pull-request analysis completed and produced a quality gate"
+
+if [[ "$INTEGRATION_ALM" == "true" ]]; then
+  echo "Running ALM pull request decoration tests..."
+  alm_run
+  echo "ALM decoration tests passed for: ${ALM_TEST_ALMS:-gitlab github azure bitbucket bitbucketcloud}"
+fi
+
+if [[ "$INTEGRATION_UI" == "true" ]]; then
+  echo "Running the UI check of the webapp addons..."
+  # The UI forces a password change for the default admin password and asks to
+  # accept the risk of third-party plugins once; do both through the Web API.
+  ui_password="It-$(date +%s)-Ui!x"
+  curl --silent --show-error --fail -u admin:admin -X POST "${SONARQUBE_URL}/api/users/change_password" \
+    --data-urlencode login=admin --data-urlencode previousPassword=admin --data-urlencode "password=${ui_password}" >/dev/null
+  curl --silent --show-error --fail -u "admin:${ui_password}" -X POST "${SONARQUBE_URL}/api/settings/set" \
+    --data-urlencode key=sonar.plugins.risk.consent --data-urlencode value=ACCEPTED >/dev/null
+  mkdir -p build/integration-test/ui
+  ui_project="${TEST_PROJECT_KEY}"
+  [[ "$INTEGRATION_ALM" == "true" ]] && ui_project="it-alm-github"
+  SONARQUBE_URL="$SONARQUBE_URL" UI_PASSWORD="$ui_password" UI_PROJECT="$ui_project" \
+    UI_OUT=build/integration-test/ui node scripts/integration-test/ui-test.cjs
+fi

@@ -1,0 +1,35 @@
+# Compose overlay used by scripts/integration-test.sh for the ALM decoration tests.
+#
+# Adds a recording mock of the GitLab, GitHub, Azure DevOps, Bitbucket Server and
+# Bitbucket Cloud APIs on the SonarQube network. Bitbucket Cloud's hosts are
+# hard-coded in the plugin, so the mock also answers to bitbucket.org and
+# api.bitbucket.org, over HTTPS with a certificate from a throwaway test CA that
+# only this SonarQube container trusts (via the generated cacerts below).
+#
+# Paths are relative to the project directory (the repository root).
+services:
+  alm-mock:
+    image: python:3.13-alpine
+    container_name: alm-mock
+    command: ["python", "-u", "/mock/alm-mock.py"]
+    environment:
+      - HEAD_SHA=${ALM_MOCK_HEAD_SHA:-}
+      - BASE_SHA=${ALM_MOCK_BASE_SHA:-}
+      - LOG=/data/requests.jsonl
+      - TLS_CERT=/data/tls/server.pem
+      - TLS_KEY=/data/tls/server.key
+    volumes:
+      - ./scripts/integration-test:/mock:ro
+      - ./build/integration-test/alm:/data
+    networks:
+      sonarnet:
+        aliases:
+          - bitbucket.org
+          - api.bitbucket.org
+
+  sonarqube:
+    depends_on:
+      alm-mock:
+        condition: service_started
+    volumes:
+      - ./build/integration-test/alm/tls/cacerts:/opt/java/openjdk/lib/security/cacerts:ro
