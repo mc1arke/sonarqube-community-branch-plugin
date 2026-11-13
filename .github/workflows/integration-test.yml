@@ -1,6 +1,6 @@
 # Runs the release-candidate integration harness when changes can affect the
 # plugin binary, patched SonarQube webapp, Docker image, or target SQ version.
-name: integration-test-poc
+name: integration-test
 
 on:
   workflow_dispatch:
