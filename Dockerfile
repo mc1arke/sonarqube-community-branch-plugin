@@ -9,7 +9,7 @@ WORKDIR ${WORKDIR}
 RUN gradle build -x test
 
 
-FROM node:24.22.3-alpine AS webapp-builder
+FROM node:26.13.0-alpine AS webapp-builder
 ARG WORKDIR
 
 COPY ./sonarqube-webapp ${WORKDIR}/sonarqube-webapp
