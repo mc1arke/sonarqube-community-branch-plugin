@@ -1,6 +1,6 @@
 ARG SONARQUBE_VERSION="community"
 
-FROM alpine:3.23 AS downloader
+FROM alpine:3.24 AS downloader
 ARG PLUGIN_VERSION
 ENV PLUGIN_VERSION=${PLUGIN_VERSION}
 
