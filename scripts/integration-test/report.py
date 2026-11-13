@@ -12,9 +12,10 @@ and writes, in that directory:
                                  that GitHub can show in the browser when it is
                                  uploaded as an unzipped artifact.
 
-Checks without a result (because an earlier step failed or the suite was switched
-off with INTEGRATION_ALM/INTEGRATION_UI) are reported as not run. Always exits 0;
-the test script's own exit code decides whether the job fails.
+Enabled checks without a result (because an earlier step failed) are reported as
+incomplete and count against the headline like failures; checks of a suite that
+was switched off with INTEGRATION_ALM/INTEGRATION_UI are reported as not run.
+Always exits 0; the test script's own exit code decides whether the job fails.
 """
 import base64
 import html
@@ -27,7 +28,7 @@ ALMS = os.environ.get("ALM_TEST_ALMS", "gitlab github azure bitbucket bitbucketc
 ALM_NAMES = {"gitlab": "GitLab", "github": "GitHub", "azure": "Azure DevOps",
              "bitbucket": "Bitbucket Server", "bitbucketcloud": "Bitbucket Cloud"}
 UI_PAGES = ["branches", "pull-requests", "pull-request-overview", "pull-request-issues", "branch-selector"]
-ICON = {"passed": "✅", "warning": "⚠️", "failed": "❌", "not run": "⏭️"}
+ICON = {"passed": "✅", "warning": "⚠️", "failed": "❌", "incomplete": "❓", "not run": "⏭️"}
 
 
 def load(path):
@@ -46,7 +47,7 @@ rows = []  # (section, check, status, details)
 
 analysis = load("analysis.json")
 rows.append(("Analyses", "Main branch, branch and pull request analysis",
-             "passed" if analysis and analysis.get("ok") else "failed",
+             "passed" if analysis and analysis.get("ok") else "incomplete",
              "; ".join(analysis.get("checks", [])) if analysis else "no result; see the test log"))
 
 for alm in ALMS:
@@ -56,7 +57,7 @@ for alm in ALMS:
         continue
     result = load(f"alm/result-{alm}.json")
     if result is None:
-        rows.append(("ALM decoration", name, "not run", "no result (an earlier step failed)"))
+        rows.append(("ALM decoration", name, "incomplete", "no result (an earlier step failed)"))
     elif result["ok"]:
         rows.append(("ALM decoration", name, "passed",
                      f"{result['calls']} calls; issues inline on lines {result['issue_lines']}; failed status reported"))
@@ -70,7 +71,7 @@ for page in UI_PAGES + sorted(k for k in (ui or {}) if k not in UI_PAGES):
         continue
     result = (ui or {}).get(page)
     if result is None:
-        rows.append(("UI", page, "not run", "no result (an earlier step failed)"))
+        rows.append(("UI", page, "incomplete", "no result (an earlier step failed)"))
     elif result["failures"]:
         rows.append(("UI", page, "failed", "; ".join(result["failures"] + result.get("warnings", []))))
     elif result.get("warnings"):
@@ -78,9 +79,15 @@ for page in UI_PAGES + sorted(k for k in (ui or {}) if k not in UI_PAGES):
     else:
         rows.append(("UI", page, "passed", ""))
 
-failed = [r for r in rows if r[2] == "failed"]
-headline = (f"❌ {len(failed)} of {len(rows)} checks failed" if failed
-            else f"✅ All {sum(1 for r in rows if r[2] in ('passed', 'warning'))} checks passed")
+failed = sum(1 for r in rows if r[2] == "failed")
+incomplete = sum(1 for r in rows if r[2] == "incomplete")
+ran = sum(1 for r in rows if r[2] != "not run")
+if failed or incomplete:
+    problems = [f"{failed} failed"] if failed else []
+    problems += [f"{incomplete} incomplete"] if incomplete else []
+    headline = f"❌ {' and '.join(problems)} of {ran} checks"
+else:
+    headline = f"✅ All {ran} checks passed"
 
 
 def markdown_cell(text):

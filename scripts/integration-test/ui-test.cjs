@@ -3,7 +3,9 @@
 // Opens the pages the addons render on a project bound to an ALM with a branch
 // and a pull request, and fails on:
 //   * JavaScript errors on the page,
-//   * failed (>= 400) requests to SonarQube itself (e.g. missing images),
+//   * failed requests to SonarQube itself: any >= 400 for static resources (e.g.
+//     missing images) and >= 500 for the Web API (an API 4xx is often a normal
+//     answer, such as 404 from api/alm_settings/get_binding for an unbound project),
 //   * utility classes written in a different prefix syntax than the webapp's
 //     own CSS uses (e.g. Tailwind 3 'sw-flex' against Tailwind 4 'sw:flex'),
 //     which leaves whole components unstyled,
@@ -64,59 +66,85 @@ function undefinedUtilityClasses() {
   return { webappSyntax, missing };
 }
 
+// Shared by the run and the error handler, so an unexpected error keeps what was collected.
+const failures = [];
+const warnings = [];
+const results = {};
+let current = 'login';
+
+function record(kind, message) {
+  results[current] = results[current] || { failures: [], warnings: [] };
+  results[current][kind].push(message);
+  (kind === 'failures' ? failures : warnings).push(`${current}: ${message}`);
+}
+const fail = (message) => record('failures', message);
+const warn = (message) => record('warnings', message);
+const firstLine = (error) => String(error).split('\n')[0];
+
+async function checkPage(page, spec) {
+  await page.goto(BASE + spec.path, { waitUntil: 'networkidle', timeout: 60000 });
+  await page.waitForTimeout(1500);
+  for (const label of ['Dismiss', 'Got it']) {
+    for (const button of await page.getByRole('button', { name: label, exact: true }).all()) {
+      await button.click({ timeout: 2000 }).catch(() => {});
+    }
+  }
+  if (spec.action) {
+    try { await spec.action(page); await page.waitForTimeout(1500); } catch (e) {
+      fail(`could not interact with the page: ${firstLine(e)}`);
+    }
+  }
+  const text = (await page.locator('body').innerText()).toLowerCase();
+  for (const expected of spec.expect) {
+    if (!text.includes(expected.toLowerCase())) fail(`expected text "${expected}" not found`);
+  }
+  const { webappSyntax, missing } = await page.evaluate(undefinedUtilityClasses);
+  const otherSyntax = missing.filter((token) => !token.replace(/^-/, '').startsWith(webappSyntax));
+  const sameSyntax = missing.filter((token) => !otherSyntax.includes(token));
+  if (otherSyntax.length) {
+    fail(`${otherSyntax.length} utility classes use a different prefix syntax than the webapp's '${webappSyntax}' and have no CSS: ${otherSyntax.join(' ')}`);
+  }
+  if (sameSyntax.length) warn(`${sameSyntax.length} utility classes without CSS: ${sameSyntax.join(' ')}`);
+}
+
 (async () => {
   const browser = await chromium.launch();
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  const page = await context.newPage();
-  const origin = new URL(BASE).origin;
-  const failures = [];
-  const warnings = [];
-  const results = { login: { failures: [], warnings: [] } };
-  let current = 'login';
-  const fail = (message) => { failures.push(`${current}: ${message}`); results[current].failures.push(message); };
-  const warn = (message) => { warnings.push(`${current}: ${message}`); results[current].warnings.push(message); };
-  page.on('pageerror', (error) => fail(`JavaScript error: ${String(error).split('\n')[0]}`));
-  page.on('response', (response) => {
-    if (response.status() >= 400 && response.url().startsWith(origin)) {
-      fail(`HTTP ${response.status()} for ${response.url().replace(origin, '')}`);
-    }
-  });
-
-  const login = await context.request.post(`${BASE}/api/authentication/login`, {
-    form: { login: process.env.UI_LOGIN || 'admin', password: process.env.UI_PASSWORD },
-  });
-  if (!login.ok()) throw new Error(`login failed with HTTP ${login.status()}`);
-
-  for (const spec of PAGES) {
-    current = spec.name;
-    results[current] = { failures: [], warnings: [], screenshot: `${spec.name}.png` };
-    await page.goto(BASE + spec.path, { waitUntil: 'networkidle', timeout: 60000 });
-    await page.waitForTimeout(1500);
-    for (const label of ['Dismiss', 'Got it']) {
-      for (const button of await page.getByRole('button', { name: label, exact: true }).all()) {
-        await button.click({ timeout: 2000 }).catch(() => {});
+  try {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    const origin = new URL(BASE).origin;
+    page.on('pageerror', (error) => fail(`JavaScript error: ${firstLine(error)}`));
+    page.on('response', (response) => {
+      if (!response.url().startsWith(origin)) return;
+      const path = response.url().replace(origin, '');
+      const isApi = path.startsWith('/api/');
+      if (response.status() >= 500 || (!isApi && response.status() >= 400)) {
+        fail(`HTTP ${response.status()} for ${path}`);
       }
-    }
-    if (spec.action) {
-      try { await spec.action(page); await page.waitForTimeout(1500); } catch (e) {
-        fail(`could not interact with the page: ${String(e).split('\n')[0]}`);
+    });
+
+    const login = await context.request.post(`${BASE}/api/authentication/login`, {
+      form: { login: process.env.UI_LOGIN || 'admin', password: process.env.UI_PASSWORD },
+    });
+    if (!login.ok()) throw new Error(`login failed with HTTP ${login.status()}`);
+
+    for (const spec of PAGES) {
+      current = spec.name;
+      results[current] = { failures: [], warnings: [], screenshot: `${spec.name}.png` };
+      // A page that fails to load or crashes is recorded as that page's failure; the others still run.
+      try {
+        await checkPage(page, spec);
+      } catch (e) {
+        fail(`page check aborted: ${firstLine(e)}`);
       }
+      await page.screenshot({ path: `${OUT}/${spec.name}.png` }).catch(() => {
+        delete results[current].screenshot;
+      });
+      console.log(`UI ${spec.name}: checked`);
     }
-    const text = (await page.locator('body').innerText()).toLowerCase();
-    for (const expected of spec.expect) {
-      if (!text.includes(expected.toLowerCase())) fail(`expected text "${expected}" not found`);
-    }
-    const { webappSyntax, missing } = await page.evaluate(undefinedUtilityClasses);
-    const otherSyntax = missing.filter((token) => !token.replace(/^-/, '').startsWith(webappSyntax));
-    const sameSyntax = missing.filter((token) => !otherSyntax.includes(token));
-    if (otherSyntax.length) {
-      fail(`${otherSyntax.length} utility classes use a different prefix syntax than the webapp's '${webappSyntax}' and have no CSS: ${otherSyntax.join(' ')}`);
-    }
-    if (sameSyntax.length) warn(`${sameSyntax.length} utility classes without CSS: ${sameSyntax.join(' ')}`);
-    await page.screenshot({ path: `${OUT}/${spec.name}.png` });
-    console.log(`UI ${spec.name}: checked`);
+  } finally {
+    await browser.close().catch(() => {});
   }
-  await browser.close();
 
   for (const warning of warnings) console.log(`UI warning: ${warning}`);
   writeResults(results);
@@ -128,13 +156,14 @@ function undefinedUtilityClasses() {
   }
   console.log(`UI check: OK (${PAGES.length} pages, screenshots in ${OUT})`);
 })().catch((error) => {
-  console.error('UI check: FAILED', error);
-  writeResults({ run: { failures: [String(error).split('\n')[0]], warnings: [] } });
+  // Keep the results of the pages that were already checked.
+  fail(`run aborted: ${firstLine(error)}`);
+  for (const failure of failures) console.error(`  - ${failure}`);
+  console.error('UI check: FAILED');
+  writeResults(results);
   process.exit(1);
 });
 
-function writeResults(results) {
-  // Drop the login entry when nothing went wrong there.
-  if (results.login && !results.login.failures.length && !results.login.warnings.length) delete results.login;
-  fs.writeFileSync(`${OUT}/results.json`, JSON.stringify(results, null, 2));
+function writeResults(collected) {
+  fs.writeFileSync(`${OUT}/results.json`, JSON.stringify(collected, null, 2));
 }

@@ -40,7 +40,11 @@ TEST_PR_BASE="main"
 # INTEGRATION_EXTRA_COMPOSE_FILES adds local compose overrides (':'-separated).
 INTEGRATION_ALM="${INTEGRATION_ALM:-true}"
 INTEGRATION_UI="${INTEGRATION_UI:-true}"
-COMPOSE_FILE="docker-compose.yml"
+# Run as a separate Compose project with its own container and image names, so
+# the cleanup's `down -v` only ever removes the test's own data and never the
+# volumes of a SonarQube started locally from the same docker-compose.yml.
+export COMPOSE_PROJECT_NAME="${INTEGRATION_COMPOSE_PROJECT:-community-branch-plugin-it}"
+COMPOSE_FILE="docker-compose.yml:scripts/integration-test/compose.integration-test.yml"
 if [[ "$INTEGRATION_ALM" == "true" ]]; then
   COMPOSE_FILE="${COMPOSE_FILE}:scripts/integration-test/compose.alm-mock.yml"
 fi
@@ -57,7 +61,8 @@ rm -rf "$RESULTS_DIR/ui" "$RESULTS_DIR/alm" "$RESULTS_DIR/analysis.json"
 mkdir -p "$RESULTS_DIR"
 
 cleanup() {
-  # Remove containers, networks and volumes so repeated/local runs start clean.
+  # Remove the test project's containers, networks and volumes so repeated/local
+  # runs start clean. Scoped to COMPOSE_PROJECT_NAME, so other stacks are untouched.
   docker compose down -v --remove-orphans
 }
 
@@ -139,8 +144,12 @@ analyse() {
   wait_for_ce_task "$task_id"
 }
 
+if [[ "$INTEGRATION_ALM" == "true" || "$INTEGRATION_UI" == "true" ]]; then
+  echo "Preparing the git fixture..."
+  fixture_prepare
+fi
 if [[ "$INTEGRATION_ALM" == "true" ]]; then
-  echo "Preparing the ALM mock, its TLS material and the git fixture..."
+  echo "Preparing the ALM mock's TLS material and trust store..."
   alm_prepare
 fi
 
@@ -222,6 +231,10 @@ fi
 
 if [[ "$INTEGRATION_UI" == "true" ]]; then
   echo "Running the UI check of the webapp addons..."
+  # Its own project with a failing pull request, independent of the ALM suite.
+  # Prepared first, while the API still accepts the default admin credentials.
+  ui_project="it-ui"
+  ui_project_prepare "$ui_project"
   # The UI forces a password change for the default admin password and asks to
   # accept the risk of third-party plugins once; do both through the Web API.
   ui_password="It-$(date +%s)-Ui!x"
@@ -230,8 +243,6 @@ if [[ "$INTEGRATION_UI" == "true" ]]; then
   curl --silent --show-error --fail -u "admin:${ui_password}" -X POST "${SONARQUBE_URL}/api/settings/set" \
     --data-urlencode key=sonar.plugins.risk.consent --data-urlencode value=ACCEPTED >/dev/null
   mkdir -p build/integration-test/ui
-  ui_project="${TEST_PROJECT_KEY}"
-  [[ "$INTEGRATION_ALM" == "true" ]] && ui_project="it-alm-github"
   SONARQUBE_URL="$SONARQUBE_URL" UI_PASSWORD="$ui_password" UI_PROJECT="$ui_project" \
     UI_OUT=build/integration-test/ui node scripts/integration-test/ui-test.cjs
 fi

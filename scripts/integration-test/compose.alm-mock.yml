@@ -10,7 +10,6 @@
 services:
   alm-mock:
     image: python:3.13-alpine
-    container_name: alm-mock
     command: ["python", "-u", "/mock/alm-mock.py"]
     environment:
       - HEAD_SHA=${ALM_MOCK_HEAD_SHA:-}

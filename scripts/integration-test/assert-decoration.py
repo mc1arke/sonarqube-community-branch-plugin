@@ -20,7 +20,8 @@ alm, log_path, issues_path, gate_path = sys.argv[1:5]
 requests = [json.loads(line) for line in open(log_path) if line.strip()]
 issues = json.load(open(issues_path))["issues"]
 gate = json.load(open(gate_path))["projectStatus"]["status"]
-expected_lines = sorted({i["line"] for i in issues if "line" in i})
+# One inline comment per issue: keep duplicates, as two issues can be on the same line.
+expected_lines = sorted(i["line"] for i in issues if "line" in i)
 failures = []
 
 
