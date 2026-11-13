@@ -78,6 +78,13 @@ dump_logs() {
 
 trap 'status=$?; if [ "$status" -ne 0 ]; then dump_logs; fi; cleanup; exit "$status"' EXIT
 
+remaining_seconds() {
+  # Seconds left until the given deadline (at least 1), to bound a single request
+  # so a server that accepts the connection but never answers cannot outlast it.
+  local left=$(($1 - SECONDS))
+  echo $((left > 0 ? left : 1))
+}
+
 wait_for_ce_task() {
   # Wait for the exact Compute Engine task produced by one scanner invocation.
   # SUCCESS proves SonarQube processed the uploaded report. FAILED/CANCELED
@@ -93,7 +100,7 @@ wait_for_ce_task() {
 
   echo "Waiting for Compute Engine task ${task_id}..."
   while (( SECONDS < deadline )); do
-    status="$(curl --silent --show-error --fail -u "$token:"       "${SONARQUBE_URL}/api/ce/task?id=${task_id}"       | python3 -c 'import json,sys; print(json.load(sys.stdin)["task"]["status"])')"
+    status="$(curl --silent --show-error --fail --max-time "$(remaining_seconds "$deadline")" -u "$token:"       "${SONARQUBE_URL}/api/ce/task?id=${task_id}"       | python3 -c 'import json,sys; print(json.load(sys.stdin)["task"]["status"])')"
 
     case "$status" in
       SUCCESS)
@@ -160,7 +167,8 @@ echo "Waiting for SonarQube at ${SONARQUBE_URL}..."
 deadline=$((SECONDS + STARTUP_TIMEOUT_SECONDS))
 
 while (( SECONDS < deadline )); do
-  response="$(curl --silent --show-error --fail "${SONARQUBE_URL}/api/system/status" 2>/dev/null || true)"
+  response="$(curl --silent --show-error --fail --max-time "$(remaining_seconds "$deadline")" \
+    "${SONARQUBE_URL}/api/system/status" 2>/dev/null || true)"
   if [[ "$response" == *'"status":"UP"'* ]]; then
     echo "SonarQube is UP."
     break

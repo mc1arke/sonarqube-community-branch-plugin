@@ -113,11 +113,13 @@ async function checkPage(page, spec) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
     const origin = new URL(BASE).origin;
+    // SonarQube may run under a web context (sonar.web.context, e.g. /sonar).
+    const apiPrefix = new URL(BASE).pathname.replace(/\/+$/, '') + '/api/';
     page.on('pageerror', (error) => fail(`JavaScript error: ${firstLine(error)}`));
     page.on('response', (response) => {
       if (!response.url().startsWith(origin)) return;
       const path = response.url().replace(origin, '');
-      const isApi = path.startsWith('/api/');
+      const isApi = path.startsWith(apiPrefix);
       if (response.status() >= 500 || (!isApi && response.status() >= 400)) {
         fail(`HTTP ${response.status()} for ${path}`);
       }

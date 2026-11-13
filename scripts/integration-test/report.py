@@ -24,6 +24,8 @@ import os
 import sys
 
 RESULTS = sys.argv[1] if len(sys.argv) > 1 else "build/integration-test"
+# The directory is missing when the job failed before the test script ran.
+os.makedirs(RESULTS, exist_ok=True)
 ALMS = os.environ.get("ALM_TEST_ALMS", "gitlab github azure bitbucket bitbucketcloud").split()
 ALM_NAMES = {"gitlab": "GitLab", "github": "GitHub", "azure": "Azure DevOps",
              "bitbucket": "Bitbucket Server", "bitbucketcloud": "Bitbucket Cloud"}

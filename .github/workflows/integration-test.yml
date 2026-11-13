@@ -83,6 +83,7 @@ jobs:
           name: integration-test-results
           path: |
             build/integration-test/ui/
+            build/integration-test/alm/requests.jsonl
             build/integration-test/alm/requests-*.jsonl
             build/integration-test/alm/issues-*.json
             build/integration-test/alm/qualitygate-*.json
