@@ -29,3 +29,6 @@ docker-compose.override.yml
 compose.override.yml
 docker-compose.override.yaml
 compose.override.yaml
+
+# Python bytecode (scripts/integration-test)
+__pycache__/
