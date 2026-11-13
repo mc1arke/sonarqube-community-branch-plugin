@@ -1,0 +1,91 @@
+# Runs the release-candidate integration harness when changes can affect the
+# plugin binary, patched SonarQube webapp, Docker image, or target SQ version.
+name: integration-test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'sonarqube-webapp-addons/**'
+      - 'sonarqube-webapp' # submodule gitlink; intentionally not a glob
+      - 'docker/**'
+      - 'Dockerfile'
+      - 'release.Dockerfile'
+      - 'docker-compose.yml'
+      - '.env'
+      - '.gitmodules'
+      - 'build.gradle'
+      - 'gradle.properties'
+      - 'scripts/integration-test.sh'
+      - 'scripts/integration-test/**'
+      - '.github/workflows/integration-test.yml'
+
+jobs:
+  integration-test:
+    # Tests the candidate in a real SonarQube instance rather than only checking
+    # compilation/unit tests. The script covers main, branch and PR analyses and
+    # waits for their server-side Compute Engine processing to complete, then
+    # checks pull request decoration against a mock of every supported ALM and
+    # the plugin's webapp addons in a browser.
+    name: SonarQube branch and PR integration test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout candidate including SonarQube webapp submodule
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Set up Node.js for the UI check
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install Playwright and Chromium for the UI check
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/playwright" playwright@1.65.0
+          "$RUNNER_TEMP/playwright/node_modules/.bin/playwright" install --with-deps chromium
+          echo "NODE_PATH=$RUNNER_TEMP/playwright/node_modules" >> "$GITHUB_ENV"
+
+      - name: Run release-candidate integration test
+        run: bash scripts/integration-test.sh
+
+      - name: Build test report
+        if: always()
+        run: python3 scripts/integration-test/report.py
+
+      # Uploaded unzipped (single file), so it opens directly in the browser from the run.
+      - name: Upload test report with screenshots
+        id: report
+        if: always() && hashFiles('build/integration-test/integration-test-report.html') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          path: build/integration-test/integration-test-report.html
+          archive: false
+
+      - name: Write job summary
+        if: always() && hashFiles('build/integration-test/summary.md') != ''
+        env:
+          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
+        run: |
+          if [ -n "$REPORT_URL" ]; then
+            echo "📸 [Open the test report with screenshots]($REPORT_URL)" >> "$GITHUB_STEP_SUMMARY"
+            echo >> "$GITHUB_STEP_SUMMARY"
+          fi
+          cat build/integration-test/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep screenshots and recorded ALM calls
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-test-results
+          path: |
+            build/integration-test/ui/
+            build/integration-test/alm/requests.jsonl
+            build/integration-test/alm/requests-*.jsonl
+            build/integration-test/alm/issues-*.json
+            build/integration-test/alm/qualitygate-*.json
+            build/integration-test/alm/result-*.json
+          if-no-files-found: ignore

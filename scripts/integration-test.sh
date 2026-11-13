@@ -1,0 +1,258 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# End-to-end release-candidate test for the Community Branch Plugin.
+#
+# This test deliberately exercises SonarQube from the outside, as a user would:
+#   1. build/start SonarQube with the candidate plugin;
+#   2. verify the plugin is installed;
+#   3. run a normal main-branch analysis;
+#   4. run a named branch analysis and verify its Compute Engine task completes;
+#   5. run a pull-request analysis and verify its Compute Engine task completes;
+#   6. verify SonarQube computed a quality gate for branch and PR analyses.
+#
+# Waiting for the Compute Engine (CE) task is important. The scanner reports
+# "ANALYSIS SUCCESSFUL" after uploading the report, before SonarQube has actually
+# processed it. A broken plugin can therefore make the CE task fail even though
+# the scanner itself exits successfully.
+#
+# The scanner image is pinned so a new scanner release cannot silently change
+# the behaviour of this release-candidate test. Override SCANNER_IMAGE when
+# intentionally testing another scanner version.
+
+SONARQUBE_URL="${SONARQUBE_URL:-http://localhost:9000}"
+STARTUP_TIMEOUT_SECONDS="${STARTUP_TIMEOUT_SECONDS:-300}"
+CE_TIMEOUT_SECONDS="${CE_TIMEOUT_SECONDS:-120}"
+POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-5}"
+SCANNER_IMAGE="${SCANNER_IMAGE:-sonarsource/sonar-scanner-cli:12.2.0.4256_8.1.0}"
+
+TEST_PROJECT_KEY="community-branch-plugin-it"
+TEST_BRANCH="integration-test-branch"
+TEST_PR_KEY="1"
+TEST_PR_BRANCH="feature/x"
+TEST_PR_BASE="main"
+
+# Additional suites (each can be switched off with "false"):
+#   INTEGRATION_ALM - pull request decoration against a recording mock of every
+#                     supported ALM (scripts/integration-test/alm.sh)
+#   INTEGRATION_UI  - browser check of the plugin's webapp addons
+#                     (scripts/integration-test/ui-test.cjs, needs Node.js + Playwright)
+# INTEGRATION_EXTRA_COMPOSE_FILES adds local compose overrides (':'-separated).
+INTEGRATION_ALM="${INTEGRATION_ALM:-true}"
+INTEGRATION_UI="${INTEGRATION_UI:-true}"
+# Run as a separate Compose project with its own container and image names, so
+# the cleanup's `down -v` only ever removes the test's own data and never the
+# volumes of a SonarQube started locally from the same docker-compose.yml.
+export COMPOSE_PROJECT_NAME="${INTEGRATION_COMPOSE_PROJECT:-community-branch-plugin-it}"
+COMPOSE_FILE="docker-compose.yml:scripts/integration-test/compose.integration-test.yml"
+if [[ "$INTEGRATION_ALM" == "true" ]]; then
+  COMPOSE_FILE="${COMPOSE_FILE}:scripts/integration-test/compose.alm-mock.yml"
+fi
+if [[ -n "${INTEGRATION_EXTRA_COMPOSE_FILES:-}" ]]; then
+  COMPOSE_FILE="${COMPOSE_FILE}:${INTEGRATION_EXTRA_COMPOSE_FILES}"
+fi
+export COMPOSE_FILE
+# shellcheck source=scripts/integration-test/alm.sh
+source scripts/integration-test/alm.sh
+
+# Results for the CI summary and report (scripts/integration-test/report.py).
+RESULTS_DIR="build/integration-test"
+rm -rf "$RESULTS_DIR/ui" "$RESULTS_DIR/alm" "$RESULTS_DIR/analysis.json"
+mkdir -p "$RESULTS_DIR"
+
+cleanup() {
+  # Remove the test project's containers, networks and volumes so repeated/local
+  # runs start clean. Scoped to COMPOSE_PROJECT_NAME, so other stacks are untouched.
+  docker compose down -v --remove-orphans
+}
+
+dump_logs() {
+  # Keep the server-side failure visible in GitHub Actions when a test fails.
+  echo "::group::SonarQube Docker logs"
+  docker compose logs --no-color sonarqube || true
+  if [[ "$INTEGRATION_ALM" == "true" ]]; then
+    docker compose exec -T sonarqube sh -c 'tail -n 200 /opt/sonarqube/logs/ce.log' || true
+  fi
+  echo "::endgroup::"
+}
+
+trap 'status=$?; if [ "$status" -ne 0 ]; then dump_logs; fi; cleanup; exit "$status"' EXIT
+
+remaining_seconds() {
+  # Seconds left until the given deadline (at least 1), to bound a single request
+  # so a server that accepts the connection but never answers cannot outlast it.
+  local left=$(($1 - SECONDS))
+  echo $((left > 0 ? left : 1))
+}
+
+wait_for_ce_task() {
+  # Wait for the exact Compute Engine task produced by one scanner invocation.
+  # SUCCESS proves SonarQube processed the uploaded report. FAILED/CANCELED
+  # catches server/plugin failures that the scanner exit code cannot detect.
+  local task_id="$1"
+  local status
+  local deadline=$((SECONDS + CE_TIMEOUT_SECONDS))
+
+  if [[ -z "$task_id" ]]; then
+    echo "Could not extract a Compute Engine task id from scanner output." >&2
+    return 1
+  fi
+
+  echo "Waiting for Compute Engine task ${task_id}..."
+  while (( SECONDS < deadline )); do
+    status="$(curl --silent --show-error --fail --max-time "$(remaining_seconds "$deadline")" -u "$token:"       "${SONARQUBE_URL}/api/ce/task?id=${task_id}"       | python3 -c 'import json,sys; print(json.load(sys.stdin)["task"]["status"])')"
+
+    case "$status" in
+      SUCCESS)
+        echo "Compute Engine task ${task_id} completed successfully."
+        return 0
+        ;;
+      FAILED|CANCELED)
+        echo "Compute Engine task ${task_id} ended in ${status}." >&2
+        return 1
+        ;;
+    esac
+
+    sleep "$POLL_INTERVAL_SECONDS"
+  done
+
+  echo "Compute Engine task ${task_id} did not finish within ${CE_TIMEOUT_SECONDS}s." >&2
+  return 1
+}
+
+assert_quality_gate() {
+  # A branch/PR existing in SonarQube does not prove its analysis succeeded.
+  # A computed quality-gate status confirms the CE task produced an analysis.
+  # Both OK and ERROR are valid test outcomes: ERROR means the analysed code
+  # failed its configured gate, not that the plugin/integration failed.
+  local qualifier="$1"
+  local gate
+
+  gate="$(curl --silent --show-error --fail -u "$token:"     "${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=${TEST_PROJECT_KEY}&${qualifier}"     | python3 -c 'import json,sys; print(json.load(sys.stdin)["projectStatus"]["status"])')"
+
+  if [[ "$gate" != "OK" && "$gate" != "ERROR" ]]; then
+    echo "No quality gate computed for ${qualifier} (got '${gate}')." >&2
+    return 1
+  fi
+
+  echo "Quality gate for ${qualifier}: ${gate}"
+}
+
+analyse() {
+  # The official scanner image stores .scannerwork/report-task.txt inside its
+  # container. Capture the CE task URL printed by the scanner instead, extract
+  # the task id, and wait for that exact server-side task to complete.
+  local out
+  local task_id
+
+  out="$(docker run --rm --network host     -v "$PWD/build/integration-test-project:/usr/src"     "$SCANNER_IMAGE"     -Dsonar.host.url="${SONARQUBE_URL}"     -Dsonar.token="$token"     "$@" | tee -a /dev/stderr)"
+
+  task_id="$(sed -n 's|.*api/ce/task?id=\([^[:space:]]*\).*|\1|p' <<<"$out" | tail -1)"
+  wait_for_ce_task "$task_id"
+}
+
+if [[ "$INTEGRATION_ALM" == "true" || "$INTEGRATION_UI" == "true" ]]; then
+  echo "Preparing the git fixture..."
+  fixture_prepare
+fi
+if [[ "$INTEGRATION_ALM" == "true" ]]; then
+  echo "Preparing the ALM mock's TLS material and trust store..."
+  alm_prepare
+fi
+
+echo "Building and starting SonarQube with the candidate plugin..."
+docker compose up -d --build
+
+echo "Waiting for SonarQube at ${SONARQUBE_URL}..."
+deadline=$((SECONDS + STARTUP_TIMEOUT_SECONDS))
+sonarqube_up=false
+
+while (( SECONDS < deadline )); do
+  response="$(curl --silent --show-error --fail --max-time "$(remaining_seconds "$deadline")" \
+    "${SONARQUBE_URL}/api/system/status" 2>/dev/null || true)"
+  if [[ "$response" == *'"status":"UP"'* ]]; then
+    echo "SonarQube is UP."
+    sonarqube_up=true
+    break
+  fi
+  sleep "$POLL_INTERVAL_SECONDS"
+done
+
+if [[ "$sonarqube_up" != "true" ]]; then
+  echo "SonarQube did not become UP within ${STARTUP_TIMEOUT_SECONDS}s." >&2
+  exit 1
+fi
+
+echo "Checking that the Community Branch Plugin is installed..."
+plugins="$(curl --silent --show-error --fail -u admin:admin "${SONARQUBE_URL}/api/plugins/installed")"
+if [[ "$plugins" != *'"key":"communityBranchPlugin"'* ]]; then
+  echo "Community Branch Plugin was not reported by /api/plugins/installed." >&2
+  exit 1
+fi
+
+# Create a disposable project and token used by all three analysis scenarios.
+echo "Creating test project..."
+curl --silent --show-error --fail -u admin:admin -X POST   "${SONARQUBE_URL}/api/projects/create?project=${TEST_PROJECT_KEY}&name=${TEST_PROJECT_KEY}" >/dev/null
+
+echo "Creating analysis token..."
+token_response="$(curl --silent --show-error --fail -u admin:admin -X POST   "${SONARQUBE_URL}/api/user_tokens/generate?name=integration-test")"
+token="$(printf '%s' "$token_response"   | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')"
+
+# Keep the fixture tiny. Its purpose is to exercise the scanner/plugin protocol,
+# not to test a particular language analyser or quality profile.
+mkdir -p build/integration-test-project
+cat > build/integration-test-project/sonar-project.properties <<EOF
+sonar.projectKey=${TEST_PROJECT_KEY}
+sonar.projectName=${TEST_PROJECT_KEY}
+sonar.sources=.
+sonar.exclusions=sonar-project.properties
+EOF
+
+cat > build/integration-test-project/example.js <<'EOF'
+function hello(name) {
+  return "Hello " + name;
+}
+console.log(hello("integration-test"));
+EOF
+
+echo "1/3: Running main-branch analysis..."
+analyse
+
+echo "2/3: Running named branch analysis '${TEST_BRANCH}'..."
+analyse -Dsonar.branch.name="${TEST_BRANCH}"
+assert_quality_gate "branch=${TEST_BRANCH}"
+
+echo "3/3: Running pull-request analysis '${TEST_PR_KEY}'..."
+analyse   -Dsonar.pullrequest.key="${TEST_PR_KEY}"   -Dsonar.pullrequest.branch="${TEST_PR_BRANCH}"   -Dsonar.pullrequest.base="${TEST_PR_BASE}"
+assert_quality_gate "pullRequest=${TEST_PR_KEY}"
+
+printf '{"ok": true, "checks": ["main-branch analysis", "branch analysis %s", "pull request analysis %s"]}\n' \
+  "$TEST_BRANCH" "$TEST_PR_KEY" > "$RESULTS_DIR/analysis.json"
+echo "Branch and pull request analysis checks passed:"
+echo "  - main-branch analysis completed in the Compute Engine"
+echo "  - named branch analysis completed and produced a quality gate"
+echo "  - pull-request analysis completed and produced a quality gate"
+
+if [[ "$INTEGRATION_ALM" == "true" ]]; then
+  echo "Running ALM pull request decoration tests..."
+  alm_run
+  echo "ALM decoration tests passed for: ${ALM_TEST_ALMS:-gitlab github azure bitbucket bitbucketcloud}"
+fi
+
+if [[ "$INTEGRATION_UI" == "true" ]]; then
+  echo "Running the UI check of the webapp addons..."
+  # Its own project with a failing pull request, independent of the ALM suite.
+  # Prepared first, while the API still accepts the default admin credentials.
+  ui_project="it-ui"
+  ui_project_prepare "$ui_project"
+  # The UI forces a password change for the default admin password and asks to
+  # accept the risk of third-party plugins once; do both through the Web API.
+  ui_password="It-$(date +%s)-Ui!x"
+  curl --silent --show-error --fail -u admin:admin -X POST "${SONARQUBE_URL}/api/users/change_password" \
+    --data-urlencode login=admin --data-urlencode previousPassword=admin --data-urlencode "password=${ui_password}" >/dev/null
+  curl --silent --show-error --fail -u "admin:${ui_password}" -X POST "${SONARQUBE_URL}/api/settings/set" \
+    --data-urlencode key=sonar.plugins.risk.consent --data-urlencode value=ACCEPTED >/dev/null
+  mkdir -p build/integration-test/ui
+  SONARQUBE_URL="$SONARQUBE_URL" UI_PASSWORD="$ui_password" UI_PROJECT="$ui_project" \
+    UI_OUT=build/integration-test/ui node scripts/integration-test/ui-test.cjs
+fi

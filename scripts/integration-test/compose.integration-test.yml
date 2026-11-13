@@ -1,0 +1,14 @@
+# Compose overlay always used by scripts/integration-test.sh.
+#
+# Keeps the test stack apart from a developer's own stack started from the same
+# docker-compose.yml: the script runs it as its own Compose project
+# (COMPOSE_PROJECT_NAME), so its volumes are separate and the `down -v` cleanup
+# only removes the test's data, and this overlay gives the containers and the
+# built image their own names so they don't clash with or overwrite the
+# developer's ones.
+services:
+  sonarqube:
+    image: community-branch-plugin-integration-test:${SONARQUBE_VERSION}
+    container_name: community-branch-plugin-it-sonarqube
+  db:
+    container_name: community-branch-plugin-it-postgres
