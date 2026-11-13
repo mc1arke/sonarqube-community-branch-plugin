@@ -21,8 +21,10 @@
 import { Button, LinkStandalone, Tooltip, TooltipSide } from '@sonarsource/echoes-react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Image } from '~adapters/components/common/Image';
+import { useAlmIconSrc } from '~adapters/helpers/almIcons';
 import { isDefined, isStringDefined } from '~shared/helpers/types';
 import { PullRequest } from '~shared/types/branch-like';
+import { almKeyToIconKey } from '~sq-server-commons/helpers/almIcons';
 import { AlmKeys } from '~sq-server-commons/types/alm-settings';
 import { Component } from '~sq-server-commons/types/types';
 
@@ -46,6 +48,20 @@ function getPRUrlAlmKey(url = '') {
   return undefined;
 }
 
+const KNOWN_ALM_KEYS: string[] = [
+  AlmKeys.Azure,
+  AlmKeys.BitbucketServer,
+  AlmKeys.BitbucketCloud,
+  AlmKeys.GitHub,
+  AlmKeys.GitLab,
+];
+
+function toAlmIconKey(almKey?: string) {
+  return almKey !== undefined && KNOWN_ALM_KEYS.includes(almKey)
+    ? almKeyToIconKey(almKey as AlmKeys)
+    : undefined;
+}
+
 export function PRLinkLegacy({
   currentBranchLike,
   component,
@@ -55,17 +71,19 @@ export function PRLinkLegacy({
 }>) {
   const intl = useIntl();
   const almKey = component.alm?.key || getPRUrlAlmKey(currentBranchLike.url) || '';
+  const almIconSrc = useAlmIconSrc(toAlmIconKey(almKey));
 
   return (
     <>
       {isDefined(currentBranchLike.url) && (
         <LinkStandalone
           iconLeft={
-            almKey !== '' && (
+            almKey !== '' &&
+            almIconSrc !== undefined && (
               <Image
                 alt={almKey}
                 height={16}
-                src={`/images/alm/${almKey}.svg`}
+                src={almIconSrc}
                 title={intl.formatMessage(
                   { id: 'branches.see_the_pr_on_x' },
                   { dop: intl.formatMessage({ id: `alm.${almKey}` }) },
@@ -90,6 +108,7 @@ interface Props {
 
 export default function PRLink({ pullRequest, component }: Readonly<Props>) {
   const almKey = component.alm?.key || getPRUrlAlmKey(pullRequest.url);
+  const almIconSrc = useAlmIconSrc(toAlmIconKey(almKey));
 
   if (!isDefined(pullRequest.url)) {
     return null;
@@ -107,8 +126,9 @@ export default function PRLink({ pullRequest, component }: Readonly<Props>) {
     >
       <Button
         prefix={
-          isStringDefined(almKey) && (
-            <Image alt={almKey} height={16} src={`/images/alm/${almKey}.svg`} width={16} />
+          isStringDefined(almKey) &&
+          almIconSrc !== undefined && (
+            <Image alt={almKey} height={16} src={almIconSrc} width={16} />
           )
         }
         to={pullRequest.url}
