@@ -152,7 +152,7 @@ public class ReportGenerator {
     private String getBaseImageUrl() {
         return configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE)
                 .orElse(server.getPublicRootUrl() + "/static/communityBranchPlugin")
-                .replaceAll("/*$", "");
+                .replaceAll("/+$", "");
     }
 
     private String getIssueUrl(PostAnalysisIssueVisitor.LightIssue issue, AnalysisDetails analysisDetails) {

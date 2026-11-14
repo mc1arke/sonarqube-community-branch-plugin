@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2024 Michael Clarke
+ * Copyright (C) 2020-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -119,7 +119,8 @@ class PullRequestPostAnalysisTaskTest {
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        DbSession dbSession = mock();
+        when(dbClient.openSession(anyBoolean())).thenReturn(dbSession);
         AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
@@ -155,7 +156,8 @@ class PullRequestPostAnalysisTaskTest {
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.AZURE_DEVOPS);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        DbSession dbSession = mock();
+        when(dbClient.openSession(anyBoolean())).thenReturn(dbSession);
         AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
@@ -193,7 +195,8 @@ class PullRequestPostAnalysisTaskTest {
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        DbSession dbSession = mock();
+        when(dbClient.openSession(anyBoolean())).thenReturn(dbSession);
         AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
@@ -233,7 +236,8 @@ class PullRequestPostAnalysisTaskTest {
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        DbSession dbSession = mock();
+        when(dbClient.openSession(anyBoolean())).thenReturn(dbSession);
         AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
@@ -265,7 +269,8 @@ class PullRequestPostAnalysisTaskTest {
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        DbSession dbSession = mock();
+        when(dbClient.openSession(anyBoolean())).thenReturn(dbSession);
         AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
@@ -318,7 +323,8 @@ class PullRequestPostAnalysisTaskTest {
         AlmSettingDto almSettingDto = mock();
         doReturn(ALM.GITHUB).when(almSettingDto).getAlm();
 
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        DbSession dbSession = mock();
+        when(dbClient.openSession(anyBoolean())).thenReturn(dbSession);
         AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
@@ -326,7 +332,6 @@ class PullRequestPostAnalysisTaskTest {
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        DbSession dbSession = mock();
         doReturn(dbSession).when(dbClient).openSession(anyBoolean());
         BranchDao branchDao = mock();
         doReturn(branchDao).when(dbClient).branchDao();
@@ -450,7 +455,8 @@ class PullRequestPostAnalysisTaskTest {
         when(almSettingDto.getAppId()).thenReturn("app id");
         when(almSettingDto.getDecryptedPrivateKey(any())).thenReturn("private key");
         when(almSettingDto.getAlm()).thenReturn(ALM.GITHUB);
-        when(dbClient.openSession(anyBoolean())).thenReturn(mock());
+        DbSession dbSession = mock();
+        when(dbClient.openSession(anyBoolean())).thenReturn(dbSession);
         AlmSettingDao almSettingDao = mock();
         when(almSettingDao.selectByUuid(any(), any())).thenReturn(Optional.of(almSettingDto));
         when(dbClient.almSettingDao()).thenReturn(almSettingDao);
@@ -458,7 +464,6 @@ class PullRequestPostAnalysisTaskTest {
         when(projectAlmSettingDao.selectByProject(any(), anyString())).thenReturn(Optional.of(projectAlmSettingDto));
         when(dbClient.projectAlmSettingDao()).thenReturn(projectAlmSettingDao);
 
-        DbSession dbSession = mock();
         doReturn(dbSession).when(dbClient).openSession(anyBoolean());
         BranchDao branchDao = mock();
         doReturn(branchDao).when(dbClient).branchDao();

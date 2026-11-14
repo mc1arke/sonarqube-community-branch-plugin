@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CloudLink;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
@@ -210,8 +211,8 @@ class BitbucketCloudClientUnitTest {
         DataValue data = underTest.createLinkDataValue("https://localhost:9000/any/project");
 
         // then
-        assertInstanceOf(DataValue.CloudLink.class, data);
-        assertEquals("https://localhost:9000/any/project", ((DataValue.CloudLink) data).getHref());
+        assertInstanceOf(CloudLink.class, data);
+        assertEquals("https://localhost:9000/any/project", ((CloudLink) data).getHref());
     }
 
     @Test

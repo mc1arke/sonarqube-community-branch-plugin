@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Project;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.sonar.db.alm.setting.ALM;
@@ -84,7 +85,8 @@ class GitlabValidatorTest {
     void testHappyPath() throws IOException {
         GitlabValidator underTest = new GitlabValidator(gitlabClientFactory);
         GitlabClient gitlabClient = mock();
-        when(gitlabClient.getProject(any())).thenReturn(mock());
+        Project project = mock();
+        when(gitlabClient.getProject(any())).thenReturn(project);
         when(gitlabClientFactory.createClient(any(), any())).thenReturn(gitlabClient);
 
         underTest.validate(projectAlmSettingDto, almSettingDto);

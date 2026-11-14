@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2025 Michael Clarke
+ * Copyright (C) 2019-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,26 +27,17 @@ abstract class BaseFormatterFactory implements FormatterFactory {
     }
 
     protected String format(Node node) {
-        if (node instanceof Document document) {
-            return documentFormatter().format(document);
-        } else if (node instanceof Heading heading) {
-            return headingFormatter().format(heading);
-        } else if (node instanceof Image image) {
-            return imageFormatter().format(image);
-        } else if (node instanceof List list) {
-            return listFormatter().format(list);
-        } else if (node instanceof ListItem listItem) {
-            return listItemFormatter().format(listItem);
-        } else if (node instanceof Paragraph paragraph) {
-            return paragraphFormatter().format(paragraph);
-        } else if (node instanceof Text text) {
-            return textFormatter().format(text);
-        } else if (node instanceof Link link) {
-            return linkFormatter().format(link);
-        } else if (node instanceof Bold bold) {
-            return boldFormatter().format(bold);
-        } else {
-            throw new IllegalArgumentException("Unknown node type: " + node.getClass().getName());
-        }
+        return switch (node) {
+            case Document document -> documentFormatter().format(document);
+            case Heading heading -> headingFormatter().format(heading);
+            case Image image -> imageFormatter().format(image);
+            case List list -> listFormatter().format(list);
+            case ListItem listItem -> listItemFormatter().format(listItem);
+            case Paragraph paragraph -> paragraphFormatter().format(paragraph);
+            case Text text -> textFormatter().format(text);
+            case Link link -> linkFormatter().format(link);
+            case Bold bold -> boldFormatter().format(bold);
+            default -> throw new IllegalArgumentException("Unknown node type: " + node.getClass().getName());
+        };
     }
 }
