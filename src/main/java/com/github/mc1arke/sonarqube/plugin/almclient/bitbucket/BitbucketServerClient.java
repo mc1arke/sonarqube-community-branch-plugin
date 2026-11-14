@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
@@ -41,6 +40,8 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -60,12 +61,12 @@ class BitbucketServerClient implements BitbucketClient {
     private static final String NO_CHECK_HEADER_VALUE = "no-check";
 
     private final BitbucketServerConfiguration config;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     private final OkHttpClient okHttpClient;
 
-    BitbucketServerClient(BitbucketServerConfiguration config, ObjectMapper objectMapper, OkHttpClient okHttpClient) {
+    BitbucketServerClient(BitbucketServerConfiguration config, JsonMapper jsonMapper, OkHttpClient okHttpClient) {
         this.config = config;
-        this.objectMapper = objectMapper;
+        this.jsonMapper = jsonMapper;
         this.okHttpClient = okHttpClient;
     }
 
@@ -114,7 +115,7 @@ class BitbucketServerClient implements BitbucketClient {
         Set<Annotation> annotationSet = annotations.stream().map(Annotation.class::cast).collect(Collectors.toSet());
         CreateAnnotationsRequest request = new CreateAnnotationsRequest(annotationSet);
         Request req = new Request.Builder()
-                .post(RequestBody.create(objectMapper.writeValueAsString(request), APPLICATION_JSON_MEDIA_TYPE))
+                .post(RequestBody.create(jsonMapper.writeValueAsString(request), APPLICATION_JSON_MEDIA_TYPE))
                 .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s/annotations", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
                 .build();
         try (Response response = okHttpClient.newCall(req).execute()) {
@@ -129,7 +130,7 @@ class BitbucketServerClient implements BitbucketClient {
 
     @Override
     public void uploadReport(String commit, CodeInsightsReport codeInsightReport, String reportKey) throws IOException {
-        String body = objectMapper.writeValueAsString(codeInsightReport);
+        String body = jsonMapper.writeValueAsString(codeInsightReport);
         Request req = new Request.Builder()
                 .put(RequestBody.create(body, APPLICATION_JSON_MEDIA_TYPE))
                 .url(format("%s/rest/insights/1.0/projects/%s/repos/%s/commits/%s/reports/%s", config.getUrl(), config.getProject(), config.getRepository(), commit, reportKey))
@@ -155,7 +156,7 @@ class BitbucketServerClient implements BitbucketClient {
                         .addArgument(ServerProperties.CODE_INSIGHT_VERSION)
                         .log();
             }
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             LOGGER.error("Could not determine Bitbucket Server version", e);
             return false;
         }
@@ -178,7 +179,7 @@ class BitbucketServerClient implements BitbucketClient {
             validate(response);
 
             try (ResponseBody responseBody = response.body()) {
-                return objectMapper.reader().forType(Repository.class)
+                return jsonMapper.reader().forType(Repository.class)
                         .readValue(responseBody.string());
             }
         }
@@ -187,7 +188,7 @@ class BitbucketServerClient implements BitbucketClient {
     @Override
     public void submitBuildStatus(String commitSha, BuildStatus buildStatus) throws IOException {
         Request req = new Request.Builder()
-                .post(RequestBody.create(objectMapper.writeValueAsString(buildStatus), APPLICATION_JSON_MEDIA_TYPE))
+                .post(RequestBody.create(jsonMapper.writeValueAsString(buildStatus), APPLICATION_JSON_MEDIA_TYPE))
                 .url(format("%s/rest/api/1.0/projects/%s/repos/%s/commits/%s/builds", config.getUrl(), config.getProject(), config.getRepository(), commitSha))
                 .build();
 
@@ -214,7 +215,7 @@ class BitbucketServerClient implements BitbucketClient {
             validate(response);
 
             try (ResponseBody responseBody = response.body()) {
-                return objectMapper.reader().forType(ServerProperties.class)
+                return jsonMapper.reader().forType(ServerProperties.class)
                         .readValue(responseBody.string());
             }
         }
@@ -223,7 +224,7 @@ class BitbucketServerClient implements BitbucketClient {
     void validate(Response response) throws IOException {
         if (!response.isSuccessful()) {
             try (ResponseBody responseBody = response.body()) {
-                ErrorResponse errors = objectMapper.reader().forType(ErrorResponse.class)
+                ErrorResponse errors = jsonMapper.reader().forType(ErrorResponse.class)
                         .readValue(responseBody.string());
                 throw new BitbucketException(response.code(), errors);
             }
