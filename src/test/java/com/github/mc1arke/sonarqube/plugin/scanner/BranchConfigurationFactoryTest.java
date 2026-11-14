@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Michael Clarke
+ * Copyright (C) 2022-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,7 +62,8 @@ class BranchConfigurationFactoryTest {
         ProjectBranches projectBranches = mock();
         when(projectBranches.isEmpty()).thenReturn(false);
         when(projectBranches.defaultBranchName()).thenReturn("default");
-        when(projectBranches.get(any())).thenReturn(mock());
+        BranchInfo branchInfo = mock();
+        when(projectBranches.get(any())).thenReturn(branchInfo);
 
         BranchConfigurationFactory underTest = new BranchConfigurationFactory();
         BranchConfiguration actual = underTest.createBranchConfiguration("branch", projectBranches);

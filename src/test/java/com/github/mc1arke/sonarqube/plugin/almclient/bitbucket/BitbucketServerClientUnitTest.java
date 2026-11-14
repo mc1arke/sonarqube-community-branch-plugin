@@ -25,6 +25,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Link;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Repository;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.Annotation;
@@ -347,8 +348,8 @@ class BitbucketServerClientUnitTest {
         DataValue data = underTest.createLinkDataValue("https://localhost:9000/any/project");
 
         // then
-        assertInstanceOf(DataValue.Link.class, data);
-        assertEquals("https://localhost:9000/any/project", ((DataValue.Link) data).getHref());
+        assertInstanceOf(Link.class, data);
+        assertEquals("https://localhost:9000/any/project", ((Link) data).getHref());
     }
 
     @Test

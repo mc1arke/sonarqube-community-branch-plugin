@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Michael Clarke
+ * Copyright (C) 2024-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
-public class Bold extends Node {
+public final class Bold extends Node {
 
     public Bold(Node... children) {
         super(children);
