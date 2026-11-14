@@ -108,8 +108,15 @@ jobs:
           name: webapp-build
           path: sonarqube-webapp.zip
 
+  integration-test:
+    # Covers changes pushed straight to master, which skip the pull request run,
+    # and gates every release on a passing integration test.
+    needs: prep
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || needs.prep.outputs.release == 'true')
+    uses: ./.github/workflows/integration-test.yml
+
   release:
-    needs: [prep, build-ui]
+    needs: [prep, build-ui, integration-test]
     if: github.event_name != 'pull_request' && needs.prep.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
