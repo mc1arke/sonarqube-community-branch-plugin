@@ -53,9 +53,10 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
-import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Percentage;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Text;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
@@ -122,11 +123,11 @@ class BitbucketPullRequestDecoratorTest {
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .isEqualTo(List.of(new ReportData("New Issues", new DataValue.Text("666 Issues")),
-                        new ReportData("Accepted Issues", new DataValue.Text("0 Issues")),
-                        new ReportData("Fixed Issues", new DataValue.Text("12 Issues")),
-                        new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ONE)),
-                        new ReportData("Duplication", new DataValue.Percentage(BigDecimal.TEN)),
+                .isEqualTo(List.of(new ReportData("New Issues", new Text("666 Issues")),
+                        new ReportData("Accepted Issues", new Text("0 Issues")),
+                        new ReportData("Fixed Issues", new Text("12 Issues")),
+                        new ReportData("Code coverage", new Percentage(BigDecimal.ONE)),
+                        new ReportData("Duplication", new Percentage(BigDecimal.TEN)),
                         new ReportData("Analysis details", null)));
     }
 
@@ -160,11 +161,11 @@ class BitbucketPullRequestDecoratorTest {
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .isEqualTo(List.of(new ReportData("New Issues", new DataValue.Text("666 Issues")),
-                        new ReportData("Accepted Issues", new DataValue.Text("0 Issues")),
-                        new ReportData("Fixed Issues", new DataValue.Text("1 Issue")),
-                        new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ZERO)),
-                        new ReportData("Duplication", new DataValue.Percentage(BigDecimal.ZERO)),
+                .isEqualTo(List.of(new ReportData("New Issues", new Text("666 Issues")),
+                        new ReportData("Accepted Issues", new Text("0 Issues")),
+                        new ReportData("Fixed Issues", new Text("1 Issue")),
+                        new ReportData("Code coverage", new Percentage(BigDecimal.ZERO)),
+                        new ReportData("Duplication", new Percentage(BigDecimal.ZERO)),
                         new ReportData("Analysis details", null)));
     }
 
