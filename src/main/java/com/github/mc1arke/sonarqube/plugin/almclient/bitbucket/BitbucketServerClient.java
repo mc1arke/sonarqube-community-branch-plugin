@@ -24,6 +24,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Link;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Repository;
@@ -124,7 +125,7 @@ class BitbucketServerClient implements BitbucketClient {
 
     @Override
     public DataValue createLinkDataValue(String dashboardUrl) {
-        return new DataValue.Link(LINK_TEXT, dashboardUrl);
+        return new Link(LINK_TEXT, dashboardUrl);
     }
 
     @Override

@@ -530,8 +530,9 @@ class AzureDevOpsPullRequestDecoratorTest {
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
 
+        CommentThread commentThread = mock();
         when(azureDevopsClient.retrievePullRequestIterationIdForCommit(azureProject, azureRepository, pullRequestId, commitSha)).thenReturn(iterationId);
-        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(commentThread);
 
         AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
@@ -562,8 +563,9 @@ class AzureDevOpsPullRequestDecoratorTest {
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         mockPullRequest(azureDevopsClient, azureProject, azureRepository, pullRequestId);
 
+        CommentThread commentThread = mock();
         when(azureDevopsClient.retrievePullRequestIterationIdForCommit(any(), any(), anyInt(), any())).thenThrow(new IOException("403 Forbidden"));
-        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(mock());
+        when(azureDevopsClient.createThread(any(), any(), anyInt(), any())).thenReturn(commentThread);
 
         AzureDevOpsPullRequestDecorator underTest = new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
 
