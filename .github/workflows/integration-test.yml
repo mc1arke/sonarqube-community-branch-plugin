@@ -1,9 +1,12 @@
 # Runs the release-candidate integration harness when changes can affect the
 # plugin binary, patched SonarQube webapp, Docker image, or target SQ version.
+# Pushes to master (including release commits) run it through build.yml, which
+# calls this workflow and only releases once it passes.
 name: integration-test
 
 on:
   workflow_dispatch:
+  workflow_call:
   pull_request:
     paths:
       - 'src/**'
