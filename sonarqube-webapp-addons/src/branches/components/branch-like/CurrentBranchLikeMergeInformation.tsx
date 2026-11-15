@@ -33,7 +33,7 @@ export function CurrentBranchLikeMergeInformation({
 
   return (
     <span
-      className="sw-max-w-[400px] sw-truncate"
+      className="sw:max-w-[400px] sw:truncate"
       title={intl.formatMessage(
         { id: 'branch_like_navigation.for_merge_into_x_from_y.title' },
         {

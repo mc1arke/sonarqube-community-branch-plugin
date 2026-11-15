@@ -52,9 +52,9 @@ export default function BranchPurgeSetting(props: Props) {
         onChange={handleOnChange}
         value={branch.excludedFromPurge}
       />
-      <Spinner isLoading={isPending} className="sw-ml-1" />
+      <Spinner isLoading={isPending} className="sw:ml-1" />
       {isTheMainBranch && (
-        <span className="sw-ml-1">
+        <span className="sw:ml-1">
           <Tooltip
             content={translate(
               'project_branch_pull_request.branch.auto_deletion.main_branch_tooltip',

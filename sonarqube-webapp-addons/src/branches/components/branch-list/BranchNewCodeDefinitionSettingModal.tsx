@@ -181,7 +181,7 @@ export default class BranchNewCodeDefinitionSettingModal extends React.PureCompo
     const formBody = (
       <form id={FORM_ID} onSubmit={this.handleSubmit}>
         <fieldset>
-          <legend className="sw-mb-2">
+          <legend className="sw:mb-2">
             <Label id="new_code_def_label">{translate('baseline.new_code_period_for_branch_x.question')}</Label>
           </legend>
           <NewCodeDefinitionSpecificGroup
@@ -190,7 +190,7 @@ export default class BranchNewCodeDefinitionSettingModal extends React.PureCompo
             branch={branch.name}
             branchList={branchList}
             branchesEnabled
-            className="sw-mt-2"
+            className="sw:mt-2"
             isValid={isValid}
             numberOfDaysInput={days}
             onNumberOfDaysChange={this.handleSelectDays}

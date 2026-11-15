@@ -60,9 +60,9 @@ export default function SonarLintAd({ status }: Readonly<Props>) {
   }
 
   return (
-    <StyledSummaryCard className="it__overview__sonarlint-promotion sw-flex sw-flex-col sw-mt-4">
-      <div className="sw-flex sw-justify-between">
-        <SubTitle as="h2" className="sw-typo-lg-semibold">
+    <StyledSummaryCard className="it__overview__sonarlint-promotion sw:flex sw:flex-col sw:mt-4">
+      <div className="sw:flex sw:justify-between">
+        <SubTitle as="h2" className="sw:typo-lg-semibold">
           {intl.formatMessage({ id: 'overview.sonarlint_ad.header' })}
         </SubTitle>
         <ButtonIcon
@@ -72,7 +72,7 @@ export default function SonarLintAd({ status }: Readonly<Props>) {
           variety={ButtonVariety.DefaultGhost}
         />
       </div>
-      <Text as="ul" className="sw-list-none">
+      <Text as="ul" className="sw:list-none">
         <TickLink>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_1' })}</TickLink>
         <TickLink>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_2' })}</TickLink>
         <TickLink>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_3' })}</TickLink>
@@ -81,10 +81,10 @@ export default function SonarLintAd({ status }: Readonly<Props>) {
           <strong>{intl.formatMessage({ id: 'overview.sonarlint_ad.details_5' })}</strong>
         </TickLink>
       </Text>
-      <SubnavigationFlowSeparator className="sw-mb-4" />
+      <SubnavigationFlowSeparator className="sw:mb-4" />
       <div>
         <StandoutLink
-          className="sw-text-left sw-typo-semibold"
+          className="sw:text-left sw:typo-semibold"
           to="https://www.sonarsource.com/products/sonarlint/features/connected-mode/?referrer=sonarqube"
         >
           {intl.formatMessage({ id: 'overview.sonarlint_ad.learn_more' })}
@@ -98,7 +98,7 @@ function TickLink({ className, children }: Readonly<{ children: ReactNode; class
   return (
     <li className={className}>
       <CheckIcon />
-      <Text className="sw-pl-1" isSubtle>{children}</Text>
+      <Text className="sw:pl-1" isSubtle>{children}</Text>
     </li>
   );
 }
