@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
@@ -39,6 +38,7 @@ import okhttp3.ResponseBody;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -59,7 +59,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 class BitbucketCloudClientUnitTest {
 
-    private final ObjectMapper mapper = mock();
+    private final JsonMapper mapper = mock();
     private final OkHttpClient client = mock();
     private final BitbucketCloudClient underTest = new BitbucketCloudClient(mapper, client, new BitbucketConfiguration("project", "repository"));
 

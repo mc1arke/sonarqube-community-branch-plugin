@@ -19,8 +19,6 @@
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.BitbucketServerConfiguration;
@@ -36,6 +34,9 @@ import org.sonar.api.server.ServerSide;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Optional;
 
@@ -60,7 +61,7 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
         String almRepo = Optional.ofNullable(StringUtils.trimToNull(projectAlmSettingDto.getAlmRepo()))
                 .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "ALM Repo must be set in configuration"));
 
-        ObjectMapper objectMapper = createObjectMapper();
+        JsonMapper jsonMapper = createJsonMapper();
         OkHttpClient.Builder clientBuilder = createBaseClientBuilder(httpClientBuilderFactory, HttpLoggingInterceptor.Level.BODY);
 
         if (almSettingDto.getAlm() == ALM.BITBUCKET_CLOUD) {
@@ -70,8 +71,8 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client ID must be set in configuration"));
             String clientSecret = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getDecryptedClientSecret(settings.getEncryption())))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "Client Secret must be set in configuration"));
-            String bearerToken = BitbucketCloudClient.negotiateBearerToken(clientId, clientSecret, objectMapper, createBaseClientBuilder(httpClientBuilderFactory, HttpLoggingInterceptor.Level.BASIC).build());
-            return new BitbucketCloudClient(objectMapper, createAuthorisingClient(clientBuilder, bearerToken), new BitbucketConfiguration(appId, almRepo));
+            String bearerToken = BitbucketCloudClient.negotiateBearerToken(clientId, clientSecret, jsonMapper, createBaseClientBuilder(httpClientBuilderFactory, HttpLoggingInterceptor.Level.BASIC).build());
+            return new BitbucketCloudClient(jsonMapper, createAuthorisingClient(clientBuilder, bearerToken), new BitbucketConfiguration(appId, almRepo));
         } else {
             String almSlug = Optional.ofNullable(StringUtils.trimToNull(projectAlmSettingDto.getAlmSlug()))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "ALM slug must be set in configuration"));
@@ -79,15 +80,18 @@ public class DefaultBitbucketClientFactory implements BitbucketClientFactory {
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.GLOBAL, "URL must be set in configuration"));
             String personalAccessToken = Optional.ofNullable(StringUtils.trimToNull(almSettingDto.getDecryptedPersonalAccessToken(settings.getEncryption())))
                     .orElseThrow(() -> new InvalidConfigurationException(InvalidConfigurationException.Scope.PROJECT, "Personal access token must be set in configuration"));
-            return new BitbucketServerClient(new BitbucketServerConfiguration(almRepo, almSlug, url), objectMapper, createAuthorisingClient(clientBuilder, personalAccessToken));
+            return new BitbucketServerClient(new BitbucketServerConfiguration(almRepo, almSlug, url), jsonMapper, createAuthorisingClient(clientBuilder, personalAccessToken));
         }
     }
 
-    private static ObjectMapper createObjectMapper() {
-        return new ObjectMapper()
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+    private static JsonMapper createJsonMapper() {
+        return JsonMapper.builder()
+                .enable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .disable(DateTimeFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
+                .changeDefaultPropertyInclusion(inclusion -> inclusion.withValueInclusion(JsonInclude.Include.NON_NULL))
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .findAndRegisterModules();
+                .findAndAddModules()
+                .build();
     }
 
     private static OkHttpClient.Builder createBaseClientBuilder(HttpClientBuilderFactory httpClientBuilderFactory, HttpLoggingInterceptor.Level level) {
