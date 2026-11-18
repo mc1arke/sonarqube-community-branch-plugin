@@ -25,12 +25,15 @@ import org.sonar.api.utils.System2;
 import org.sonar.scanner.scan.branch.BranchConfiguration;
 import org.sonar.scanner.scan.branch.ProjectBranches;
 
+import java.util.List;
 import java.util.Optional;
 
 public class GithubActionsAutoConfigurer implements BranchAutoConfigurer {
 
     private static final String PULL_REQUEST_REF_PREFIX = "refs/pull/";
-    private static final String PULL_REQUEST_REF_POSTFIX = "/merge";
+    // GitHub runs pull request workflows on the merge ref; Forgejo and Gitea Actions, which expose the same
+    // GITHUB_* variables, run them on the head ref.
+    private static final List<String> PULL_REQUEST_REF_POSTFIXES = List.of("/merge", "/head");
 
     private final BranchConfigurationFactory branchConfigurationFactory;
 
@@ -50,13 +53,24 @@ public class GithubActionsAutoConfigurer implements BranchAutoConfigurer {
         }
 
         String sourceBranch = system.envVariable("GITHUB_HEAD_REF");
-        if (ref.startsWith(PULL_REQUEST_REF_PREFIX) && ref.endsWith(PULL_REQUEST_REF_POSTFIX) && StringUtils.isNotEmpty(sourceBranch)) {
-            String key = ref.substring(PULL_REQUEST_REF_PREFIX.length(), ref.length() - PULL_REQUEST_REF_POSTFIX.length());
+        Optional<String> pullRequestKey = findPullRequestKey(ref);
+        if (pullRequestKey.isPresent() && StringUtils.isNotEmpty(sourceBranch)) {
             String targetBranch = system.envVariable("GITHUB_BASE_REF");
-            return Optional.of(branchConfigurationFactory.createPullRequestConfiguration(key, sourceBranch, targetBranch, projectBranches));
+            return Optional.of(branchConfigurationFactory.createPullRequestConfiguration(pullRequestKey.get(), sourceBranch, targetBranch, projectBranches));
         } else {
             String branch = system.envVariable("GITHUB_REF_NAME");
             return Optional.of(branchConfigurationFactory.createBranchConfiguration(branch, projectBranches));
         }
+    }
+
+    private static Optional<String> findPullRequestKey(String ref) {
+        if (!ref.startsWith(PULL_REQUEST_REF_PREFIX)) {
+            return Optional.empty();
+        }
+        return PULL_REQUEST_REF_POSTFIXES.stream()
+                .filter(postfix -> ref.endsWith(postfix) && ref.length() > PULL_REQUEST_REF_PREFIX.length() + postfix.length())
+                .map(postfix -> ref.substring(PULL_REQUEST_REF_PREFIX.length(), ref.length() - postfix.length()))
+                .filter(StringUtils::isNotEmpty)
+                .findFirst();
     }
 }
