@@ -351,4 +351,18 @@ class BitbucketCloudClientUnitTest {
         assertEquals("GET", captor.getValue().method());
         assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository", captor.getValue().url().toString());
     }
+
+    @Test
+    void shouldThrowIOExceptionWhenRepositoryResponseIsNotValidJson() throws IOException {
+        Call call = mock();
+        Response response = successfulResponse("<html>Not JSON</html>");
+        when(client.newCall(any())).thenReturn(call);
+        when(call.execute()).thenReturn(response);
+        BitbucketCloudClient underTest = new BitbucketCloudClient(JsonMapper.builder().build(), client, new BitbucketConfiguration("project", "repository"));
+
+        assertThatThrownBy(underTest::retrieveRepository)
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse Bitbucket Cloud response as Repository")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
 }

@@ -179,8 +179,7 @@ class BitbucketServerClient implements BitbucketClient {
             validate(response);
 
             try (ResponseBody responseBody = response.body()) {
-                return jsonMapper.reader().forType(Repository.class)
-                        .readValue(responseBody.string());
+                return readResponse(responseBody, Repository.class);
             }
         }
     }
@@ -215,19 +214,28 @@ class BitbucketServerClient implements BitbucketClient {
             validate(response);
 
             try (ResponseBody responseBody = response.body()) {
-                return jsonMapper.reader().forType(ServerProperties.class)
-                        .readValue(responseBody.string());
+                return readResponse(responseBody, ServerProperties.class);
             }
         }
     }
 
     void validate(Response response) throws IOException {
         if (!response.isSuccessful()) {
+            ErrorResponse errors;
             try (ResponseBody responseBody = response.body()) {
-                ErrorResponse errors = jsonMapper.reader().forType(ErrorResponse.class)
-                        .readValue(responseBody.string());
-                throw new BitbucketException(response.code(), errors);
+                errors = readResponse(responseBody, ErrorResponse.class);
+            } catch (IOException ex) {
+                throw new IOException(format("Bitbucket Server returned HTTP %s with an unreadable error response", response.code()), ex);
             }
+            throw new BitbucketException(response.code(), errors);
+        }
+    }
+
+    private <T> T readResponse(ResponseBody responseBody, Class<T> type) throws IOException {
+        try {
+            return jsonMapper.reader().forType(type).readValue(responseBody.string());
+        } catch (JacksonException ex) {
+            throw new IOException(format("Could not parse Bitbucket Server response as %s", type.getSimpleName()), ex);
         }
     }
 }
