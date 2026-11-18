@@ -33,6 +33,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
@@ -199,5 +200,22 @@ class AzureDevopsRestClientTest {
         assertThat(request.getUri()).isEqualTo(URI.create("http://test.url/projectId/_apis/git/repositories/repository%20Name/pullRequests/123?api-version=4.1"));
         assertThat(request.getEntity()).isNull();
         assertThat(result).isSameAs(pullRequest);
+    }
+
+    @Test
+    void shouldThrowIOExceptionNamingRequestWhenResponseIsNotValidJson() throws IOException {
+        AzureDevopsRestClient underTest = new AzureDevopsRestClient("http://url.test/api", "token", JsonMapper.builder().build(), () -> closeableHttpClient);
+
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
+        when(statusLine.getStatusCode()).thenReturn(200);
+        when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
+        when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity("<html>Service unavailable</html>", StandardCharsets.UTF_8));
+        when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
+
+        assertThatThrownBy(() -> underTest.retrievePullRequest("project", "repository", 123))
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse Azure DevOps response for GET http://url.test/api/project/_apis/git/repositories/repository/pullRequests/123?api-version=4.1")
+                .hasCauseInstanceOf(JacksonException.class);
     }
 }

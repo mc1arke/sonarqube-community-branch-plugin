@@ -193,6 +193,8 @@ class BitbucketCloudClient implements BitbucketClient {
 
             return jsonMapper.reader().forType(Repository.class)
                     .readValue(response.body().string());
+        } catch (JacksonException ex) {
+            throw new IOException("Could not parse Bitbucket Cloud response as Repository", ex);
         }
     }
 
