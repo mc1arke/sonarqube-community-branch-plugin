@@ -25,20 +25,26 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.ce.task.projectanalysis.scm.ScmInfoRepository;
 import org.sonar.db.alm.setting.ALM;
 import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
+import org.sonar.db.protobuf.DbCommons;
+import org.sonar.db.protobuf.DbIssues;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
@@ -54,9 +60,12 @@ import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.PullReque
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.enums.CommentType;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
+import tools.jackson.core.JacksonException;
 
 class AzureDevOpsPullRequestDecoratorTest {
 
@@ -670,5 +679,147 @@ class AzureDevOpsPullRequestDecoratorTest {
         GitStatusContext context = statusCaptor.getValue().getContext();
         assertThat(context.getGenre()).isEqualTo("SonarQube");
         assertThat(context.getName()).isEqualTo("quality gate - monorepo-project-fe");
+    }
+
+    static Stream<Exception> clientFailures() {
+        return Stream.of(new IOException("io failure"), new JacksonException("json failure") {});
+    }
+
+    private AzureDevOpsPullRequestDecorator decorator() {
+        return new AzureDevOpsPullRequestDecorator(scmInfoRepository, azureDevopsClientFactory, reportGenerator, markdownFormatterFactory);
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldWrapFailureRetrievingPullRequest(Exception failure) throws IOException {
+        AzureDevopsClient client = mock();
+        when(analysisDetails.getPullRequestId()).thenReturn("123");
+        when(projectAlmSettingDto.getAlmSlug()).thenReturn("project");
+        when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
+        when(client.retrievePullRequest("project", "repo", 123)).thenThrow(failure);
+
+        AzureDevOpsPullRequestDecorator underTest = decorator();
+        assertThatThrownBy(() -> underTest.getPullRequest(client, almSettingDto, projectAlmSettingDto, analysisDetails))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not retrieve Pull Request details")
+                .hasCause(failure);
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldWrapFailureRetrievingPullRequestCommits(Exception failure) throws IOException {
+        AzureDevopsClient client = mock();
+        PullRequest pullRequest = mockPullRequest(client, "project", "repo", 123);
+        when(client.getPullRequestCommits("project", "repo", 123)).thenThrow(failure);
+
+        AzureDevOpsPullRequestDecorator underTest = decorator();
+        assertThatThrownBy(() -> underTest.getCommitIdsForPullRequest(client, pullRequest))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not retrieve commit details for Pull Request")
+                .hasCause(failure);
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldWrapFailureSubmittingCommitNote(Exception failure) throws IOException {
+        AzureDevopsClient client = mock();
+        PullRequest pullRequest = mockPullRequest(client, "project", "repo", 123);
+        when(client.createThread(any(), any(), anyInt(), any())).thenThrow(failure);
+
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
+        when(lightIssue.getLocations()).thenReturn(DbIssues.Locations.newBuilder()
+                .setTextRange(DbCommons.TextRange.newBuilder().setStartLine(1).setStartOffset(2).setEndLine(3).setEndOffset(4))
+                .build());
+        PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
+        when(componentIssue.getIssue()).thenReturn(lightIssue);
+        AnalysisIssueSummary analysisIssueSummary = mock();
+        when(analysisIssueSummary.format(any())).thenReturn("issue summary");
+
+        AzureDevOpsPullRequestDecorator underTest = decorator();
+        assertThatThrownBy(() -> underTest.submitCommitNoteForIssue(client, pullRequest, componentIssue, "src/File.java", analysisDetails, analysisIssueSummary))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not submit commit comment to Azure Devops")
+                .hasCause(failure);
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldWrapFailureSubmittingSummaryNote(Exception failure) throws IOException {
+        AzureDevopsClient client = mock();
+        PullRequest pullRequest = mockPullRequest(client, "project", "repo", 123);
+        when(client.createThread(any(), any(), anyInt(), any())).thenThrow(failure);
+        AnalysisSummary analysisSummary = mock();
+        when(analysisSummary.format(any())).thenReturn("summary");
+
+        AzureDevOpsPullRequestDecorator underTest = decorator();
+        assertThatThrownBy(() -> underTest.submitSummaryNote(client, pullRequest, analysisDetails, analysisSummary))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not submit summary comment to Azure Devops")
+                .hasCause(failure);
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldWrapFailureRetrievingDiscussions(Exception failure) throws IOException {
+        AzureDevopsClient client = mock();
+        PullRequest pullRequest = mockPullRequest(client, "project", "repo", 123);
+        when(client.retrieveThreads("project", "repo", 123)).thenThrow(failure);
+
+        AzureDevOpsPullRequestDecorator underTest = decorator();
+        assertThatThrownBy(() -> underTest.getDiscussions(client, pullRequest))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not retrieve discussions from Azure Devops")
+                .hasCause(failure);
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldWrapFailureAddingNoteToDiscussion(Exception failure) throws IOException {
+        AzureDevopsClient client = mock();
+        PullRequest pullRequest = mockPullRequest(client, "project", "repo", 123);
+        CommentThread discussion = mock();
+        when(discussion.getId()).thenReturn(7);
+        doThrow(failure).when(client).addCommentToThread(eq("project"), eq("repo"), eq(123), eq(7), any());
+
+        AzureDevOpsPullRequestDecorator underTest = decorator();
+        assertThatThrownBy(() -> underTest.addNoteToDiscussion(client, discussion, pullRequest, "note"))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not add note to Pull Request comment thread on Azure Devops")
+                .hasCause(failure);
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldWrapFailureResolvingDiscussion(Exception failure) throws IOException {
+        AzureDevopsClient client = mock();
+        PullRequest pullRequest = mockPullRequest(client, "project", "repo", 123);
+        CommentThread discussion = mock();
+        when(discussion.getId()).thenReturn(7);
+        doThrow(failure).when(client).resolvePullRequestThread("project", "repo", 123, 7);
+
+        AzureDevOpsPullRequestDecorator underTest = decorator();
+        assertThatThrownBy(() -> underTest.resolveDiscussion(client, discussion, pullRequest))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not resolve Pull Request comment thread on Azure Devops")
+                .hasCause(failure);
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldWrapFailureDeletingDiscussion(Exception failure) throws IOException {
+        AzureDevopsClient client = mock();
+        PullRequest pullRequest = mockPullRequest(client, "project", "repo", 123);
+        CommentThread discussion = mock();
+        when(discussion.getId()).thenReturn(7);
+        Comment note = mock();
+        when(note.getId()).thenReturn(9);
+        doThrow(failure).when(client).deletePullRequestThreadComment("project", "repo", 123, 7, 9);
+
+        AzureDevOpsPullRequestDecorator underTest = decorator();
+        List<Comment> notes = List.of(note);
+        assertThatThrownBy(() -> underTest.deleteDiscussion(client, discussion, pullRequest, notes))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not delete Pull Request comment thread on Azure Devops")
+                .hasCause(failure);
     }
 }

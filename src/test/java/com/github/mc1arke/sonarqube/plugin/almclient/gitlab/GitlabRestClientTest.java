@@ -24,12 +24,15 @@ import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
 import org.mockito.ArgumentCaptor;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -97,4 +100,33 @@ class GitlabRestClientTest {
         assertThat(request.getEntity().getContent()).hasContent("body=Merge+request+note");
     }
 
+    private GitlabRestClient clientReturning(String body) throws IOException {
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
+        when(statusLine.getStatusCode()).thenReturn(200);
+        when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
+        when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity(body, StandardCharsets.UTF_8));
+        when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
+        return new GitlabRestClient("http://api.url", "token", linkHeaderReader, JsonMapper.builder().build(), () -> closeableHttpClient);
+    }
+
+    @Test
+    void shouldThrowIOExceptionWhenEntityResponseIsNotValidJson() throws IOException {
+        GitlabRestClient underTest = clientReturning("this is not json");
+
+        assertThatThrownBy(() -> underTest.getProject("group/project"))
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse JSON response")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
+
+    @Test
+    void shouldThrowIOExceptionWhenEntityListResponseIsNotValidJson() throws IOException {
+        GitlabRestClient underTest = clientReturning("this is not json");
+
+        assertThatThrownBy(() -> underTest.getMergeRequestCommits(123, 321))
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse JSON response")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
 }
