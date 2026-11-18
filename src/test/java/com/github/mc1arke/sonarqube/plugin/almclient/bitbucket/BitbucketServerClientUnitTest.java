@@ -33,6 +33,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.Erro
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.ServerProperties;
 import com.google.common.collect.Sets;
 import okhttp3.Call;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.ObjectReader;
 import tools.jackson.databind.json.JsonMapper;
@@ -451,5 +453,42 @@ class BitbucketServerClientUnitTest {
         assertEquals("https://my-server.org/rest/api/1.0/projects/project/repos/repository", request.url().toString());
         assertEquals("repo-slug", result.getSlug());
         assertEquals("no-check", request.header("x-atlassian-token"));
+    }
+
+    private void respondWith(boolean successful, int code, String body) throws IOException {
+        Call call = mock();
+        Response response = mock();
+        when(client.newCall(any())).thenReturn(call);
+        when(call.execute()).thenReturn(response);
+        when(response.isSuccessful()).thenReturn(successful);
+        when(response.code()).thenReturn(code);
+        when(response.body()).thenReturn(ResponseBody.create(body, MediaType.parse("text/html")));
+    }
+
+    @Test
+    void shouldThrowIOExceptionWhenRepositoryResponseIsNotValidJson() throws IOException {
+        respondWith(true, 200, "<html>Not JSON</html>");
+
+        assertThatThrownBy(underTest::retrieveRepository)
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse Bitbucket Server response as Repository")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
+
+    @Test
+    void shouldKeepStatusCodeWhenErrorResponseIsNotValidJson() throws IOException {
+        respondWith(false, 502, "<html>Bad Gateway</html>");
+
+        assertThatThrownBy(underTest::retrieveRepository)
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Bitbucket Server returned HTTP 502 with an unreadable error response")
+                .hasRootCauseInstanceOf(JacksonException.class);
+    }
+
+    @Test
+    void shouldNotSupportCodeInsightsWhenServerPropertiesAreNotValidJson() throws IOException {
+        respondWith(true, 200, "<html>Not JSON</html>");
+
+        assertFalse(underTest.supportsCodeInsights());
     }
 }
