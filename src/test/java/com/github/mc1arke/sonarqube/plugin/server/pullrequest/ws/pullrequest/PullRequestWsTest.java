@@ -32,7 +32,7 @@ class PullRequestWsTest {
 
     @Test
     void shouldCallDefineOnEachAction() {
-        PullRequestWsAction[] pullRequestWsActions = new PullRequestWsAction[]{mock(), mock(), mock()};
+        PullRequestWsAction[] pullRequestWsActions = {mock(), mock(), mock()};
 
         WebService.Context context = mock();
         WebService.NewController controller = mock();

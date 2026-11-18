@@ -48,9 +48,10 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationU
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
-import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Percentage;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Text;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PullRequestBuildStatusDecorator;
@@ -119,11 +120,11 @@ public class BitbucketPullRequestDecorator implements PullRequestBuildStatusDeco
 
     private static List<ReportData> toReport(BitbucketClient client, AnalysisSummary analysisSummary) {
         List<ReportData> reportData = new ArrayList<>();
-        reportData.add(new ReportData("New Issues", new DataValue.Text(issueLabel(analysisSummary.getNewIssues().getValue()))));
-        reportData.add(new ReportData("Accepted Issues", new DataValue.Text(issueLabel(analysisSummary.getAcceptedIssues().getValue()))));
-        reportData.add(new ReportData("Fixed Issues", new DataValue.Text(issueLabel(analysisSummary.getFixedIssues().getValue()))));
-        reportData.add(new ReportData("Code coverage", new DataValue.Percentage(Optional.ofNullable(analysisSummary.getNewCoverage()).orElse(BigDecimal.ZERO))));
-        reportData.add(new ReportData("Duplication", new DataValue.Percentage(Optional.ofNullable(analysisSummary.getNewDuplications()).orElse(BigDecimal.ZERO))));
+        reportData.add(new ReportData("New Issues", new Text(issueLabel(analysisSummary.getNewIssues().getValue()))));
+        reportData.add(new ReportData("Accepted Issues", new Text(issueLabel(analysisSummary.getAcceptedIssues().getValue()))));
+        reportData.add(new ReportData("Fixed Issues", new Text(issueLabel(analysisSummary.getFixedIssues().getValue()))));
+        reportData.add(new ReportData("Code coverage", new Percentage(Optional.ofNullable(analysisSummary.getNewCoverage()).orElse(BigDecimal.ZERO))));
+        reportData.add(new ReportData("Duplication", new Percentage(Optional.ofNullable(analysisSummary.getNewDuplications()).orElse(BigDecimal.ZERO))));
         reportData.add(new ReportData("Analysis details", client.createLinkDataValue(analysisSummary.getDashboardUrl())));
 
         return reportData;

@@ -30,7 +30,7 @@ class SupportWsTest {
 
     @Test
     void shouldCallDefineOnEachAction() {
-        SupportWsAction[] supportWsActions = new SupportWsAction[]{mock(), mock(), mock()};
+        SupportWsAction[] supportWsActions = {mock(), mock(), mock()};
 
         WebService.Context context = mock();
         WebService.NewController controller = mock();
