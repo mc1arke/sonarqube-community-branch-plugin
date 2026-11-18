@@ -31,6 +31,7 @@ public class GithubActionsAutoConfigurer implements BranchAutoConfigurer {
 
     private static final String PULL_REQUEST_REF_PREFIX = "refs/pull/";
     private static final String PULL_REQUEST_REF_POSTFIX = "/merge";
+    private static final String PULL_REQUEST_HEAD_REF_POSTFIX = "/head";
 
     private final BranchConfigurationFactory branchConfigurationFactory;
 
@@ -50,8 +51,9 @@ public class GithubActionsAutoConfigurer implements BranchAutoConfigurer {
         }
 
         String sourceBranch = system.envVariable("GITHUB_HEAD_REF");
-        if (ref.startsWith(PULL_REQUEST_REF_PREFIX) && ref.endsWith(PULL_REQUEST_REF_POSTFIX) && StringUtils.isNotEmpty(sourceBranch)) {
-            String key = ref.substring(PULL_REQUEST_REF_PREFIX.length(), ref.length() - PULL_REQUEST_REF_POSTFIX.length());
+        String postfix = ref.endsWith(PULL_REQUEST_REF_POSTFIX) ? PULL_REQUEST_REF_POSTFIX : PULL_REQUEST_HEAD_REF_POSTFIX;
+        if (ref.startsWith(PULL_REQUEST_REF_PREFIX) && ref.endsWith(postfix) && StringUtils.isNotEmpty(sourceBranch)) {
+            String key = ref.substring(PULL_REQUEST_REF_PREFIX.length(), ref.length() - postfix.length());
             String targetBranch = system.envVariable("GITHUB_BASE_REF");
             return Optional.of(branchConfigurationFactory.createPullRequestConfiguration(key, sourceBranch, targetBranch, projectBranches));
         } else {
