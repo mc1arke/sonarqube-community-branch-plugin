@@ -31,6 +31,10 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.Crea
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.ErrorResponse;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.ServerProperties;
 import com.google.common.collect.Sets;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import okhttp3.Call;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -43,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.ObjectReader;
@@ -55,6 +60,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -475,13 +481,24 @@ class BitbucketServerClientUnitTest {
     }
 
     @Test
-    void shouldKeepStatusCodeWhenErrorResponseIsNotValidJson() throws IOException {
+    void shouldLogStatusCodeAndThrowIOExceptionWhenErrorResponseIsNotValidJson() throws IOException {
         respondWith(false, 502, "<html>Bad Gateway</html>");
+        Logger logger = (Logger) LoggerFactory.getLogger(BitbucketServerClient.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            assertThatThrownBy(underTest::retrieveRepository)
+                    .isExactlyInstanceOf(IOException.class)
+                    .hasMessage("Could not parse Bitbucket Server response as ErrorResponse")
+                    .hasCauseInstanceOf(JacksonException.class);
 
-        assertThatThrownBy(underTest::retrieveRepository)
-                .isExactlyInstanceOf(IOException.class)
-                .hasMessage("Bitbucket Server returned HTTP 502 with an unreadable error response")
-                .hasRootCauseInstanceOf(JacksonException.class);
+            assertThat(appender.list)
+                    .extracting(ILoggingEvent::getLevel, ILoggingEvent::getFormattedMessage)
+                    .containsExactly(tuple(Level.WARN, "Bitbucket Server returned HTTP 502"));
+        } finally {
+            logger.detachAppender(appender);
+        }
     }
 
     @Test
