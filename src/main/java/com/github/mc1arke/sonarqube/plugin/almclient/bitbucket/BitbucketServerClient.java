@@ -222,13 +222,10 @@ class BitbucketServerClient implements BitbucketClient {
 
     void validate(Response response) throws IOException {
         if (!response.isSuccessful()) {
-            ErrorResponse errors;
+            LOGGER.warn("Bitbucket Server returned HTTP {}", response.code());
             try (ResponseBody responseBody = response.body()) {
-                errors = readResponse(responseBody, ErrorResponse.class);
-            } catch (IOException ex) {
-                throw new IOException(format("Bitbucket Server returned HTTP %s with an unreadable error response", response.code()), ex);
+                throw new BitbucketException(response.code(), readResponse(responseBody, ErrorResponse.class));
             }
-            throw new BitbucketException(response.code(), errors);
         }
     }
 
