@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2024 Michael Clarke
+ * Copyright (C) 2022-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,6 +46,7 @@ public final class AnalysisSummary {
     private final List<String> failedQualityGateConditions;
     private final String dashboardUrl;
 
+    private final BigDecimal totalCoverage;
     private final BigDecimal newCoverage;
     private final UrlIconMetric<BigDecimal> coverage;
 
@@ -65,6 +66,7 @@ public final class AnalysisSummary {
         this.failedQualityGateConditions = builder.failedQualityGateConditions;
         this.dashboardUrl = builder.dashboardUrl;
         this.newCoverage = builder.newCoverage;
+        this.totalCoverage = builder.totalCoverage;
         this.coverage = builder.coverage;
         this.newDuplications = builder.newDuplications;
         this.duplications = builder.duplications;
@@ -101,6 +103,10 @@ public final class AnalysisSummary {
 
     public BigDecimal getNewCoverage() {
         return newCoverage;
+    }
+
+    public BigDecimal getTotalCoverage() {
+        return totalCoverage;
     }
 
     public UrlIconMetric<BigDecimal> getCoverage() {
@@ -208,6 +214,7 @@ public final class AnalysisSummary {
         private String dashboardUrl;
 
         private BigDecimal newCoverage;
+        private BigDecimal totalCoverage;
         private UrlIconMetric<BigDecimal> coverage;
 
         private BigDecimal newDuplications;
@@ -254,6 +261,11 @@ public final class AnalysisSummary {
 
         public Builder withNewCoverage(BigDecimal newCoverage) {
             this.newCoverage = newCoverage;
+            return this;
+        }
+
+        public Builder withTotalCoverage(BigDecimal totalCoverage) {
+            this.totalCoverage = totalCoverage;
             return this;
         }
 

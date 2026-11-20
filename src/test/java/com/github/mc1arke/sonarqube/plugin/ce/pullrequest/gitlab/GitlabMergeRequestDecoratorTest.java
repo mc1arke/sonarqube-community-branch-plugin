@@ -440,7 +440,7 @@ class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-        when(lightIssue.getLine()).thenReturn(999);
+        when(lightIssue.getLine()).thenReturn(Optional.of(999));
 
         Component component = mock();
 
@@ -482,7 +482,7 @@ class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-        when(lightIssue.getLine()).thenReturn(999);
+        when(lightIssue.getLine()).thenReturn(Optional.of(999));
 
         Component component = mock();
 
@@ -510,7 +510,7 @@ class GitlabMergeRequestDecoratorTest {
         ArgumentCaptor<MergeRequestNote> mergeRequestNoteArgumentCaptor = ArgumentCaptor.captor();
         verify(gitlabClient, times(2)).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), mergeRequestNoteArgumentCaptor.capture());
 
-        assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(0))
+        assertThat(mergeRequestNoteArgumentCaptor.getAllValues().getFirst())
                 .usingRecursiveComparison()
                 .isEqualTo(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
         assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(1)).isNotInstanceOf(CommitNote.class);
@@ -521,7 +521,7 @@ class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-        when(lightIssue.getLine()).thenReturn(999);
+        when(lightIssue.getLine()).thenReturn(Optional.of(999));
 
         Component component = mock();
 
@@ -566,7 +566,7 @@ class GitlabMergeRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
-        when(lightIssue.getLine()).thenReturn(null);
+        when(lightIssue.getLine()).thenReturn(Optional.empty());
 
         Component component = mock();
 
@@ -626,7 +626,7 @@ class GitlabMergeRequestDecoratorTest {
 
         when(analysisSummary.format(any())).thenReturn("Different Summary comment");
         when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube2.dummy/dashboard?id=projectKey&pullRequest=123");
-        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.TEN);
+        when(analysisSummary.getTotalCoverage()).thenReturn(BigDecimal.TEN);
 
         Discussion discussion = mock();
         when(discussion.getId()).thenReturn("dicussion id 2");
@@ -657,7 +657,7 @@ class GitlabMergeRequestDecoratorTest {
 
         when(analysisSummary.format(any())).thenReturn("Different Summary comment");
         when(analysisSummary.getDashboardUrl()).thenReturn("https://sonarqube2.dummy/dashboard?id=projectKey&pullRequest=123");
-        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.TEN);
+        when(analysisSummary.getTotalCoverage()).thenReturn(BigDecimal.TEN);
 
         Discussion discussion = mock();
         when(discussion.getId()).thenReturn("dicussion id 2");

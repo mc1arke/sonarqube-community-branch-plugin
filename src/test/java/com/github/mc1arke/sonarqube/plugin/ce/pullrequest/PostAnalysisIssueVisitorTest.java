@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 Michael Clarke
+ * Copyright (C) 2019-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -94,14 +94,14 @@ class PostAnalysisIssueVisitorTest {
         // map the DefaultIssue into a LightIssue (using PostAnalysisIssueVisitor to workaround private constructor)
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
         visitor.onIssue(component, defaultIssue);
-        PostAnalysisIssueVisitor.LightIssue lightIssue = visitor.getIssues().get(0).getIssue();
+        PostAnalysisIssueVisitor.LightIssue lightIssue = visitor.getIssues().getFirst().getIssue();
 
         // check values equality, twice (see below)
         for (int i = 0; i < 2; i++) {
             assertThat(lightIssue.key()).isEqualTo(EXAMPLE_ISSUE_KEY);
-            assertThat(lightIssue.getLine()).isEqualTo(EXAMPLE_ISSUE_LINE);
-            assertThat(lightIssue.getMessage()).isEqualTo(EXAMPLE_ISSUE_MESSAGE);
-            assertThat(lightIssue.resolution()).isEqualTo(EXAMPLE_ISSUE_RESOLUTION);
+            assertThat(lightIssue.getLine()).hasValue(EXAMPLE_ISSUE_LINE);
+            assertThat(lightIssue.getMessage()).hasValue(EXAMPLE_ISSUE_MESSAGE);
+            assertThat(lightIssue.resolution()).hasValue(EXAMPLE_ISSUE_RESOLUTION);
             assertThat(lightIssue.impacts()).isEqualTo(EXAMPLE_IMPACTS);
             assertThat(lightIssue.issueStatus()).isEqualTo(EXAMPLE_ISSUE_STATUS);
             assertThat(lightIssue.getRuleKey()).isEqualTo(EXAMPLE_ISSUE_RULEKEY);
@@ -129,7 +129,7 @@ class PostAnalysisIssueVisitorTest {
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
         visitor.onIssue(component, defaultIssue);
         visitor.onIssue(component, defaultIssue);
-        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().get(0).getIssue();
+        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().getFirst().getIssue();
         PostAnalysisIssueVisitor.LightIssue lightIssue2 = visitor.getIssues().get(1).getIssue();
 
         // assert equality
@@ -149,7 +149,7 @@ class PostAnalysisIssueVisitorTest {
         // map the DefaultIssue into a first LightIssue
         PostAnalysisIssueVisitor visitor = new PostAnalysisIssueVisitor();
         visitor.onIssue(component, defaultIssue);
-        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().get(0).getIssue();
+        PostAnalysisIssueVisitor.LightIssue lightIssue1 = visitor.getIssues().getFirst().getIssue();
 
         // map a slightly different DefaultIssue into another LightIssue
         doReturn("another message").when(defaultIssue).getMessage();

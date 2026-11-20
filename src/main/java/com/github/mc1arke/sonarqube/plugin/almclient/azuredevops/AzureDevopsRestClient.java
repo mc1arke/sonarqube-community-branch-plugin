@@ -40,6 +40,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
@@ -162,7 +163,11 @@ public class AzureDevopsRestClient implements AzureDevopsClient {
             if (null == type) {
                 return null;
             }
-            return jsonMapper.readValue(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8), type);
+            try {
+                return jsonMapper.readValue(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8), type);
+            } catch (JacksonException ex) {
+                throw new IOException(String.format("Could not parse Azure DevOps response for %s %s", method.toUpperCase(Locale.ENGLISH), url), ex);
+            }
         }
     }
 

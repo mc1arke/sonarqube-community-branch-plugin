@@ -40,12 +40,12 @@ repositories {
     }
 }
 
-def sonarqubeVersion = '26.7.0.124771'
+def sonarqubeVersion = '26.11.0.134175'
 def sonarqubeLibDir = "${projectDir}/sonarqube-lib"
 def sonarLibraries = "${sonarqubeLibDir}/sonarqube-${sonarqubeVersion}/lib"
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-java.targetCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
+java.targetCompatibility = JavaVersion.VERSION_21
 configurations {
     zip
     githubApiUnbridged
@@ -74,8 +74,7 @@ dependencies {
     testImplementation(fileTree(dir: "${sonarLibraries}/scanner", include: '*.jar'))
 
     zip("sonarqube:sonarqube:${sonarqubeVersion}@zip")
-    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.4')
-    compileOnly('com.google.code.findbugs:jsr305:3.0.2')
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.23.0')
     implementation('org.javassist:javassist:3.33.0-GA')
     implementation('com.squareup.okhttp3:logging-interceptor:5.5.1')
 }

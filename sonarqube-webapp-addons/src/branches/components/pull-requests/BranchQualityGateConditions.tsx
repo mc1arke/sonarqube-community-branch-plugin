@@ -20,7 +20,8 @@
 
 import styled from '@emotion/styled';
 import { useIntl } from 'react-intl';
-import { Badge, ButtonSecondary, themeBorder, themeColor } from '~design-system';
+import { cssVar } from '@sonarsource/echoes-react';
+import { Badge, ButtonSecondary } from '~design-system';
 import { MetricType } from '~shared/types/metrics';
 import {
   DEFAULT_ISSUES_QUERY,
@@ -60,7 +61,7 @@ export default function BranchQualityGateConditions(props: Readonly<Props>) {
   );
 
   return (
-    <ul className="sw-flex sw-items-center sw-gap-2 sw-flex-wrap sw-mb-4">
+    <ul className="sw:flex sw:items-center sw:gap-2 sw:flex-wrap sw:mb-4">
       {filteredFailedConditions.map((condition) => (
         <li key={condition.metric}>
           <FailedQGCondition branchLike={branchLike} component={component} condition={condition} />
@@ -79,8 +80,8 @@ function FailedQGCondition(
   const url = getQGConditionUrl(component.key, condition, branchLike);
 
   return (
-    <StyledConditionButton className="sw-px-3 sw-py-2 sw-rounded-1 sw-typo-default" to={url}>
-      <Badge className="sw-mr-2 sw-px-1" variant="deleted">
+    <StyledConditionButton className="sw:px-3 sw:py-2 sw:rounded-1 sw:typo-default" to={url}>
+      <Badge className="sw:mr-2 sw:px-1" variant="deleted">
         {translate('overview.measures.failed_badge')}
       </Badge>
       <SpanDanger>
@@ -126,7 +127,7 @@ function FailedRatingMetric({ condition }: Readonly<FailedMetricProps>) {
           rating: `${intl.formatMessage({
             id: `metric_domain.${domain}`,
           })} ${intl.formatMessage({ id: 'metric.type.RATING' }).toLowerCase()}`,
-          value: <strong className="sw-typo-semibold">{formatMeasure(actual, type)}</strong>,
+          value: <strong className="sw:typo-semibold">{formatMeasure(actual, type)}</strong>,
           threshold: formatMeasure(error, type),
         },
       )}
@@ -149,7 +150,7 @@ function FailedGeneralMetric({ condition }: Readonly<FailedMetricProps>) {
         {
           metric: (
             <>
-              <strong className="sw-typo-semibold sw-mr-1">
+              <strong className="sw:typo-semibold sw:mr-1">
                 {formatMeasure(
                   condition.actual,
                   getShortType(metric.type),
@@ -213,9 +214,9 @@ function getQGConditionUrl(
 }
 
 const StyledConditionButton = styled(ButtonSecondary)`
-  --border: ${themeBorder('default')};
+  --border: ${cssVar('border-width-default')} solid ${cssVar('color-border-weak')};
 `;
 
 const SpanDanger = styled.span`
-  color: ${themeColor('danger')};
+  color: ${cssVar('color-text-danger')};
 `;

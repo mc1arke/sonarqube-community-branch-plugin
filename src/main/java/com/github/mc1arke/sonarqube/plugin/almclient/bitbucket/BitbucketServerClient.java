@@ -23,6 +23,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Link;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Repository;
@@ -125,7 +126,7 @@ class BitbucketServerClient implements BitbucketClient {
 
     @Override
     public DataValue createLinkDataValue(String dashboardUrl) {
-        return new DataValue.Link(LINK_TEXT, dashboardUrl);
+        return new Link(LINK_TEXT, dashboardUrl);
     }
 
     @Override
@@ -179,8 +180,7 @@ class BitbucketServerClient implements BitbucketClient {
             validate(response);
 
             try (ResponseBody responseBody = response.body()) {
-                return jsonMapper.reader().forType(Repository.class)
-                        .readValue(responseBody.string());
+                return readResponse(responseBody, Repository.class);
             }
         }
     }
@@ -215,19 +215,25 @@ class BitbucketServerClient implements BitbucketClient {
             validate(response);
 
             try (ResponseBody responseBody = response.body()) {
-                return jsonMapper.reader().forType(ServerProperties.class)
-                        .readValue(responseBody.string());
+                return readResponse(responseBody, ServerProperties.class);
             }
         }
     }
 
     void validate(Response response) throws IOException {
         if (!response.isSuccessful()) {
+            LOGGER.warn("Bitbucket Server returned HTTP {}", response.code());
             try (ResponseBody responseBody = response.body()) {
-                ErrorResponse errors = jsonMapper.reader().forType(ErrorResponse.class)
-                        .readValue(responseBody.string());
-                throw new BitbucketException(response.code(), errors);
+                throw new BitbucketException(response.code(), readResponse(responseBody, ErrorResponse.class));
             }
+        }
+    }
+
+    private <T> T readResponse(ResponseBody responseBody, Class<T> type) throws IOException {
+        try {
+            return jsonMapper.reader().forType(type).readValue(responseBody.string());
+        } catch (JacksonException ex) {
+            throw new IOException(format("Could not parse Bitbucket Server response as %s", type.getSimpleName()), ex);
         }
     }
 }

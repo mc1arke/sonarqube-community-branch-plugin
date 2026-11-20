@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2026 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,11 +35,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.IssueStatus;
@@ -53,14 +57,17 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
-import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Percentage;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Text;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
+import tools.jackson.core.JacksonException;
 
 class BitbucketPullRequestDecoratorTest {
 
@@ -122,11 +129,11 @@ class BitbucketPullRequestDecoratorTest {
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .isEqualTo(List.of(new ReportData("New Issues", new DataValue.Text("666 Issues")),
-                        new ReportData("Accepted Issues", new DataValue.Text("0 Issues")),
-                        new ReportData("Fixed Issues", new DataValue.Text("12 Issues")),
-                        new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ONE)),
-                        new ReportData("Duplication", new DataValue.Percentage(BigDecimal.TEN)),
+                .isEqualTo(List.of(new ReportData("New Issues", new Text("666 Issues")),
+                        new ReportData("Accepted Issues", new Text("0 Issues")),
+                        new ReportData("Fixed Issues", new Text("12 Issues")),
+                        new ReportData("Code coverage", new Percentage(BigDecimal.ONE)),
+                        new ReportData("Duplication", new Percentage(BigDecimal.TEN)),
                         new ReportData("Analysis details", null)));
     }
 
@@ -160,11 +167,11 @@ class BitbucketPullRequestDecoratorTest {
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .isEqualTo(List.of(new ReportData("New Issues", new DataValue.Text("666 Issues")),
-                        new ReportData("Accepted Issues", new DataValue.Text("0 Issues")),
-                        new ReportData("Fixed Issues", new DataValue.Text("1 Issue")),
-                        new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ZERO)),
-                        new ReportData("Duplication", new DataValue.Percentage(BigDecimal.ZERO)),
+                .isEqualTo(List.of(new ReportData("New Issues", new Text("666 Issues")),
+                        new ReportData("Accepted Issues", new Text("0 Issues")),
+                        new ReportData("Fixed Issues", new Text("1 Issue")),
+                        new ReportData("Code coverage", new Percentage(BigDecimal.ZERO)),
+                        new ReportData("Duplication", new Percentage(BigDecimal.ZERO)),
                         new ReportData("Analysis details", null)));
     }
 
@@ -200,9 +207,9 @@ class BitbucketPullRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue defaultIssue = mock();
         when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         when(defaultIssue.impacts()).thenReturn(Map.of(SoftwareQuality.RELIABILITY, Severity.HIGH));
-        when(defaultIssue.getLine()).thenReturn(ISSUE_LINE);
+        when(defaultIssue.getLine()).thenReturn(Optional.of(ISSUE_LINE));
         when(defaultIssue.key()).thenReturn(ISSUE_KEY);
-        when(defaultIssue.getMessage()).thenReturn(ISSUE_MESSAGE);
+        when(defaultIssue.getMessage()).thenReturn(Optional.of(ISSUE_MESSAGE));
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
         when(componentIssue.getIssue()).thenReturn(defaultIssue);
@@ -219,4 +226,28 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisDetails.getScmReportableIssues()).thenReturn(List.of(componentIssue));
     }
 
+    static Stream<Exception> clientFailures() {
+        return Stream.of(new IOException("io failure"), new JacksonException("json failure") {});
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldReturnDefaultResultWhenReportUploadFails(Exception failure) throws IOException {
+        when(client.supportsCodeInsights()).thenReturn(true);
+        mockValidAnalysis();
+        when(analysisSummary.getNewDuplications()).thenReturn(BigDecimal.ONE);
+        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.ONE);
+        when(analysisSummary.getAcceptedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 0));
+        when(analysisSummary.getFixedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 0));
+        when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 1L));
+        when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 0));
+        when(client.normaliseReportKey(any())).thenReturn("reportKey");
+        doThrow(failure).when(client).uploadReport(any(), any(), any());
+
+        DecorationResult result = underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getPullRequestUrl()).isEmpty();
+        verify(client, never()).deleteAnnotations(any(), any());
+    }
 }

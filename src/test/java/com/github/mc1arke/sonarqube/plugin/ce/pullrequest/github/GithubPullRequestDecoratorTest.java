@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Michael Clarke
+ * Copyright (C) 2020-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -99,8 +99,8 @@ class GithubPullRequestDecoratorTest {
             when(componentIssue.getScmPath()).thenReturn(Optional.of("path" + i));
             when(componentIssue.getComponent()).thenReturn(component);
             PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
-            when(lightIssue.getMessage()).thenReturn("issue message " + i);
-            when(lightIssue.getLine()).thenReturn(i);
+            when(lightIssue.getMessage()).thenReturn(Optional.of("issue message " + i));
+            when(lightIssue.getLine()).thenReturn(Optional.of(i));
             when(lightIssue.impacts()).thenReturn(Map.of(SoftwareQuality.values()[i % SoftwareQuality.values().length], Severity.values()[i % Severity.values().length]));
             when(componentIssue.getIssue()).thenReturn(lightIssue);
             return componentIssue;
@@ -146,7 +146,7 @@ class GithubPullRequestDecoratorTest {
         when(pullRequest.getComments()).thenReturn(List.of(comment1, comment2, comment3, comment4, comment5, summaryComment));
         when(pullRequest.comment(any(String.class))).thenReturn(summaryComment);
         when(repository.getPullRequest(anyInt())).thenReturn(pullRequest);
-        when(pullRequest.getHtmlUrl()).thenReturn(new URL("http://url.of/pull/request"));
+        when(pullRequest.getHtmlUrl()).thenReturn(URI.create("http://url.of/pull/request").toURL());
         Formatter<Document> documentFormatter = mock();
         when(documentFormatter.format(any())).thenReturn("**Project ID:** project-key");
         when(markdownFormatterFactory.documentFormatter()).thenReturn(documentFormatter);
@@ -206,7 +206,7 @@ class GithubPullRequestDecoratorTest {
         when(repository.createCheckRun(any(), any())).thenReturn(checkRunBuilder);
         GHPullRequest pullRequest = mock();
         when(repository.getPullRequest(anyInt())).thenReturn(pullRequest);
-        when(pullRequest.getHtmlUrl()).thenReturn(new URL("http://url.of/pull/request"));
+        when(pullRequest.getHtmlUrl()).thenReturn(URI.create("http://url.of/pull/request").toURL());
         when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
 
         DecorationResult decorationResult = testCase.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);

@@ -18,6 +18,9 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -25,6 +28,7 @@ import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.sonar.api.config.internal.Encryption;
@@ -34,8 +38,17 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -44,6 +57,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DefaultBitbucketClientFactoryUnitTest {
+
+    @RegisterExtension
+    static final WireMockExtension wireMockExtension = WireMockExtension.newInstance()
+            .options(wireMockConfig().dynamicPort())
+            .build();
 
     @Test
     void testCreateClientIsCloudIfCloudConfig() throws IOException {
@@ -140,5 +158,28 @@ class DefaultBitbucketClientFactoryUnitTest {
         assertThat(client).isInstanceOf(BitbucketServerClient.class);
     }
 
+    @Test
+    void shouldSerialiseServerReportCreatedDateAsEpochMilliseconds() throws IOException {
+        AlmSettingDto almSettingDto = new AlmSettingDto().setAlm(ALM.BITBUCKET)
+                .setUrl(wireMockExtension.baseUrl())
+                .setPersonalAccessToken("personalAccessToken");
+        ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto()
+                .setAlmRepo("almRepo")
+                .setAlmSlug("almSlug");
+        Settings settings = mock();
+        when(settings.getEncryption()).thenReturn(mock(Encryption.class));
+        HttpClientBuilderFactory httpClientBuilderFactory = mock();
+        when(httpClientBuilderFactory.createClientBuilder()).then(i -> new OkHttpClient.Builder());
+        wireMockExtension.stubFor(put(urlPathMatching("/rest/insights/1.0/.*")).willReturn(ok()));
 
+        BitbucketClient client = new DefaultBitbucketClientFactory(settings, httpClientBuilderFactory).createClient(projectAlmSettingDto, almSettingDto);
+        Instant createdDate = Instant.ofEpochMilli(1794992298541L);
+        client.uploadReport("commit", client.createCodeInsightsReport(List.of(), "description", createdDate, "https://dashboard", "https://logo", ReportStatus.PASSED), "reportKey");
+
+        List<LoggedRequest> requests = wireMockExtension.findAll(putRequestedFor(urlPathMatching("/rest/insights/1.0/.*")));
+        assertThat(requests).hasSize(1);
+        JsonNode body = JsonMapper.builder().build().readTree(requests.get(0).getBodyAsString());
+        assertThat(body.get("createdDate").isIntegralNumber()).isTrue();
+        assertThat(body.get("createdDate").asLong()).isEqualTo(1794992298541L);
+    }
 }

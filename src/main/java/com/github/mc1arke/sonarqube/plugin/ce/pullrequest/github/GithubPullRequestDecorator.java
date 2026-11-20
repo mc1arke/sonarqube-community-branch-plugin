@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Michael Clarke
+ * Copyright (C) 2020-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -99,9 +99,9 @@ public class GithubPullRequestDecorator implements PullRequestBuildStatusDecorat
         for (PostAnalysisIssueVisitor.ComponentIssue componentIssue : analysisDetails.getScmReportableIssues()) {
             output.add(new GHCheckRunBuilder.Annotation(
                 componentIssue.getScmPath().orElseThrow(),
-                Optional.ofNullable(componentIssue.getIssue().getLine()).orElse(0),
+                componentIssue.getIssue().getLine().orElse(0),
                 mapToGithubAnnotationLevel(componentIssue.getIssue().impacts().values()),
-                Optional.ofNullable(componentIssue.getIssue().getMessage()).orElseThrow())
+                componentIssue.getIssue().getMessage().orElseThrow())
             );
         }
 

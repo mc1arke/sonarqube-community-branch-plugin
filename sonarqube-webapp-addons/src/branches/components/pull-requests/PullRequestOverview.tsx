@@ -125,20 +125,20 @@ export default function PullRequestOverview(props: Readonly<Readonly<Props>>) {
         {!frontEndEngineeringEnableSidebarNavigation && (
           <>
             <PullRequestMetaTopBar measures={measures} pullRequest={pullRequest} />
-            <BasicSeparator className="sw-my-4" />
+            <BasicSeparator className="sw:my-4" />
           </>
         )}
 
         {ignoredConditions && <IgnoredConditionWarning />}
 
-        <div className="sw-flex sw-justify-between sw-items-start sw-my-6">
+        <div className="sw:flex sw:justify-between sw:items-start sw:my-6">
           <QGStatus status={status} />
           {!frontEndEngineeringEnableSidebarNavigation && (
             <LastAnalysisLabel analysisDate={pullRequest.analysisDate} />
           )}
         </div>
 
-        <AnalysisStatus className="sw-mb-4" component={component} />
+        <AnalysisStatus className="sw:mb-4" component={component} />
 
         <MeasuresCardPanel
           pullRequest={pullRequest}

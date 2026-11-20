@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@ package com.github.mc1arke.sonarqube.plugin.server.pullrequest.validator;
 import com.github.mc1arke.sonarqube.plugin.InvalidConfigurationException;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.AzureDevopsClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.azuredevops.model.Repository;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.sonar.db.alm.setting.ALM;
@@ -86,7 +87,8 @@ class AzureDevopsValidatorTest {
     void testExceptionOnMissingSlug() throws IOException {
         AzureDevopsValidator underTest = new AzureDevopsValidator(azureDevopsClientFactory);
         AzureDevopsClient azureDevopsClient = mock();
-        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock());
+        Repository repository = mock();
+        when(azureDevopsClient.getRepository(any(), any())).thenReturn(repository);
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
 
         assertThatThrownBy(() -> underTest.validate(projectAlmSettingDto, almSettingDto))
@@ -99,7 +101,8 @@ class AzureDevopsValidatorTest {
     void testExceptionOnMissingRepo() throws IOException {
         AzureDevopsValidator underTest = new AzureDevopsValidator(azureDevopsClientFactory);
         AzureDevopsClient azureDevopsClient = mock();
-        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock());
+        Repository repository = mock();
+        when(azureDevopsClient.getRepository(any(), any())).thenReturn(repository);
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("slug");
 
@@ -114,7 +117,8 @@ class AzureDevopsValidatorTest {
     void testHappyPath() throws IOException {
         AzureDevopsValidator underTest = new AzureDevopsValidator(azureDevopsClientFactory);
         AzureDevopsClient azureDevopsClient = mock();
-        when(azureDevopsClient.getRepository(any(), any())).thenReturn(mock());
+        Repository repository = mock();
+        when(azureDevopsClient.getRepository(any(), any())).thenReturn(repository);
         when(azureDevopsClientFactory.createClient(any(), any())).thenReturn(azureDevopsClient);
         when(projectAlmSettingDto.getAlmSlug()).thenReturn("slug");
         when(projectAlmSettingDto.getAlmRepo()).thenReturn("repo");
