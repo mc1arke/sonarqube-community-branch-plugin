@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Michael Clarke
+ * Copyright (C) 2020-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -94,7 +94,7 @@ public class AnalysisDetails {
         return getIssues().stream()
                 .filter(i -> i.getComponent().getReportAttributes().getScmPath().isPresent())
                 .filter(i -> i.getComponent().getType() == Component.Type.FILE)
-                .filter(i -> i.getIssue().resolution() == null)
+                .filter(i -> i.getIssue().resolution().isEmpty())
                 .filter(i -> i.getIssue().issueStatus() == IssueStatus.OPEN)
                 .toList();
     }

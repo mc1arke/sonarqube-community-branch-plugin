@@ -43,29 +43,29 @@ export function MenuItem(props: MenuItemProps) {
 
   return (
     <ItemButton
-      className={classNames({ 'branch-like-active': selected, 'sw-pl-6': indent })}
+      className={classNames({ 'branch-like-active': selected, 'sw:pl-6': indent })}
       innerRef={selected ? setSelectedNode : undefined}
       onClick={() => {
         onSelect(branchLike);
       }}
     >
-      <div className="sw-flex sw-items-center sw-justify-between sw-truncate sw-flex-1">
-        <div className="sw-flex sw-items-center">
+      <div className="sw:flex sw:items-center sw:justify-between sw:truncate sw:flex-1">
+        <div className="sw:flex sw:items-center">
           <BranchLikeIcon branchLike={branchLike} />
 
           {isMainBranch(branchLike) && (
             <>
-              <Text className="sw-truncate sw-ml-4 sw-mr-2" isHighlighted>{displayName}</Text>
+              <Text className="sw:truncate sw:ml-4 sw:mr-2" isHighlighted>{displayName}</Text>
               <Badge variant="default">{translate('branches.main_branch')}</Badge>
             </>
           )}
           {!isMainBranch(branchLike) && (
-            <Text className="sw-ml-3 sw-mr-2" isSubtle>{displayName}</Text>
+            <Text className="sw:ml-3 sw:mr-2" isSubtle>{displayName}</Text>
           )}
         </div>
         <QualityGateStatus
           branchLike={branchLike}
-          className="sw-flex sw-items-center sw-w-[96px]"
+          className="sw:flex sw:items-center sw:w-[96px]"
           showStatusText
         />
       </div>

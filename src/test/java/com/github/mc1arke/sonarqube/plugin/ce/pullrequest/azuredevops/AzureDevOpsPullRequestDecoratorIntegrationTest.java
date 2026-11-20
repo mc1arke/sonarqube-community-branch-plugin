@@ -91,8 +91,10 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
     @BeforeEach
     void setUp() {
         when(settings.getEncryption()).thenReturn(encryption);
-        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(mock());
-        when(reportGenerator.createAnalysisSummary(any())).thenReturn(mock());
+        AnalysisIssueSummary analysisIssueSummary = mock();
+        when(reportGenerator.createAnalysisIssueSummary(any(), any())).thenReturn(analysisIssueSummary);
+        AnalysisSummary analysisSummary = mock();
+        when(reportGenerator.createAnalysisSummary(any())).thenReturn(analysisSummary);
     }
 
     private void configureTestDefaults() {
@@ -122,10 +124,10 @@ class AzureDevOpsPullRequestDecoratorIntegrationTest {
         when(componentIssue.getScmPath()).thenReturn(Optional.of("scmPath"));
         when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         int lineNumber = 5;
-        when(defaultIssue.getLine()).thenReturn(lineNumber);
+        when(defaultIssue.getLine()).thenReturn(Optional.of(lineNumber));
         when(defaultIssue.getLocations()).thenReturn(locate);
         String issueMessage = "issueMessage";
-        when(defaultIssue.getMessage()).thenReturn(issueMessage);
+        when(defaultIssue.getMessage()).thenReturn(Optional.of(issueMessage));
         when(defaultIssue.getRuleKey()).thenReturn(ruleKey);
         when(defaultIssue.key()).thenReturn(issueKeyVal);
         Changeset changeset = mock();

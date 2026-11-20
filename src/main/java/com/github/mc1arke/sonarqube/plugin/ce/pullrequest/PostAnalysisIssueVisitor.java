@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 Michael Clarke
+ * Copyright (C) 2019-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import javax.annotation.CheckForNull;
 
 import org.sonar.api.issue.IssueStatus;
 import org.sonar.api.issue.impact.Severity;
@@ -103,19 +101,16 @@ public class PostAnalysisIssueVisitor extends IssueVisitor {
             return key;
         }
 
-        @CheckForNull
-        public Integer getLine() {
-            return line;
+        public Optional<Integer> getLine() {
+            return Optional.ofNullable(line);
         }
 
-        @CheckForNull
-        public String getMessage() {
-            return message;
+        public Optional<String> getMessage() {
+            return Optional.ofNullable(message);
         }
 
-        @CheckForNull
-        public String resolution() {
-            return resolution;
+        public Optional<String> resolution() {
+            return Optional.ofNullable(resolution);
         }
 
         public IssueStatus issueStatus() {

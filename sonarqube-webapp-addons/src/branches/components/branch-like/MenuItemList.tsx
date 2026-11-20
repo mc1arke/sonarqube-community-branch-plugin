@@ -24,7 +24,7 @@ import { HelperHintIcon, ItemDivider, ItemHeader } from '~design-system';
 import { isDefined } from '~shared/helpers/types';
 import { getBranchLikeKey, isSameBranchLike } from '~sq-server-commons/helpers/branch-like';
 import { translate } from '~sq-server-commons/helpers/l10n';
-import HelpTooltip from '~sq-server-commons/sonar-aligned/components/controls/HelpTooltip';
+import Tooltip from '~sq-server-commons/components/controls/Tooltip';
 import { BranchLike, BranchLikeTree } from '~sq-server-commons/types/branch-like';
 import MenuItem from './MenuItem';
 
@@ -70,16 +70,16 @@ export function MenuItemList(props: MenuItemListProps) {
   return (
     <ul
       aria-label={`- ${translate('branch_like_navigation.list')}`}
-      className="item-list sw-overflow-y-auto sw-overflow-x-hidden"
+      className="item-list sw:overflow-y-auto sw:overflow-x-hidden"
     >
       <output>
         {!hasResults && (
-          <div className="sw-px-3 sw-py-2">
+          <div className="sw:px-3 sw:py-2">
             <span>{intl.formatMessage({ id: 'no_results_for_x' }, { '0': search })}</span>
           </div>
         )}
         {hasResults && (
-          <span className="sw-sr-only">
+          <span className="sw:sr-only">
             {intl.formatMessage({ id: 'results_shown_x' }, { count: total })}
           </span>
         )}
@@ -121,12 +121,11 @@ export function MenuItemList(props: MenuItemListProps) {
           <ItemDivider aria-hidden />
           <ItemHeader>
             {translate('branch_like_navigation.orphan_pull_requests')}
-            <HelpTooltip
-              className="sw-ml-1"
-              overlay={translate('branch_like_navigation.orphan_pull_requests.tooltip')}
-            >
-              <HelperHintIcon />
-            </HelpTooltip>
+            <span className="sw:ml-1">
+              <Tooltip content={translate('branch_like_navigation.orphan_pull_requests.tooltip')}>
+                <HelperHintIcon />
+              </Tooltip>
+            </span>
           </ItemHeader>
           <ItemDivider aria-hidden />
           {branchLikeTree.orphanPullRequests.map((pr) => renderItem(pr))}

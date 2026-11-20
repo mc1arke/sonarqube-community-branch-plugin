@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Michael Clarke
+ * Copyright (C) 2022-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -75,7 +75,7 @@ public class ReportGenerator {
 
         return AnalysisIssueSummary.builder()
                 .withIssueUrl(getIssueUrl(issue, analysisDetails))
-                .withMessage(issue.getMessage())
+                .withMessage(issue.getMessage().orElse(null))
                 .build();
     }
 
@@ -119,13 +119,13 @@ public class ReportGenerator {
                 .withSummaryImageUrl(baseImageUrl + "/common/icon.png")
                 .withCoverage(new AnalysisSummary.UrlIconMetric<>(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_COVERAGE_KEY), baseImageUrl + "/" + (newCoverage == null ? NO_DATA_IMAGE_PATH : PASSED_IMAGE_PATH), coverage))
                 .withNewCoverage(newCoverage)
+                .withTotalCoverage(coverage)
                 .withDashboardUrl(getDashboardUrl(analysisDetails))
                 .withDuplications(new AnalysisSummary.UrlIconMetric<>(getComponentMeasuresUrlForCodeMetrics(analysisDetails, CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY), baseImageUrl + "/" + (newDuplications == null ? NO_DATA_IMAGE_PATH : PASSED_IMAGE_PATH), duplications))
                 .withNewDuplications(newDuplications)
                 .withFailedQualityGateConditions(failedConditions.stream()
                         .map(ReportGenerator::formatQualityGateCondition)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
+                        .flatMap(Optional::stream)
                         .toList())
                 .withStatusDescription(QualityGate.Status.OK == analysisDetails.getQualityGateStatus() ? "Passed" : "Failed")
                 .withStatusImageUrl(QualityGate.Status.OK == analysisDetails.getQualityGateStatus()
@@ -150,9 +150,13 @@ public class ReportGenerator {
     }
 
     private String getBaseImageUrl() {
-        return configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE)
-                .orElse(server.getPublicRootUrl() + "/static/communityBranchPlugin")
-                .replaceAll("/*$", "");
+        String baseUrl = configuration.get(CommunityBranchPlugin.IMAGE_URL_BASE)
+                .orElse(server.getPublicRootUrl() + "/static/communityBranchPlugin");
+        int end = baseUrl.length();
+        while (end > 0 && baseUrl.charAt(end - 1) == '/') {
+            end--;
+        }
+        return baseUrl.substring(0, end);
     }
 
     private String getIssueUrl(PostAnalysisIssueVisitor.LightIssue issue, AnalysisDetails analysisDetails) {

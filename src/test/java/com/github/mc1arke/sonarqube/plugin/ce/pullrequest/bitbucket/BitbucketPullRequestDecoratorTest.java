@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 Mathias Åhsberg, Michael Clarke
+ * Copyright (C) 2020-2026 Mathias Åhsberg, Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,9 +57,10 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.BitbucketClientFactory;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
-import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Percentage;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportData;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Text;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.AnalysisDetails;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisitor;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
@@ -128,11 +129,11 @@ class BitbucketPullRequestDecoratorTest {
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .isEqualTo(List.of(new ReportData("New Issues", new DataValue.Text("666 Issues")),
-                        new ReportData("Accepted Issues", new DataValue.Text("0 Issues")),
-                        new ReportData("Fixed Issues", new DataValue.Text("12 Issues")),
-                        new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ONE)),
-                        new ReportData("Duplication", new DataValue.Percentage(BigDecimal.TEN)),
+                .isEqualTo(List.of(new ReportData("New Issues", new Text("666 Issues")),
+                        new ReportData("Accepted Issues", new Text("0 Issues")),
+                        new ReportData("Fixed Issues", new Text("12 Issues")),
+                        new ReportData("Code coverage", new Percentage(BigDecimal.ONE)),
+                        new ReportData("Duplication", new Percentage(BigDecimal.TEN)),
                         new ReportData("Analysis details", null)));
     }
 
@@ -166,11 +167,11 @@ class BitbucketPullRequestDecoratorTest {
 
         assertThat(reportDataArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .isEqualTo(List.of(new ReportData("New Issues", new DataValue.Text("666 Issues")),
-                        new ReportData("Accepted Issues", new DataValue.Text("0 Issues")),
-                        new ReportData("Fixed Issues", new DataValue.Text("1 Issue")),
-                        new ReportData("Code coverage", new DataValue.Percentage(BigDecimal.ZERO)),
-                        new ReportData("Duplication", new DataValue.Percentage(BigDecimal.ZERO)),
+                .isEqualTo(List.of(new ReportData("New Issues", new Text("666 Issues")),
+                        new ReportData("Accepted Issues", new Text("0 Issues")),
+                        new ReportData("Fixed Issues", new Text("1 Issue")),
+                        new ReportData("Code coverage", new Percentage(BigDecimal.ZERO)),
+                        new ReportData("Duplication", new Percentage(BigDecimal.ZERO)),
                         new ReportData("Analysis details", null)));
     }
 
@@ -206,9 +207,9 @@ class BitbucketPullRequestDecoratorTest {
         PostAnalysisIssueVisitor.LightIssue defaultIssue = mock();
         when(defaultIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
         when(defaultIssue.impacts()).thenReturn(Map.of(SoftwareQuality.RELIABILITY, Severity.HIGH));
-        when(defaultIssue.getLine()).thenReturn(ISSUE_LINE);
+        when(defaultIssue.getLine()).thenReturn(Optional.of(ISSUE_LINE));
         when(defaultIssue.key()).thenReturn(ISSUE_KEY);
-        when(defaultIssue.getMessage()).thenReturn(ISSUE_MESSAGE);
+        when(defaultIssue.getMessage()).thenReturn(Optional.of(ISSUE_MESSAGE));
 
         PostAnalysisIssueVisitor.ComponentIssue componentIssue = mock();
         when(componentIssue.getIssue()).thenReturn(defaultIssue);

@@ -123,14 +123,14 @@ export default function BranchListRow(props: BranchListRowProps) {
   return (
     <TableRowInteractive>
       <ContentCell>
-        <BranchLikeIcon branchLike={branch} className="sw-mr-1" />
+        <BranchLikeIcon branchLike={branch} className="sw:mr-1" />
         {branch.name}
-        {branch.isMain && <Badge className="sw-ml-1">{translate('branches.main_branch')}</Badge>}
+        {branch.isMain && <Badge className="sw:ml-1">{translate('branches.main_branch')}</Badge>}
       </ContentCell>
       <ContentCell>
         <Tooltip content={settingWarning}>
           <span>
-            {settingWarning !== undefined && <FlagWarningIcon className="sw-mr-1" />}
+            {settingWarning !== undefined && <FlagWarningIcon className="sw:mr-1" />}
             {branch.newCodePeriod
               ? renderNewCodePeriodSetting(branch.newCodePeriod)
               : translate('branch_list.default_setting')}

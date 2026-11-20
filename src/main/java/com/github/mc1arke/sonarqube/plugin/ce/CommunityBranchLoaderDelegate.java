@@ -29,7 +29,6 @@ import org.sonar.db.component.BranchType;
 import org.sonar.scanner.protocol.output.ScannerReport;
 import org.sonar.server.project.Project;
 
-import javax.annotation.Nonnull;
 import java.util.Optional;
 
 /**
@@ -46,7 +45,7 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
     }
 
     @Override
-    public void load(@Nonnull ScannerReport.Metadata metadata) {
+    public void load(ScannerReport.Metadata metadata) {
         Branch branch = load(metadata, metadataHolder.getProject(), dbClient);
 
         metadataHolder.setBranch(branch);
@@ -74,13 +73,11 @@ public class CommunityBranchLoaderDelegate implements BranchLoaderDelegate {
                 targetBranchName = targetBranch;
             }
 
-            if (ScannerReport.Metadata.BranchType.PULL_REQUEST == branchType) {
-                return createPullRequest(metadata, dbClient, branchName, projectUuid, targetBranch, targetBranchName);
-            } else if (ScannerReport.Metadata.BranchType.BRANCH == branchType) {
-                return createBranch(dbClient, branchName, projectUuid, targetBranch);
-            } else {
-                throw new IllegalStateException(String.format("Invalid branch type '%s'", branchType.name()));
-            }
+            return switch (branchType) {
+                case PULL_REQUEST -> createPullRequest(metadata, dbClient, branchName, projectUuid, targetBranch, targetBranchName);
+                case BRANCH -> createBranch(dbClient, branchName, projectUuid, targetBranch);
+                default -> throw new IllegalStateException(String.format("Invalid branch type '%s'", branchType.name()));
+            };
         }
     }
 

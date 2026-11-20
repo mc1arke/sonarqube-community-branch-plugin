@@ -10,13 +10,9 @@ public final class GitStatusStateMapper {
     }
 
     public static GitStatusState toGitStatusState(QualityGate.Status analysisStatus) {
-        switch (analysisStatus) {
-            case OK:
-                return GitStatusState.SUCCEEDED;
-            case ERROR:
-                return GitStatusState.ERROR;
-            default:
-                return GitStatusState.NOTSET;
-        }
+        return switch (analysisStatus) {
+            case OK -> GitStatusState.SUCCEEDED;
+            case ERROR -> GitStatusState.ERROR;
+        };
     }
 }

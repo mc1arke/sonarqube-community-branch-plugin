@@ -34,6 +34,7 @@ import {
   TrendUpCircleIcon
 } from '~design-system';
 import { PullRequest } from '~shared/types/branch-like';
+import { MeasurementType, getMeasurementMetricKey } from '~shared/helpers/overview';
 import { MetricKey, MetricType } from '~shared/types/metrics';
 import { getLeakValue } from '~sq-server-commons/components/measure/utils';
 import { DEFAULT_ISSUES_QUERY } from '~sq-server-commons/components/shared/utils';
@@ -59,10 +60,8 @@ import { IssueMeasuresCardInner } from '~sq-server-commons/components/overview/I
 import MeasuresCardNumber from '~sq-server-commons/components/overview/MeasuresCardNumber';
 import MeasuresCardPercent from '~sq-server-commons/components/overview/MeasuresCardPercent';
 import {
-  MeasurementType,
   QGStatusEnum,
   getConditionRequiredLabel,
-  getMeasurementMetricKey,
 } from '~sq-server-commons/utils/overview-utils';
 
 interface Props {
@@ -104,15 +103,15 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
   const totalFailedConditions = conditions.filter((condition) => condition.level === QGStatusEnum.ERROR);
 
   return (
-    <Card className="sw-py-8 sw-px-6">
+    <Card className="sw:py-8 sw:px-6">
       <GridContainer
-        className={classNames('sw-relative sw-overflow-hidden js-summary', {
-          'sw-grid-cols-3': totalFailedConditions.length === 0,
-          'sw-grid-cols-4': totalFailedConditions.length > 0,
+        className={classNames('sw:relative sw:overflow-hidden js-summary', {
+          'sw:grid-cols-3': totalFailedConditions.length === 0,
+          'sw:grid-cols-4': totalFailedConditions.length > 0,
         })}
       >
         {totalFailedConditions.length > 0 && (
-          <StyledConditionsCard className="sw-row-span-3">
+          <StyledConditionsCard className="sw:row-span-3">
             <FailedConditions
               qualityGate={qualityGate}
               branchLike={pullRequest}
@@ -155,11 +154,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
             url={acceptedUrl}
             icon={
               acceptedCount !== undefined && (
-                <SnoozeCircleIcon
-                  color={
-                    acceptedCount === '0' ? 'overviewCardDefaultIcon' : 'overviewCardWarningIcon'
-                  }
-                />
+                <SnoozeCircleIcon disabled={acceptedCount === '0'} />
               )
             }
             footer={
@@ -176,7 +171,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
                 {intl.formatMessage({ id: 'overview.pull_request.fixed_issues' })}
                 <Tooltip
                   content={
-                    <div className="sw-flex sw-flex-col sw-gap-4">
+                    <div className="sw:flex sw:flex-col sw:gap-4">
                       <span>
                         {intl.formatMessage({
                           id: 'overview.pull_request.fixed_issues.disclaimer',
@@ -191,7 +186,7 @@ export default function MeasuresCardPanel(props: React.PropsWithChildren<Props>)
                   }
                   side={TooltipSide.Top}
                 >
-                  <span className="sw-typo-default sw-cursor-default">
+                  <span className="sw:typo-default sw:cursor-default">
                     <IconQuestionMark color="echoes-color-icon-subtle" />
                   </span>
                 </Tooltip>
