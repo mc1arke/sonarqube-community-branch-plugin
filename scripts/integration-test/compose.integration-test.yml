@@ -10,5 +10,7 @@ services:
   sonarqube:
     image: community-branch-plugin-integration-test:${SONARQUBE_VERSION}
     container_name: community-branch-plugin-it-sonarqube
+    build:
+      dockerfile: Dockerfile
   db:
     container_name: community-branch-plugin-it-postgres
