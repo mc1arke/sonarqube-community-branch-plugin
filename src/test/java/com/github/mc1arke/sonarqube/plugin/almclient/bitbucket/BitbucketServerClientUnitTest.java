@@ -50,7 +50,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.ObjectReader;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -75,9 +74,7 @@ import static org.mockito.Mockito.when;
 
 class BitbucketServerClientUnitTest {
 
-    private final JsonMapper mapper = spy(JsonMapper.builder()
-            .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false)
-            .build());
+    private final JsonMapper mapper = spy(JsonMapper.builder().build());
     private final OkHttpClient client = mock();
     private final BitbucketServerClient underTest = new BitbucketServerClient(new BitbucketServerConfiguration("project", "repository", "https://my-server.org"), mapper, client);
 
@@ -298,7 +295,8 @@ class BitbucketServerClientUnitTest {
 
         try (Buffer bodyContent = new Buffer()) {
             request.body().writeTo(bodyContent);
-            assertEquals("{\"annotations\":[{\"externalId\":\"external ID\",\"line\":12,\"type\":\"type\",\"link\":\"link\",\"message\":\"hello\",\"path\":\"path\",\"severity\":\"severe\"}]}", bodyContent.readUtf8());
+            assertThat(mapper.readTree(bodyContent.readUtf8()))
+                    .isEqualTo(mapper.readTree("{\"annotations\":[{\"externalId\":\"external ID\",\"line\":12,\"type\":\"type\",\"link\":\"link\",\"message\":\"hello\",\"path\":\"path\",\"severity\":\"severe\"}]}"));
         }
     }
 
