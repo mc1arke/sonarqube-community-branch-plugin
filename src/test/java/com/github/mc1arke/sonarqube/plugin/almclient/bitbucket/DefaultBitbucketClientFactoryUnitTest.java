@@ -22,9 +22,13 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatu
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import okhttp3.Interceptor;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.Buffer;
 import okhttp3.logging.HttpLoggingInterceptor;
 
 import org.junit.jupiter.api.Test;
@@ -39,6 +43,7 @@ import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import tools.jackson.databind.JsonNode;
@@ -167,7 +172,8 @@ class DefaultBitbucketClientFactoryUnitTest {
                 .setAlmRepo("almRepo")
                 .setAlmSlug("almSlug");
         Settings settings = mock();
-        when(settings.getEncryption()).thenReturn(mock(Encryption.class));
+        Encryption encryption = mock();
+        when(settings.getEncryption()).thenReturn(encryption);
         HttpClientBuilderFactory httpClientBuilderFactory = mock();
         when(httpClientBuilderFactory.createClientBuilder()).then(i -> new OkHttpClient.Builder());
         wireMockExtension.stubFor(put(urlPathMatching("/rest/insights/1.0/.*")).willReturn(ok()));
@@ -181,5 +187,49 @@ class DefaultBitbucketClientFactoryUnitTest {
         JsonNode body = JsonMapper.builder().build().readTree(requests.get(0).getBodyAsString());
         assertThat(body.get("createdDate").isIntegralNumber()).isTrue();
         assertThat(body.get("createdDate").asLong()).isEqualTo(1794992298541L);
+    }
+
+    @Test
+    void shouldSerialiseCloudReportCreatedDateAsFormattedString() throws IOException {
+        AlmSettingDto almSettingDto = new AlmSettingDto().setAlm(ALM.BITBUCKET_CLOUD)
+                .setClientId("clientId")
+                .setAppId("appId")
+                .setClientSecret("clientSecret");
+        ProjectAlmSettingDto projectAlmSettingDto = new ProjectAlmSettingDto()
+                .setAlmRepo("almRepo");
+        Settings settings = mock();
+        Encryption encryption = mock();
+        when(settings.getEncryption()).thenReturn(encryption);
+
+        List<String> reportBodies = new ArrayList<>();
+        Interceptor fakeBitbucketCloud = chain -> {
+            Request request = chain.request();
+            String responseBody = "{}";
+            if (request.url().host().equals("bitbucket.org")) {
+                responseBody = "{\"access_token\": \"dummy\"}";
+            } else if ("PUT".equals(request.method()) && request.body() != null) {
+                Buffer buffer = new Buffer();
+                request.body().writeTo(buffer);
+                reportBodies.add(buffer.readUtf8());
+            }
+            return new Response.Builder()
+                    .request(request)
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(ResponseBody.create(responseBody, MediaType.get("application/json")))
+                    .build();
+        };
+        HttpClientBuilderFactory httpClientBuilderFactory = mock();
+        when(httpClientBuilderFactory.createClientBuilder()).then(i -> new OkHttpClient.Builder().addInterceptor(fakeBitbucketCloud));
+
+        BitbucketClient client = new DefaultBitbucketClientFactory(settings, httpClientBuilderFactory).createClient(projectAlmSettingDto, almSettingDto);
+        Instant createdDate = Instant.ofEpochMilli(1794992298541L);
+        client.uploadReport("commit", client.createCodeInsightsReport(List.of(), "description", createdDate, "https://dashboard", "https://logo", ReportStatus.PASSED), "reportKey");
+
+        assertThat(reportBodies).hasSize(1);
+        JsonNode body = JsonMapper.builder().build().readTree(reportBodies.get(0));
+        assertThat(body.get("created_on").isString()).isTrue();
+        assertThat(body.get("created_on").asString()).isEqualTo("2026-11-18T08:58:18+0000");
     }
 }
