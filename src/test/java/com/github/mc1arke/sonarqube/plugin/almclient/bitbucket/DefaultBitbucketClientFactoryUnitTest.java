@@ -229,6 +229,7 @@ class DefaultBitbucketClientFactoryUnitTest {
 
         assertThat(reportBodies).hasSize(1);
         JsonNode body = JsonMapper.builder().build().readTree(reportBodies.get(0));
+        assertThat(body.has("createdDate")).isFalse();
         assertThat(body.get("created_on").isString()).isTrue();
         assertThat(body.get("created_on").asString()).isEqualTo("2026-11-18T08:58:18+0000");
     }
