@@ -342,9 +342,9 @@ class BitbucketCloudClientUnitTest {
         Response response = successfulResponse("{\"slug\": \"repository\"}");
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        BitbucketCloudClient underTest = new BitbucketCloudClient(JsonMapper.builder().build(), client, new BitbucketConfiguration("project", "repository"));
+        BitbucketCloudClient jsonParsingClient = new BitbucketCloudClient(JsonMapper.builder().build(), client, new BitbucketConfiguration("project", "repository"));
 
-        Repository repository = underTest.retrieveRepository();
+        Repository repository = jsonParsingClient.retrieveRepository();
 
         assertThat(repository.getSlug()).isEqualTo("repository");
         ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
@@ -359,9 +359,9 @@ class BitbucketCloudClientUnitTest {
         Response response = successfulResponse("<html>Not JSON</html>");
         when(client.newCall(any())).thenReturn(call);
         when(call.execute()).thenReturn(response);
-        BitbucketCloudClient underTest = new BitbucketCloudClient(JsonMapper.builder().build(), client, new BitbucketConfiguration("project", "repository"));
+        BitbucketCloudClient jsonParsingClient = new BitbucketCloudClient(JsonMapper.builder().build(), client, new BitbucketConfiguration("project", "repository"));
 
-        assertThatThrownBy(underTest::retrieveRepository)
+        assertThatThrownBy(jsonParsingClient::retrieveRepository)
                 .isExactlyInstanceOf(IOException.class)
                 .hasMessage("Could not parse Bitbucket Cloud response as Repository")
                 .hasCauseInstanceOf(JacksonException.class);
