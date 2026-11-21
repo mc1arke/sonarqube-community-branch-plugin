@@ -85,4 +85,35 @@ class GithubActionsAutoConfigurerTest {
         assertThat(underTest.detectConfiguration(system2, projectBranches)).contains(branchConfiguration);
         verify(branchConfigurationFactory).createPullRequestConfiguration("id", "source", "target", projectBranches);
     }
+
+    @Test
+    void shouldDetectForgejoPullRequestHeadRef() {
+        System2 system2 = mock();
+        when(system2.envVariable("GITHUB_ACTIONS")).thenReturn("true");
+        when(system2.envVariable("GITHUB_HEAD_REF")).thenReturn("feature/customer");
+        when(system2.envVariable("GITHUB_REF")).thenReturn("refs/pull/2/head");
+        when(system2.envVariable("GITHUB_BASE_REF")).thenReturn("main");
+        BranchConfigurationFactory factory = mock();
+        BranchConfiguration configuration = mock();
+        when(factory.createPullRequestConfiguration(any(), any(), any(), any())).thenReturn(configuration);
+        ProjectBranches branches = mock();
+
+        assertThat(new GithubActionsAutoConfigurer(factory).detectConfiguration(system2, branches)).contains(configuration);
+        verify(factory).createPullRequestConfiguration("2", "feature/customer", "main", branches);
+    }
+
+    @Test
+    void shouldUseBranchConfigurationForHeadRefWithoutSourceBranch() {
+        System2 system2 = mock();
+        when(system2.envVariable("GITHUB_ACTIONS")).thenReturn("true");
+        when(system2.envVariable("GITHUB_REF")).thenReturn("refs/pull/2/head");
+        when(system2.envVariable("GITHUB_REF_NAME")).thenReturn("2");
+        BranchConfigurationFactory factory = mock();
+        BranchConfiguration configuration = mock();
+        when(factory.createBranchConfiguration(any(), any())).thenReturn(configuration);
+        ProjectBranches branches = mock();
+
+        assertThat(new GithubActionsAutoConfigurer(factory).detectConfiguration(system2, branches)).contains(configuration);
+        verify(factory).createBranchConfiguration("2", branches);
+    }
 }
