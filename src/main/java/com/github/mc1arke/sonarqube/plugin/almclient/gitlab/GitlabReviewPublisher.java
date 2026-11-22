@@ -20,18 +20,45 @@ package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.DraftNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-/** Stages a review and checks for unrelated drafts before bulk publication. */
+/**
+ * Publishes a set of notes as a single GitLab review (draft notes + {@code bulk_publish}) so that recipients get one
+ * notification rather than one per note.
+ * <p>
+ * GitLab's {@code bulk_publish} publishes <em>every</em> pending draft the authenticated account has on the merge
+ * request, so the review is only staged when the account has no other drafts, and only published if the pending
+ * drafts are exactly the ones staged here. Whenever batching is not possible, but nothing has been left behind on
+ * GitLab, {@link #publish} returns {@code false} so the caller can post the notes as individual discussions instead.
+ */
 public class GitlabReviewPublisher {
 
-    public void publish(GitlabClient client, long projectId, long mergeRequestIid, List<MergeRequestNote> notes) throws IOException {
-        if (!client.getMergeRequestDraftNotes(projectId, mergeRequestIid).isEmpty()) {
-            throw new IllegalStateException("Cannot publish SonarQube review while the GitLab account has pending draft notes on this merge request");
+    private static final Logger LOGGER = LoggerFactory.getLogger(GitlabReviewPublisher.class);
+
+    /**
+     * @return {@code true} if the notes were published as a review, {@code false} if nothing was published and no
+     * drafts created by this call remain, meaning the caller should fall back to posting the notes individually.
+     * @throws IOException if the state on GitLab is uncertain (cleanup of staged drafts failed, or the publish request
+     * failed), in which case falling back could duplicate comments.
+     */
+    public boolean publish(GitlabClient client, long projectId, long mergeRequestIid, List<MergeRequestNote> notes) throws IOException {
+        List<DraftNote> existingDrafts;
+        try {
+            existingDrafts = client.getMergeRequestDraftNotes(projectId, mergeRequestIid);
+        } catch (IOException | IllegalStateException ex) {
+            LOGGER.warn("Could not list GitLab draft notes, so the GitLab version may not support the Draft Notes API. Posting comments individually", ex);
+            return false;
+        }
+        if (!existingDrafts.isEmpty()) {
+            LOGGER.warn("The GitLab account used for decoration has {} pending draft note(s) on merge request {}. "
+                    + "Posting comments individually to avoid publishing them", existingDrafts.size(), mergeRequestIid);
+            return false;
         }
 
         List<Long> createdIds = new ArrayList<>();
@@ -43,19 +70,31 @@ public class GitlabReviewPublisher {
             if (pendingIds.size() != createdIds.size() || !new HashSet<>(pendingIds).equals(new HashSet<>(createdIds))) {
                 throw new IllegalStateException("GitLab draft notes changed while preparing the SonarQube review; refusing to publish unrelated drafts");
             }
-        } catch (IOException | RuntimeException failure) {
-            for (Long id : createdIds) {
-                try {
-                    client.deleteMergeRequestDraftNote(projectId, mergeRequestIid, id);
-                } catch (IOException | RuntimeException cleanupFailure) {
-                    failure.addSuppressed(cleanupFailure);
-                }
+        } catch (IOException | IllegalStateException failure) {
+            deleteDrafts(client, projectId, mergeRequestIid, createdIds, failure);
+            if (failure.getSuppressed().length > 0) {
+                throw new IOException("Could not prepare SonarQube review on GitLab, and some of its draft notes could not be removed", failure);
             }
+            LOGGER.warn("Could not prepare a SonarQube review on GitLab. Posting comments individually", failure);
+            return false;
+        } catch (RuntimeException failure) {
+            deleteDrafts(client, projectId, mergeRequestIid, createdIds, failure);
             throw failure;
         }
 
         // Do not retry or fall back to individual comments after an ambiguous publish response.
         // GitLab may already have published the review even if the response was lost.
         client.publishMergeRequestDraftNotes(projectId, mergeRequestIid);
+        return true;
+    }
+
+    private static void deleteDrafts(GitlabClient client, long projectId, long mergeRequestIid, List<Long> ids, Exception failure) {
+        for (Long id : ids) {
+            try {
+                client.deleteMergeRequestDraftNote(projectId, mergeRequestIid, id);
+            } catch (IOException | RuntimeException cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+        }
     }
 }

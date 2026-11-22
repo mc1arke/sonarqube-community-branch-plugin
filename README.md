@@ -163,31 +163,27 @@ on GitHub Actions:
     SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 ```
 
-## Batched GitLab review notifications
+## GitLab review notifications
 
-By default, GitLab decorations publish each inline comment and the analysis summary immediately.
-To publish new inline comments as one GitLab review, set this scanner property:
+New inline comments on a GitLab merge request are published as a single GitLab review, so each recipient gets
+one notification for the analysis rather than one per finding. Each finding is still its own discussion at its
+diff position. The analysis summary is posted as a separate resolvable discussion and is resolved when the Quality
+Gate passes, so it may send its own notification. Cleaning up old discussions and adding replies may also notify users.
 
-```properties
-sonar.pullrequest.gitlab.batchComments=true
-```
+Reviews use the GitLab Draft Notes API. GitLab's `bulk_publish` publishes **all** pending drafts of the
+authenticated account on the merge request, so the plugin falls back to posting comments one by one when:
 
-Each finding remains a separate discussion at its original diff position. GitLab sends a single review
-notification for the findings to each eligible recipient. The analysis summary is published as a separate
-resolvable discussion and may generate its own notification. The plugin resolves successful summaries by
-discussion ID and leaves failed summaries open. Existing discussion cleanup and replies may also notify users.
+* the Draft Notes API is not available, for example on older GitLab versions,
+* the account already has pending drafts on the merge request, such as a manual review in progress, or
+* the drafts change while the review is being prepared, for example because another analysis is decorating the
+  same merge request at the same time. The drafts created by this attempt are deleted first.
 
-This opt-in mode requires the GitLab Draft Notes API, including diff positions and `bulk_publish`.
-Use a dedicated GitLab account and serialize decorations for the same merge request across projects/analyses.
-GitLab bulk publication includes **all** pending drafts of the authenticated account on the merge request;
-it cannot atomically publish only the drafts of one analysis. The plugin refuses publication if existing or
-unexpected drafts are detected, but the final check and publication are not atomic. Do not use the same account
-for manual draft reviews or concurrent decorations on the same merge request.
+The last check and the publish request can't be made atomic. If another draft is added by the same account in
+between, it is published with the review. Use a dedicated GitLab account for decoration to avoid this.
 
-If draft preparation fails, the plugin attempts to delete only the drafts created by that attempt.
-If publication fails, it does not retry or fall back to individual comments: the server might already have
-published the review. Check the merge request and any remaining drafts before running analysis again.
-Unsupported APIs fail decoration rather than silently reverting to per-comment notifications.
+The plugin doesn't retry or fall back after a failed publish request, because GitLab might already have published
+the review. It also doesn't fall back if it couldn't delete drafts it created. In both cases decoration fails, and
+you should check the merge request and the account's pending drafts before running the analysis again.
 
 ## Serving images for PR decoration
 

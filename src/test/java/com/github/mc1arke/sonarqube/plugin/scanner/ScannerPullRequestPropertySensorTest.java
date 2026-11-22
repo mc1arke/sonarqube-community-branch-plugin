@@ -20,9 +20,6 @@ package com.github.mc1arke.sonarqube.plugin.scanner;
 
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.GitlabMergeRequestDecorator;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
-import org.sonar.api.config.Configuration;
-import java.util.Optional;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.utils.System2;
 
@@ -37,31 +34,6 @@ class ScannerPullRequestPropertySensorTest {
     private final SensorContext context = mock();
     private final ScannerPullRequestPropertySensor sensor = new ScannerPullRequestPropertySensor(system2);
 
-    private final Configuration configuration = mock();
-
-    @BeforeEach
-    void configureContext() {
-        when(context.config()).thenReturn(configuration);
-    }
-
-    @Test
-    void shouldReportBatchModeFromScannerConfiguration() {
-        when(configuration.get(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_BATCH_COMMENTS)).thenReturn(Optional.of("true"));
-        sensor.execute(context);
-        verify(context).config();
-        verify(context).addContextProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_BATCH_COMMENTS, "true");
-        verifyNoMoreInteractions(context);
-    }
-
-    @Test
-    void shouldReportExplicitlyDisabledBatchMode() {
-        when(configuration.get(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_BATCH_COMMENTS)).thenReturn(Optional.of("false"));
-        sensor.execute(context);
-        verify(context).config();
-        verify(context).addContextProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_BATCH_COMMENTS, "false");
-        verifyNoMoreInteractions(context);
-    }
-
     @Test
     void shouldReportAllGitlabVariablesFromEnvironment() {
         when(system2.envVariable("GITLAB_CI")).thenReturn("true");
@@ -72,7 +44,6 @@ class ScannerPullRequestPropertySensorTest {
 
         sensor.execute(context);
 
-        verify(context).config();
         verify(context).addContextProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL, "value");
         verify(context).addContextProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID, "value");
         verifyNoMoreInteractions(context);
@@ -86,7 +57,6 @@ class ScannerPullRequestPropertySensorTest {
 
         sensor.execute(context);
 
-        verify(context).config();
         verify(context).addContextProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PROJECT_URL, "value");
         verify(context).addContextProperty(GitlabMergeRequestDecorator.PULLREQUEST_GITLAB_PIPELINE_ID, "value");
         verifyNoMoreInteractions(context);

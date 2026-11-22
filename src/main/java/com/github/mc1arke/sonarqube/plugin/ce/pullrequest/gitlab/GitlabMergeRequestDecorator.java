@@ -54,8 +54,6 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     public static final String PULLREQUEST_GITLAB_PIPELINE_ID =
             "com.github.mc1arke.sonarqube.plugin.branch.pullrequest.gitlab.pipelineId";
 
-    public static final String PULLREQUEST_GITLAB_BATCH_COMMENTS = "sonar.pullrequest.gitlab.batchComments";
-
     private final GitlabClientFactory gitlabClientFactory;
     private final MarkdownFormatterFactory formatterFactory;
 
@@ -149,8 +147,8 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     protected void submitNewComments(GitlabClient client, MergeRequest mergeRequest, AnalysisDetails analysis,
                                      List<ComponentIssueScmPath> issues,
                                      AnalysisSummary analysisSummary) {
-        if (!Boolean.parseBoolean(analysis.getScannerProperty(PULLREQUEST_GITLAB_BATCH_COMMENTS).orElse("false"))) {
-            super.submitNewComments(client, mergeRequest, analysis, issues, analysisSummary);
+        if (issues.isEmpty()) {
+            submitSummaryNote(client, mergeRequest, analysis, analysisSummary);
             return;
         }
 
@@ -159,12 +157,15 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
             notes.add(createCommitNote(mergeRequest, issue.componentIssue(), issue.scmPath(),
                     createAnalysisIssueSummary(issue.componentIssue(), analysis)));
         }
-        if (!notes.isEmpty()) {
-            try {
-                new GitlabReviewPublisher().publish(client, mergeRequest.getTargetProjectId(), mergeRequest.getIid(), notes);
-            } catch (IOException ex) {
-                throw new IllegalStateException("Could not publish SonarQube review to Gitlab", ex);
-            }
+        boolean published;
+        try {
+            published = new GitlabReviewPublisher().publish(client, mergeRequest.getTargetProjectId(), mergeRequest.getIid(), notes);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not publish SonarQube review to Gitlab", ex);
+        }
+        if (!published) {
+            super.submitNewComments(client, mergeRequest, analysis, issues, analysisSummary);
+            return;
         }
         submitSummaryNote(client, mergeRequest, analysis, analysisSummary);
     }

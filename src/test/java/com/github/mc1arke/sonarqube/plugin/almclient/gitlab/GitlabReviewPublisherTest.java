@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -45,7 +46,7 @@ class GitlabReviewPublisherTest {
     void publishesAllNewNotesInOneReview() throws IOException {
         when(client.getMergeRequestDraftNotes(1, 2)).thenReturn(List.of()).thenReturn(List.of(new DraftNote(12), new DraftNote(11)));
         when(client.addMergeRequestDraftNote(eq(1L), eq(2L), any())).thenReturn(new DraftNote(11), new DraftNote(12));
-        publisher.publish(client, 1, 2, notes);
+        assertThat(publisher.publish(client, 1, 2, notes)).isTrue();
         var order = inOrder(client);
         order.verify(client).getMergeRequestDraftNotes(1, 2);
         order.verify(client).addMergeRequestDraftNote(1, 2, notes.getFirst());
@@ -56,19 +57,27 @@ class GitlabReviewPublisherTest {
     }
 
     @Test
-    void refusesExistingDraftsWithoutChangingThem() throws IOException {
+    void fallsBackWithoutChangingExistingDrafts() throws IOException {
         when(client.getMergeRequestDraftNotes(1, 2)).thenReturn(List.of(new DraftNote(99)));
-        assertThatThrownBy(() -> publisher.publish(client, 1, 2, notes)).hasMessageContaining("pending draft notes");
+        assertThat(publisher.publish(client, 1, 2, notes)).isFalse();
         verify(client, never()).addMergeRequestDraftNote(anyLong(), anyLong(), any());
         verify(client, never()).deleteMergeRequestDraftNote(anyLong(), anyLong(), anyLong());
         verify(client, never()).publishMergeRequestDraftNotes(anyLong(), anyLong());
     }
 
     @Test
-    void removesOnlyOwnDraftsIfAnotherOperationAddsADraft() throws IOException {
+    void fallsBackWhenDraftNotesCannotBeListed() throws IOException {
+        when(client.getMergeRequestDraftNotes(1, 2)).thenThrow(new IllegalStateException("Expected: 200, Got: 404"));
+        assertThat(publisher.publish(client, 1, 2, notes)).isFalse();
+        verify(client, never()).addMergeRequestDraftNote(anyLong(), anyLong(), any());
+        verify(client, never()).publishMergeRequestDraftNotes(anyLong(), anyLong());
+    }
+
+    @Test
+    void removesOnlyOwnDraftsAndFallsBackIfAnotherOperationAddsADraft() throws IOException {
         when(client.getMergeRequestDraftNotes(1, 2)).thenReturn(List.of()).thenReturn(List.of(new DraftNote(11), new DraftNote(12), new DraftNote(99)));
         when(client.addMergeRequestDraftNote(eq(1L), eq(2L), any())).thenReturn(new DraftNote(11), new DraftNote(12));
-        assertThatThrownBy(() -> publisher.publish(client, 1, 2, notes)).hasMessageContaining("refusing to publish unrelated drafts");
+        assertThat(publisher.publish(client, 1, 2, notes)).isFalse();
         verify(client).deleteMergeRequestDraftNote(1, 2, 11);
         verify(client).deleteMergeRequestDraftNote(1, 2, 12);
         verify(client, never()).deleteMergeRequestDraftNote(1, 2, 99);
@@ -76,7 +85,16 @@ class GitlabReviewPublisherTest {
     }
 
     @Test
-    void cleansUpAfterPartialPreparationFailureAndPreservesOriginalError() throws IOException {
+    void cleansUpAndFallsBackAfterPartialPreparationFailure() throws IOException {
+        when(client.addMergeRequestDraftNote(eq(1L), eq(2L), any()))
+                .thenReturn(new DraftNote(11)).thenThrow(new IOException("creation failed"));
+        assertThat(publisher.publish(client, 1, 2, notes)).isFalse();
+        verify(client).deleteMergeRequestDraftNote(1, 2, 11);
+        verify(client, never()).publishMergeRequestDraftNotes(anyLong(), anyLong());
+    }
+
+    @Test
+    void failsWithoutFallbackWhenCleanupAfterPreparationFailureFails() throws IOException {
         IOException failure = new IOException("creation failed");
         IOException cleanupFailure = new IOException("cleanup failed");
         when(client.addMergeRequestDraftNote(eq(1L), eq(2L), any()))
@@ -84,7 +102,9 @@ class GitlabReviewPublisherTest {
         doThrow(cleanupFailure).when(client).deleteMergeRequestDraftNote(1, 2, 11);
         assertThatThrownBy(() -> publisher.publish(client, 1, 2,
                 List.of(notes.getFirst(), notes.getLast(), new MergeRequestNote("third"))))
-                .isSameAs(failure).hasSuppressedException(cleanupFailure);
+                .isInstanceOf(IOException.class)
+                .hasCause(failure)
+                .satisfies(ex -> assertThat(ex.getCause()).hasSuppressedException(cleanupFailure));
         verify(client).deleteMergeRequestDraftNote(1, 2, 12);
         verify(client, never()).publishMergeRequestDraftNotes(anyLong(), anyLong());
     }
