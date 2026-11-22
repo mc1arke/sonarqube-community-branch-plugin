@@ -19,6 +19,7 @@ any gap shows up as an error in SonarQube's Compute Engine log.
 
 Environment: HEAD_SHA / BASE_SHA (fixture commits), LOG, TLS_CERT, TLS_KEY.
 """
+import itertools
 import json
 import os
 import re
@@ -32,6 +33,10 @@ LOG = os.environ.get("LOG", "/data/requests.jsonl")
 SHA = os.environ.get("HEAD_SHA", "0" * 40)
 BASE = os.environ.get("BASE_SHA", "0" * 40)
 LOCK = threading.Lock()
+# GitLab draft notes pending per merge request, as the Draft Notes API keeps them for the authenticated user.
+DRAFTS = {}
+DRAFT_IDS = itertools.count(101)
+DRAFTS_LOCK = threading.Lock()
 
 
 def gitlab(m, p, q, body):
@@ -44,6 +49,24 @@ def gitlab(m, p, q, body):
                      "diff_refs": {"base_sha": BASE, "start_sha": BASE, "head_sha": SHA}}
     if re.fullmatch(r"/api/v4/projects/\d+/merge_requests/\d+/commits", p):
         return 200, [{"id": SHA}]
+    dn = re.fullmatch(r"/api/v4/projects/(\d+)/merge_requests/(\d+)/draft_notes(?:/(\d+|bulk_publish))?", p)
+    if dn:
+        key, target = (dn.group(1), dn.group(2)), dn.group(3)
+        with DRAFTS_LOCK:
+            drafts = DRAFTS.setdefault(key, [])
+            if target is None and m == "GET":
+                return 200, [{"id": d} for d in drafts]
+            if target is None and m == "POST":
+                draft_id = next(DRAFT_IDS)
+                drafts.append(draft_id)
+                return 201, {"id": draft_id, "note": parse_qs(body).get("note", [""])[0]}
+            if target == "bulk_publish" and m == "POST":
+                drafts.clear()
+                return 204, None
+            if target and target.isdigit() and m == "DELETE" and int(target) in drafts:
+                drafts.remove(int(target))
+                return 204, None
+        return None
     if re.fullmatch(r"/api/v4/projects/\d+/merge_requests/\d+/discussions", p):
         if m == "GET":
             return 200, []
