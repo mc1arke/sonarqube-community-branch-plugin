@@ -18,8 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsAnnotation;
@@ -34,7 +32,12 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.Crea
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.ErrorResponse;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.server.ServerProperties;
 import com.google.common.collect.Sets;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import okhttp3.Call;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -45,6 +48,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -53,6 +60,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -66,7 +74,7 @@ import static org.mockito.Mockito.when;
 
 class BitbucketServerClientUnitTest {
 
-    private final ObjectMapper mapper = spy();
+    private final JsonMapper mapper = spy(JsonMapper.builder().build());
     private final OkHttpClient client = mock();
     private final BitbucketServerClient underTest = new BitbucketServerClient(new BitbucketServerConfiguration("project", "repository", "https://my-server.org"), mapper, client);
 
@@ -287,7 +295,8 @@ class BitbucketServerClientUnitTest {
 
         try (Buffer bodyContent = new Buffer()) {
             request.body().writeTo(bodyContent);
-            assertEquals("{\"annotations\":[{\"externalId\":\"external ID\",\"line\":12,\"type\":\"type\",\"link\":\"link\",\"message\":\"hello\",\"path\":\"path\",\"severity\":\"severe\"}]}", bodyContent.readUtf8());
+            assertThat(mapper.readTree(bodyContent.readUtf8()))
+                    .isEqualTo(mapper.readTree("{\"annotations\":[{\"externalId\":\"external ID\",\"line\":12,\"type\":\"type\",\"link\":\"link\",\"message\":\"hello\",\"path\":\"path\",\"severity\":\"severe\"}]}"));
         }
     }
 
@@ -448,5 +457,53 @@ class BitbucketServerClientUnitTest {
         assertEquals("https://my-server.org/rest/api/1.0/projects/project/repos/repository", request.url().toString());
         assertEquals("repo-slug", result.getSlug());
         assertEquals("no-check", request.header("x-atlassian-token"));
+    }
+
+    private void respondWith(boolean successful, int code, String body) throws IOException {
+        Call call = mock();
+        Response response = mock();
+        when(client.newCall(any())).thenReturn(call);
+        when(call.execute()).thenReturn(response);
+        when(response.isSuccessful()).thenReturn(successful);
+        when(response.code()).thenReturn(code);
+        when(response.body()).thenReturn(ResponseBody.create(body, MediaType.parse("text/html")));
+    }
+
+    @Test
+    void shouldThrowIOExceptionWhenRepositoryResponseIsNotValidJson() throws IOException {
+        respondWith(true, 200, "<html>Not JSON</html>");
+
+        assertThatThrownBy(underTest::retrieveRepository)
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse Bitbucket Server response as Repository")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
+
+    @Test
+    void shouldLogStatusCodeAndThrowIOExceptionWhenErrorResponseIsNotValidJson() throws IOException {
+        respondWith(false, 502, "<html>Bad Gateway</html>");
+        Logger logger = (Logger) LoggerFactory.getLogger(BitbucketServerClient.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            assertThatThrownBy(underTest::retrieveRepository)
+                    .isExactlyInstanceOf(IOException.class)
+                    .hasMessage("Could not parse Bitbucket Server response as ErrorResponse")
+                    .hasCauseInstanceOf(JacksonException.class);
+
+            assertThat(appender.list)
+                    .extracting(ILoggingEvent::getLevel, ILoggingEvent::getFormattedMessage)
+                    .containsExactly(tuple(Level.WARN, "Bitbucket Server returned HTTP 502"));
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    void shouldNotSupportCodeInsightsWhenServerPropertiesAreNotValidJson() throws IOException {
+        respondWith(true, 200, "<html>Not JSON</html>");
+
+        assertFalse(underTest.supportsCodeInsights());
     }
 }

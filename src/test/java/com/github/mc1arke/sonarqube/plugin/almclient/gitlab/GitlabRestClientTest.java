@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,18 +18,21 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
 import org.mockito.ArgumentCaptor;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,11 +45,11 @@ class GitlabRestClientTest {
 
     private final CloseableHttpClient closeableHttpClient = mock();
     private final LinkHeaderReader linkHeaderReader = mock();
-    private final ObjectMapper objectMapper = mock();
+    private final JsonMapper jsonMapper = mock();
 
     @Test
     void checkErrorThrownOnNonSuccessResponseStatus() throws IOException {
-        GitlabRestClient underTest = new GitlabRestClient("http://url.test/api", "token", linkHeaderReader, objectMapper, () -> closeableHttpClient);
+        GitlabRestClient underTest = new GitlabRestClient("http://url.test/api", "token", linkHeaderReader, jsonMapper, () -> closeableHttpClient);
 
         CloseableHttpResponse closeableHttpResponse = mock();
         StatusLine statusLine = mock();
@@ -84,7 +87,7 @@ class GitlabRestClientTest {
 
         MergeRequestNote mergeRequestNote = new MergeRequestNote("Merge request note");
 
-        GitlabRestClient underTest = new GitlabRestClient("http://api.url", "token", linkHeaderReader, objectMapper, () -> closeableHttpClient);
+        GitlabRestClient underTest = new GitlabRestClient("http://api.url", "token", linkHeaderReader, jsonMapper, () -> closeableHttpClient);
         underTest.addMergeRequestDiscussion(123, 321, mergeRequestNote);
 
         ArgumentCaptor<HttpUriRequest> requestArgumentCaptor = ArgumentCaptor.captor();
@@ -97,4 +100,33 @@ class GitlabRestClientTest {
         assertThat(request.getEntity().getContent()).hasContent("body=Merge+request+note");
     }
 
+    private GitlabRestClient clientReturning(String body) throws IOException {
+        CloseableHttpResponse closeableHttpResponse = mock();
+        StatusLine statusLine = mock();
+        when(statusLine.getStatusCode()).thenReturn(200);
+        when(closeableHttpResponse.getStatusLine()).thenReturn(statusLine);
+        when(closeableHttpResponse.getEntity()).thenReturn(new StringEntity(body, StandardCharsets.UTF_8));
+        when(closeableHttpClient.execute(any())).thenReturn(closeableHttpResponse);
+        return new GitlabRestClient("http://api.url", "token", linkHeaderReader, JsonMapper.builder().build(), () -> closeableHttpClient);
+    }
+
+    @Test
+    void shouldThrowIOExceptionWhenEntityResponseIsNotValidJson() throws IOException {
+        GitlabRestClient underTest = clientReturning("this is not json");
+
+        assertThatThrownBy(() -> underTest.getProject("group/project"))
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse JSON response")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
+
+    @Test
+    void shouldThrowIOExceptionWhenEntityListResponseIsNotValidJson() throws IOException {
+        GitlabRestClient underTest = clientReturning("this is not json");
+
+        assertThatThrownBy(() -> underTest.getMergeRequestCommits(123, 321))
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse JSON response")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
 }

@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.Response.Stream;
@@ -30,19 +29,21 @@ import org.sonar.api.server.ws.WebService.NewController;
 import org.sonar.api.utils.DateUtils;
 import org.sonar.server.property.InternalProperties;
 import org.sonar.server.user.UserSession;
+import tools.jackson.databind.json.JsonMapper;
 
 public class InfoWsAction implements SupportWsAction {
 
     private final UserSession userSession;
     private final InternalProperties internalProperties;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     public InfoWsAction(UserSession userSession, InternalProperties internalProperties) {
         this.userSession = userSession;
         this.internalProperties = internalProperties;
-        this.objectMapper = new ObjectMapper()
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .findAndRegisterModules();
+        this.jsonMapper = JsonMapper.builder()
+                .changeDefaultPropertyInclusion(inclusion -> inclusion.withValueInclusion(JsonInclude.Include.NON_NULL))
+                .findAndAddModules()
+                .build();
     }
 
     @Override
@@ -57,7 +58,7 @@ public class InfoWsAction implements SupportWsAction {
         try (OutputStream outputStream = stream.output()) {
             stream.setMediaType("application/json");
             stream.setStatus(200);
-            objectMapper.writeValue(outputStream, new InfoResponse(
+            jsonMapper.writeValue(outputStream, new InfoResponse(
                     new InfoResponse.Statistics(
                             internalProperties.read(InternalProperties.INSTALLATION_DATE)
                                     .map(date -> DateUtils.formatDateTime(Long.parseLong(date))).orElse(null))
