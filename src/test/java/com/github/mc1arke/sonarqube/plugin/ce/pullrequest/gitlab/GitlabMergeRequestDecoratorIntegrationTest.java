@@ -18,14 +18,17 @@
  */
 package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.created;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -63,6 +66,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSu
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 
 class GitlabMergeRequestDecoratorIntegrationTest {
 
@@ -73,15 +77,20 @@ class GitlabMergeRequestDecoratorIntegrationTest {
 
     @Test
     void decorateQualityGateStatusOk() {
-        decorateQualityGateStatus(QualityGate.Status.OK, false);
+        decorateQualityGateStatus(QualityGate.Status.OK, false, true);
     }
 
     @Test
     void decorateQualityGateStatusError() {
-        decorateQualityGateStatus(QualityGate.Status.ERROR, true);
+        decorateQualityGateStatus(QualityGate.Status.ERROR, true, true);
     }
 
-    private void decorateQualityGateStatus(QualityGate.Status status, boolean isMonorepo) {
+    @Test
+    void decorateQualityGateStatusWithIndividualCommentsWhenDraftNotesApiIsUnavailable() {
+        decorateQualityGateStatus(QualityGate.Status.ERROR, false, false);
+    }
+
+    private void decorateQualityGateStatus(QualityGate.Status status, boolean isMonorepo, boolean draftNotesSupported) {
         String user = "sonar_user";
         String repositorySlug = "repo/slug";
         String commitSha = "commitSha";
@@ -232,16 +241,31 @@ class GitlabMergeRequestDecoratorIntegrationTest {
                 .withRequestBody(equalTo("body=summary+comm%C3%A9nt%0A%0A%5Blink+text%5D"))
                 .willReturn(created().withBody(discussionPostResponseBody(discussionId, discussionNote(noteId, user, "summary comment", true, false)))));
 
-        wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
-                .withRequestBody(equalTo("body=issu%C3%A9&" +
-                        urlEncode("position[base_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
-                        urlEncode("position[start_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
-                        urlEncode("position[head_sha]") + "=" + commitSha + "&" +
-                        urlEncode("position[old_path]") + "=" + urlEncode(filePath) + "&" +
-                        urlEncode("position[new_path]") + "=" + urlEncode(filePath) + "&" +
-                        urlEncode("position[new_line]") + "=" + lineNumber + "&" +
-                        urlEncode("position[position_type]") + "=text"))
-                .willReturn(created().withBody(discussionPostResponseBody(discussionId, discussionNote(noteId, user, "issue",true, false)))));
+        String commitNoteFields = urlEncode("position[base_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
+                urlEncode("position[start_sha]") + "=d6a420d043dfe85e7c240fd136fc6e197998b10a&" +
+                urlEncode("position[head_sha]") + "=" + commitSha + "&" +
+                urlEncode("position[old_path]") + "=" + urlEncode(filePath) + "&" +
+                urlEncode("position[new_path]") + "=" + urlEncode(filePath) + "&" +
+                urlEncode("position[new_line]") + "=" + lineNumber + "&" +
+                urlEncode("position[position_type]") + "=text";
+        String draftNotesPath = "/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/draft_notes";
+
+        if (draftNotesSupported) {
+            wireMockExtension.stubFor(get(urlPathEqualTo(draftNotesPath)).inScenario("review").whenScenarioStateIs(Scenario.STARTED)
+                    .willReturn(okJson("[]")).willSetStateTo("staged"));
+            wireMockExtension.stubFor(post(urlPathEqualTo(draftNotesPath))
+                    .withRequestBody(equalTo("note=issu%C3%A9&" + commitNoteFields))
+                    .willReturn(created().withBody("{\"id\": 11}")));
+            wireMockExtension.stubFor(get(urlPathEqualTo(draftNotesPath)).inScenario("review").whenScenarioStateIs("staged")
+                    .willReturn(okJson("[{\"id\": 11}]")));
+            wireMockExtension.stubFor(post(urlPathEqualTo(draftNotesPath + "/bulk_publish"))
+                    .willReturn(noContent()));
+        } else {
+            wireMockExtension.stubFor(get(urlPathEqualTo(draftNotesPath)).willReturn(notFound()));
+            wireMockExtension.stubFor(post(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
+                    .withRequestBody(equalTo("body=issu%C3%A9&" + commitNoteFields))
+                    .willReturn(created().withBody(discussionPostResponseBody(discussionId, discussionNote(noteId, user, "issue",true, false)))));
+        }
 
         wireMockExtension.stubFor(put(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions/" + discussionId))
                 .withQueryParam("resolved", equalTo("true"))
@@ -269,6 +293,10 @@ class GitlabMergeRequestDecoratorIntegrationTest {
 
 
         assertThat(pullRequestDecorator.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto).getPullRequestUrl()).isEqualTo(Optional.of("http://gitlab.example.com/my-group/my-project/merge_requests/1"));
+
+        wireMockExtension.verify(draftNotesSupported ? 1 : 0, postRequestedFor(urlPathEqualTo(draftNotesPath + "/bulk_publish")));
+        wireMockExtension.verify(draftNotesSupported ? 0 : 1, postRequestedFor(urlPathEqualTo("/api/v4/projects/" + sourceProjectId + "/merge_requests/" + mergeRequestIid + "/discussions"))
+                .withRequestBody(containing(urlEncode("position[new_line]"))));
     }
 
     private static String discussionPostResponseBody(String discussionId, String... notes) {

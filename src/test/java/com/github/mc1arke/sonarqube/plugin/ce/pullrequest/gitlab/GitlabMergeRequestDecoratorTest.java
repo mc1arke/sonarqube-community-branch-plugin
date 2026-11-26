@@ -57,6 +57,7 @@ import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.DiffRefs;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.DraftNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Note;
@@ -436,7 +437,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    void shouldThrowErrorIfSubmittingNewIssueToGitlabFails() throws IOException {
+    void shouldThrowErrorIfSubmittingNewIssueToGitlabFailsAfterFallingBackFromUnavailableDraftNotesApi() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
@@ -460,11 +461,16 @@ class GitlabMergeRequestDecoratorTest {
         when(scmInfo.getChangesetForLine(999)).thenReturn(changeset);
         when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
 
+        when(gitlabClient.getMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID))
+                .thenThrow(new IllegalStateException("An unexpected response code was returned from the Gitlab API - Expected: 200, Got: 404"));
         when(gitlabClient.addMergeRequestDiscussion(anyLong(), anyLong(), any())).thenThrow(new IOException("dummy"));
 
         assertThatThrownBy(() -> underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Could not submit commit comment to Gitlab");
+
+        verify(gitlabClient, never()).addMergeRequestDraftNote(anyLong(), anyLong(), any());
+        verify(gitlabClient, never()).publishMergeRequestDraftNotes(anyLong(), anyLong());
 
         verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
         verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
@@ -478,7 +484,7 @@ class GitlabMergeRequestDecoratorTest {
     }
 
     @Test
-    void shouldStartNewDiscussionForNewIssueFromCommitInMergeRequest() throws IOException {
+    void shouldStartNewDiscussionForNewIssueWhenAccountHasPendingDraftNotes() throws IOException {
         PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
         when(lightIssue.key()).thenReturn("issueKey1");
         when(lightIssue.issueStatus()).thenReturn(IssueStatus.OPEN);
@@ -502,6 +508,8 @@ class GitlabMergeRequestDecoratorTest {
         when(scmInfo.getChangesetForLine(999)).thenReturn(changeset);
         when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
 
+        when(gitlabClient.getMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID)).thenReturn(List.of(new DraftNote(99)));
+
         underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
 
         verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
@@ -514,6 +522,9 @@ class GitlabMergeRequestDecoratorTest {
                 .usingRecursiveComparison()
                 .isEqualTo(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
         assertThat(mergeRequestNoteArgumentCaptor.getAllValues().get(1)).isNotInstanceOf(CommitNote.class);
+        verify(gitlabClient, never()).addMergeRequestDraftNote(anyLong(), anyLong(), any());
+        verify(gitlabClient, never()).deleteMergeRequestDraftNote(anyLong(), anyLong(), anyLong());
+        verify(gitlabClient, never()).publishMergeRequestDraftNotes(anyLong(), anyLong());
     }
 
     @Test
@@ -921,5 +932,57 @@ class GitlabMergeRequestDecoratorTest {
         verify(gitlabClient, never()).addMergeRequestDiscussionNote(anyLong(), anyLong(), any(), any());
         verify(gitlabClient, never()).deleteMergeRequestDiscussionNote(anyLong(), anyLong(), any(), anyLong());
         verify(gitlabClient).getMergeRequestDiscussions(PROJECT_ID, MERGE_REQUEST_IID);
+    }
+
+    @Test
+    void batchesFindingsAndPostsFailedSummaryAsAnOpenDiscussion() throws IOException {
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.ERROR);
+        PostAnalysisIssueVisitor.LightIssue lightIssue = mock();
+        when(lightIssue.key()).thenReturn("issueKey1");
+        when(lightIssue.getLine()).thenReturn(Optional.of(999));
+        Component component = mock();
+        PostAnalysisIssueVisitor.ComponentIssue issue = mock();
+        when(issue.getIssue()).thenReturn(lightIssue);
+        when(issue.getComponent()).thenReturn(component);
+        when(issue.getScmPath()).thenReturn(Optional.of("path-to-file"));
+        when(analysisDetails.getScmReportableIssues()).thenReturn(List.of(issue));
+        Changeset changeset = mock();
+        when(changeset.getRevision()).thenReturn("DEF");
+        ScmInfo scmInfo = mock();
+        when(scmInfo.hasChangesetForLine(999)).thenReturn(true);
+        when(scmInfo.getChangesetForLine(999)).thenReturn(changeset);
+        when(scmInfoRepository.getScmInfo(component)).thenReturn(Optional.of(scmInfo));
+        when(gitlabClient.getMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID))
+                .thenReturn(List.of()).thenReturn(List.of(new DraftNote(11)));
+        when(gitlabClient.addMergeRequestDraftNote(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), any()))
+                .thenReturn(new DraftNote(11));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        ArgumentCaptor<MergeRequestNote> captor = ArgumentCaptor.captor();
+        verify(gitlabClient).addMergeRequestDraftNote(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), captor.capture());
+        assertThat(captor.getValue()).usingRecursiveComparison()
+                .isEqualTo(new CommitNote("Issue Summary", BASE_SHA, START_SHA, HEAD_SHA, "path-to-file", "path-to-file", 999));
+        verify(gitlabClient).publishMergeRequestDraftNotes(PROJECT_ID, MERGE_REQUEST_IID);
+        verify(gitlabClient).addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID),
+                org.mockito.ArgumentMatchers.refEq(new MergeRequestNote("Summary Comment")));
+        verify(gitlabClient, never()).resolveMergeRequestDiscussion(anyLong(), anyLong(), any());
+    }
+
+    @Test
+    void resolvesOnlyTheNewSuccessfulSummaryWithoutPublishingAnEmptyReview() throws IOException {
+        when(analysisDetails.getQualityGateStatus()).thenReturn(QualityGate.Status.OK);
+        Note summary = new Note(10, false, sonarqubeUser, "Summary Comment", false, true);
+        when(gitlabClient.getMergeRequestDiscussions(PROJECT_ID, MERGE_REQUEST_IID))
+                .thenReturn(List.of(new Discussion("older-summary", List.of(summary))));
+        when(gitlabClient.addMergeRequestDiscussion(eq(PROJECT_ID), eq(MERGE_REQUEST_IID), any()))
+                .thenReturn(new Discussion("new-summary", List.of(summary)));
+
+        underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        verify(gitlabClient, never()).getMergeRequestDraftNotes(anyLong(), anyLong());
+        verify(gitlabClient, never()).publishMergeRequestDraftNotes(anyLong(), anyLong());
+        verify(gitlabClient).resolveMergeRequestDiscussion(PROJECT_ID, MERGE_REQUEST_IID, "new-summary");
+        verify(gitlabClient, never()).resolveMergeRequestDiscussion(PROJECT_ID, MERGE_REQUEST_IID, "older-summary");
     }
 }

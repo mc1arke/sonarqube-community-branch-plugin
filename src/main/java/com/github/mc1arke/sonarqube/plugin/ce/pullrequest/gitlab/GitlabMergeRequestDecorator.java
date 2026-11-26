@@ -20,6 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClient;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabClientFactory;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.GitlabReviewPublisher;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
@@ -42,6 +43,7 @@ import org.sonar.db.alm.setting.AlmSettingDto;
 import org.sonar.db.alm.setting.ProjectAlmSettingDto;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -142,18 +144,45 @@ public class GitlabMergeRequestDecorator extends DiscussionAwarePullRequestDecor
     }
 
     @Override
-    protected void submitCommitNoteForIssue(GitlabClient client, MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String path, AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary) {
-        Integer line = issue.getIssue().getLine().orElseThrow(() -> new IllegalStateException("No line is associated with this issue"));
+    protected void submitNewComments(GitlabClient client, MergeRequest mergeRequest, AnalysisDetails analysis,
+                                     List<ComponentIssueScmPath> issues,
+                                     AnalysisSummary analysisSummary) {
+        if (issues.isEmpty()) {
+            submitSummaryNote(client, mergeRequest, analysis, analysisSummary);
+            return;
+        }
 
+        List<MergeRequestNote> notes = new ArrayList<>();
+        for (ComponentIssueScmPath issue : issues) {
+            notes.add(createCommitNote(mergeRequest, issue.componentIssue(), issue.scmPath(),
+                    createAnalysisIssueSummary(issue.componentIssue(), analysis)));
+        }
+        boolean published;
+        try {
+            published = new GitlabReviewPublisher().publish(client, mergeRequest.getTargetProjectId(), mergeRequest.getIid(), notes);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not publish SonarQube review to Gitlab", ex);
+        }
+        if (!published) {
+            super.submitNewComments(client, mergeRequest, analysis, issues, analysisSummary);
+            return;
+        }
+        submitSummaryNote(client, mergeRequest, analysis, analysisSummary);
+    }
+
+    private CommitNote createCommitNote(MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue,
+                                        String path, AnalysisIssueSummary analysisIssueSummary) {
+        Integer line = issue.getIssue().getLine().orElseThrow(() -> new IllegalStateException("No line is associated with this issue"));
+        return new CommitNote(analysisIssueSummary.format(formatterFactory),
+                mergeRequest.getDiffRefs().getBaseSha(), mergeRequest.getDiffRefs().getStartSha(),
+                mergeRequest.getDiffRefs().getHeadSha(), path, path, line);
+    }
+
+    @Override
+    protected void submitCommitNoteForIssue(GitlabClient client, MergeRequest mergeRequest, PostAnalysisIssueVisitor.ComponentIssue issue, String path, AnalysisDetails analysis, AnalysisIssueSummary analysisIssueSummary) {
         try {
             client.addMergeRequestDiscussion(mergeRequest.getTargetProjectId(), mergeRequest.getIid(),
-                    new CommitNote(analysisIssueSummary.format(formatterFactory),
-                    mergeRequest.getDiffRefs().getBaseSha(),
-                    mergeRequest.getDiffRefs().getStartSha(),
-                    mergeRequest.getDiffRefs().getHeadSha(),
-                    path,
-                    path,
-                    line));
+                    createCommitNote(mergeRequest, issue, path, analysisIssueSummary));
         } catch (IOException ex) {
             throw new IllegalStateException("Could not submit commit comment to Gitlab", ex);
         }

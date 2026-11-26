@@ -48,11 +48,17 @@ unmatched = sorted({f'{r["method"]} {r["path"]}' for r in requests if not r["mat
 check(not unmatched, f"the plugin called endpoints the mock does not know: {unmatched}")
 
 if alm == "gitlab":
+    # New findings are published as one review (draft notes + bulk_publish); the summary is its own discussion.
     posts = [parse_qs(r["body"]) for r in calls("POST", "/merge_requests/1/discussions")]
-    inline = sorted(int(p["position[new_line]"][0]) for p in posts if "position[new_line]" in p)
+    drafts = [parse_qs(r["body"]) for r in calls("POST", "/merge_requests/1/draft_notes")]
+    inline = sorted(int(p["position[new_line]"][0]) for p in drafts if "position[new_line]" in p)
+    inline_discussions = [p for p in posts if "position[new_line]" in p]
     summaries = [p for p in posts if "position[new_line]" not in p]
+    publishes = calls("POST", "/merge_requests/1/draft_notes/bulk_publish")
     statuses = [r for r in requests if r["method"] == "POST" and "/statuses/" in r["path"]]
-    check(inline == expected_lines, f"inline discussions on lines {inline}, expected {expected_lines}")
+    check(inline == expected_lines, f"inline draft notes on lines {inline}, expected {expected_lines}")
+    check(not inline_discussions, f"expected no individually posted inline discussions, got {len(inline_discussions)}")
+    check(len(publishes) == 1, f"expected the review to be published once, got {len(publishes)} bulk_publish calls")
     check(len(summaries) == 1, f"expected 1 summary discussion, got {len(summaries)}")
     check(len(statuses) == 1 and "state=failed" in statuses[0]["query"], f"expected one failed commit status, got {[s['query'] for s in statuses]}")
 elif alm == "github":

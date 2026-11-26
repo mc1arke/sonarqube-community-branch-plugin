@@ -19,6 +19,7 @@
 package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
+import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.DraftNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequest;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
@@ -30,6 +31,14 @@ import java.io.IOException;
 import java.util.List;
 
 public interface GitlabClient {
+
+    List<DraftNote> getMergeRequestDraftNotes(long projectId, long mergeRequestIid) throws IOException;
+
+    DraftNote addMergeRequestDraftNote(long projectId, long mergeRequestIid, MergeRequestNote note) throws IOException;
+
+    void deleteMergeRequestDraftNote(long projectId, long mergeRequestIid, long draftNoteId) throws IOException;
+
+    void publishMergeRequestDraftNotes(long projectId, long mergeRequestIid) throws IOException;
 
     User getCurrentUser() throws IOException;
 

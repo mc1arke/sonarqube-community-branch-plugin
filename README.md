@@ -163,6 +163,28 @@ on GitHub Actions:
     SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 ```
 
+## GitLab review notifications
+
+New inline comments on a GitLab merge request are published as a single GitLab review, so each recipient gets
+one notification for the analysis rather than one per finding. Each finding is still its own discussion at its
+diff position. The analysis summary is posted as a separate resolvable discussion and is resolved when the Quality
+Gate passes, so it may send its own notification. Cleaning up old discussions and adding replies may also notify users.
+
+Reviews use the GitLab Draft Notes API. GitLab's `bulk_publish` publishes **all** pending drafts of the
+authenticated account on the merge request, so the plugin falls back to posting comments one by one when:
+
+* the Draft Notes API is not available, for example on older GitLab versions,
+* the account already has pending drafts on the merge request, such as a manual review in progress, or
+* the drafts change while the review is being prepared, for example because another analysis is decorating the
+  same merge request at the same time. The drafts created by this attempt are deleted first.
+
+The last check and the publish request can't be made atomic. If another draft is added by the same account in
+between, it is published with the review. Use a dedicated GitLab account for decoration to avoid this.
+
+The plugin doesn't retry or fall back after a failed publish request, because GitLab might already have published
+the review. It also doesn't fall back if it couldn't delete drafts it created. In both cases decoration fails, and
+you should check the merge request and the account's pending drafts before running the analysis again.
+
 ## Serving images for PR decoration
 
 By default, images for PR decoration are served as static resources on the SonarQube server as a part of Community

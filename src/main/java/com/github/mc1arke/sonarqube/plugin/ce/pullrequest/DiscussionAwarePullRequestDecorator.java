@@ -68,6 +68,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
 
         P pullRequest = getPullRequest(client, almSettingDto, projectAlmSettingDto, analysis);
 
+        List<ComponentIssueScmPath> uncommentedIssues = List.of();
         if (isInlineCommentsEnabled(projectAlmSettingDto)) {
             U user = getCurrentUser(client);
 
@@ -87,29 +88,34 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
                     pullRequest);
 
             List<String> commitIds = getCommitIdsForPullRequest(client, pullRequest);
-            List<ComponentIssueScmPath> uncommentedIssues = findIssuesWithoutComments(openSonarqubeIssues,
+            uncommentedIssues = findIssuesWithoutComments(openSonarqubeIssues,
                     commentKeysForOpenComments)
                     .stream()
                     .map(DiscussionAwarePullRequestDecorator::loadScmPathsForIssues)
                     .flatMap(Optional::stream)
                     .filter(issue -> isIssueFromCommitInCurrentRequest(issue.componentIssue(), commitIds, scmInfoRepository))
                     .toList();
-
-            uncommentedIssues.forEach(issue -> submitCommitNoteForIssue(client,
-                    pullRequest,
-                    issue.componentIssue(),
-                    issue.scmPath(),
-                    analysis,
-                    reportGenerator.createAnalysisIssueSummary(issue.componentIssue(), analysis)));
         }
 
         AnalysisSummary analysisSummary = reportGenerator.createAnalysisSummary(analysis);
-        submitSummaryNote(client, pullRequest, analysis, analysisSummary);
+        submitNewComments(client, pullRequest, analysis, uncommentedIssues, analysisSummary);
         submitPipelineStatus(client, pullRequest, analysis, analysisSummary, projectAlmSettingDto);
 
         DecorationResult.Builder builder = DecorationResult.builder();
         createFrontEndUrl(pullRequest, analysis).ifPresent(builder::withPullRequestUrl);
         return builder.build();
+    }
+
+    protected void submitNewComments(C client, P pullRequest, AnalysisDetails analysis,
+                                     List<ComponentIssueScmPath> issues,
+                                     AnalysisSummary analysisSummary) {
+        issues.forEach(issue -> submitCommitNoteForIssue(client, pullRequest, issue.componentIssue(), issue.scmPath(),
+                analysis, createAnalysisIssueSummary(issue.componentIssue(), analysis)));
+        submitSummaryNote(client, pullRequest, analysis, analysisSummary);
+    }
+
+    protected AnalysisIssueSummary createAnalysisIssueSummary(PostAnalysisIssueVisitor.ComponentIssue issue, AnalysisDetails analysis) {
+        return reportGenerator.createAnalysisIssueSummary(issue, analysis);
     }
 
     protected abstract boolean isInlineCommentsEnabled(ProjectAlmSettingDto projectAlmSettingDto);
@@ -338,7 +344,7 @@ public abstract class DiscussionAwarePullRequestDecorator<C, P, U, D, N> impleme
     }
 
 
-    private record ComponentIssueScmPath(PostAnalysisIssueVisitor.ComponentIssue componentIssue, String scmPath) {
+    protected record ComponentIssueScmPath(PostAnalysisIssueVisitor.ComponentIssue componentIssue, String scmPath) {
 
     }
 
