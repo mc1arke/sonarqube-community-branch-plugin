@@ -22,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,11 +35,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.sonar.api.ce.posttask.QualityGate;
 import org.sonar.api.issue.IssueStatus;
@@ -62,6 +66,8 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.PostAnalysisIssueVisit
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisIssueSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.AnalysisSummary;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.report.ReportGenerator;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.DecorationResult;
+import tools.jackson.core.JacksonException;
 
 class BitbucketPullRequestDecoratorTest {
 
@@ -220,4 +226,28 @@ class BitbucketPullRequestDecoratorTest {
         when(analysisDetails.getScmReportableIssues()).thenReturn(List.of(componentIssue));
     }
 
+    static Stream<Exception> clientFailures() {
+        return Stream.of(new IOException("io failure"), new JacksonException("json failure") {});
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientFailures")
+    void shouldReturnDefaultResultWhenReportUploadFails(Exception failure) throws IOException {
+        when(client.supportsCodeInsights()).thenReturn(true);
+        mockValidAnalysis();
+        when(analysisSummary.getNewDuplications()).thenReturn(BigDecimal.ONE);
+        when(analysisSummary.getNewCoverage()).thenReturn(BigDecimal.ONE);
+        when(analysisSummary.getAcceptedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("acceptedIssuesUrl", "acceptedIssuesImageUrl", 0));
+        when(analysisSummary.getFixedIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("fixedIssuesUrl", "fixedIssuesImageUrl", 0));
+        when(analysisSummary.getNewIssues()).thenReturn(new AnalysisSummary.UrlIconMetric<>("newIssuesUrl", "newIssuesImageUrl", 1L));
+        when(analysisSummary.getSecurityHotspots()).thenReturn(new AnalysisSummary.UrlIconMetric<>("securityHotspotsUrl", "securityHotspotsImageUrl", 0));
+        when(client.normaliseReportKey(any())).thenReturn("reportKey");
+        doThrow(failure).when(client).uploadReport(any(), any(), any());
+
+        DecorationResult result = underTest.decorateQualityGateStatus(analysisDetails, almSettingDto, projectAlmSettingDto);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getPullRequestUrl()).isEmpty();
+        verify(client, never()).deleteAnnotations(any(), any());
+    }
 }

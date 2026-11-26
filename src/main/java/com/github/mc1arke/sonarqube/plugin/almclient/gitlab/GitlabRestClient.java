@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Michael Clarke
+ * Copyright (C) 2021-2026 Michael Clarke
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Commit;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.Discussion;
@@ -42,6 +41,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -60,15 +61,15 @@ class GitlabRestClient implements GitlabClient {
 
     private final String baseGitlabApiUrl;
     private final String authToken;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     private final LinkHeaderReader linkHeaderReader;
     private final Supplier<CloseableHttpClient> httpClientFactory;
 
-    GitlabRestClient(String baseGitlabApiUrl, String authToken, LinkHeaderReader linkHeaderReader, ObjectMapper objectMapper, Supplier<CloseableHttpClient> httpClientFactory) {
+    GitlabRestClient(String baseGitlabApiUrl, String authToken, LinkHeaderReader linkHeaderReader, JsonMapper jsonMapper, Supplier<CloseableHttpClient> httpClientFactory) {
         this.baseGitlabApiUrl = baseGitlabApiUrl;
         this.authToken = authToken;
         this.linkHeaderReader = linkHeaderReader;
-        this.objectMapper = objectMapper;
+        this.jsonMapper = jsonMapper;
         this.httpClientFactory = httpClientFactory;
     }
 
@@ -221,7 +222,11 @@ class GitlabRestClient implements GitlabClient {
             if (null == type) {
                 return null;
             }
-            return objectMapper.readValue(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8), type);
+            try {
+                return jsonMapper.readValue(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8), type);
+            } catch (JacksonException e) {
+                throw new IOException("Could not parse JSON response", e);
+            }
         }
     }
 
@@ -237,8 +242,8 @@ class GitlabRestClient implements GitlabClient {
 
             responseValidator.accept(httpResponse);
 
-            List<X> entities = new ArrayList<>(objectMapper.readValue(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8),
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, type)));
+            List<X> entities = new ArrayList<>(jsonMapper.readValue(EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8),
+                    jsonMapper.getTypeFactory().constructCollectionType(List.class, type)));
 
             Optional<String> nextURL = Optional.ofNullable(httpResponse.getFirstHeader("Link"))
                     .map(NameValuePair::getValue)
@@ -248,6 +253,8 @@ class GitlabRestClient implements GitlabClient {
             }
 
             return entities;
+        } catch (JacksonException e) {
+            throw new IOException("Could not parse JSON response", e);
         }
     }
 

@@ -18,7 +18,7 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.gitlab;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.CommitNote;
 import com.github.mc1arke.sonarqube.plugin.almclient.gitlab.model.MergeRequestNote;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -47,7 +47,7 @@ class GitlabReviewPublisherIntegrationTest {
 
     private GitlabClient client() {
         return new GitlabRestClient(server.baseUrl() + "/api/v4", "token", new DefaultLinkHeaderReader(),
-                new ObjectMapper(), HttpClients::createDefault);
+                JsonMapper.builder().build(), HttpClients::createDefault);
     }
 
     @Test

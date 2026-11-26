@@ -19,8 +19,6 @@
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
@@ -40,6 +38,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -60,18 +60,18 @@ class BitbucketCloudClient implements BitbucketClient {
     private static final String REPORTER = "SonarQube";
     private static final String LINK_TEXT = "Go to SonarQube";
 
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     private final OkHttpClient okHttpClient;
     private final BitbucketConfiguration bitbucketConfiguration;
 
 
-    BitbucketCloudClient(ObjectMapper objectMapper, OkHttpClient okHttpClient, BitbucketConfiguration bitbucketConfiguration) {
-        this.objectMapper = objectMapper;
+    BitbucketCloudClient(JsonMapper jsonMapper, OkHttpClient okHttpClient, BitbucketConfiguration bitbucketConfiguration) {
+        this.jsonMapper = jsonMapper;
         this.okHttpClient = okHttpClient;
         this.bitbucketConfiguration = bitbucketConfiguration;
     }
 
-    static String negotiateBearerToken(String clientId, String clientSecret, ObjectMapper objectMapper, OkHttpClient okHttpClient) {
+    static String negotiateBearerToken(String clientId, String clientSecret, JsonMapper jsonMapper, OkHttpClient okHttpClient) {
         Request request = new Request.Builder()
                 .header("Authorization", "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8)))
                 .url("https://bitbucket.org/site/oauth2/access_token")
@@ -79,9 +79,9 @@ class BitbucketCloudClient implements BitbucketClient {
                 .build();
 
         try (Response response = okHttpClient.newCall(request).execute()) {
-            BitbucketCloudClient.AuthToken authToken = objectMapper.readValue(response.body().string(), BitbucketCloudClient.AuthToken.class);
-            return authToken.getAccessToken();
-        } catch (IOException ex) {
+            BitbucketCloudClient.AuthToken authToken = jsonMapper.readValue(response.body().string(), BitbucketCloudClient.AuthToken.class);
+            return authToken.accessToken();
+        } catch (IOException | JacksonException ex) {
             throw new IllegalStateException("Could not retrieve bearer token", ex);
         }
     }
@@ -129,15 +129,15 @@ class BitbucketCloudClient implements BitbucketClient {
         }
 
         Request req = new Request.Builder()
-                .post(RequestBody.create(objectMapper.writeValueAsString(annotations), APPLICATION_JSON_MEDIA_TYPE))
+                .post(RequestBody.create(jsonMapper.writeValueAsString(annotations), APPLICATION_JSON_MEDIA_TYPE))
                 .url(format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/reports/%s/annotations", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commit, reportKey))
                 .build();
 
         LOGGER.info("Creating annotations on bitbucket cloud");
         LOGGER.atDebug().setMessage("Create annotations: {}").addArgument(() -> {
             try {
-                return objectMapper.writeValueAsString(annotations);
-            } catch (JsonProcessingException e) {
+                return jsonMapper.writeValueAsString(annotations);
+            } catch (JacksonException e) {
                 return "An error occurred whilst converting annotations to JSON: " + e.getClass().getName() + ": " + e.getMessage();
             }
         }).log();
@@ -158,7 +158,7 @@ class BitbucketCloudClient implements BitbucketClient {
         deleteExistingReport(commit, reportKey);
 
         String targetUrl = format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/reports/%s", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commit, reportKey);
-        String body = objectMapper.writeValueAsString(codeInsightReport);
+        String body = jsonMapper.writeValueAsString(codeInsightReport);
         Request req = new Request.Builder()
                 .put(RequestBody.create(body, APPLICATION_JSON_MEDIA_TYPE))
                 .url(targetUrl)
@@ -191,15 +191,17 @@ class BitbucketCloudClient implements BitbucketClient {
         try (Response response = okHttpClient.newCall(req).execute()) {
             validate(response);
 
-            return objectMapper.reader().forType(Repository.class)
+            return jsonMapper.reader().forType(Repository.class)
                     .readValue(response.body().string());
+        } catch (JacksonException ex) {
+            throw new IOException("Could not parse Bitbucket Cloud response as Repository", ex);
         }
     }
 
     @Override
     public void submitBuildStatus(String commitSha, BuildStatus buildStatus) throws IOException {
         Request req = new Request.Builder()
-                .post(RequestBody.create(objectMapper.writeValueAsString(buildStatus), APPLICATION_JSON_MEDIA_TYPE))
+                .post(RequestBody.create(jsonMapper.writeValueAsString(buildStatus), APPLICATION_JSON_MEDIA_TYPE))
                 .url(format("https://api.bitbucket.org/2.0/repositories/%s/%s/commit/%s/statuses/build", bitbucketConfiguration.getProject(), bitbucketConfiguration.getRepository(), commitSha))
                 .build();
 
@@ -235,16 +237,8 @@ class BitbucketCloudClient implements BitbucketClient {
         }
     }
 
-    private static class AuthToken {
+    private record AuthToken(@JsonProperty("access_token") String accessToken) {
 
-        private final String accessToken;
-
-        AuthToken(@JsonProperty("access_token") String accessToken) {
-            this.accessToken = accessToken;
-        }
-
-        String getAccessToken() {
-            return accessToken;
-        }
     }
+
 }

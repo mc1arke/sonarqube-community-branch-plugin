@@ -18,7 +18,6 @@
  */
 package com.github.mc1arke.sonarqube.plugin.almclient.bitbucket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.AnnotationUploadLimit;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BitbucketConfiguration;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.BuildStatus;
@@ -27,10 +26,14 @@ import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsight
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.CodeInsightsReport;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.DataValue;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.ReportStatus;
+import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.Repository;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.cloud.CloudAnnotation;
 import com.github.mc1arke.sonarqube.plugin.almclient.bitbucket.model.cloud.CloudCreateReportRequest;
 import com.google.common.collect.Sets;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import okhttp3.Call;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -38,7 +41,12 @@ import okhttp3.ResponseBody;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -59,7 +67,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 class BitbucketCloudClientUnitTest {
 
-    private final ObjectMapper mapper = mock();
+    private final JsonMapper mapper = mock();
     private final OkHttpClient client = mock();
     private final BitbucketCloudClient underTest = new BitbucketCloudClient(mapper, client, new BitbucketConfiguration("project", "repository"));
 
@@ -274,5 +282,88 @@ class BitbucketCloudClientUnitTest {
     void shouldReturnOriginalKeyFromNormalisation() {
         assertThat(underTest.normaliseReportKey("MyVeryLongReportKeyThatWon'tBeModifiedByTheNormalisation"))
                 .isEqualTo("MyVeryLongReportKeyThatWon'tBeModifiedByTheNormalisation");
+    }
+
+    private static Response successfulResponse(String body) {
+        Response response = mock();
+        when(response.isSuccessful()).thenReturn(true);
+        when(response.body()).thenReturn(ResponseBody.create(body, MediaType.parse("application/json")));
+        return response;
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenBearerTokenResponseIsNotValidJson() throws IOException {
+        Call call = mock();
+        Response response = successfulResponse("this is not json");
+        when(client.newCall(any())).thenReturn(call);
+        when(call.execute()).thenReturn(response);
+        JsonMapper jsonMapper = JsonMapper.builder().build();
+
+        assertThatThrownBy(() -> BitbucketCloudClient.negotiateBearerToken("clientId", "clientSecret", jsonMapper, client))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("Could not retrieve bearer token")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldUploadAnnotationsWithDebugLoggingEnabled(boolean debugSerialisationFails) throws IOException {
+        Logger logger = (Logger) LoggerFactory.getLogger(BitbucketCloudClient.class);
+        Level originalLevel = logger.getLevel();
+        logger.setLevel(Level.DEBUG);
+        try {
+            CloudAnnotation annotation = mock();
+            Set<CodeInsightsAnnotation> annotations = Sets.newHashSet(annotation);
+            Call call = mock();
+            Response response = mock();
+            when(client.newCall(any())).thenReturn(call);
+            when(call.execute()).thenReturn(response);
+            when(response.isSuccessful()).thenReturn(true);
+            if (debugSerialisationFails) {
+                when(mapper.writeValueAsString(any()))
+                        .thenReturn("{payload}")
+                        .thenThrow(new JacksonException("cannot serialise") {});
+            } else {
+                when(mapper.writeValueAsString(any())).thenReturn("{payload}");
+            }
+
+            underTest.uploadAnnotations("commit", annotations, "reportKey");
+
+            verify(mapper, times(2)).writeValueAsString(any());
+            verify(client).newCall(any());
+        } finally {
+            logger.setLevel(originalLevel);
+        }
+    }
+
+    @Test
+    void shouldRetrieveRepository() throws IOException {
+        Call call = mock();
+        Response response = successfulResponse("{\"slug\": \"repository\"}");
+        when(client.newCall(any())).thenReturn(call);
+        when(call.execute()).thenReturn(response);
+        BitbucketCloudClient jsonParsingClient = new BitbucketCloudClient(JsonMapper.builder().build(), client, new BitbucketConfiguration("project", "repository"));
+
+        Repository repository = jsonParsingClient.retrieveRepository();
+
+        assertThat(repository.getSlug()).isEqualTo("repository");
+        ArgumentCaptor<Request> captor = ArgumentCaptor.captor();
+        verify(client).newCall(captor.capture());
+        assertEquals("GET", captor.getValue().method());
+        assertEquals("https://api.bitbucket.org/2.0/repositories/project/repository", captor.getValue().url().toString());
+    }
+
+    @Test
+    void shouldThrowIOExceptionWhenRepositoryResponseIsNotValidJson() throws IOException {
+        Call call = mock();
+        Response response = successfulResponse("<html>Not JSON</html>");
+        when(client.newCall(any())).thenReturn(call);
+        when(call.execute()).thenReturn(response);
+        BitbucketCloudClient jsonParsingClient = new BitbucketCloudClient(JsonMapper.builder().build(), client, new BitbucketConfiguration("project", "repository"));
+
+        assertThatThrownBy(jsonParsingClient::retrieveRepository)
+                .isExactlyInstanceOf(IOException.class)
+                .hasMessage("Could not parse Bitbucket Cloud response as Repository")
+                .hasCauseInstanceOf(JacksonException.class);
     }
 }
